@@ -1,26 +1,74 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+
 const props = defineProps<{ search?: string }>()
 
-const recipes = [
-  { id: '1', title: 'Pasta Carbonara', ingredients: 'Pasta, Eier, Speck, Käse, Pfeffer', favorite: true },
-  { id: '2', title: 'Tomatensuppe', ingredients: 'Tomaten, Zwiebeln, Knoblauch, Brühe', favorite: false },
-  { id: '3', title: 'Tiramisu', ingredients: 'Mascarpone, Espresso, Löffelbiskuit, Eier, Kakao', favorite: true },
-  { id: '4', title: 'Pizza Margherita', ingredients: 'Mehl, Tomaten, Mozzarella, Basilikum', favorite: false },
-  { id: '5', title: 'Schnitzel Wiener Art', ingredients: 'Kalbsschnitzel, Paniermehl, Ei, Zitrone', favorite: false }
-]
+type Recipe = {
+  id: string
+  title: string
+  ingredients: string
+  favorite: boolean
+}
+
+const recipes = ref<Recipe[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+
+const loadRecipes = () => {
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
+  const endpoint = baseUrl + '/recipes'
+
+  const requestOptions: RequestInit = {
+    method: 'GET',
+    redirect: 'follow',
+  }
+
+  fetch(endpoint, requestOptions)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Fehler beim Laden: ${response.status}`)
+      }
+      return response.json()
+    })
+    .then((result: Recipe[]) => {
+      recipes.value = []
+      result.forEach(r => {
+        recipes.value.push(r)
+      })
+      error.value = null
+    })
+    .catch(err => {
+      console.log('error', err)
+      error.value = err.message ?? 'Unbekannter Fehler'
+    })
+    .finally(() => {
+      loading.value = false
+    })
+}
+
+onMounted(() => {
+  loadRecipes()
+})
 
 const filtered = computed(() => {
-  if (!props.search) return recipes
+  if (!props.search) return recipes.value
   const q = props.search.toLowerCase().trim()
-  return recipes.filter(r => r.title.toLowerCase().includes(q) || r.ingredients.toLowerCase().includes(q))
+  return recipes.value.filter(r =>
+    r.title.toLowerCase().includes(q) ||
+    r.ingredients.toLowerCase().includes(q)
+  )
 })
 </script>
+
 
 <template>
   <section class="recipe-list">
     <h3 class="recipes-title">Rezepte des Tages</h3>
-    <ul class="recipes">
+
+    <p v-if="loading">Lade Rezepte …</p>
+    <p v-else-if="error">Fehler: {{ error }}</p>
+
+    <ul v-else class="recipes">
       <li v-for="r in filtered" :key="r.id" class="recipe-card">
         <div class="main-row">
           <span class="name">
@@ -30,7 +78,9 @@ const filtered = computed(() => {
         </div>
         <span class="ingredients">{{ r.ingredients }}</span>
       </li>
-      <li v-if="filtered.length === 0" class="none-found">Keine passenden Rezepte gefunden.</li>
+      <li v-if="filtered.length === 0" class="none-found">
+        Keine passenden Rezepte gefunden.
+      </li>
     </ul>
   </section>
 </template>
