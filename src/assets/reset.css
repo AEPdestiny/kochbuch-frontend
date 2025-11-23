@@ -1,0 +1,12 @@
+/* src/assets/reset.css */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body {
+  width: 100vw;
+  min-height: 100vh;
+  background: #fff;    /* überall weiß! */
+  color: #131313;
+}
