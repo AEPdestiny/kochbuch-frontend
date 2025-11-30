@@ -14,6 +14,10 @@ const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+const newTitle = ref('')
+const newIngredients = ref('')
+const newFavorite = ref(false)
+
 const loadRecipes = () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   const endpoint = baseUrl + '/recipes'
@@ -45,6 +49,37 @@ const loadRecipes = () => {
       loading.value = false
     })
 }
+const createRecipe = async () => {
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
+  const endpoint = baseUrl + '/recipes'
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: newTitle.value,
+        ingredients: newIngredients.value,
+        favorite: newFavorite.value,
+      }),
+    })
+
+    if (!res.ok) {
+      throw new Error(`Fehler beim Speichern: ${res.status}`)
+    }
+
+    const saved = (await res.json()) as Recipe
+    recipes.value.push(saved)
+
+    newTitle.value = ''
+    newIngredients.value = ''
+    newFavorite.value = false
+    error.value = null
+  } catch (e: any) {
+    console.error('error', e)
+    error.value = e.message ?? 'Unbekannter Fehler'
+  }
+}
 
 onMounted(() => {
   loadRecipes()
@@ -64,6 +99,26 @@ const filtered = computed(() => {
 <template>
   <section class="recipe-list">
     <h3 class="recipes-title">Rezepte des Tages</h3>
+
+    <form class="new-recipe-form" @submit.prevent="createRecipe">
+      <input
+        v-model="newTitle"
+        type="text"
+        placeholder="Titel"
+        required
+      />
+      <input
+        v-model="newIngredients"
+        type="text"
+        placeholder="Zutaten"
+        required
+      />
+      <label>
+        <input type="checkbox" v-model="newFavorite" />
+        Favorit
+      </label>
+      <button type="submit">Rezept speichern</button>
+    </form>
 
     <p v-if="loading">Lade Rezepte …</p>
     <p v-else-if="error">Fehler: {{ error }}</p>
