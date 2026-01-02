@@ -7,7 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <header class="main-header">
       <h1 class="brand">
         <span class="chef-hat">👨‍🍳</span>
-        <span class="chef-text">Chefkoch</span>
+        <span class="chef-text">Dishly</span>
       </h1>
       <nav>
         <RouterLink to="/" class="nav-link">Start</RouterLink>
@@ -17,7 +17,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <main class="main-main">
       <RouterView />
     </main>
-    <footer class="main-footer">© 2025 Chefkoch – Dein Rezeptportal</footer>
+    <footer class="main-footer">© 2026 Dishly – Dein Rezeptportal</footer>
   </div>
 </template>
 
