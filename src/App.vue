@@ -26,6 +26,7 @@ import dishlyLogo from './assets/dishly-logo.png'
         <RouterLink to="/" class="nav-item">Home</RouterLink>
         <RouterLink to="/my-recipes" class="nav-item">Deine Rezepte</RouterLink>
         <RouterLink to="/about" class="nav-item">Über mich</RouterLink>
+        <RouterLink to="/contact" class="nav-item">Kontakt</RouterLink>
       </nav>
     </header>
 
