@@ -60,11 +60,6 @@ const closeDetails = () => {
 <template>
   <section class="home-wrap">
     <section class="hero">
-      <h2 class="hero-title">
-        Entdecke einfache, leckere Rezepte
-        <span class="hero-highlight">mit Dishly</span>
-        <span class="fav-star">✦</span>
-      </h2>
       <p class="hero-desc">
         Stöbere durch Gerichte aus der ganzen Welt und finde dein nächstes Lieblingsrezept.
       </p>
@@ -72,8 +67,8 @@ const closeDetails = () => {
         v-model="search"
         class="search-input"
         type="search"
-        placeholder="Rezepte suchen (z.B. Tiramisu, Pasta...)"
-        aria-label="Rezepte durchsuchen"
+        placeholder="Nach Titel, Land oder Zutaten suchen"
+        aria-label="Rezepte nach Titel, Land oder Zutaten durchsuchen"
       />
     </section>
 
