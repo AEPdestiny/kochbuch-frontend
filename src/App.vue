@@ -54,12 +54,12 @@ import dishlyLogo from './assets/dishly-logo.png'
 .top-line {
   height: 4px;
   width: 100%;
-  background: #a4ede4;
+  background: #8fd5cc;
 }
 
 .main-header {
   background: #ffffff;
-  border-bottom: 2px solid #ffd6ec;
+  border-bottom: 1px solid #dde4e6;
   padding: 12px 8vw 10px 8vw;
   display: flex;
   flex-direction: column;
@@ -79,7 +79,7 @@ import dishlyLogo from './assets/dishly-logo.png'
 }
 
 .logo {
-  height: 72px;
+  height: 80px;
 }
 
 .tagline-box {
@@ -87,8 +87,8 @@ import dishlyLogo from './assets/dishly-logo.png'
   margin-left: 24px;
   padding: 10px 18px;
   border-radius: 24px;
-  background: #fff5fb;
-  border: 1px solid #ffd6ec;
+  background: #eefaf8;
+  border: 1px solid #c3e7e1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -96,14 +96,14 @@ import dishlyLogo from './assets/dishly-logo.png'
 }
 
 .tagline-text {
-  color: #e08ab5;
+  color: #cc7da9;
   font-weight: 600;
   font-size: 1rem;
   text-align: center;
 }
 
 .tagline-deco {
-  color: #e8a4c5;
+  color: #8fd5cc;
   font-size: 0.95rem;
 }
 
@@ -111,19 +111,19 @@ import dishlyLogo from './assets/dishly-logo.png'
   margin-top: 8px;
   display: inline-flex;
   align-self: center;
-  background: #e0fff8;
+  background: #f4fbfa;
   border-radius: 999px;
-  border: 1px solid #a4ede4;
+  border: 1px solid #c3e7e1;
   overflow: hidden;
 }
 
 .nav-item {
   padding: 8px 22px;
   text-decoration: none;
-  color: #e08ab5;
+  color: #486b68;
   font-weight: 600;
   font-size: 0.98rem;
-  border-right: 1px solid #c7f5ec;
+  border-right: 1px solid #ddeeee;
   transition: background 0.2s, color 0.2s, border 0.2s;
 }
 
@@ -133,7 +133,26 @@ import dishlyLogo from './assets/dishly-logo.png'
 
 .nav-item:hover,
 .router-link-exact-active {
+  background: #8fd5cc;
+  color: #ffffff;
+}
+
+.main-main {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100vw;
+  min-height: 80vh;
   background: #ffffff;
-  color: #e08ab5;
+}
+
+.main-footer {
+  text-align: center;
+  color: #486b68;
+  background: #f4fbfa;
+  font-size: 0.98rem;
+  padding: 12px 0 10px 0;
+  border-top: 1px solid #dde4e6;
 }
 </style>
