@@ -142,9 +142,9 @@ const filtered = computed(() => {
 
 <style scoped>
 .recipe-list {
-  width: 100vw;
-  max-width: 100vw;
-  margin: 0 0 40px 0;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto 40px auto;
   padding: 29px 10vw 22px 10vw;
   background: #fff;
 }

@@ -43,7 +43,7 @@ import dishlyLogo from './assets/dishly-logo.png'
 
 .app-bg {
   min-height: 100vh;
-  width: 100vw;
+  width: 100%;
   background: #ffffff;
   font-family: 'Roboto', Arial, sans-serif;
   color: #2b1b23;
@@ -142,7 +142,7 @@ import dishlyLogo from './assets/dishly-logo.png'
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  width: 100vw;
+  width: 100%;
   min-height: 80vh;
   background: #ffffff;
 }
