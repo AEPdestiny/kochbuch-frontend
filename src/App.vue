@@ -79,7 +79,7 @@ import dishlyLogo from './assets/dishly-logo.png'
 }
 
 .logo {
-  height: 56px;
+  height: 72px;
 }
 
 .tagline-box {
