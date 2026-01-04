@@ -12,12 +12,14 @@ type Recipe = {
   category: string
   rating: number
   ingredients: string
+  instructions: string
 }
 
 const search = ref('')
 const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const selected = ref<Recipe | null>(null)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
 
@@ -45,71 +47,113 @@ const filtered = computed(() => {
     r.category.toLowerCase().includes(q)
   )
 })
+
+const openDetails = (recipe: Recipe) => {
+  selected.value = recipe
+}
+
+const closeDetails = () => {
+  selected.value = null
+}
 </script>
 
 <template>
-  <section class="hero">
-    <h2 class="hero-title">
-      Entdecke einfache, leckere Rezepte
-      <span class="hero-highlight">mit Dishly</span>
-      <span class="fav-star">✦</span>
-    </h2>
-    <p class="hero-desc">
-      Stöbere durch Gerichte aus der ganzen Welt und finde dein nächstes Lieblingsrezept.
-    </p>
-    <input
-      v-model="search"
-      class="search-input"
-      type="search"
-      placeholder="Rezepte suchen (z.B. Tiramisu, Pasta...)"
-      aria-label="Rezepte durchsuchen"
-    />
-  </section>
-
-  <section class="list-wrap">
-    <p v-if="loading" class="status-text">Lade Rezepte …</p>
-    <p v-else-if="error" class="status-text error">Fehler: {{ error }}</p>
-
-    <div v-else class="recipe-grid">
-      <article
-        v-for="r in filtered"
-        :key="r.id"
-        class="recipe-card"
-      >
-        <div class="image-wrap" v-if="r.imageUrl">
-          <img :src="r.imageUrl" :alt="r.title" />
-        </div>
-
-        <div class="card-content">
-          <h3 class="card-title">{{ r.title }}</h3>
-
-          <p class="card-meta">
-            <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
-            <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
-            <span v-if="r.rating" class="pill pill-rating">★ {{ r.rating.toFixed(1) }}</span>
-          </p>
-
-          <p class="card-times">
-            <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
-              ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} Min.
-            </span>
-            <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
-          </p>
-
-          <p class="card-ingredients">
-            {{ r.ingredients }}
-          </p>
-        </div>
-      </article>
-
-      <p v-if="!loading && filtered.length === 0" class="status-text">
-        Keine passenden Rezepte gefunden.
+  <section class="home-wrap">
+    <section class="hero">
+      <h2 class="hero-title">
+        Entdecke einfache, leckere Rezepte
+        <span class="hero-highlight">mit Dishly</span>
+        <span class="fav-star">✦</span>
+      </h2>
+      <p class="hero-desc">
+        Stöbere durch Gerichte aus der ganzen Welt und finde dein nächstes Lieblingsrezept.
       </p>
+      <input
+        v-model="search"
+        class="search-input"
+        type="search"
+        placeholder="Rezepte suchen (z.B. Tiramisu, Pasta...)"
+        aria-label="Rezepte durchsuchen"
+      />
+    </section>
+
+    <section class="list-wrap">
+      <p v-if="loading" class="status-text">Lade Rezepte …</p>
+      <p v-else-if="error" class="status-text error">Fehler: {{ error }}</p>
+
+      <div v-else class="recipe-grid">
+        <article
+          v-for="r in filtered"
+          :key="r.id"
+          class="recipe-card"
+          @click="openDetails(r)"
+        >
+          <div class="image-wrap" v-if="r.imageUrl">
+            <img :src="r.imageUrl" :alt="r.title" />
+          </div>
+
+          <div class="card-content">
+            <h3 class="card-title">{{ r.title }}</h3>
+
+            <p class="card-meta">
+              <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
+              <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
+              <span v-if="r.rating" class="pill pill-rating">★ {{ r.rating.toFixed(1) }}</span>
+            </p>
+
+            <p class="card-times">
+              <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
+                ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} Min.
+              </span>
+              <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
+            </p>
+
+            <p class="card-ingredients">
+              {{ r.ingredients }}
+            </p>
+          </div>
+        </article>
+
+        <p v-if="!loading && filtered.length === 0" class="status-text">
+          Keine passenden Rezepte gefunden.
+        </p>
+      </div>
+    </section>
+
+    <div v-if="selected" class="overlay" @click.self="closeDetails">
+      <div class="overlay-card">
+        <button class="overlay-close" @click="closeDetails">×</button>
+
+        <h3 class="overlay-title">{{ selected.title }}</h3>
+
+        <p class="overlay-meta">
+          <span v-if="selected.category">{{ selected.category }}</span>
+          <span v-if="selected.difficulty"> • {{ selected.difficulty }}</span>
+          <span v-if="selected.rating"> • ★ {{ selected.rating.toFixed(1) }}</span>
+        </p>
+
+        <p class="overlay-meta">
+          <span v-if="selected.prepTimeMinutes || selected.cookTimeMinutes">
+            ⏱ {{ selected.prepTimeMinutes + selected.cookTimeMinutes }} Min.
+          </span>
+          <span v-if="selected.servings"> • 🍽 {{ selected.servings }} Portionen</span>
+        </p>
+
+        <h4 class="overlay-subtitle">Zutaten</h4>
+        <p class="overlay-text">{{ selected.ingredients }}</p>
+
+        <h4 class="overlay-subtitle">Anleitung</h4>
+        <p class="overlay-text">{{ selected.instructions }}</p>
+      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
+.home-wrap {
+  width: 100%;
+}
+
 .hero {
   background: #fff7fb;
   border-radius: 22px;
@@ -196,6 +240,7 @@ const filtered = computed(() => {
   flex-direction: column;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
   border-color 0.15s ease;
+  cursor: pointer;
 }
 
 .recipe-card:hover {
@@ -267,5 +312,63 @@ const filtered = computed(() => {
   font-size: 0.95rem;
   color: #324240;
   margin-top: 4px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 20, 25, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.overlay-card {
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  padding: 22px 24px 20px 24px;
+  overflow-y: auto;
+}
+
+.overlay-close {
+  border: none;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  float: right;
+  cursor: pointer;
+  color: #486b68;
+}
+
+.overlay-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #cc7da9;
+  margin: 4px 0 6px 0;
+}
+
+.overlay-meta {
+  font-size: 0.95rem;
+  color: #486b68;
+  margin-bottom: 6px;
+}
+
+.overlay-subtitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #26b6b8;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.overlay-text {
+  font-size: 0.95rem;
+  color: #2b1b23;
+  white-space: pre-line;
 }
 </style>
