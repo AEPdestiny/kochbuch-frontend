@@ -79,7 +79,7 @@ import dishlyLogo from './assets/dishly-logo.png'
 }
 
 .logo {
-  height: 80px;
+  height: 100px;
 }
 
 .tagline-box {
@@ -132,7 +132,7 @@ import dishlyLogo from './assets/dishly-logo.png'
 }
 
 .nav-item:hover,
-.router-link-exact-active {
+.nav-item.router-link-exact-active {
   background: #8fd5cc;
   color: #ffffff;
 }
