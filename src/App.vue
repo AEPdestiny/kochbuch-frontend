@@ -10,13 +10,13 @@ import dishlyLogo from './assets/dishly-logo.png'
 
       <div class="header-row">
         <RouterLink to="/" class="logo-link">
-          <img :src="dishlyLogo" alt="Dishly Logo" class="logo" />
+          <img :src="dishlyLogo" alt="Dishly logo" class="logo" />
         </RouterLink>
 
         <div class="tagline-box">
           <span class="tagline-deco">✦</span>
           <span class="tagline-text">
-            Deine Rezeptwelt für einfache, leckere Gerichte
+            Your Recipeworld for simple, tasty recipes
           </span>
           <span class="tagline-deco">✦</span>
         </div>
@@ -24,9 +24,9 @@ import dishlyLogo from './assets/dishly-logo.png'
 
       <nav class="nav-bar">
         <RouterLink to="/" class="nav-item">Home</RouterLink>
-        <RouterLink to="/my-recipes" class="nav-item">Deine Rezepte</RouterLink>
-        <RouterLink to="/about" class="nav-item">Über mich</RouterLink>
-        <RouterLink to="/contact" class="nav-item">Kontakt</RouterLink>
+        <RouterLink to="/my-recipes" class="nav-item">Your recipes</RouterLink>
+        <RouterLink to="/about" class="nav-item">About</RouterLink>
+        <RouterLink to="/contact" class="nav-item">Contact</RouterLink>
       </nav>
     </header>
 
@@ -34,9 +34,12 @@ import dishlyLogo from './assets/dishly-logo.png'
       <RouterView />
     </main>
 
-    <footer class="main-footer">© 2026 Dishly – Dein Rezeptportal. Alle Rechte vorbehalten.</footer>
+    <footer class="main-footer">
+      © 2026 Dishly – Your recipe hub. All rights reserved.
+    </footer>
   </div>
 </template>
+
 
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
