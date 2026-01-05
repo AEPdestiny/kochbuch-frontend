@@ -27,7 +27,7 @@ onMounted(async () => {
   try {
     const res = await fetch(baseUrl + '/recipes/external')
     if (!res.ok) {
-      throw new Error('Fehler beim Laden der API-Rezepte')
+      throw new Error('Fehler beim Laden der Rezepte')
     }
     recipes.value = await res.json()
     error.value = null

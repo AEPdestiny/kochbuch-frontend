@@ -34,7 +34,7 @@ import dishlyLogo from './assets/dishly-logo.png'
       <RouterView />
     </main>
 
-    <footer class="main-footer">© 2026 Dishly – Dein Rezeptportal</footer>
+    <footer class="main-footer">© 2026 Dishly – Dein Rezeptportal. Alle Rechte vorbehalten.</footer>
   </div>
 </template>
 
