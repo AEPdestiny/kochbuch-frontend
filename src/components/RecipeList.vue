@@ -36,6 +36,8 @@ const newInstructions = ref('')
 const newFavorite = ref(false)
 const newPublished = ref(false)
 
+const editing = ref<Recipe | null>(null)
+
 const loadRecipes = () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   const endpoint = baseUrl + '/recipes'
@@ -121,6 +123,60 @@ const createRecipe = async () => {
     error.value = null
   } catch (e: any) {
     console.error('error', e)
+    error.value = e.message ?? 'Unknown error'
+  }
+}
+
+const startEdit = (r: Recipe) => {
+  editing.value = { ...r }
+}
+
+const cancelEdit = () => {
+  editing.value = null
+}
+
+const updateRecipe = async () => {
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
+  if (!editing.value) return
+  const endpoint = `${baseUrl}/recipes/${editing.value.id}`
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editing.value),
+    })
+    if (!res.ok) {
+      throw new Error(`Error updating recipe: ${res.status}`)
+    }
+    const updated = (await res.json()) as Recipe
+    const idx = recipes.value.findIndex(r => r.id === updated.id)
+    if (idx !== -1) {
+      recipes.value[idx] = updated
+    }
+    editing.value = null
+    error.value = null
+  } catch (e: any) {
+    console.error(e)
+    error.value = e.message ?? 'Unknown error'
+  }
+}
+
+const deleteRecipe = async (id: number | string) => {
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
+  const endpoint = `${baseUrl}/recipes/${id}`
+
+  try {
+    const res = await fetch(endpoint, { method: 'DELETE' })
+    if (!res.ok) {
+      throw new Error(`Error deleting recipe: ${res.status}`)
+    }
+    recipes.value = recipes.value.filter(r => r.id !== id)
+    if (editing.value && editing.value.id === id) {
+      editing.value = null
+    }
+  } catch (e: any) {
+    console.error(e)
     error.value = e.message ?? 'Unknown error'
   }
 }
@@ -281,7 +337,7 @@ const filtered = computed(() => {
 
       <ul v-else class="recipes">
         <li v-for="r in filtered" :key="r.id" class="recipe-card">
-          <div class="recipe-header">
+          <div class="recipe-header" @click="startEdit(r)">
             <div>
               <h4 class="name">
                 {{ r.title }}
@@ -307,12 +363,88 @@ const filtered = computed(() => {
           <p class="ingredients">
             {{ r.ingredients }}
           </p>
+
+          <div class="card-actions">
+            <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
+            <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Delete</button>
+          </div>
         </li>
 
         <li v-if="!loading && filtered.length === 0" class="none-found">
           No recipes found. Create your first Dishly recipe above.
         </li>
       </ul>
+
+      <div v-if="editing" class="edit-panel">
+        <h4>Edit recipe</h4>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label>Title</label>
+            <input v-model="editing.title" type="text" />
+          </div>
+          <div class="form-field">
+            <label>Image URL</label>
+            <input v-model="editing.imageUrl" type="url" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field small">
+            <label>Prep time (min)</label>
+            <input v-model.number="editing.prepTimeMinutes" type="number" min="0" />
+          </div>
+          <div class="form-field small">
+            <label>Cook time (min)</label>
+            <input v-model.number="editing.cookTimeMinutes" type="number" min="0" />
+          </div>
+          <div class="form-field small">
+            <label>Servings</label>
+            <input v-model.number="editing.servings" type="number" min="0" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label>Difficulty</label>
+            <input v-model="editing.difficulty" type="text" />
+          </div>
+          <div class="form-field">
+            <label>Category / Cuisine</label>
+            <input v-model="editing.category" type="text" />
+          </div>
+          <div class="form-field small">
+            <label>Rating</label>
+            <input v-model.number="editing.rating" type="number" min="0" max="5" step="0.1" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Ingredients</label>
+          <textarea v-model="editing.ingredients" rows="3"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label>Instructions</label>
+          <textarea v-model="editing.instructions" rows="5"></textarea>
+        </div>
+
+        <div class="form-toggle-row">
+          <label class="toggle-item">
+            <input type="checkbox" v-model="editing.favorite" />
+            <span>Mark as favorite</span>
+          </label>
+          <label class="toggle-item">
+            <input type="checkbox" v-model="editing.published" />
+            <span>Show on Home (published)</span>
+          </label>
+        </div>
+
+        <div class="edit-buttons">
+          <button class="submit-btn" @click="updateRecipe">Save changes</button>
+          <button class="cancel-btn" @click="cancelEdit">Cancel</button>
+        </div>
+      </div>
     </div>
   </section>
 </template>
@@ -440,6 +572,16 @@ textarea {
   box-shadow: 0 3px 12px rgba(191, 140, 167, 0.5);
 }
 
+.cancel-btn {
+  border-radius: 999px;
+  border: 1px solid #c3e7e1;
+  background: #ffffff;
+  color: #486b68;
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
 .error-text {
   margin-top: 8px;
   color: #a14c2b;
@@ -485,6 +627,7 @@ textarea {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
+  cursor: pointer;
 }
 
 .name {
@@ -528,10 +671,41 @@ textarea {
   color: #324240;
 }
 
+.card-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+}
+
+.link-btn {
+  background: transparent;
+  border: none;
+  color: #26b6b8;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn.danger {
+  color: #a14c2b;
+}
+
 .none-found {
   color: #486b68;
   font-size: 0.95rem;
   text-align: center;
   padding-top: 8px;
+}
+
+.edit-panel {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #f0e1eb;
+}
+
+.edit-buttons {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
 }
 </style>
