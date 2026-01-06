@@ -6,8 +6,8 @@
       <div class="icon-circle">✉️</div>
       <h2 class="section-title">Get in touch</h2>
       <p>
-        Got feedback, ideas or a new recipe you would love to see on Dishly?
-        We’d be happy to hear from you.
+        Got feedback, ideas or a new feature you would love to see on Dishly?
+        i would be happy to hear from you.
       </p>
 
       <p>
@@ -15,7 +15,7 @@
         <a href="mailto:Dishly.Rezepte@gmx.de" class="email-link">
           Dishly.Rezepte@gmx.de
         </a>
-        and we’ll get back to you as soon as possible.
+        and I’ll get back to you as soon as possible.
       </p>
     </div>
   </section>

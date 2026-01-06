@@ -69,7 +69,7 @@ import food3 from '../assets/food3.jpg'
 .food-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 130px;
+  grid-auto-rows: 170px;
   gap: 10px;
 }
 
