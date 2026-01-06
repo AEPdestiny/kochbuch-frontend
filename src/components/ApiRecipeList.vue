@@ -29,7 +29,7 @@ onMounted(async () => {
   try {
     const [extRes, ownRes] = await Promise.all([
       fetch(baseUrl + '/recipes/external'),
-      fetch(baseUrl + '/recipes'),
+      fetch(baseUrl + '/recipes/published'),
     ])
 
     if (!extRes.ok || !ownRes.ok) {
@@ -37,11 +37,11 @@ onMounted(async () => {
     }
 
     const external: Recipe[] = await extRes.json()
-    const own: Recipe[] = await ownRes.json()
+    const ownPublished: Recipe[] = await ownRes.json()
 
     recipes.value = [
       ...external,
-      ...own.filter(r => r.published),
+      ...ownPublished,
     ]
     error.value = null
   } catch (e: any) {
@@ -69,26 +69,32 @@ const closeDetails = () => {
   selected.value = null
 }
 
-const toggleFavorite = async (r: Recipe) => {
-  r.favorite = !r.favorite
-
-  if (typeof r.id === 'string') {
-    return
-  }
-
+const saveToMyRecipes = async (r: Recipe) => {
   try {
-    const res = await fetch(`${baseUrl}/recipes/${r.id}`, {
-      method: 'PUT',
+    const res = await fetch(baseUrl + '/recipes', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(r),
+      body: JSON.stringify({
+        title: r.title,
+        imageUrl: r.imageUrl,
+        prepTimeMinutes: r.prepTimeMinutes ?? 0,
+        cookTimeMinutes: r.cookTimeMinutes ?? 0,
+        servings: r.servings ?? 0,
+        difficulty: r.difficulty ?? '',
+        category: r.category ?? '',
+        rating: r.rating ?? 0,
+        ingredients: r.ingredients,
+        instructions: r.instructions,
+        favorite: false,
+        published: false,
+      }),
     })
     if (!res.ok) {
-      throw new Error(`Error updating favorite: ${res.status}`)
+      throw new Error(`Error saving to my recipes: ${res.status}`)
     }
   } catch (e: any) {
     console.error(e)
     error.value = e.message ?? 'Unknown error'
-    r.favorite = !r.favorite
   }
 }
 </script>
@@ -148,10 +154,9 @@ const toggleFavorite = async (r: Recipe) => {
             <div class="card-actions">
               <button
                 class="fav-btn"
-                @click.stop="toggleFavorite(r)"
+                @click.stop="saveToMyRecipes(r)"
               >
-                <span v-if="r.favorite">★ Remove favorite</span>
-                <span v-else>☆ Mark as favorite</span>
+                Save to my recipes
               </button>
             </div>
           </div>
