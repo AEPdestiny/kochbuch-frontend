@@ -38,6 +38,9 @@ const newPublished = ref(false)
 
 const editing = ref<Recipe | null>(null)
 
+// für Favorites-Overlay
+const selectedFavorite = ref<Recipe | null>(null)
+
 const loadRecipes = () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   const endpoint = baseUrl + '/recipes'
@@ -69,6 +72,7 @@ const loadRecipes = () => {
       loading.value = false
     })
 }
+
 const createRecipe = async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   if (
@@ -194,6 +198,14 @@ const filtered = computed(() => {
   )
 })
 const favorites = computed(() => recipes.value.filter(r => r.favorite))
+
+const openFavoriteDetails = (r: Recipe) => {
+  selectedFavorite.value = r
+}
+
+const closeFavoriteDetails = () => {
+  selectedFavorite.value = null
+}
 </script>
 
 <template>
@@ -338,36 +350,44 @@ const favorites = computed(() => recipes.value.filter(r => r.favorite))
 
       <ul v-else class="recipes">
         <li v-for="r in filtered" :key="r.id" class="recipe-card">
-          <div class="recipe-header" @click="startEdit(r)">
-            <div>
-              <h4 class="name">
-                {{ r.title }}
-              </h4>
-              <p class="meta">
-                <span v-if="r.category">{{ r.category }}</span>
-                <span v-if="r.difficulty"> • {{ r.difficulty }}</span>
-                <span v-if="r.rating"> • ★ {{ r.rating.toFixed(1) }}</span>
-              </p>
-              <p class="meta">
-                <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
-                  ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
-                </span>
-                <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
-              </p>
+          <div class="recipe-row">
+            <div class="image-wrap" v-if="r.imageUrl">
+              <img :src="r.imageUrl" :alt="r.title" />
             </div>
-            <div class="badge-column">
-              <span v-if="r.favorite" class="badge badge-fav">★ Favorite</span>
-              <span v-if="r.published" class="badge badge-published">Published on Home</span>
+
+            <div class="recipe-main">
+              <div class="recipe-header" @click="startEdit(r)">
+                <div>
+                  <h4 class="name">
+                    {{ r.title }}
+                  </h4>
+                  <p class="meta">
+                    <span v-if="r.category">{{ r.category }}</span>
+                    <span v-if="r.difficulty"> • {{ r.difficulty }}</span>
+                    <span v-if="r.rating"> • ★ {{ r.rating.toFixed(1) }}</span>
+                  </p>
+                  <p class="meta">
+                    <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
+                      ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
+                    </span>
+                    <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
+                  </p>
+                </div>
+                <div class="badge-column">
+                  <span v-if="r.favorite" class="badge badge-fav">★ Favorite</span>
+                  <span v-if="r.published" class="badge badge-published">Published on Home</span>
+                </div>
+              </div>
+
+              <p class="ingredients">
+                {{ r.ingredients }}
+              </p>
+
+              <div class="card-actions">
+                <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
+                <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Delete</button>
+              </div>
             </div>
-          </div>
-
-          <p class="ingredients">
-            {{ r.ingredients }}
-          </p>
-
-          <div class="card-actions">
-            <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
-            <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Delete</button>
           </div>
         </li>
 
@@ -453,46 +473,74 @@ const favorites = computed(() => recipes.value.filter(r => r.favorite))
       <p v-if="loading" class="status-text">Loading recipes…</p>
       <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
 
-      <ul v-else class="recipes favorites-list">
-        <li v-for="r in favorites" :key="'fav-' + r.id" class="recipe-card">
-          <div class="recipe-header">
-            <div>
-              <h4 class="name">
-                {{ r.title }}
-              </h4>
-              <p class="meta">
-                <span v-if="r.category">{{ r.category }}</span>
-                <span v-if="r.difficulty"> • {{ r.difficulty }}</span>
-                <span v-if="r.rating"> • ★ {{ r.rating.toFixed(1) }}</span>
-              </p>
-            </div>
-            <div class="badge-column">
-              <span class="badge badge-fav">★ Favorite</span>
-            </div>
+      <div v-else class="recipe-grid">
+        <article
+          v-for="r in favorites"
+          :key="'fav-' + r.id"
+          class="recipe-card"
+          @click="openFavoriteDetails(r)"
+        >
+          <div class="image-wrap" v-if="r.imageUrl">
+            <img :src="r.imageUrl" :alt="r.title" />
           </div>
 
-          <p class="ingredients">
-            {{ r.ingredients }}
-          </p>
+          <div class="card-content">
+            <h3 class="card-title">{{ r.title }}</h3>
 
-          <div class="card-actions">
-            <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
-            <button
-              class="link-btn danger"
-              @click.stop="
-                editing = { ...r, favorite: false };
-                updateRecipe();
-              "
-            >
-              Remove favorite
-            </button>
+            <p class="card-meta">
+              <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
+              <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
+              <span v-if="r.rating" class="pill pill-rating">
+                ★ {{ r.rating.toFixed(1) }}
+              </span>
+            </p>
+
+            <p class="card-times">
+              <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
+                ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
+              </span>
+              <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
+            </p>
+
+            <p class="card-ingredients">
+              {{ r.ingredients }}
+            </p>
           </div>
-        </li>
+        </article>
 
-        <li v-if="favorites.length === 0" class="none-found">
+        <p v-if="favorites.length === 0" class="status-text">
           You have no favorite recipes yet. Mark recipes as favorites to see them here.
-        </li>
-      </ul>
+        </p>
+      </div>
+    </div>
+
+    <div v-if="selectedFavorite" class="overlay" @click.self="closeFavoriteDetails">
+      <div class="overlay-card">
+        <button class="overlay-close" @click="closeFavoriteDetails">×</button>
+
+        <h3 class="overlay-title">{{ selectedFavorite.title }}</h3>
+
+        <p class="overlay-meta">
+          <span v-if="selectedFavorite.category">{{ selectedFavorite.category }}</span>
+          <span v-if="selectedFavorite.difficulty"> • {{ selectedFavorite.difficulty }}</span>
+          <span v-if="selectedFavorite.rating"> • ★ {{ selectedFavorite.rating.toFixed(1) }}</span>
+        </p>
+
+        <p class="overlay-meta">
+          <span v-if="selectedFavorite.prepTimeMinutes || selectedFavorite.cookTimeMinutes">
+            ⏱ {{ selectedFavorite.prepTimeMinutes + selectedFavorite.cookTimeMinutes }} min
+          </span>
+          <span v-if="selectedFavorite.servings">
+            • 🍽 {{ selectedFavorite.servings }} servings
+          </span>
+        </p>
+
+        <h4 class="overlay-subtitle">Ingredients</h4>
+        <p class="overlay-text">{{ selectedFavorite.ingredients }}</p>
+
+        <h4 class="overlay-subtitle">Instructions</h4>
+        <p class="overlay-text">{{ selectedFavorite.instructions }}</p>
+      </div>
     </div>
   </section>
 </template>
@@ -602,7 +650,7 @@ textarea {
 }
 
 .submit-btn {
-  align-self: flex-start;
+  alignself: flex-start;
   margin-top: 6px;
   background: #cc7da9;
   color: #ffffff;
@@ -662,12 +710,37 @@ textarea {
   gap: 12px;
 }
 
+/* Card-Layout für created + favorites */
 .recipe-card {
   background: #f4fbfa;
   border-radius: 14px;
   border: 1px solid #c3e7e1;
   padding: 12px 14px 10px 14px;
   box-shadow: 0 1px 7px rgba(79, 127, 120, 0.1);
+}
+
+/* Created: Bild links, Text rechts */
+.recipe-row {
+  display: flex;
+  gap: 12px;
+}
+
+.image-wrap {
+  width: 120px;
+  height: 90px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+
+.image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recipe-main {
+  flex: 1;
 }
 
 .recipe-header {
@@ -755,5 +828,120 @@ textarea {
   margin-top: 10px;
   display: flex;
   gap: 10px;
+}
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+  margin-top: 12px;
+}
+
+.card-content {
+  padding: 10px 4px 4px 4px;
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #2b1b23;
+  margin-bottom: 4px;
+}
+
+.card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.pill {
+  font-size: 0.8rem;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+
+.pill-mint {
+  background: #e0f5f2;
+  color: #26b6b8;
+}
+
+.pill-soft {
+  background: #fbe5f0;
+  color: #cc7da9;
+}
+
+.pill-rating {
+  background: #fff5c7;
+  color: #b38700;
+}
+
+.card-times {
+  font-size: 0.9rem;
+  color: #486b68;
+  margin-bottom: 4px;
+}
+
+.card-ingredients {
+  font-size: 0.9rem;
+  color: #324240;
+  margin-top: 2px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 20, 25, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+}
+
+.overlay-card {
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  padding: 22px 24px 20px 24px;
+  overflow-y: auto;
+}
+
+.overlay-close {
+  border: none;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  float: right;
+  cursor: pointer;
+  color: #486b68;
+}
+
+.overlay-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #cc7da9;
+  margin: 4px 0 6px 0;
+}
+
+.overlay-meta {
+  font-size: 0.95rem;
+  color: #486b68;
+  margin-bottom: 6px;
+}
+
+.overlay-subtitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #26b6b8;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.overlay-text {
+  font-size: 0.95rem;
+  color: #2b1b23;
+  white-space: pre-line;
 }
 </style>

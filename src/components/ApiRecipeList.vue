@@ -19,13 +19,39 @@ type Recipe = {
 
 const search = ref('')
 const recipes = ref<Recipe[]>([])
+const allExternal = ref<Recipe[]>([])
+const ownPublished = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<Recipe | null>(null)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
 
-onMounted(async () => {
+// wie viele API-Rezepte gleichzeitig anzeigen
+const EXTERNAL_CHUNK = 20
+
+const shuffleArray = (items: Recipe[]): Recipe[] => {
+  const arr: Recipe[] = [...items]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = arr[i] as Recipe
+    arr[i] = arr[j] as Recipe
+    arr[j] = tmp
+  }
+  return arr
+}
+
+const buildView = () => {
+  const shuffled = shuffleArray(allExternal.value)
+  const externalSlice = shuffled.slice(0, EXTERNAL_CHUNK)
+  recipes.value = [
+    ...externalSlice,
+    ...ownPublished.value,
+  ]
+}
+
+const loadRecipes = async () => {
+  loading.value = true
   try {
     const [extRes, ownRes] = await Promise.all([
       fetch(baseUrl + '/recipes/external'),
@@ -39,16 +65,19 @@ onMounted(async () => {
     const external: Recipe[] = await extRes.json()
     const own: Recipe[] = await ownRes.json()
 
-    recipes.value = [
-      ...external,
-      ...own,
-    ]
+    allExternal.value = external
+    ownPublished.value = own
+    buildView()
     error.value = null
   } catch (e: any) {
     error.value = e.message ?? 'Unknown error'
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  loadRecipes()
 })
 
 const filtered = computed(() => {
@@ -68,6 +97,11 @@ const openDetails = (recipe: Recipe) => {
 const closeDetails = () => {
   selected.value = null
 }
+
+const shuffleRecipes = () => {
+  if (!allExternal.value.length) return
+  buildView()
+}
 </script>
 
 <template>
@@ -84,6 +118,13 @@ const closeDetails = () => {
         aria-label="Search recipes by title, cuisine or ingredients"
       />
     </section>
+
+    <div class="shuffle-wrap">
+      <button class="shuffle-btn" type="button" @click="shuffleRecipes">
+        <span class="shuffle-icon">🔀</span>
+        <span>Shuffle recipes</span>
+      </button>
+    </div>
 
     <section class="list-wrap">
       <p v-if="loading" class="status-text">Loading recipes…</p>
@@ -170,7 +211,7 @@ const closeDetails = () => {
   box-shadow: 0 2px 21px 0 rgba(191, 140, 167, 0.12);
   padding: 40px 28px 26px 28px;
   text-align: center;
-  margin: 30px 0 34px 0;
+  margin: 30px 0 20px 0;
   width: 100%;
   border: 1px solid #f6d9ea;
 }
@@ -195,6 +236,37 @@ const closeDetails = () => {
 
 .search-input:focus {
   border: 2px solid #26b6b8;
+}
+
+.shuffle-wrap {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto 10px auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.shuffle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border-radius: 999px;
+  border: 1.5px solid #26b6b8;
+  color: #26b6b8;
+  padding: 7px 16px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 7px rgba(79, 127, 120, 0.18);
+}
+
+.shuffle-btn:hover {
+  background: #e0f5f2;
+}
+
+.shuffle-icon {
+  font-size: 1.05rem;
 }
 
 .list-wrap {
