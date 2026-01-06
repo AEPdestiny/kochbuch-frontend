@@ -22,7 +22,6 @@ const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<Recipe | null>(null)
-const togglingFavorite = ref<string | number | null>(null)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
 
@@ -71,29 +70,25 @@ const closeDetails = () => {
 }
 
 const toggleFavorite = async (r: Recipe) => {
-  if (typeof r.id === 'string' && r.id.toString().startsWith('ext-')) {
-    r.favorite = !r.favorite
+  r.favorite = !r.favorite
+
+  if (typeof r.id === 'string') {
     return
   }
 
-  togglingFavorite.value = r.id
   try {
     const res = await fetch(`${baseUrl}/recipes/${r.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...r, favorite: !r.favorite }),
+      body: JSON.stringify(r),
     })
     if (!res.ok) {
       throw new Error(`Error updating favorite: ${res.status}`)
     }
-    const updated = (await res.json()) as Recipe
-    const idx = recipes.value.findIndex(x => x.id === updated.id)
-    if (idx !== -1) recipes.value[idx] = updated
   } catch (e: any) {
     console.error(e)
     error.value = e.message ?? 'Unknown error'
-  } finally {
-    togglingFavorite.value = null
+    r.favorite = !r.favorite
   }
 }
 </script>
@@ -154,7 +149,6 @@ const toggleFavorite = async (r: Recipe) => {
               <button
                 class="fav-btn"
                 @click.stop="toggleFavorite(r)"
-                :disabled="togglingFavorite === r.id"
               >
                 <span v-if="r.favorite">★ Remove favorite</span>
                 <span v-else>☆ Mark as favorite</span>
@@ -355,11 +349,6 @@ const toggleFavorite = async (r: Recipe) => {
   font-size: 0.9rem;
   cursor: pointer;
   padding: 0;
-}
-
-.fav-btn:disabled {
-  opacity: 0.6;
-  cursor: wait;
 }
 
 .overlay {
