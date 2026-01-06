@@ -19,14 +19,21 @@ import food3 from '../assets/food3.jpg'
       <div class="intro-column">
         <div class="intro-card">
           <p class="hello-text">Hi, I’m Salma.</p>
+          <h1 class="headline">The person behind Dishly</h1>
+
+          <h2 class="section-title">What is Dishly?</h2>
           <p class="intro-body">
             Dishly is my personal project: a cozy recipe space where simple, tasty
             dishes are saved in one place.
           </p>
+
+          <h2 class="section-title">What you’ll find here</h2>
           <p class="intro-body">
             Home shows all public recipes. Under “Your recipes” you can create dishes,
             edit or delete them, mark favorites and decide which ones appear on Home.
           </p>
+
+          <h2 class="section-title">Cooking, for me …</h2>
           <p class="intro-body">
             Cooking should be everyday friendly, low-stress and still a bit special –
             that’s what I want Dishly to feel like.
@@ -61,9 +68,9 @@ import food3 from '../assets/food3.jpg'
 
 .food-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  grid-auto-rows: 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 130px;
+  gap: 10px;
 }
 
 .food-grid img {
@@ -72,6 +79,10 @@ import food3 from '../assets/food3.jpg'
   border-radius: 18px;
   object-fit: cover;
   box-shadow: 0 4px 18px rgba(79, 127, 120, 0.18);
+}
+
+.food-grid img:nth-child(3) {
+  grid-column: 1 / span 2;
 }
 
 
@@ -96,6 +107,20 @@ import food3 from '../assets/food3.jpg'
   color: #cc7da9;
   font-style: italic;
   margin: 0 0 10px 0;
+}
+
+.headline {
+  font-size: 1.4rem;
+  color: #486b68;
+  margin: 4px 0 14px 0;
+  font-weight: 700;
+}
+
+.section-title {
+  font-size: 1.05rem;
+  color: #26b6b8;
+  margin-top: 12px;
+  margin-bottom: 4px;
 }
 
 .intro-body {
