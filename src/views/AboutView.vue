@@ -1,33 +1,43 @@
+<script setup lang="ts">
+import profileImg from './assets/salma-profile.jpg'
+import food1 from './assets/food1.jpg'
+import food2 from './assets/food2.jpg'
+import food3 from './assets/food3.jpg'
+</script>
+
 <template>
   <section class="about">
-    <h1 class="page-title">About Dishly</h1>
-
-    <div class="about-card id-card">
-      <div class="id-header">
-        <div class="avatar-circle">S</div>
-        <div>
-          <h2 class="name-title">Salma</h2>
-          <p class="name-subtitle">Creator of Dishly</p>
+    <div class="about-layout">
+      <div class="food-column">
+        <div class="food-grid">
+          <img :src="food1" alt="Dishly recipe 1" />
+          <img :src="food2" alt="Dishly recipe 2" />
+          <img :src="food3" alt="Dishly recipe 3" />
         </div>
       </div>
 
-      <div class="id-body">
-        <h3 class="section-title">What is Dishly?</h3>
-        <p>
-          Dishly is my personal project: a cozy recipe space where simple, tasty dishes are saved in one place.
-        </p>
+      <div class="intro-column">
+        <div class="intro-card">
+          <p class="hello-text">Hi, I’m Salma.</p>
+          <p class="intro-body">
+            Dishly is my personal project: a cozy recipe space where simple, tasty
+            dishes are saved in one place.
+          </p>
+          <p class="intro-body">
+            Home shows all public recipes. Under “Your recipes” you can create dishes,
+            edit or delete them, mark favorites and decide which ones appear on Home.
+          </p>
+          <p class="intro-body">
+            Cooking should be everyday friendly, low-stress and still a bit special –
+            that’s what I want Dishly to feel like.
+          </p>
+        </div>
+      </div>
 
-        <h3 class="section-title">What you’ll find here</h3>
-        <p>
-          Home shows all public recipes. Under “Your recipes” you can create dishes,
-          edit or delete them, mark favorites and decide which ones appear on Home.
-        </p>
-
-        <h3 class="section-title">Cooking, for me …</h3>
-        <p>
-          Cooking should be everyday friendly, low‑stress and still a bit special –
-          that’s what I want Dishly to feel like.
-        </p>
+      <div class="portrait-column">
+        <div class="portrait-wrapper">
+          <img :src="profileImg" alt="Salma – creator of Dishly" class="portrait-img" />
+        </div>
       </div>
     </div>
   </section>
@@ -35,81 +45,93 @@
 
 <style scoped>
 .about {
-  max-width: 800px;
+  width: 100%;
+  max-width: 1200px;
   margin: 40px auto 60px auto;
-  padding: 0 10vw;
+  padding: 0 6vw;
 }
 
-.page-title {
-  font-size: 2.4rem;
-  color: #cc7da9;
-  margin-bottom: 24px;
+.about-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
+  gap: 24px;
+  align-items: center;
 }
 
-.about-card.id-card {
-  background: #ffffff;
-  border-radius: 22px;
-  border: 1px solid #c3e7e1;
-  box-shadow: 0 4px 22px rgba(79, 127, 120, 0.16);
-  padding: 22px 22px 20px 22px;
+
+.food-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr;
+  gap: 12px;
+}
+
+.food-grid img {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 4px 18px rgba(79, 127, 120, 0.18);
+}
+
+
+.intro-column {
   position: relative;
 }
 
-.about-card.id-card::before {
-  content: 'Dishly creator card';
-  position: absolute;
-  top: 10px;
-  right: 18px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #8fd5cc;
+.intro-card {
+  background: #ffeef6;
+  border-radius: 26px;
+  padding: 26px 24px 22px 24px;
+  box-shadow: 0 6px 24px rgba(191, 140, 167, 0.25);
+  border: 1px solid #f6d9ea;
+  position: relative;
+  z-index: 1;
 }
 
-.id-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
-  border-bottom: 1px dashed #c3e7e1;
-  padding-bottom: 10px;
+.hello-text {
+  font-family: 'Pacifico', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  sans-serif;
+  font-size: 2.2rem;
+  color: #cc7da9;
+  font-style: italic;
+  margin: 0 0 10px 0;
 }
 
-.avatar-circle {
-  width: 52px;
-  height: 52px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #cc7da9, #8fd5cc);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 800;
-  font-size: 1.4rem;
-}
-
-.name-title {
-  font-size: 1.4rem;
+.intro-body {
+  font-size: 1.02rem;
+  line-height: 1.7;
   color: #2b1b23;
-  margin: 0;
+  margin-bottom: 10px;
 }
 
-.name-subtitle {
-  font-size: 0.9rem;
-  color: #486b68;
-  margin: 2px 0 0 0;
+
+.portrait-column {
+  position: relative;
 }
 
-.id-body .section-title {
-  font-size: 1.1rem;
-  color: #26b6b8;
-  margin-top: 14px;
-  margin-bottom: 4px;
+.portrait-wrapper {
+  position: relative;
+  z-index: 3;
+  margin-top: -40px;
 }
 
-p {
-  font-size: 1.05rem;
-  line-height: 1.6;
-  color: #2b1b23;
+.portrait-img {
+  width: 100%;
+  max-height: 520px;
+  border-radius: 30px;
+  object-fit: cover;
+  box-shadow: 0 12px 32px rgba(79, 127, 120, 0.45);
+  border: 3px solid #ffffff;
+}
+
+@media (max-width: 960px) {
+  .about-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .portrait-wrapper {
+    margin-top: 16px;
+  }
 }
 </style>
