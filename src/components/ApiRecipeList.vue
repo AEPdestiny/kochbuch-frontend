@@ -37,11 +37,11 @@ onMounted(async () => {
     }
 
     const external: Recipe[] = await extRes.json()
-    const ownPublished: Recipe[] = await ownRes.json()
+    const own: Recipe[] = await ownRes.json()
 
     recipes.value = [
       ...external,
-      ...ownPublished,
+      ...own,
     ]
     error.value = null
   } catch (e: any) {
@@ -67,35 +67,6 @@ const openDetails = (recipe: Recipe) => {
 
 const closeDetails = () => {
   selected.value = null
-}
-
-const saveToMyRecipes = async (r: Recipe) => {
-  try {
-    const res = await fetch(baseUrl + '/recipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: r.title,
-        imageUrl: r.imageUrl,
-        prepTimeMinutes: r.prepTimeMinutes ?? 0,
-        cookTimeMinutes: r.cookTimeMinutes ?? 0,
-        servings: r.servings ?? 0,
-        difficulty: r.difficulty ?? '',
-        category: r.category ?? '',
-        rating: r.rating ?? 0,
-        ingredients: r.ingredients,
-        instructions: r.instructions,
-        favorite: false,
-        published: false,
-      }),
-    })
-    if (!res.ok) {
-      throw new Error(`Error saving to my recipes: ${res.status}`)
-    }
-  } catch (e: any) {
-    console.error(e)
-    error.value = e.message ?? 'Unknown error'
-  }
 }
 </script>
 
@@ -150,15 +121,6 @@ const saveToMyRecipes = async (r: Recipe) => {
             <p class="card-ingredients">
               {{ r.ingredients }}
             </p>
-
-            <div class="card-actions">
-              <button
-                class="fav-btn"
-                @click.stop="saveToMyRecipes(r)"
-              >
-                Save to my recipes
-              </button>
-            </div>
           </div>
         </article>
 
@@ -341,19 +303,6 @@ const saveToMyRecipes = async (r: Recipe) => {
   font-size: 0.95rem;
   color: #324240;
   margin-top: 4px;
-}
-
-.card-actions {
-  margin-top: 6px;
-}
-
-.fav-btn {
-  border: none;
-  background: transparent;
-  color: #cc7da9;
-  font-size: 0.9rem;
-  cursor: pointer;
-  padding: 0;
 }
 
 .overlay {

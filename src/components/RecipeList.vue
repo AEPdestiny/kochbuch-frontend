@@ -446,10 +446,14 @@ const favorites = computed(() => recipes.value.filter(r => r.favorite))
           <button class="cancel-btn" @click="cancelEdit">Cancel</button>
         </div>
       </div>
+    </div>
+    <div class="list-card">
+      <h3 class="recipes-title">Your favorite recipes</h3>
 
-      <h3 class="favorites-title">Your favorite recipes</h3>
+      <p v-if="loading" class="status-text">Loading recipes…</p>
+      <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
 
-      <ul class="recipes favorites-list">
+      <ul v-else class="recipes favorites-list">
         <li v-for="r in favorites" :key="'fav-' + r.id" class="recipe-card">
           <div class="recipe-header">
             <div>
