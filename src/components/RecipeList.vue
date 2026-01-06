@@ -193,6 +193,7 @@ const filtered = computed(() => {
     r.ingredients.toLowerCase().includes(q)
   )
 })
+const favorites = computed(() => recipes.value.filter(r => r.favorite))
 </script>
 
 <template>
@@ -330,7 +331,7 @@ const filtered = computed(() => {
     </div>
 
     <div class="list-card">
-      <h3 class="recipes-title">Your saved recipes</h3>
+      <h3 class="recipes-title">Your created recipes</h3>
 
       <p v-if="loading" class="status-text">Loading recipes…</p>
       <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
@@ -445,6 +446,49 @@ const filtered = computed(() => {
           <button class="cancel-btn" @click="cancelEdit">Cancel</button>
         </div>
       </div>
+
+      <h3 class="favorites-title">Your favorite recipes</h3>
+
+      <ul class="recipes favorites-list">
+        <li v-for="r in favorites" :key="'fav-' + r.id" class="recipe-card">
+          <div class="recipe-header">
+            <div>
+              <h4 class="name">
+                {{ r.title }}
+              </h4>
+              <p class="meta">
+                <span v-if="r.category">{{ r.category }}</span>
+                <span v-if="r.difficulty"> • {{ r.difficulty }}</span>
+                <span v-if="r.rating"> • ★ {{ r.rating.toFixed(1) }}</span>
+              </p>
+            </div>
+            <div class="badge-column">
+              <span class="badge badge-fav">★ Favorite</span>
+            </div>
+          </div>
+
+          <p class="ingredients">
+            {{ r.ingredients }}
+          </p>
+
+          <div class="card-actions">
+            <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
+            <button
+              class="link-btn danger"
+              @click.stop="
+                editing = { ...r, favorite: false };
+                updateRecipe();
+              "
+            >
+              Remove favorite
+            </button>
+          </div>
+        </li>
+
+        <li v-if="favorites.length === 0" class="none-found">
+          You have no favorite recipes yet. Mark recipes as favorites to see them here.
+        </li>
+      </ul>
     </div>
   </section>
 </template>

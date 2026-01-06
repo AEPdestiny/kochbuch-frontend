@@ -13,6 +13,7 @@ type Recipe = {
   rating: number
   ingredients: string
   instructions: string
+  favorite?: boolean
   published?: boolean
 }
 
@@ -21,6 +22,7 @@ const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<Recipe | null>(null)
+const togglingFavorite = ref<string | number | null>(null)
 
 const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
 
@@ -66,6 +68,33 @@ const openDetails = (recipe: Recipe) => {
 
 const closeDetails = () => {
   selected.value = null
+}
+
+const toggleFavorite = async (r: Recipe) => {
+  if (typeof r.id === 'string' && r.id.toString().startsWith('ext-')) {
+    r.favorite = !r.favorite
+    return
+  }
+
+  togglingFavorite.value = r.id
+  try {
+    const res = await fetch(`${baseUrl}/recipes/${r.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...r, favorite: !r.favorite }),
+    })
+    if (!res.ok) {
+      throw new Error(`Error updating favorite: ${res.status}`)
+    }
+    const updated = (await res.json()) as Recipe
+    const idx = recipes.value.findIndex(x => x.id === updated.id)
+    if (idx !== -1) recipes.value[idx] = updated
+  } catch (e: any) {
+    console.error(e)
+    error.value = e.message ?? 'Unknown error'
+  } finally {
+    togglingFavorite.value = null
+  }
 }
 </script>
 
@@ -120,6 +149,17 @@ const closeDetails = () => {
             <p class="card-ingredients">
               {{ r.ingredients }}
             </p>
+
+            <div class="card-actions">
+              <button
+                class="fav-btn"
+                @click.stop="toggleFavorite(r)"
+                :disabled="togglingFavorite === r.id"
+              >
+                <span v-if="r.favorite">★ Remove favorite</span>
+                <span v-else>☆ Mark as favorite</span>
+              </button>
+            </div>
           </div>
         </article>
 
@@ -302,6 +342,24 @@ const closeDetails = () => {
   font-size: 0.95rem;
   color: #324240;
   margin-top: 4px;
+}
+
+.card-actions {
+  margin-top: 6px;
+}
+
+.fav-btn {
+  border: none;
+  background: transparent;
+  color: #cc7da9;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.fav-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .overlay {

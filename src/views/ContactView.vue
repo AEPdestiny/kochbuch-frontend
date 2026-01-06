@@ -7,7 +7,7 @@
       <h2 class="section-title">Get in touch</h2>
       <p>
         Got feedback, ideas or a new feature you would love to see on Dishly?
-        i would be happy to hear from you.
+        I would be happy to hear from you.
       </p>
 
       <p>
