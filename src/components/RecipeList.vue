@@ -23,6 +23,8 @@ type Recipe = {
 const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+// Zusätzlicher State nur für Formular-Validierungsfehler
+const formError = ref<string | null>(null)
 
 // Form für ein neues Rezept (Create)
 const newTitle = ref('')
@@ -82,14 +84,17 @@ const loadRecipes = () => {
 // Neues Rezept anlegen und ans Backend senden
 const createRecipe = async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
+  // Validierung: Pflichtfelder; hier nur formError setzen
   if (
     !newTitle.value.trim() ||
     !newIngredients.value.trim() ||
     !newInstructions.value.trim()
   ) {
-    error.value = 'Please fill in all required fields.'
+    formError.value = 'Please fill in all required fields.'
     return
   }
+  formError.value = null
+
   const endpoint = baseUrl + '/recipes'
 
   try {
@@ -373,8 +378,9 @@ const closeFavoriteDetails = () => {
           Save recipe
         </button>
 
-        <p v-if="error" class="error-text">
-          {{ error }}
+        <!-- nur die Formular-Fehlermeldung anzeigen -->
+        <p v-if="formError" class="error-text">
+          {{ formError }}
         </p>
       </form>
     </div>
@@ -441,7 +447,7 @@ const closeFavoriteDetails = () => {
       </ul>
 
       <!-- Seitliches Bearbeitungs-Panel für das aktuell ausgewählte Rezept -->
-      <div v-if="editing" class="edit-panel">
+      <div class="edit-panel" v-if="editing">
         <h4>Edit recipe</h4>
 
         <div class="form-row">
