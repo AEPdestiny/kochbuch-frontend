@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import RecipeList from '../components/RecipeList.vue'
+import RecipeList from '../components/RecipeList.vue'// bindet die RecipeList-Komponente ein
 </script>
 
 <template>
+  <!-- Seite für das persönliche Kochbuch des Nutzers -->
   <section class="my-recipes-page">
+    <!-- Einleitender Header mit Titel und kurzer Erklärung -->
     <header class="my-recipes-header">
       <h2 class="page-title">Your personal Dishly cookbook</h2>
       <p class="page-subtitle">

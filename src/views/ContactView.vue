@@ -1,7 +1,9 @@
 <template>
+  <!-- Kontakt-Seite mit Karte und Mail-Link -->
   <section class="contact">
     <h1 class="page-title">Contact</h1>
 
+    <!-- Kontaktkarte mit Icon, Text und E-Mail-Adresse -->
     <div class="contact-card">
       <div class="icon-circle">✉️</div>
       <h2 class="section-title">Get in touch</h2>
@@ -81,12 +83,14 @@ p {
   color: #2b1b23;
 }
 
+/* E-Mail-Link farblich hervorgehoben */
 .email-link {
   color: #26b6b8;
   font-weight: 600;
   text-decoration: none;
 }
 
+/* Unterstrichen für bessere Erkennbarkeit als Link */
 .email-link:hover {
   text-decoration: underline;
 }

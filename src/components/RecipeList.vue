@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps<{ search?: string }>()
 
+// Typdefinition für ein Rezept-Objekt, so wie es vom Backend kommt
 type Recipe = {
   id: number | string
   title: string
@@ -18,11 +19,12 @@ type Recipe = {
   favorite: boolean
   published: boolean
 }
-
+// Liste aller Rezepte, Lade-Status und Fehlermeldung
 const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// Form für ein neues Rezept (Create)
 const newTitle = ref('')
 const newImageUrl = ref('')
 const newPrepTime = ref<number | null>(null)
@@ -36,28 +38,30 @@ const newInstructions = ref('')
 const newFavorite = ref(false)
 const newPublished = ref(false)
 
-const editing = ref<Recipe | null>(null)
+const editing = ref<Recipe | null>(null) // Referenz auf das Rezept, das aktuell bearbeitet wird (Update)
 
-// für Favorites-Overlay
-const selectedFavorite = ref<Recipe | null>(null)
+const selectedFavorite = ref<Recipe | null>(null) // Referenz auf das aktuell ausgewählte Lieblingsrezept
 
+// Lädt alle Rezepte vom Backend-Endpoint /recipes
 const loadRecipes = () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   const endpoint = baseUrl + '/recipes'
-
+  // Fetch-Optionen für den GET-Request
   const requestOptions: RequestInit = {
     method: 'GET',
     redirect: 'follow',
   }
-
+  // Request an Backend schicken, um alle Rezepte zu laden
   fetch(endpoint, requestOptions)
     .then(response => {
+      // Falls HTTP-Status nicht ok ist, Fehler werfen
       if (!response.ok) {
         throw new Error(`Error loading recipes: ${response.status}`)
       }
       return response.json()
     })
     .then((result: Recipe[]) => {
+      // Liste zunächst leeren und dann mit den geladenen Rezepten füllen
       recipes.value = []
       result.forEach(r => {
         recipes.value.push(r)
@@ -65,14 +69,17 @@ const loadRecipes = () => {
       error.value = null
     })
     .catch(err => {
+      // Fehler im Log ausgeben und Fehlermeldung im State setzen
       console.log('error', err)
       error.value = err.message ?? 'Unknown error'
     })
     .finally(() => {
+      // Lade-Status immer beenden, egal ob Erfolg oder Fehler
       loading.value = false
     })
 }
 
+// Neues Rezept anlegen und ans Backend senden
 const createRecipe = async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   if (
@@ -86,6 +93,7 @@ const createRecipe = async () => {
   const endpoint = baseUrl + '/recipes'
 
   try {
+    // POST-Request für das neue Rezept
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -108,10 +116,11 @@ const createRecipe = async () => {
     if (!res.ok) {
       throw new Error(`Error saving recipe: ${res.status}`)
     }
-
+    // Vom Backend zurückgegebenes gespeichertes Rezept in die Liste pushen
     const saved = (await res.json()) as Recipe
     recipes.value.push(saved)
 
+    // Formularfelder zurücksetzen
     newTitle.value = ''
     newImageUrl.value = ''
     newPrepTime.value = null
@@ -131,20 +140,24 @@ const createRecipe = async () => {
   }
 }
 
+// Edit-Modus starten, indem eine Kopie des Rezepts in editing gelegt wird
 const startEdit = (r: Recipe) => {
   editing.value = { ...r }
 }
 
+// Edit-Vorgang abbrechen und Formular zurücksetzen
 const cancelEdit = () => {
   editing.value = null
 }
 
+// Bestehendes Rezept per PUT beim Backend aktualisieren
 const updateRecipe = async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   if (!editing.value) return
   const endpoint = `${baseUrl}/recipes/${editing.value.id}`
 
   try {
+    // PUT-Request mit dem aktuell bearbeiteten Rezept
     const res = await fetch(endpoint, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -153,11 +166,16 @@ const updateRecipe = async () => {
     if (!res.ok) {
       throw new Error(`Error updating recipe: ${res.status}`)
     }
+    // Aktualisiertes Rezept vom Backend holen
     const updated = (await res.json()) as Recipe
+
+    // Passenden Eintrag in der lokalen Liste ersetzen
     const idx = recipes.value.findIndex(r => r.id === updated.id)
     if (idx !== -1) {
       recipes.value[idx] = updated
     }
+
+    // Edit-Modus verlassen und Fehlerzustand zurücksetzen
     editing.value = null
     error.value = null
   } catch (e: any) {
@@ -166,16 +184,21 @@ const updateRecipe = async () => {
   }
 }
 
+// Rezept im Backend löschen und lokal entfernen
 const deleteRecipe = async (id: number | string) => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   const endpoint = `${baseUrl}/recipes/${id}`
 
   try {
+    // DELETE-Request an den passenden /recipes/{id}-Endpoint
     const res = await fetch(endpoint, { method: 'DELETE' })
     if (!res.ok) {
       throw new Error(`Error deleting recipe: ${res.status}`)
     }
+    // Erfolgreich gelöscht: Rezept aus der lokalen Liste herausfiltern
     recipes.value = recipes.value.filter(r => r.id !== id)
+
+    // Falls gerade dieses Rezept im Edit-Modus war, Edit-Zustand zurücksetzen
     if (editing.value && editing.value.id === id) {
       editing.value = null
     }
@@ -189,6 +212,7 @@ onMounted(() => {
   loadRecipes()
 })
 
+// Abgeleitete Liste, gefiltert nach Suchbegriff aus dem Prop (Titel oder Zutaten)
 const filtered = computed(() => {
   if (!props.search) return recipes.value
   const q = props.search.toLowerCase().trim()
@@ -197,26 +221,33 @@ const filtered = computed(() => {
     r.ingredients.toLowerCase().includes(q)
   )
 })
+// Abgeleitete Liste aller Rezepte, die als Favorit markiert sind
 const favorites = computed(() => recipes.value.filter(r => r.favorite))
 
+// Öffnet Detailansicht für ein ausgewähltes Lieblingsrezept
 const openFavoriteDetails = (r: Recipe) => {
   selectedFavorite.value = r
 }
 
+// Schließt die Detailansicht des Lieblingsrezepts wieder
 const closeFavoriteDetails = () => {
   selectedFavorite.value = null
 }
 </script>
 
 <template>
+  <!-- Gesamter Bereich zum Verwalten der eigenen Rezepte -->
   <section class="recipe-manager">
+    <!-- Karte mit Formular zum Anlegen eines neuen Rezepts -->
     <div class="form-card">
       <h3 class="form-title">Create a new recipe</h3>
       <p class="form-subtitle">
         All fields marked with <span class="required-star">*</span> are required.
       </p>
 
+      <!-- Neues Rezept wird per createRecipe() gespeichert -->
       <form class="new-recipe-form" @submit.prevent="createRecipe">
+        <!-- Erste Zeile: Titel + Bild-URL -->
         <div class="form-row">
           <div class="form-field">
             <label>
@@ -239,6 +270,7 @@ const closeFavoriteDetails = () => {
           </div>
         </div>
 
+        <!-- Zweite Zeile: Zeiten + Portionen -->
         <div class="form-row">
           <div class="form-field small">
             <label>Prep time (min)</label>
@@ -269,6 +301,7 @@ const closeFavoriteDetails = () => {
           </div>
         </div>
 
+        <!-- Dritte Zeile: Difficulty, Kategorie, Rating -->
         <div class="form-row">
           <div class="form-field">
             <label>Difficulty</label>
@@ -299,6 +332,7 @@ const closeFavoriteDetails = () => {
           </div>
         </div>
 
+        <!-- Zutaten-Eingabe -->
         <div class="form-field">
           <label>
             Ingredients <span class="required-star">*</span>
@@ -310,6 +344,7 @@ const closeFavoriteDetails = () => {
           ></textarea>
         </div>
 
+        <!-- Anweisungen-Eingabe -->
         <div class="form-field">
           <label>
             Instructions <span class="required-star">*</span>
@@ -321,6 +356,7 @@ const closeFavoriteDetails = () => {
           ></textarea>
         </div>
 
+        <!-- Schalter: Favorit und auf Home anzeigen -->
         <div class="form-toggle-row">
           <label class="toggle-item">
             <input type="checkbox" v-model="newFavorite" />
@@ -332,6 +368,7 @@ const closeFavoriteDetails = () => {
           </label>
         </div>
 
+        <!-- Submit-Button -->
         <button type="submit" class="submit-btn">
           Save recipe
         </button>
@@ -342,12 +379,14 @@ const closeFavoriteDetails = () => {
       </form>
     </div>
 
+    <!-- Karte mit Liste der selbst erstellten Rezepte + Edit-Panel -->
     <div class="list-card">
       <h3 class="recipes-title">Your created recipes</h3>
 
       <p v-if="loading" class="status-text">Loading recipes…</p>
       <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
 
+      <!-- Wenn geladen und kein Fehler: Liste der gefilterten Rezepte -->
       <ul v-else class="recipes">
         <li v-for="r in filtered" :key="r.id" class="recipe-card">
           <div class="recipe-row">
@@ -356,6 +395,7 @@ const closeFavoriteDetails = () => {
             </div>
 
             <div class="recipe-main">
+              <!-- Klick auf Header öffnet Edit-Panel für dieses Rezept -->
               <div class="recipe-header" @click="startEdit(r)">
                 <div>
                   <h4 class="name">
@@ -373,16 +413,19 @@ const closeFavoriteDetails = () => {
                     <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
                   </p>
                 </div>
+                <!-- Badges für Favorit / veröffentlicht -->
                 <div class="badge-column">
                   <span v-if="r.favorite" class="badge badge-fav">★ Favorite</span>
                   <span v-if="r.published" class="badge badge-published">Published on Home</span>
                 </div>
               </div>
 
+              <!-- Kurzansicht der Zutaten -->
               <p class="ingredients">
                 {{ r.ingredients }}
               </p>
 
+              <!-- Aktionen: Edit und Delete -->
               <div class="card-actions">
                 <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
                 <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Delete</button>
@@ -391,11 +434,13 @@ const closeFavoriteDetails = () => {
           </div>
         </li>
 
+        <!-- Hinweis, wenn kein Rezept zur Suche passt -->
         <li v-if="!loading && filtered.length === 0" class="none-found">
           No recipes found. Create your first Dishly recipe above.
         </li>
       </ul>
 
+      <!-- Seitliches Bearbeitungs-Panel für das aktuell ausgewählte Rezept -->
       <div v-if="editing" class="edit-panel">
         <h4>Edit recipe</h4>
 
@@ -461,12 +506,15 @@ const closeFavoriteDetails = () => {
           </label>
         </div>
 
+        <!-- Buttons zum Speichern und Abbrechen -->
         <div class="edit-buttons">
           <button class="submit-btn" @click="updateRecipe">Save changes</button>
           <button class="cancel-btn" @click="cancelEdit">Cancel</button>
         </div>
       </div>
     </div>
+
+    <!-- Zweite Karte: Grid mit allen Favoriten + Overlay-Details -->
     <div class="list-card">
       <h3 class="recipes-title">Your favorite recipes</h3>
 
@@ -508,12 +556,14 @@ const closeFavoriteDetails = () => {
           </div>
         </article>
 
+        <!-- Hinweis, falls noch keine Favoriten markiert wurden -->
         <p v-if="favorites.length === 0" class="status-text">
           You have no favorite recipes yet. Mark recipes as favorites to see them here.
         </p>
       </div>
     </div>
 
+    <!-- Overlay mit Detailansicht für ausgewähltes Lieblingsrezept -->
     <div v-if="selectedFavorite" class="overlay" @click.self="closeFavoriteDetails">
       <div class="overlay-card">
         <button class="overlay-close" @click="closeFavoriteDetails">×</button>
@@ -620,6 +670,7 @@ textarea {
   outline: none;
 }
 
+/* Fokuszustand hebt das aktive Feld farblich hervor */
 input:focus,
 textarea:focus {
   border-color: #26b6b8;
@@ -645,6 +696,7 @@ textarea {
   color: #486b68;
 }
 
+/* Checkbox selbst nicht auf volle Breite ziehen */
 .toggle-item input {
   width: auto;
 }
@@ -663,6 +715,7 @@ textarea {
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Hover-Effekt für Submit-Button */
 .submit-btn:hover {
   background: #b96593;
   box-shadow: 0 3px 12px rgba(191, 140, 167, 0.5);
@@ -710,7 +763,6 @@ textarea {
   gap: 12px;
 }
 
-/* Card-Layout für created + favorites */
 .recipe-card {
   background: #f4fbfa;
   border-radius: 14px;
@@ -719,7 +771,6 @@ textarea {
   box-shadow: 0 1px 7px rgba(79, 127, 120, 0.1);
 }
 
-/* Created: Bild links, Text rechts */
 .recipe-row {
   display: flex;
   gap: 12px;

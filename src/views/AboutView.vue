@@ -1,4 +1,5 @@
 <script setup lang="ts">
+//Bilder importieren
 import profileImg from '../assets/salma-profile.jpg'
 import food1 from '../assets/food1.jpg'
 import food2 from '../assets/food2.jpg'
@@ -6,8 +7,10 @@ import food3 from '../assets/food3.jpg'
 </script>
 
 <template>
+  <!-- About-Seite mit dreispaltigem Layout: Food-Bilder, Text, Portrait -->
   <section class="about">
     <div class="about-layout">
+      <!-- Linke Spalte: Bilder von Gerichten -->
       <div class="food-column">
         <div class="food-grid">
           <img :src="food1" alt="Dishly recipe 1" />
@@ -16,6 +19,7 @@ import food3 from '../assets/food3.jpg'
         </div>
       </div>
 
+      <!-- Mittlere Spalte: Textkarte mit Erklärung zu Dishly -->
       <div class="intro-column">
         <div class="intro-card">
           <p class="hello-text">Hi, I’m Salma.</p>
@@ -23,19 +27,22 @@ import food3 from '../assets/food3.jpg'
 
           <h2 class="section-title">What is Dishly?</h2>
           <p class="intro-body">
-            Dishly is my personal project: a cozy recipe space where simple, tasty
-            dishes are saved in one place.
+            Dishly is a digital cookbook where you can collect recipes in one place.
+            It’s all about simple, tasty dishes you can revisit whenever you want,
+            so your favorite meals don’t get lost in notes or screenshots.
           </p>
 
           <h2 class="section-title">What you’ll find here</h2>
           <p class="intro-body">
-            Home shows all public recipes. Under “Your recipes” you can create dishes,
-            edit or delete them, mark favorites and decide which ones appear on Home.
+            "Home" has public recipes that you can browse and filter.
+            At the top you can search by title, category or keywords to quickly find dishes.
+            Under “Your recipes” you can create, edit and delete your own dishes,
+            mark favorites and choose which ones should also appear on Home.
           </p>
 
           <h2 class="section-title">Cooking, for me …</h2>
           <p class="intro-body">
-            Cooking should be everyday friendly, low-stress and still a bit special –
+            Cooking should be everyday friendly, low-stress and still a bit special,
             that’s what I want Dishly to feel like.
           </p>
         </div>
@@ -51,6 +58,7 @@ import food3 from '../assets/food3.jpg'
 </template>
 
 <style scoped>
+/* Gesamtbreite begrenzen und zentrieren */
 .about {
   width: 100%;
   max-width: 1200px;
@@ -58,6 +66,7 @@ import food3 from '../assets/food3.jpg'
   padding: 0 6vw;
 }
 
+/* Dreispaltiges Grid-Layout für Bilder, Text und Portrait */
 .about-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
@@ -150,6 +159,7 @@ import food3 from '../assets/food3.jpg'
   border: 3px solid #ffffff;
 }
 
+/* Anpassung für Tablets/Mobile: alles untereinander anzeigen */
 @media (max-width: 960px) {
   .about-layout {
     grid-template-columns: minmax(0, 1fr);

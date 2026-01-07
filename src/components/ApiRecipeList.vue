@@ -1,6 +1,9 @@
+/**Zeigt auf der Startseite öffentliche API-Rezepte plus eigene veröffentlichte Rezepte.*/
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 
+// Rezept-Typ für externe und eigene Rezepte
 type Recipe = {
   id: number | string
   title: string
@@ -16,20 +19,20 @@ type Recipe = {
   favorite?: boolean
   published?: boolean
 }
+const search = ref('') // Suchtext für das Input-Feld
+const recipes = ref<Recipe[]>([]) // kombinierte Liste, die im Grid angezeigt wird
+const allExternal = ref<Recipe[]>([]) // alle geladenen externen API-Rezepte
+const ownPublished = ref<Recipe[]>([]) // eigene veröffentlichte Rezepte aus dem Backend
 
-const search = ref('')
-const recipes = ref<Recipe[]>([])
-const allExternal = ref<Recipe[]>([])
-const ownPublished = ref<Recipe[]>([])
+// Laden/Fehler/ausgewähltes Rezept
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<Recipe | null>(null)
 
-const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
+const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'// Backend-Basis-URL (aus Env, sonst lokal)
+const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
 
-// wie viele API-Rezepte gleichzeitig anzeigen
-const EXTERNAL_CHUNK = 20
-
+//erstellt eine zufällige Reihenfolge der übergebenen Rezepte
 const shuffleArray = (items: Recipe[]): Recipe[] => {
   const arr: Recipe[] = [...items]
   for (let i = arr.length - 1; i > 0; i--) {
@@ -41,6 +44,7 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
   return arr
 }
 
+// Baut die aktuell sichtbare Liste aus zufälligen externen Rezepten + eigenen veröffentlichten
 const buildView = () => {
   const shuffled = shuffleArray(allExternal.value)
   const externalSlice = shuffled.slice(0, EXTERNAL_CHUNK)
@@ -50,6 +54,7 @@ const buildView = () => {
   ]
 }
 
+// Lädt externe und eigene veröffentlichte Rezepte parallel vom Backend
 const loadRecipes = async () => {
   loading.value = true
   try {
@@ -80,6 +85,7 @@ onMounted(() => {
   loadRecipes()
 })
 
+// Abgeleitete Liste, gefiltert nach Suchbegriff in Titel, Zutaten oder Kategorie
 const filtered = computed(() => {
   const q = search.value.toLowerCase().trim()
   if (!q) return recipes.value
@@ -90,22 +96,26 @@ const filtered = computed(() => {
   )
 })
 
+// Öffnet das Detail-Overlay für ein ausgewähltes Rezept
 const openDetails = (recipe: Recipe) => {
   selected.value = recipe
 }
-
+// Schließt das Detail-Overlay wieder
 const closeDetails = () => {
   selected.value = null
 }
-
+// Mischt die externen Rezepte neu und baut die Ansicht erneut auf
 const shuffleRecipes = () => {
   if (!allExternal.value.length) return
   buildView()
 }
+
 </script>
 
 <template>
+  <!-- Gesamte Home-Sektion mit Suchfeld, Shuffle-Button und Rezeptliste -->
   <section class="home-wrap">
+    <!-- Hero-Bereich mit Intro-Text und Suche -->
     <section class="hero">
       <p class="hero-desc">
         Discover dishes from all around the world and find your next favorite recipe.
@@ -119,6 +129,7 @@ const shuffleRecipes = () => {
       />
     </section>
 
+    <!-- Shuffle-Button zum Neu-Mischen der externen Rezepte -->
     <div class="shuffle-wrap">
       <button class="shuffle-btn" type="button" @click="shuffleRecipes">
         <span class="shuffle-icon">🔀</span>
@@ -131,6 +142,7 @@ const shuffleRecipes = () => {
       <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
 
       <div v-else class="recipe-grid">
+        <!-- Karten für alle gefilterten Rezepte -->
         <article
           v-for="r in filtered"
           :key="r.id"
@@ -165,12 +177,14 @@ const shuffleRecipes = () => {
           </div>
         </article>
 
+        <!-- Hinweis, wenn kein Treffer zur Suche passt -->
         <p v-if="!loading && filtered.length === 0" class="status-text">
           No matching recipes found.
         </p>
       </div>
     </section>
 
+    <!-- Overlay mit Detailansicht zum ausgewählten Rezept -->
     <div v-if="selected" class="overlay" @click.self="closeDetails">
       <div class="overlay-card">
         <button class="overlay-close" @click="closeDetails">×</button>

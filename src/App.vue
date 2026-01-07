@@ -1,18 +1,23 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import dishlyLogo from './assets/dishly-logo.png'
+import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
 </script>
 
 <template>
   <div class="app-bg">
+    <!-- Oberer Bereich mit Logo, Tagline und Navigation -->
     <header class="main-header">
+      <!-- Farbige Linie ganz oben zur visuellen Trennung -->
       <div class="top-line"></div>
 
+      <!-- Zeile mit Logo links und Tagline rechts -->
       <div class="header-row">
+        <!-- Klickbares Logo führt immer zur Home-Seite -->
         <RouterLink to="/" class="logo-link">
           <img :src="dishlyLogo" alt="Dishly logo" class="logo" />
         </RouterLink>
 
+        <!-- Box mit Slogan in der Mitte/Rechts -->
         <div class="tagline-box">
           <span class="tagline-deco">✦</span>
           <span class="tagline-text">
@@ -22,6 +27,7 @@ import dishlyLogo from './assets/dishly-logo.png'
         </div>
       </div>
 
+      <!-- Hauptnavigation zwischen den Seiten der App -->
       <nav class="nav-bar">
         <RouterLink to="/" class="nav-item">Home</RouterLink>
         <RouterLink to="/my-recipes" class="nav-item">Your recipes</RouterLink>
@@ -40,10 +46,11 @@ import dishlyLogo from './assets/dishly-logo.png'
   </div>
 </template>
 
-
 <style scoped>
+/* Google-Font für die gesamte App einbinden */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
+/* Layout, damit Footer unten bleibt */
 .app-bg {
   min-height: 100vh;
   width: 100%;
@@ -69,6 +76,7 @@ import dishlyLogo from './assets/dishly-logo.png'
   gap: 10px;
 }
 
+/* Zeile mit Logo und Tagline nebeneinander */
 .header-row {
   display: flex;
   align-items: center;
@@ -76,11 +84,13 @@ import dishlyLogo from './assets/dishly-logo.png'
   gap: 24px;
 }
 
+/* zentriertes Logo */
 .logo-link {
   display: flex;
   align-items: center;
 }
 
+/* Höhe des Logos */
 .logo {
   height: 100px;
 }
@@ -130,6 +140,7 @@ import dishlyLogo from './assets/dishly-logo.png'
   transition: background 0.2s, color 0.2s, border 0.2s;
 }
 
+/* Rechts außen kein Trenner mehr */
 .nav-item:last-child {
   border-right: none;
 }
