@@ -25,6 +25,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 // Zusätzlicher State nur für Formular-Validierungsfehler
 const formError = ref<string | null>(null)
+const editFormError = ref<string | null>(null)
 
 // Form für ein neues Rezept (Create)
 const newTitle = ref('')
@@ -159,6 +160,15 @@ const cancelEdit = () => {
 const updateRecipe = async () => {
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   if (!editing.value) return
+  if (
+    !editing.value.title.trim() ||
+    !editing.value.ingredients.trim() ||
+    !editing.value.instructions.trim()
+  ) {
+    editFormError.value = 'Please fill in all required fields.'
+    return
+  }
+  editFormError.value = null
   const endpoint = `${baseUrl}/recipes/${editing.value.id}`
 
   try {
@@ -517,6 +527,9 @@ const closeFavoriteDetails = () => {
           <button class="submit-btn" @click="updateRecipe">Save changes</button>
           <button class="cancel-btn" @click="cancelEdit">Cancel</button>
         </div>
+        <p v-if="editFormError" class="error-text">
+          {{ editFormError }}
+        </p>
       </div>
     </div>
 
