@@ -1,6 +1,23 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
+import { useAuthStore } from '@/stores/authStore'
+import router from '@/router'
+
+const authStore = useAuthStore()
+
+onMounted(async () => {
+  authStore.initFromStorage()
+  if (authStore.token) {
+    await authStore.loadCurrentUser()
+  }
+})
+
+async function logout() {
+  authStore.logout()
+  await router.push('/')
+}
 </script>
 
 <template>
@@ -33,6 +50,16 @@ import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
         <RouterLink to="/my-recipes" class="nav-item">Your recipes</RouterLink>
         <RouterLink to="/about" class="nav-item">About</RouterLink>
         <RouterLink to="/contact" class="nav-item">Contact</RouterLink>
+        <template v-if="authStore.isAuthenticated">
+          <span class="nav-item user-name">{{ authStore.user?.username ?? 'User' }}</span>
+          <button class="nav-item nav-button" type="button" @click="logout">
+            Logout
+          </button>
+        </template>
+        <template v-else>
+          <RouterLink to="/login" class="nav-item">Login</RouterLink>
+          <RouterLink to="/register" class="nav-item">Registrieren</RouterLink>
+        </template>
       </nav>
     </header>
 
@@ -149,6 +176,25 @@ import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
 .nav-item.router-link-exact-active {
   background: #8fd5cc;
   color: #ffffff;
+}
+
+.nav-button {
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.user-name {
+  color: #2b1b23;
+  cursor: default;
+}
+
+.user-name:hover {
+  background: transparent;
+  color: #2b1b23;
 }
 
 .main-main {

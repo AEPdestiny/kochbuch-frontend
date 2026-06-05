@@ -1,6 +1,16 @@
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
-import { describe, it, expect } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { recipeApi } from '@/shared/api/recipeApi'
+
+vi.mock('@/shared/api/recipeApi', () => ({
+  recipeApi: {
+    getRecipes: vi.fn(),
+    createRecipe: vi.fn(),
+    updateRecipe: vi.fn(),
+    deleteRecipe: vi.fn(),
+  },
+}))
 
 // Views, die über Routen erreichbar sind
 import HomeView from '@/views/HomeView.vue'
@@ -20,6 +30,15 @@ const router = createRouter({
 })
 
 describe('App routing', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    vi.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    })
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
+  })
+
   it('renders Home with ApiRecipeList on /', async () => {
     // Zielroute setzen und warten, bis der Router bereit ist
     router.push('/')

@@ -1,11 +1,20 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
+import { recipeApi } from '@/shared/api/recipeApi'
+
+vi.mock('@/shared/api/recipeApi', () => ({
+  recipeApi: {
+    getPublishedRecipes: vi.fn(),
+  },
+}))
 
 describe('ApiRecipeList.vue', () => {
   // Vor jedem Test Mocks zurücksetzen, damit Tests unabhängig bleiben
   beforeEach(() => {
     vi.restoreAllMocks()
+    vi.clearAllMocks()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
   })
 
   it('shows loading text while recipes are being fetched', () => {
@@ -44,6 +53,7 @@ describe('ApiRecipeList.vue', () => {
       ok: true,
       json: async () => fakeRecipes,
     })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
     // Warten, bis alle Promises abgearbeitet sind
@@ -60,6 +70,7 @@ describe('ApiRecipeList.vue', () => {
       status: 500,
       json: async () => ({}),
     })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -99,11 +110,12 @@ describe('ApiRecipeList.vue', () => {
       },
     ]
 
-    // fetch-Mock liefert beide Rezepte
-    vi.spyOn(global, 'fetch').mockResolvedValue({
+    // fetch-Mock liefert externe Rezepte, published kommt aus recipeApi
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
       ok: true,
       json: async () => fakeRecipes,
     })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()

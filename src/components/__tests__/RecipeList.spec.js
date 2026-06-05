@@ -1,11 +1,25 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RecipeList from '@/components/RecipeList.vue'
+import { recipeApi } from '@/shared/api/recipeApi'
+import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+
+vi.mock('@/shared/api/recipeApi', () => ({
+  recipeApi: {
+    getRecipes: vi.fn(),
+    createRecipe: vi.fn(),
+    updateRecipe: vi.fn(),
+    deleteRecipe: vi.fn(),
+  },
+}))
 
 describe('RecipeList.vue', () => {
   // Vor jedem Test Mocks zurücksetzen, damit Tests unabhängig bleiben
   beforeEach(() => {
     vi.restoreAllMocks()
+    vi.clearAllMocks()
+    sessionStorage.clear()
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
   })
 
   it('loads /recipes and shows "Your created recipes" with items', async () => {
@@ -29,10 +43,7 @@ describe('RecipeList.vue', () => {
     ]
 
     // fetch so mocken, dass diese Fake-Daten zurückkommen
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => fakeRecipes,
-    })
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue(fakeRecipes)
 
     const wrapper = mount(RecipeList)
 
@@ -44,21 +55,12 @@ describe('RecipeList.vue', () => {
   })
 
   it('creates a recipe via form submit', async () => {
-    const fetchMock = vi.spyOn(global, 'fetch')
-
-    // 1. Aufruf: initiales GET /recipes -> leere Liste
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
-
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(RecipeList)
     await flushPromises()
 
     // 2. Aufruf: POST /recipes -> neues Rezept wird zurückgegeben
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
+    vi.mocked(recipeApi.createRecipe).mockResolvedValue({
         id: 1,
         title: 'New Dish',
         imageUrl: '',
@@ -72,7 +74,6 @@ describe('RecipeList.vue', () => {
         instructions: 'y',
         favorite: false,
         published: false,
-      }),
     })
 
     // Formularfelder mit Testwerten befüllen
@@ -91,23 +92,41 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Erwartung: letzter fetch war ein POST auf /recipes
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      expect.stringContaining('/recipes'),
-      expect.objectContaining({ method: 'POST' })
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.createRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'New Dish',
+        ingredients: 'x',
+        instructions: 'y',
+      })
     )
     // Neues Rezept erscheint
     expect(wrapper.text()).toContain('New Dish')
   })
 
+  it('does not create a recipe without login', async () => {
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    await wrapper
+      .find('input[placeholder="e.g. Creamy Tomato Pasta"]')
+      .setValue('New Dish')
+    await wrapper
+      .find('textarea[placeholder="List your ingredients, separated by commas."]')
+      .setValue('x')
+    await wrapper
+      .find('textarea[placeholder="Write your step-by-step instructions."]')
+      .setValue('y')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.createRecipe).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu erstellen.')
+  })
+
   it('shows validation error if required fields are missing', async () => {
-    const fetchMock = vi.spyOn(global, 'fetch')
-
-    // Initial nur GET /recipes -> leere Liste
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => [],
-    })
-
     const wrapper = mount(RecipeList)
     await flushPromises()
 
@@ -116,12 +135,13 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Erwartung: kein zusätzlicher fetch (also kein POST)
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
     // Validierungsfehlermeldung sichtbar
     expect(wrapper.text()).toContain('Please fill in all required fields.')
   })
 
   it('updates a recipe via edit panel', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     // Startzustand mit einem vorhandenen Rezept
     const initial = [
       {
@@ -141,12 +161,7 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    const fetchMock = vi.spyOn(global, 'fetch')
-    // Erstes fetch: GET /recipes -> initiale Daten
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => initial,
-    })
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
@@ -155,12 +170,9 @@ describe('RecipeList.vue', () => {
     await wrapper.find('.link-btn').trigger('click')
 
     // Zweites fetch: PUT /recipes/1 -> aktualisiertes Rezept zurück
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        ...initial[0],
-        title: 'Updated Title',
-      }),
+    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({
+      ...initial[0],
+      title: 'Updated Title',
     })
 
     // Titel im Edit-Panel anpassen
@@ -173,15 +185,58 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Erwartung: PUT auf /recipes/1 wurde abgesetzt
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      expect.stringContaining('/recipes/1'),
-      expect.objectContaining({ method: 'PUT' })
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        title: 'Updated Title',
+        ingredients: 'x',
+        instructions: 'y',
+      })
     )
     // Neuer Titel wird angezeigt
     expect(wrapper.text()).toContain('Updated Title')
   })
 
+  it('does not update a recipe without login', async () => {
+    const initial = [
+      {
+        id: 1,
+        title: 'Old Title',
+        imageUrl: '',
+        prepTimeMinutes: 0,
+        cookTimeMinutes: 0,
+        servings: 0,
+        difficulty: '',
+        category: '',
+        rating: 0,
+        ingredients: 'x',
+        instructions: 'y',
+        favorite: false,
+        published: false,
+      },
+    ]
+
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    await wrapper.find('.link-btn').trigger('click')
+    const titleInput = wrapper.find('.edit-panel input[type="text"]')
+    await titleInput.setValue('Updated Title')
+
+    const saveBtn = wrapper.find('.edit-panel .submit-btn')
+    await saveBtn.trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.updateRecipe).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu bearbeiten.')
+  })
+
   it('deletes a recipe when clicking Delete', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     // Startzustand mit einem Rezept, das gelöscht werden soll
     const initial = [
       {
@@ -201,21 +256,13 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    const fetchMock = vi.spyOn(global, 'fetch')
-    // Erstes fetch: GET /recipes -> initiale Daten
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => initial,
-    })
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
 
     // Zweites fetch: DELETE /recipes/1
-    fetchMock.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({}),
-    })
+    vi.mocked(recipeApi.deleteRecipe).mockResolvedValue()
 
     // Delete-Button klicken
     const deleteBtn = wrapper.find('.link-btn.danger')
@@ -223,11 +270,42 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Erwartung: DELETE auf /recipes/1
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      expect.stringContaining('/recipes/1'),
-      expect.objectContaining({ method: 'DELETE' })
-    )
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.deleteRecipe).toHaveBeenCalledWith(1)
     expect(wrapper.text()).not.toContain('To Delete')
+  })
+
+  it('does not delete a recipe without login', async () => {
+    const initial = [
+      {
+        id: 1,
+        title: 'To Delete',
+        imageUrl: '',
+        prepTimeMinutes: 0,
+        cookTimeMinutes: 0,
+        servings: 0,
+        difficulty: '',
+        category: '',
+        rating: 0,
+        ingredients: 'x',
+        instructions: 'y',
+        favorite: false,
+        published: false,
+      },
+    ]
+
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    const deleteBtn = wrapper.find('.link-btn.danger')
+    await deleteBtn.trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.deleteRecipe).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu löschen.')
   })
 
   it('shows only favorite recipes in favorites grid', async () => {
@@ -265,11 +343,7 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    // fetch liefert beide Rezepte
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => initial,
-    })
+    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()

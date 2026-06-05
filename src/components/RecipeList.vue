@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { recipeApi } from '@/shared/api/recipeApi'
 
 const props = defineProps<{ search?: string }>()
 
@@ -46,45 +48,28 @@ const editing = ref<Recipe | null>(null) // Referenz auf das Rezept, das aktuell
 const selectedFavorite = ref<Recipe | null>(null) // Referenz auf das aktuell ausgewählte Lieblingsrezept
 
 // Lädt alle Rezepte vom Backend-Endpoint /recipes
-const loadRecipes = () => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
-  const endpoint = baseUrl + '/recipes'
-  // Fetch-Optionen für den GET-Request
-  const requestOptions: RequestInit = {
-    method: 'GET',
-    redirect: 'follow',
-  }
-  // Request an Backend schicken, um alle Rezepte zu laden
-  fetch(endpoint, requestOptions)
-    .then(response => {
-      // Falls HTTP-Status nicht ok ist, Fehler werfen
-      if (!response.ok) {
-        throw new Error(`Error loading recipes: ${response.status}`)
-      }
-      return response.json()
-    })
-    .then((result: Recipe[]) => {
-      // Liste zunächst leeren und dann mit den geladenen Rezepten füllen
+const loadRecipes = async () => {
+  // Request ueber den zentralen API Client schicken, um alle Rezepte zu laden
+  try {
+    const result = await recipeApi.getRecipes()
+    // Liste zunaechst leeren und dann mit den geladenen Rezepten fuellen
       recipes.value = []
       result.forEach(r => {
         recipes.value.push(r)
       })
       error.value = null
-    })
-    .catch(err => {
+  } catch (err: unknown) {
       // Fehler im Log ausgeben und Fehlermeldung im State setzen
       console.log('error', err)
-      error.value = err.message ?? 'Unknown error'
-    })
-    .finally(() => {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+  } finally {
       // Lade-Status immer beenden, egal ob Erfolg oder Fehler
       loading.value = false
-    })
+  }
 }
 
 // Neues Rezept anlegen und ans Backend senden
 const createRecipe = async () => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   // Validierung: Pflichtfelder; hier nur formError setzen
   if (
     !newTitle.value.trim() ||
@@ -96,34 +81,29 @@ const createRecipe = async () => {
   }
   formError.value = null
 
-  const endpoint = baseUrl + '/recipes'
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    formError.value = 'Bitte melde dich an, um ein Rezept zu erstellen.'
+    return
+  }
 
   try {
     // POST-Request für das neue Rezept
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: newTitle.value,
-        imageUrl: newImageUrl.value,
-        prepTimeMinutes: newPrepTime.value ?? 0,
-        cookTimeMinutes: newCookTime.value ?? 0,
-        servings: newServings.value ?? 0,
-        difficulty: newDifficulty.value,
-        category: newCategory.value,
-        rating: newRating.value ?? 0,
-        ingredients: newIngredients.value,
-        instructions: newInstructions.value,
-        favorite: newFavorite.value,
-        published: newPublished.value,
-      }),
+    const saved = await recipeApi.createRecipe({
+      title: newTitle.value,
+      imageUrl: newImageUrl.value,
+      prepTimeMinutes: newPrepTime.value ?? 0,
+      cookTimeMinutes: newCookTime.value ?? 0,
+      servings: newServings.value ?? 0,
+      difficulty: newDifficulty.value,
+      category: newCategory.value,
+      rating: newRating.value ?? 0,
+      ingredients: newIngredients.value,
+      instructions: newInstructions.value,
+      favorite: newFavorite.value,
+      published: newPublished.value,
     })
 
-    if (!res.ok) {
-      throw new Error(`Error saving recipe: ${res.status}`)
-    }
     // Vom Backend zurückgegebenes gespeichertes Rezept in die Liste pushen
-    const saved = (await res.json()) as Recipe
     recipes.value.push(saved)
 
     // Formularfelder zurücksetzen
@@ -140,10 +120,29 @@ const createRecipe = async () => {
     newFavorite.value = false
     newPublished.value = false
     error.value = null
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('error', e)
-    error.value = e.message ?? 'Unknown error'
+    formError.value = toCreateRecipeErrorMessage(e)
   }
+}
+
+const toCreateRecipeErrorMessage = (e: unknown) => {
+  if (e instanceof ApiClientError) {
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um ein Rezept zu erstellen.'
+    }
+    if (e.status === 403) {
+      return 'Du hast keine Berechtigung, dieses Rezept zu erstellen.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Das Rezept konnte nicht gespeichert werden.'
 }
 
 // Edit-Modus starten, indem eine Kopie des Rezepts in editing gelegt wird
@@ -158,7 +157,6 @@ const cancelEdit = () => {
 
 // Bestehendes Rezept per PUT beim Backend aktualisieren
 const updateRecipe = async () => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
   if (!editing.value) return
   if (
     !editing.value.title.trim() ||
@@ -169,20 +167,27 @@ const updateRecipe = async () => {
     return
   }
   editFormError.value = null
-  const endpoint = `${baseUrl}/recipes/${editing.value.id}`
+
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    editFormError.value = 'Bitte melde dich an, um ein Rezept zu bearbeiten.'
+    return
+  }
 
   try {
-    // PUT-Request mit dem aktuell bearbeiteten Rezept
-    const res = await fetch(endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editing.value),
+    const updated = await recipeApi.updateRecipe(editing.value.id, {
+      title: editing.value.title,
+      imageUrl: editing.value.imageUrl,
+      prepTimeMinutes: editing.value.prepTimeMinutes,
+      cookTimeMinutes: editing.value.cookTimeMinutes,
+      servings: editing.value.servings,
+      difficulty: editing.value.difficulty,
+      category: editing.value.category,
+      rating: editing.value.rating,
+      ingredients: editing.value.ingredients,
+      instructions: editing.value.instructions,
+      favorite: editing.value.favorite,
+      published: editing.value.published,
     })
-    if (!res.ok) {
-      throw new Error(`Error updating recipe: ${res.status}`)
-    }
-    // Aktualisiertes Rezept vom Backend holen
-    const updated = (await res.json()) as Recipe
 
     // Passenden Eintrag in der lokalen Liste ersetzen
     const idx = recipes.value.findIndex(r => r.id === updated.id)
@@ -193,23 +198,44 @@ const updateRecipe = async () => {
     // Edit-Modus verlassen und Fehlerzustand zurücksetzen
     editing.value = null
     error.value = null
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e.message ?? 'Unknown error'
+    editFormError.value = toUpdateRecipeErrorMessage(e)
   }
+}
+
+const toUpdateRecipeErrorMessage = (e: unknown) => {
+  if (e instanceof ApiClientError) {
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um ein Rezept zu bearbeiten.'
+    }
+    if (e.status === 403) {
+      return 'Du darfst dieses Rezept nicht bearbeiten.'
+    }
+    if (e.status === 404) {
+      return 'Das Rezept wurde nicht gefunden.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Das Rezept konnte nicht aktualisiert werden.'
 }
 
 // Rezept im Backend löschen und lokal entfernen
 const deleteRecipe = async (id: number | string) => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'
-  const endpoint = `${baseUrl}/recipes/${id}`
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = 'Bitte melde dich an, um ein Rezept zu löschen.'
+    return
+  }
 
   try {
     // DELETE-Request an den passenden /recipes/{id}-Endpoint
-    const res = await fetch(endpoint, { method: 'DELETE' })
-    if (!res.ok) {
-      throw new Error(`Error deleting recipe: ${res.status}`)
-    }
+    await recipeApi.deleteRecipe(id)
     // Erfolgreich gelöscht: Rezept aus der lokalen Liste herausfiltern
     recipes.value = recipes.value.filter(r => r.id !== id)
 
@@ -217,10 +243,32 @@ const deleteRecipe = async (id: number | string) => {
     if (editing.value && editing.value.id === id) {
       editing.value = null
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e)
-    error.value = e.message ?? 'Unknown error'
+    error.value = toDeleteRecipeErrorMessage(e)
   }
+}
+
+const toDeleteRecipeErrorMessage = (e: unknown) => {
+  if (e instanceof ApiClientError) {
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um ein Rezept zu löschen.'
+    }
+    if (e.status === 403) {
+      return 'Du darfst dieses Rezept nicht löschen.'
+    }
+    if (e.status === 404) {
+      return 'Das Rezept wurde nicht gefunden.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Das Rezept konnte nicht gelöscht werden.'
 }
 
 onMounted(() => {
@@ -721,7 +769,7 @@ textarea {
 }
 
 .submit-btn {
-  alignself: flex-start;
+  align-self: flex-start;
   margin-top: 6px;
   background: #cc7da9;
   color: #ffffff;

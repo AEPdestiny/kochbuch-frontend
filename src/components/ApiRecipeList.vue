@@ -2,6 +2,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { recipeApi } from '@/shared/api/recipeApi'
 
 // Rezept-Typ für externe und eigene Rezepte
 type Recipe = {
@@ -58,17 +59,16 @@ const buildView = () => {
 const loadRecipes = async () => {
   loading.value = true
   try {
-    const [extRes, ownRes] = await Promise.all([
+    const [extRes, own] = await Promise.all([
       fetch(baseUrl + '/recipes/external'),
-      fetch(baseUrl + '/recipes/published'),
+      recipeApi.getPublishedRecipes(),
     ])
 
-    if (!extRes.ok || !ownRes.ok) {
+    if (!extRes.ok) {
       throw new Error('Error while loading recipes')
     }
 
     const external: Recipe[] = await extRes.json()
-    const own: Recipe[] = await ownRes.json()
 
     allExternal.value = external
     ownPublished.value = own
@@ -145,7 +145,7 @@ const shuffleRecipes = () => {
         <!-- Karten für alle gefilterten Rezepte -->
         <article
           v-for="r in filtered"
-          :key="r.id"
+          :key="`${r.title}-${r.id}`"
           class="recipe-card"
           @click="openDetails(r)"
         >
