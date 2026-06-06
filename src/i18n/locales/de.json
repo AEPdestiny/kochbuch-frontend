@@ -47,6 +47,164 @@
       "unknown": "Authentifizierung fehlgeschlagen."
     }
   },
+  "pantry": {
+    "title": "Dein Vorrat",
+    "subtitle": "Behalte im Blick, welche Zutaten du zu Hause hast.",
+    "loading": "Vorrat wird geladen...",
+    "empty": "Dein Vorrat ist noch leer.",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "z.B. Reis",
+      "quantity": "Menge",
+      "quantityPlaceholder": "2",
+      "unit": "Einheit",
+      "unitPlaceholder": "kg",
+      "category": "Kategorie",
+      "categoryPlaceholder": "Vorrat"
+    },
+    "actions": {
+      "login": "Zum Login",
+      "create": "Hinzufügen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "update": "Speichern",
+      "cancel": "Abbrechen"
+    },
+    "errors": {
+      "loginRequired": "Bitte melde dich an, um deinen Vorrat zu sehen.",
+      "sessionExpired": "Bitte melde dich erneut an, um deinen Vorrat zu sehen.",
+      "sessionExpiredEdit": "Bitte melde dich erneut an, um deinen Vorrat zu bearbeiten.",
+      "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
+      "load": "Dein Vorrat konnte nicht geladen werden.",
+      "nameRequired": "Bitte gib einen Namen für das Pantry Item ein.",
+      "validation": "Bitte prüfe deine Eingaben für das Pantry Item.",
+      "create": "Das Pantry Item konnte nicht gespeichert werden.",
+      "delete": "Das Pantry Item konnte nicht gelöscht werden.",
+      "update": "Das Pantry Item konnte nicht aktualisiert werden.",
+      "deleteForbidden": "Du darfst dieses Pantry Item nicht löschen.",
+      "updateForbidden": "Du darfst dieses Pantry Item nicht bearbeiten.",
+      "notFound": "Dieses Pantry Item wurde nicht gefunden."
+    }
+  },
+  "shoppingList": {
+    "title": "Deine Einkaufsliste",
+    "subtitle": "Behalte im Blick, was du noch einkaufen möchtest.",
+    "loading": "Einkaufsliste wird geladen...",
+    "empty": "Deine Einkaufsliste ist noch leer.",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "z.B. Tomaten",
+      "quantity": "Menge",
+      "quantityPlaceholder": "3",
+      "unit": "Einheit",
+      "unitPlaceholder": "Stück",
+      "category": "Kategorie",
+      "categoryPlaceholder": "Gemüse",
+      "checked": "Erledigt"
+    },
+    "status": {
+      "open": "Offen",
+      "done": "Erledigt"
+    },
+    "actions": {
+      "login": "Zum Login",
+      "create": "Hinzufügen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "update": "Speichern",
+      "cancel": "Abbrechen"
+    },
+    "errors": {
+      "loginRequired": "Bitte melde dich an, um deine Einkaufsliste zu sehen.",
+      "sessionExpired": "Bitte melde dich erneut an, um deine Einkaufsliste zu sehen.",
+      "sessionExpiredEdit": "Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.",
+      "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
+      "load": "Deine Einkaufsliste konnte nicht geladen werden.",
+      "nameRequired": "Bitte gib einen Namen für das Shopping List Item ein.",
+      "validation": "Bitte prüfe deine Eingaben für das Shopping List Item.",
+      "create": "Das Shopping List Item konnte nicht gespeichert werden.",
+      "delete": "Das Shopping List Item konnte nicht gelöscht werden.",
+      "update": "Das Shopping List Item konnte nicht aktualisiert werden.",
+      "deleteForbidden": "Du darfst dieses Shopping List Item nicht löschen.",
+      "updateForbidden": "Du darfst dieses Shopping List Item nicht bearbeiten.",
+      "notFound": "Dieses Shopping List Item wurde nicht gefunden."
+    }
+  },
+  "recipes": {
+    "loading": "Rezepte werden geladen...",
+    "my": {
+      "createTitle": "Neues Rezept erstellen",
+      "requiredHintStart": "Alle mit",
+      "requiredHintEnd": "markierten Felder sind Pflichtfelder.",
+      "createdTitle": "Deine erstellten Rezepte",
+      "favoritesTitle": "Deine Favoriten",
+      "editTitle": "Rezept bearbeiten"
+    },
+    "form": {
+      "title": "Titel",
+      "titlePlaceholder": "z. B. Cremige Tomatenpasta",
+      "imageUrl": "Bild-URL",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "Vorbereitungszeit (Min.)",
+      "prepTimePlaceholder": "10",
+      "cookTime": "Kochzeit (Min.)",
+      "cookTimePlaceholder": "20",
+      "servings": "Portionen",
+      "servingsPlaceholder": "2",
+      "difficulty": "Schwierigkeit",
+      "difficultyPlaceholder": "z. B. einfach, mittel, schwer",
+      "category": "Kategorie / Küche",
+      "categoryPlaceholder": "z. B. Italienisch, Dessert",
+      "rating": "Bewertung",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "Zutaten",
+      "ingredientsPlaceholder": "Zutaten mit Kommas getrennt eintragen.",
+      "instructions": "Zubereitung",
+      "instructionsPlaceholder": "Beschreibe die Zubereitung Schritt für Schritt."
+    },
+    "actions": {
+      "login": "Zum Login",
+      "save": "Rezept speichern",
+      "saveChanges": "Änderungen speichern",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "cancel": "Abbrechen"
+    },
+    "status": {
+      "favorite": "Als Favorit markieren",
+      "showOnHome": "Auf Startseite anzeigen",
+      "favoriteBadge": "Favorit",
+      "publishedBadge": "Auf Startseite sichtbar",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} min",
+      "servings": "{count} Portionen"
+    },
+    "empty": {
+      "created": "Keine Rezepte gefunden. Erstelle oben dein erstes Dishly-Rezept.",
+      "favorites": "Du hast noch keine Favoriten. Markiere Rezepte als Favoriten, um sie hier zu sehen."
+    },
+    "errors": {
+      "prefix": "Fehler:",
+      "loginRequired": "Bitte melde dich an, um deine Rezepte zu sehen.",
+      "sessionExpired": "Bitte melde dich erneut an, um deine Rezepte zu sehen.",
+      "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
+      "load": "Deine Rezepte konnten nicht geladen werden.",
+      "requiredFields": "Bitte fülle alle Pflichtfelder aus.",
+      "createLoginRequired": "Bitte melde dich an, um ein Rezept zu erstellen.",
+      "createSessionExpired": "Bitte melde dich erneut an, um ein Rezept zu erstellen.",
+      "createForbidden": "Du hast keine Berechtigung, dieses Rezept zu erstellen.",
+      "create": "Das Rezept konnte nicht gespeichert werden.",
+      "updateLoginRequired": "Bitte melde dich an, um ein Rezept zu bearbeiten.",
+      "updateSessionExpired": "Bitte melde dich erneut an, um ein Rezept zu bearbeiten.",
+      "updateForbidden": "Du darfst dieses Rezept nicht bearbeiten.",
+      "update": "Das Rezept konnte nicht aktualisiert werden.",
+      "deleteLoginRequired": "Bitte melde dich an, um ein Rezept zu löschen.",
+      "deleteSessionExpired": "Bitte melde dich erneut an, um ein Rezept zu löschen.",
+      "deleteForbidden": "Du darfst dieses Rezept nicht löschen.",
+      "delete": "Das Rezept konnte nicht gelöscht werden.",
+      "notFound": "Das Rezept wurde nicht gefunden."
+    }
+  },
   "dashboard": {
     "eyebrow": "Dashboard",
     "welcome": "Willkommen zurück, {username}",

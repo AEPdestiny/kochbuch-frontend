@@ -1,8 +1,9 @@
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PantryView from '@/views/PantryView.vue'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { i18n, setLocale } from '@/i18n'
 import type { PantryItemResponse } from '@/types/pantry'
 
 vi.mock('@/shared/api/pantryApi', () => ({
@@ -18,6 +19,8 @@ describe('PantryView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    setLocale('de')
+    config.global.plugins = [i18n]
     vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
   })
 
@@ -334,6 +337,27 @@ describe('PantryView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben für das Pantry Item.')
+  })
+  it('shows English pantry texts after locale switch', async () => {
+    setLocale('en')
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Your Pantry')
+    expect(wrapper.text()).toContain('Your pantry is still empty.')
+    expect(wrapper.find('button[type="submit"]').text()).toBe('Add')
+  })
+
+  it('renders Arabic pantry texts without errors', async () => {
+    setLocale('ar')
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية مخزونك.')
+    expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
   })
 })
 

@@ -1,8 +1,9 @@
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, config } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RecipeList from '@/components/RecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { i18n, setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
@@ -20,6 +21,8 @@ describe('RecipeList.vue', () => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
     sessionStorage.clear()
+    setLocale('de')
+    config.global.plugins = [i18n]
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
   })
@@ -393,5 +396,47 @@ describe('RecipeList.vue', () => {
     // Erwartung: Nur das Favorite-Rezept wird angezeigt
     expect(favGrid).toContain('Fav 1')
     expect(favGrid).not.toContain('Not Fav')
+  })
+  it('shows English recipe UI texts after locale switch while recipe data stays unchanged', async () => {
+    setLocale('en')
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
+      {
+        id: 1,
+        title: 'Kartoffelsuppe',
+        imageUrl: '',
+        prepTimeMinutes: 5,
+        cookTimeMinutes: 10,
+        servings: 2,
+        difficulty: 'einfach',
+        category: 'Hausmannskost',
+        rating: 4.5,
+        ingredients: 'Kartoffeln, Lauch',
+        instructions: 'Kochen',
+        favorite: true,
+        published: true,
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Create a new recipe')
+    expect(wrapper.text()).toContain('Your created recipes')
+    expect(wrapper.text()).toContain('Your favorite recipes')
+    expect(wrapper.text()).toContain('Save recipe')
+    expect(wrapper.text()).toContain('Kartoffelsuppe')
+    expect(wrapper.text()).toContain('Kartoffeln, Lauch')
+    expect(wrapper.text()).toContain('Hausmannskost')
+  })
+
+  it('renders Arabic recipe UI texts without errors', async () => {
+    setLocale('ar')
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('إنشاء وصفة جديدة')
+    expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية وصفاتك.')
   })
 })

@@ -47,6 +47,164 @@
       "unknown": "Kimlik doğrulama başarısız oldu."
     }
   },
+  "pantry": {
+    "title": "Kilerin",
+    "subtitle": "Evde hangi malzemelerin olduğunu takip et.",
+    "loading": "Kiler yükleniyor...",
+    "empty": "Kilerin henüz boş.",
+    "form": {
+      "name": "Ad",
+      "namePlaceholder": "örn. pirinç",
+      "quantity": "Miktar",
+      "quantityPlaceholder": "2",
+      "unit": "Birim",
+      "unitPlaceholder": "kg",
+      "category": "Kategori",
+      "categoryPlaceholder": "Kiler"
+    },
+    "actions": {
+      "login": "Girişe git",
+      "create": "Ekle",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "update": "Kaydet",
+      "cancel": "İptal"
+    },
+    "errors": {
+      "loginRequired": "Kilerini görmek için lütfen giriş yap.",
+      "sessionExpired": "Kilerini görmek için lütfen tekrar giriş yap.",
+      "sessionExpiredEdit": "Kilerini düzenlemek için lütfen tekrar giriş yap.",
+      "network": "Backend şu anda kullanılamıyor. Lütfen tekrar dene.",
+      "load": "Kilerin yüklenemedi.",
+      "nameRequired": "Lütfen pantry item için bir ad gir.",
+      "validation": "Lütfen pantry item girişlerini kontrol et.",
+      "create": "Pantry item kaydedilemedi.",
+      "delete": "Pantry item silinemedi.",
+      "update": "Pantry item güncellenemedi.",
+      "deleteForbidden": "Bu pantry item silme iznin yok.",
+      "updateForbidden": "Bu pantry item düzenleme iznin yok.",
+      "notFound": "Bu pantry item bulunamadı."
+    }
+  },
+  "shoppingList": {
+    "title": "Alışveriş listen",
+    "subtitle": "Hâlâ ne almak istediğini takip et.",
+    "loading": "Alışveriş listesi yükleniyor...",
+    "empty": "Alışveriş listen henüz boş.",
+    "form": {
+      "name": "Ad",
+      "namePlaceholder": "örn. domates",
+      "quantity": "Miktar",
+      "quantityPlaceholder": "3",
+      "unit": "Birim",
+      "unitPlaceholder": "adet",
+      "category": "Kategori",
+      "categoryPlaceholder": "Sebze",
+      "checked": "Tamamlandı"
+    },
+    "status": {
+      "open": "Açık",
+      "done": "Tamamlandı"
+    },
+    "actions": {
+      "login": "Girişe git",
+      "create": "Ekle",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "update": "Kaydet",
+      "cancel": "İptal"
+    },
+    "errors": {
+      "loginRequired": "Alışveriş listeni görmek için lütfen giriş yap.",
+      "sessionExpired": "Alışveriş listeni görmek için lütfen tekrar giriş yap.",
+      "sessionExpiredEdit": "Alışveriş listeni düzenlemek için lütfen tekrar giriş yap.",
+      "network": "Backend şu anda kullanılamıyor. Lütfen tekrar dene.",
+      "load": "Alışveriş listen yüklenemedi.",
+      "nameRequired": "Lütfen shopping list item için bir ad gir.",
+      "validation": "Lütfen shopping list item girişlerini kontrol et.",
+      "create": "Shopping list item kaydedilemedi.",
+      "delete": "Shopping list item silinemedi.",
+      "update": "Shopping list item güncellenemedi.",
+      "deleteForbidden": "Bu shopping list item silme iznin yok.",
+      "updateForbidden": "Bu shopping list item düzenleme iznin yok.",
+      "notFound": "Bu shopping list item bulunamadı."
+    }
+  },
+  "recipes": {
+    "loading": "Tarifler yükleniyor...",
+    "my": {
+      "createTitle": "Yeni tarif oluştur",
+      "requiredHintStart": "İşaretli tüm alanlar",
+      "requiredHintEnd": "zorunludur.",
+      "createdTitle": "Oluşturduğun tarifler",
+      "favoritesTitle": "Favori tariflerin",
+      "editTitle": "Tarifi düzenle"
+    },
+    "form": {
+      "title": "Başlık",
+      "titlePlaceholder": "örn. kremalı domatesli makarna",
+      "imageUrl": "Görsel URL",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "Hazırlık süresi (dk.)",
+      "prepTimePlaceholder": "10",
+      "cookTime": "Pişirme süresi (dk.)",
+      "cookTimePlaceholder": "20",
+      "servings": "Porsiyon",
+      "servingsPlaceholder": "2",
+      "difficulty": "Zorluk",
+      "difficultyPlaceholder": "örn. kolay, orta, zor",
+      "category": "Kategori / mutfak",
+      "categoryPlaceholder": "örn. İtalyan, tatlı",
+      "rating": "Puan",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "Malzemeler",
+      "ingredientsPlaceholder": "Malzemeleri virgülle ayırarak gir.",
+      "instructions": "Hazırlanış",
+      "instructionsPlaceholder": "Hazırlanışı adım adım açıkla."
+    },
+    "actions": {
+      "login": "Girişe git",
+      "save": "Tarifi kaydet",
+      "saveChanges": "Değişiklikleri kaydet",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "cancel": "İptal"
+    },
+    "status": {
+      "favorite": "Favori olarak işaretle",
+      "showOnHome": "Ana sayfada göster",
+      "favoriteBadge": "Favori",
+      "publishedBadge": "Ana sayfada görünür",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} dk",
+      "servings": "{count} porsiyon"
+    },
+    "empty": {
+      "created": "Tarif bulunamadı. Yukarıda ilk Dishly tarifini oluştur.",
+      "favorites": "Henüz favorin yok. Burada görmek için tarifleri favori olarak işaretle."
+    },
+    "errors": {
+      "prefix": "Hata:",
+      "loginRequired": "Tariflerini görmek için lütfen giriş yap.",
+      "sessionExpired": "Tariflerini görmek için lütfen tekrar giriş yap.",
+      "network": "Backend şu anda kullanılamıyor. Lütfen tekrar dene.",
+      "load": "Tariflerin yüklenemedi.",
+      "requiredFields": "Lütfen tüm zorunlu alanları doldur.",
+      "createLoginRequired": "Tarif oluşturmak için lütfen giriş yap.",
+      "createSessionExpired": "Tarif oluşturmak için lütfen tekrar giriş yap.",
+      "createForbidden": "Bu tarifi oluşturma iznin yok.",
+      "create": "Tarif kaydedilemedi.",
+      "updateLoginRequired": "Tarifi düzenlemek için lütfen giriş yap.",
+      "updateSessionExpired": "Tarifi düzenlemek için lütfen tekrar giriş yap.",
+      "updateForbidden": "Bu tarifi düzenleme iznin yok.",
+      "update": "Tarif güncellenemedi.",
+      "deleteLoginRequired": "Tarifi silmek için lütfen giriş yap.",
+      "deleteSessionExpired": "Tarifi silmek için lütfen tekrar giriş yap.",
+      "deleteForbidden": "Bu tarifi silme iznin yok.",
+      "delete": "Tarif silinemedi.",
+      "notFound": "Tarif bulunamadı."
+    }
+  },
   "dashboard": {
     "eyebrow": "Panel",
     "welcome": "Tekrar hoş geldin, {username}",

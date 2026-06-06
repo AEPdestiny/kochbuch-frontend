@@ -47,6 +47,164 @@
       "unknown": "身份验证失败。"
     }
   },
+  "pantry": {
+    "title": "你的储藏",
+    "subtitle": "随时了解家里有哪些食材。",
+    "loading": "正在加载储藏...",
+    "empty": "你的储藏还没有物品。",
+    "form": {
+      "name": "名称",
+      "namePlaceholder": "例如：米",
+      "quantity": "数量",
+      "quantityPlaceholder": "2",
+      "unit": "单位",
+      "unitPlaceholder": "kg",
+      "category": "类别",
+      "categoryPlaceholder": "储藏"
+    },
+    "actions": {
+      "login": "前往登录",
+      "create": "添加",
+      "edit": "编辑",
+      "delete": "删除",
+      "update": "保存",
+      "cancel": "取消"
+    },
+    "errors": {
+      "loginRequired": "请登录以查看你的储藏。",
+      "sessionExpired": "请重新登录以查看你的储藏。",
+      "sessionExpiredEdit": "请重新登录以编辑你的储藏。",
+      "network": "后端当前不可用。请重试。",
+      "load": "无法加载你的储藏。",
+      "nameRequired": "请输入储藏物品名称。",
+      "validation": "请检查储藏物品输入。",
+      "create": "无法保存储藏物品。",
+      "delete": "无法删除储藏物品。",
+      "update": "无法更新储藏物品。",
+      "deleteForbidden": "你不能删除此储藏物品。",
+      "updateForbidden": "你不能编辑此储藏物品。",
+      "notFound": "未找到此储藏物品。"
+    }
+  },
+  "shoppingList": {
+    "title": "你的购物清单",
+    "subtitle": "随时了解还需要购买什么。",
+    "loading": "正在加载购物清单...",
+    "empty": "你的购物清单还没有物品。",
+    "form": {
+      "name": "名称",
+      "namePlaceholder": "例如：番茄",
+      "quantity": "数量",
+      "quantityPlaceholder": "3",
+      "unit": "单位",
+      "unitPlaceholder": "个",
+      "category": "类别",
+      "categoryPlaceholder": "蔬菜",
+      "checked": "已完成"
+    },
+    "status": {
+      "open": "未完成",
+      "done": "已完成"
+    },
+    "actions": {
+      "login": "前往登录",
+      "create": "添加",
+      "edit": "编辑",
+      "delete": "删除",
+      "update": "保存",
+      "cancel": "取消"
+    },
+    "errors": {
+      "loginRequired": "请登录以查看你的购物清单。",
+      "sessionExpired": "请重新登录以查看你的购物清单。",
+      "sessionExpiredEdit": "请重新登录以编辑你的购物清单。",
+      "network": "后端当前不可用。请重试。",
+      "load": "无法加载你的购物清单。",
+      "nameRequired": "请输入购物清单物品名称。",
+      "validation": "请检查购物清单物品输入。",
+      "create": "无法保存购物清单物品。",
+      "delete": "无法删除购物清单物品。",
+      "update": "无法更新购物清单物品。",
+      "deleteForbidden": "你不能删除此购物清单物品。",
+      "updateForbidden": "你不能编辑此购物清单物品。",
+      "notFound": "未找到此购物清单物品。"
+    }
+  },
+  "recipes": {
+    "loading": "正在加载食谱...",
+    "my": {
+      "createTitle": "创建新食谱",
+      "requiredHintStart": "所有标有",
+      "requiredHintEnd": "的字段都是必填项。",
+      "createdTitle": "你创建的食谱",
+      "favoritesTitle": "你的收藏食谱",
+      "editTitle": "编辑食谱"
+    },
+    "form": {
+      "title": "标题",
+      "titlePlaceholder": "例如：奶油番茄意面",
+      "imageUrl": "图片 URL",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "准备时间（分钟）",
+      "prepTimePlaceholder": "10",
+      "cookTime": "烹饪时间（分钟）",
+      "cookTimePlaceholder": "20",
+      "servings": "份数",
+      "servingsPlaceholder": "2",
+      "difficulty": "难度",
+      "difficultyPlaceholder": "例如：简单、中等、困难",
+      "category": "类别 / 菜系",
+      "categoryPlaceholder": "例如：意大利、甜点",
+      "rating": "评分",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "食材",
+      "ingredientsPlaceholder": "用逗号分隔输入食材。",
+      "instructions": "做法",
+      "instructionsPlaceholder": "逐步描述做法。"
+    },
+    "actions": {
+      "login": "前往登录",
+      "save": "保存食谱",
+      "saveChanges": "保存更改",
+      "edit": "编辑",
+      "delete": "删除",
+      "cancel": "取消"
+    },
+    "status": {
+      "favorite": "标记为收藏",
+      "showOnHome": "在首页显示",
+      "favoriteBadge": "收藏",
+      "publishedBadge": "首页可见",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} 分钟",
+      "servings": "{count} 份"
+    },
+    "empty": {
+      "created": "未找到食谱。请在上方创建你的第一个 Dishly 食谱。",
+      "favorites": "你还没有收藏。将食谱标记为收藏后会显示在这里。"
+    },
+    "errors": {
+      "prefix": "错误：",
+      "loginRequired": "请登录以查看你的食谱。",
+      "sessionExpired": "请重新登录以查看你的食谱。",
+      "network": "后端当前不可用。请重试。",
+      "load": "无法加载你的食谱。",
+      "requiredFields": "请填写所有必填字段。",
+      "createLoginRequired": "请登录以创建食谱。",
+      "createSessionExpired": "请重新登录以创建食谱。",
+      "createForbidden": "你不能创建此食谱。",
+      "create": "无法保存食谱。",
+      "updateLoginRequired": "请登录以编辑食谱。",
+      "updateSessionExpired": "请重新登录以编辑食谱。",
+      "updateForbidden": "你不能编辑此食谱。",
+      "update": "无法更新食谱。",
+      "deleteLoginRequired": "请登录以删除食谱。",
+      "deleteSessionExpired": "请重新登录以删除食谱。",
+      "deleteForbidden": "你不能删除此食谱。",
+      "delete": "无法删除食谱。",
+      "notFound": "未找到食谱。"
+    }
+  },
   "dashboard": {
     "eyebrow": "仪表盘",
     "welcome": "欢迎回来，{username}",

@@ -1,8 +1,9 @@
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ShoppingListView from '@/views/ShoppingListView.vue'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { i18n, setLocale } from '@/i18n'
 import type { ShoppingListItemResponse } from '@/types/shoppingList'
 
 vi.mock('@/shared/api/shoppingListApi', () => ({
@@ -18,6 +19,8 @@ describe('ShoppingListView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
+    setLocale('de')
+    config.global.plugins = [i18n]
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
   })
 
@@ -376,6 +379,27 @@ describe('ShoppingListView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben für das Shopping List Item.')
+  })
+  it('shows English shopping list texts after locale switch', async () => {
+    setLocale('en')
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Your Shopping List')
+    expect(wrapper.text()).toContain('Your shopping list is still empty.')
+    expect(wrapper.find('button[type="submit"]').text()).toBe('Add')
+  })
+
+  it('renders Arabic shopping list texts without errors', async () => {
+    setLocale('ar')
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية قائمة التسوق الخاصة بك.')
+    expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
   })
 })
 

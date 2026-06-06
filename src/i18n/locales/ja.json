@@ -47,6 +47,164 @@
       "unknown": "認証に失敗しました。"
     }
   },
+  "pantry": {
+    "title": "あなたの在庫",
+    "subtitle": "家にある食材を把握しましょう。",
+    "loading": "在庫を読み込み中...",
+    "empty": "在庫はまだ空です。",
+    "form": {
+      "name": "名前",
+      "namePlaceholder": "例: 米",
+      "quantity": "数量",
+      "quantityPlaceholder": "2",
+      "unit": "単位",
+      "unitPlaceholder": "kg",
+      "category": "カテゴリ",
+      "categoryPlaceholder": "在庫"
+    },
+    "actions": {
+      "login": "ログインへ",
+      "create": "追加",
+      "edit": "編集",
+      "delete": "削除",
+      "update": "保存",
+      "cancel": "キャンセル"
+    },
+    "errors": {
+      "loginRequired": "在庫を見るにはログインしてください。",
+      "sessionExpired": "在庫を見るにはもう一度ログインしてください。",
+      "sessionExpiredEdit": "在庫を編集するにはもう一度ログインしてください。",
+      "network": "バックエンドは現在利用できません。もう一度お試しください。",
+      "load": "在庫を読み込めませんでした。",
+      "nameRequired": "在庫アイテムの名前を入力してください。",
+      "validation": "在庫アイテムの入力を確認してください。",
+      "create": "在庫アイテムを保存できませんでした。",
+      "delete": "在庫アイテムを削除できませんでした。",
+      "update": "在庫アイテムを更新できませんでした。",
+      "deleteForbidden": "この在庫アイテムを削除する権限がありません。",
+      "updateForbidden": "この在庫アイテムを編集する権限がありません。",
+      "notFound": "この在庫アイテムは見つかりませんでした。"
+    }
+  },
+  "shoppingList": {
+    "title": "あなたの買い物リスト",
+    "subtitle": "まだ買いたいものを把握しましょう。",
+    "loading": "買い物リストを読み込み中...",
+    "empty": "買い物リストはまだ空です。",
+    "form": {
+      "name": "名前",
+      "namePlaceholder": "例: トマト",
+      "quantity": "数量",
+      "quantityPlaceholder": "3",
+      "unit": "単位",
+      "unitPlaceholder": "個",
+      "category": "カテゴリ",
+      "categoryPlaceholder": "野菜",
+      "checked": "完了"
+    },
+    "status": {
+      "open": "未完了",
+      "done": "完了"
+    },
+    "actions": {
+      "login": "ログインへ",
+      "create": "追加",
+      "edit": "編集",
+      "delete": "削除",
+      "update": "保存",
+      "cancel": "キャンセル"
+    },
+    "errors": {
+      "loginRequired": "買い物リストを見るにはログインしてください。",
+      "sessionExpired": "買い物リストを見るにはもう一度ログインしてください。",
+      "sessionExpiredEdit": "買い物リストを編集するにはもう一度ログインしてください。",
+      "network": "バックエンドは現在利用できません。もう一度お試しください。",
+      "load": "買い物リストを読み込めませんでした。",
+      "nameRequired": "買い物リストアイテムの名前を入力してください。",
+      "validation": "買い物リストアイテムの入力を確認してください。",
+      "create": "買い物リストアイテムを保存できませんでした。",
+      "delete": "買い物リストアイテムを削除できませんでした。",
+      "update": "買い物リストアイテムを更新できませんでした。",
+      "deleteForbidden": "この買い物リストアイテムを削除する権限がありません。",
+      "updateForbidden": "この買い物リストアイテムを編集する権限がありません。",
+      "notFound": "この買い物リストアイテムは見つかりませんでした。"
+    }
+  },
+  "recipes": {
+    "loading": "レシピを読み込み中...",
+    "my": {
+      "createTitle": "新しいレシピを作成",
+      "requiredHintStart": "印の付いた項目はすべて",
+      "requiredHintEnd": "必須です。",
+      "createdTitle": "作成したレシピ",
+      "favoritesTitle": "お気に入りレシピ",
+      "editTitle": "レシピを編集"
+    },
+    "form": {
+      "title": "タイトル",
+      "titlePlaceholder": "例: クリーミートマトパスタ",
+      "imageUrl": "画像 URL",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "準備時間（分）",
+      "prepTimePlaceholder": "10",
+      "cookTime": "調理時間（分）",
+      "cookTimePlaceholder": "20",
+      "servings": "人数分",
+      "servingsPlaceholder": "2",
+      "difficulty": "難易度",
+      "difficultyPlaceholder": "例: 簡単、普通、難しい",
+      "category": "カテゴリ / 料理",
+      "categoryPlaceholder": "例: イタリアン、デザート",
+      "rating": "評価",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "材料",
+      "ingredientsPlaceholder": "材料をカンマ区切りで入力してください。",
+      "instructions": "作り方",
+      "instructionsPlaceholder": "作り方を手順ごとに説明してください。"
+    },
+    "actions": {
+      "login": "ログインへ",
+      "save": "レシピを保存",
+      "saveChanges": "変更を保存",
+      "edit": "編集",
+      "delete": "削除",
+      "cancel": "キャンセル"
+    },
+    "status": {
+      "favorite": "お気に入りに追加",
+      "showOnHome": "ホームに表示",
+      "favoriteBadge": "お気に入り",
+      "publishedBadge": "ホームに表示中",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} 分",
+      "servings": "{count} 人分"
+    },
+    "empty": {
+      "created": "レシピが見つかりません。上で最初の Dishly レシピを作成してください。",
+      "favorites": "お気に入りはまだありません。レシピをお気に入りに追加するとここに表示されます。"
+    },
+    "errors": {
+      "prefix": "エラー:",
+      "loginRequired": "レシピを見るにはログインしてください。",
+      "sessionExpired": "レシピを見るにはもう一度ログインしてください。",
+      "network": "バックエンドは現在利用できません。もう一度お試しください。",
+      "load": "レシピを読み込めませんでした。",
+      "requiredFields": "すべての必須項目を入力してください。",
+      "createLoginRequired": "レシピを作成するにはログインしてください。",
+      "createSessionExpired": "レシピを作成するにはもう一度ログインしてください。",
+      "createForbidden": "このレシピを作成する権限がありません。",
+      "create": "レシピを保存できませんでした。",
+      "updateLoginRequired": "レシピを編集するにはログインしてください。",
+      "updateSessionExpired": "レシピを編集するにはもう一度ログインしてください。",
+      "updateForbidden": "このレシピを編集する権限がありません。",
+      "update": "レシピを更新できませんでした。",
+      "deleteLoginRequired": "レシピを削除するにはログインしてください。",
+      "deleteSessionExpired": "レシピを削除するにはもう一度ログインしてください。",
+      "deleteForbidden": "このレシピを削除する権限がありません。",
+      "delete": "レシピを削除できませんでした。",
+      "notFound": "レシピが見つかりませんでした。"
+    }
+  },
   "dashboard": {
     "eyebrow": "ダッシュボード",
     "welcome": "おかえりなさい、{username}",

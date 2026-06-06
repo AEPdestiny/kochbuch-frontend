@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { recipeApi } from '@/shared/api/recipeApi'
 import type { Recipe } from '@/types/recipe'
 
 const props = defineProps<{ search?: string }>()
+const { t } = useI18n()
 
-// Liste aller Rezepte, Lade-Status und Fehlermeldung
 const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const loginRequired = ref(false)
-// Zusätzlicher State nur für Formular-Validierungsfehler
 const formError = ref<string | null>(null)
 const editFormError = ref<string | null>(null)
 
-// Form für ein neues Rezept (Create)
 const newTitle = ref('')
 const newImageUrl = ref('')
 const newPrepTime = ref<number | null>(null)
@@ -29,75 +28,60 @@ const newInstructions = ref('')
 const newFavorite = ref(false)
 const newPublished = ref(false)
 
-const editing = ref<Recipe | null>(null) // Referenz auf das Rezept, das aktuell bearbeitet wird (Update)
+const editing = ref<Recipe | null>(null)
+const selectedFavorite = ref<Recipe | null>(null)
 
-const selectedFavorite = ref<Recipe | null>(null) // Referenz auf das aktuell ausgewählte Lieblingsrezept
-
-// Lädt die eigenen Rezepte vom Backend-Endpoint /recipes/mine
 const loadRecipes = async () => {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     recipes.value = []
-    error.value = 'Bitte melde dich an, um deine Rezepte zu sehen.'
+    error.value = t('recipes.errors.loginRequired')
     loginRequired.value = true
     loading.value = false
     return
   }
 
   try {
-    const result = await recipeApi.getMyRecipes()
-    // Liste zunächst leeren und dann mit den geladenen Rezepten füllen
-      recipes.value = []
-      result.forEach(r => {
-        recipes.value.push(r)
-      })
-      error.value = null
-      loginRequired.value = false
+    recipes.value = await recipeApi.getMyRecipes()
+    error.value = null
+    loginRequired.value = false
   } catch (err: unknown) {
-      // Fehlermeldung im State setzen
-      error.value = toLoadRecipesErrorMessage(err)
-      loginRequired.value = err instanceof ApiClientError && err.status === 401
+    error.value = toLoadRecipesErrorMessage(err)
+    loginRequired.value = err instanceof ApiClientError && err.status === 401
   } finally {
-      // Lade-Status immer beenden, egal ob Erfolg oder Fehler
-      loading.value = false
+    loading.value = false
   }
 }
 
 const toLoadRecipesErrorMessage = (e: unknown) => {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deine Rezepte zu sehen.'
+      return t('recipes.errors.sessionExpired')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('recipes.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Deine Rezepte konnten nicht geladen werden.'
+  return t('recipes.errors.load')
 }
 
-// Neues Rezept anlegen und ans Backend senden
 const createRecipe = async () => {
-  // Validierung: Pflichtfelder; hier nur formError setzen
   if (
     !newTitle.value.trim() ||
     !newIngredients.value.trim() ||
     !newInstructions.value.trim()
   ) {
-    formError.value = 'Bitte fülle alle Pflichtfelder aus.'
+    formError.value = t('recipes.errors.requiredFields')
     return
   }
   formError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    formError.value = 'Bitte melde dich an, um ein Rezept zu erstellen.'
+    formError.value = t('recipes.errors.createLoginRequired')
     return
   }
 
   try {
-    // POST-Request für das neue Rezept
     const saved = await recipeApi.createRecipe({
       title: newTitle.value,
       imageUrl: newImageUrl.value,
@@ -113,10 +97,7 @@ const createRecipe = async () => {
       published: newPublished.value,
     })
 
-    // Vom Backend zurückgegebenes gespeichertes Rezept in die Liste pushen
     recipes.value.push(saved)
-
-    // Formularfelder zurücksetzen
     newTitle.value = ''
     newImageUrl.value = ''
     newPrepTime.value = null
@@ -131,7 +112,6 @@ const createRecipe = async () => {
     newPublished.value = false
     error.value = null
   } catch (e: unknown) {
-    console.error('error', e)
     formError.value = toCreateRecipeErrorMessage(e)
   }
 }
@@ -139,33 +119,27 @@ const createRecipe = async () => {
 const toCreateRecipeErrorMessage = (e: unknown) => {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um ein Rezept zu erstellen.'
+      return t('recipes.errors.createSessionExpired')
     }
     if (e.status === 403) {
-      return 'Du hast keine Berechtigung, dieses Rezept zu erstellen.'
+      return t('recipes.errors.createForbidden')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('recipes.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Rezept konnte nicht gespeichert werden.'
+  return t('recipes.errors.create')
 }
 
-// Edit-Modus starten, indem eine Kopie des Rezepts in editing gelegt wird
 const startEdit = (r: Recipe) => {
   editing.value = { ...r }
 }
 
-// Edit-Vorgang abbrechen und Formular zurücksetzen
 const cancelEdit = () => {
   editing.value = null
 }
 
-// Bestehendes Rezept per PUT beim Backend aktualisieren
 const updateRecipe = async () => {
   if (!editing.value) return
   if (
@@ -173,13 +147,13 @@ const updateRecipe = async () => {
     !editing.value.ingredients.trim() ||
     !editing.value.instructions.trim()
   ) {
-    editFormError.value = 'Bitte fülle alle Pflichtfelder aus.'
+    editFormError.value = t('recipes.errors.requiredFields')
     return
   }
   editFormError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    editFormError.value = 'Bitte melde dich an, um ein Rezept zu bearbeiten.'
+    editFormError.value = t('recipes.errors.updateLoginRequired')
     return
   }
 
@@ -199,17 +173,14 @@ const updateRecipe = async () => {
       published: editing.value.published,
     })
 
-    // Passenden Eintrag in der lokalen Liste ersetzen
     const idx = recipes.value.findIndex(r => r.id === updated.id)
     if (idx !== -1) {
       recipes.value[idx] = updated
     }
 
-    // Edit-Modus verlassen und Fehlerzustand zurücksetzen
     editing.value = null
     error.value = null
   } catch (e: unknown) {
-    console.error(e)
     editFormError.value = toUpdateRecipeErrorMessage(e)
   }
 }
@@ -217,44 +188,36 @@ const updateRecipe = async () => {
 const toUpdateRecipeErrorMessage = (e: unknown) => {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um ein Rezept zu bearbeiten.'
+      return t('recipes.errors.updateSessionExpired')
     }
     if (e.status === 403) {
-      return 'Du darfst dieses Rezept nicht bearbeiten.'
+      return t('recipes.errors.updateForbidden')
     }
     if (e.status === 404) {
-      return 'Das Rezept wurde nicht gefunden.'
+      return t('recipes.errors.notFound')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('recipes.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Rezept konnte nicht aktualisiert werden.'
+  return t('recipes.errors.update')
 }
 
-// Rezept im Backend löschen und lokal entfernen
 const deleteRecipe = async (id: number | string) => {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um ein Rezept zu löschen.'
+    error.value = t('recipes.errors.deleteLoginRequired')
     return
   }
 
   try {
-    // DELETE-Request an den passenden /recipes/{id}-Endpoint
     await recipeApi.deleteRecipe(id)
-    // Erfolgreich gelöscht: Rezept aus der lokalen Liste herausfiltern
     recipes.value = recipes.value.filter(r => r.id !== id)
 
-    // Falls gerade dieses Rezept im Edit-Modus war, Edit-Zustand zurücksetzen
     if (editing.value && editing.value.id === id) {
       editing.value = null
     }
   } catch (e: unknown) {
-    console.error(e)
     error.value = toDeleteRecipeErrorMessage(e)
   }
 }
@@ -262,30 +225,26 @@ const deleteRecipe = async (id: number | string) => {
 const toDeleteRecipeErrorMessage = (e: unknown) => {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um ein Rezept zu löschen.'
+      return t('recipes.errors.deleteSessionExpired')
     }
     if (e.status === 403) {
-      return 'Du darfst dieses Rezept nicht löschen.'
+      return t('recipes.errors.deleteForbidden')
     }
     if (e.status === 404) {
-      return 'Das Rezept wurde nicht gefunden.'
+      return t('recipes.errors.notFound')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('recipes.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Rezept konnte nicht gelöscht werden.'
+  return t('recipes.errors.delete')
 }
 
 onMounted(() => {
   loadRecipes()
 })
 
-// Abgeleitete Liste, gefiltert nach Suchbegriff aus dem Prop (Titel oder Zutaten)
 const filtered = computed(() => {
   if (!props.search) return recipes.value
   const q = props.search.toLowerCase().trim()
@@ -294,178 +253,163 @@ const filtered = computed(() => {
     r.ingredients.toLowerCase().includes(q)
   )
 })
-// Abgeleitete Liste aller Rezepte, die als Favorit markiert sind
+
 const favorites = computed(() => recipes.value.filter(r => r.favorite))
 
-// Öffnet Detailansicht für ein ausgewähltes Lieblingsrezept
 const openFavoriteDetails = (r: Recipe) => {
   selectedFavorite.value = r
 }
 
-// Schließt die Detailansicht des Lieblingsrezepts wieder
 const closeFavoriteDetails = () => {
   selectedFavorite.value = null
 }
 </script>
 
 <template>
-  <!-- Gesamter Bereich zum Verwalten der eigenen Rezepte -->
   <section class="recipe-manager">
-    <!-- Karte mit Formular zum Anlegen eines neuen Rezepts -->
     <div class="form-card">
-      <h3 class="form-title">Neues Rezept erstellen</h3>
+      <h3 class="form-title">{{ t('recipes.my.createTitle') }}</h3>
       <p class="form-subtitle">
-        Alle mit <span class="required-star">*</span> markierten Felder sind Pflichtfelder.
+        {{ t('recipes.my.requiredHintStart') }} <span class="required-star">*</span> {{ t('recipes.my.requiredHintEnd') }}
       </p>
 
-      <!-- Neues Rezept wird per createRecipe() gespeichert -->
       <form class="new-recipe-form" @submit.prevent="createRecipe">
-        <!-- Erste Zeile: Titel + Bild-URL -->
         <div class="form-row">
           <div class="form-field">
             <label>
-              Titel <span class="required-star">*</span>
+              {{ t('recipes.form.title') }} <span class="required-star">*</span>
             </label>
             <input
               v-model="newTitle"
               type="text"
-              placeholder="z. B. Cremige Tomatenpasta"
+              :placeholder="t('recipes.form.titlePlaceholder')"
             />
           </div>
 
           <div class="form-field">
-            <label>Bild-URL</label>
+            <label>{{ t('recipes.form.imageUrl') }}</label>
             <input
               v-model="newImageUrl"
               type="url"
-              placeholder="https://example.com/recipe.jpg"
+              :placeholder="t('recipes.form.imageUrlPlaceholder', { protocol: 'https://' })"
             />
           </div>
         </div>
 
-        <!-- Zweite Zeile: Zeiten + Portionen -->
         <div class="form-row">
           <div class="form-field small">
-            <label>Vorbereitungszeit (Min.)</label>
+            <label>{{ t('recipes.form.prepTime') }}</label>
             <input
               v-model.number="newPrepTime"
               type="number"
               min="0"
-              placeholder="10"
+              :placeholder="t('recipes.form.prepTimePlaceholder')"
             />
           </div>
           <div class="form-field small">
-            <label>Kochzeit (Min.)</label>
+            <label>{{ t('recipes.form.cookTime') }}</label>
             <input
               v-model.number="newCookTime"
               type="number"
               min="0"
-              placeholder="20"
+              :placeholder="t('recipes.form.cookTimePlaceholder')"
             />
           </div>
           <div class="form-field small">
-            <label>Portionen</label>
+            <label>{{ t('recipes.form.servings') }}</label>
             <input
               v-model.number="newServings"
               type="number"
               min="0"
-              placeholder="2"
+              :placeholder="t('recipes.form.servingsPlaceholder')"
             />
           </div>
         </div>
 
-        <!-- Dritte Zeile: Difficulty, Kategorie, Rating -->
         <div class="form-row">
           <div class="form-field">
-            <label>Schwierigkeit</label>
+            <label>{{ t('recipes.form.difficulty') }}</label>
             <input
               v-model="newDifficulty"
               type="text"
-              placeholder="z. B. einfach, mittel, schwer"
+              :placeholder="t('recipes.form.difficultyPlaceholder')"
             />
           </div>
           <div class="form-field">
-            <label>Kategorie / Küche</label>
+            <label>{{ t('recipes.form.category') }}</label>
             <input
               v-model="newCategory"
               type="text"
-              placeholder="z. B. Italienisch, Dessert"
+              :placeholder="t('recipes.form.categoryPlaceholder')"
             />
           </div>
           <div class="form-field small">
-            <label>Bewertung</label>
+            <label>{{ t('recipes.form.rating') }}</label>
             <input
               v-model.number="newRating"
               type="number"
               min="0"
               max="5"
               step="0.1"
-              placeholder="4.5"
+              :placeholder="t('recipes.form.ratingPlaceholder')"
             />
           </div>
         </div>
 
-        <!-- Zutaten-Eingabe -->
         <div class="form-field">
           <label>
-            Zutaten <span class="required-star">*</span>
+            {{ t('recipes.form.ingredients') }} <span class="required-star">*</span>
           </label>
           <textarea
             v-model="newIngredients"
             rows="3"
-            placeholder="Zutaten mit Kommas getrennt eintragen."
+            :placeholder="t('recipes.form.ingredientsPlaceholder')"
           ></textarea>
         </div>
 
-        <!-- Anweisungen-Eingabe -->
         <div class="form-field">
           <label>
-            Zubereitung <span class="required-star">*</span>
+            {{ t('recipes.form.instructions') }} <span class="required-star">*</span>
           </label>
           <textarea
             v-model="newInstructions"
             rows="5"
-            placeholder="Beschreibe die Zubereitung Schritt für Schritt."
+            :placeholder="t('recipes.form.instructionsPlaceholder')"
           ></textarea>
         </div>
 
-        <!-- Schalter: Favorit und auf Home anzeigen -->
         <div class="form-toggle-row">
           <label class="toggle-item">
             <input type="checkbox" v-model="newFavorite" />
-            <span>Als Favorit markieren</span>
+            <span>{{ t('recipes.status.favorite') }}</span>
           </label>
           <label class="toggle-item">
             <input type="checkbox" v-model="newPublished" />
-            <span>Auf Startseite anzeigen</span>
+            <span>{{ t('recipes.status.showOnHome') }}</span>
           </label>
         </div>
 
-        <!-- Submit-Button -->
         <button type="submit" class="submit-btn">
-          Rezept speichern
+          {{ t('recipes.actions.save') }}
         </button>
 
-        <!-- nur die Formular-Fehlermeldung anzeigen -->
         <p v-if="formError" class="error-text">
           {{ formError }}
         </p>
       </form>
     </div>
 
-    <!-- Karte mit Liste der selbst erstellten Rezepte + Edit-Panel -->
     <div class="list-card">
-      <h3 class="recipes-title">Deine erstellten Rezepte</h3>
+      <h3 class="recipes-title">{{ t('recipes.my.createdTitle') }}</h3>
 
-      <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
+      <p v-if="loading" class="status-text">{{ t('recipes.loading') }}</p>
       <div v-else-if="error" class="status-text error">
-        <p>Fehler: {{ error }}</p>
+        <p>{{ t('recipes.errors.prefix') }} {{ error }}</p>
         <a v-if="loginRequired" href="/login" class="login-link">
-          Zum Login
+          {{ t('recipes.actions.login') }}
         </a>
       </div>
 
-      <!-- Wenn geladen und kein Fehler: Liste der gefilterten Rezepte -->
       <ul v-else class="recipes">
         <li v-for="r in filtered" :key="r.id" class="recipe-card">
           <div class="recipe-row">
@@ -474,7 +418,6 @@ const closeFavoriteDetails = () => {
             </div>
 
             <div class="recipe-main">
-              <!-- Klick auf Header öffnet Edit-Panel für dieses Rezept -->
               <div class="recipe-header" @click="startEdit(r)">
                 <div>
                   <h4 class="name">
@@ -482,113 +425,107 @@ const closeFavoriteDetails = () => {
                   </h4>
                   <p class="meta">
                     <span v-if="r.category">{{ r.category }}</span>
-                    <span v-if="r.difficulty"> • {{ r.difficulty }}</span>
-                    <span v-if="r.rating"> • ★ {{ r.rating.toFixed(1) }}</span>
+                    <span v-if="r.difficulty"> - {{ r.difficulty }}</span>
+                    <span v-if="r.rating"> - {{ t('recipes.status.rating', { rating: r.rating.toFixed(1) }) }}</span>
                   </p>
                   <p class="meta">
                     <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
-                      ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
+                      {{ t('recipes.status.totalTime', { minutes: r.prepTimeMinutes + r.cookTimeMinutes }) }}
                     </span>
-                    <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
+                    <span v-if="r.servings"> - {{ t('recipes.status.servings', { count: r.servings }) }}</span>
                   </p>
                 </div>
-                <!-- Badges für Favorit / veröffentlicht -->
                 <div class="badge-column">
-                  <span v-if="r.favorite" class="badge badge-fav">★ Favorit</span>
-                  <span v-if="r.published" class="badge badge-published">Auf Startseite sichtbar</span>
+                  <span v-if="r.favorite" class="badge badge-fav">{{ t('recipes.status.favoriteBadge') }}</span>
+                  <span v-if="r.published" class="badge badge-published">{{ t('recipes.status.publishedBadge') }}</span>
                 </div>
               </div>
 
-              <!-- Kurzansicht der Zutaten -->
               <p class="ingredients">
                 {{ r.ingredients }}
               </p>
 
-              <!-- Aktionen: Edit und Delete -->
               <div class="card-actions">
-                <button class="link-btn" @click.stop="startEdit(r)">Bearbeiten</button>
-                <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Löschen</button>
+                <button class="link-btn" @click.stop="startEdit(r)">{{ t('recipes.actions.edit') }}</button>
+                <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">{{ t('recipes.actions.delete') }}</button>
               </div>
             </div>
           </div>
         </li>
 
-        <!-- Hinweis, wenn kein Rezept zur Suche passt -->
         <li v-if="!loading && filtered.length === 0" class="none-found">
-          Keine Rezepte gefunden. Erstelle oben dein erstes Dishly-Rezept.
+          {{ t('recipes.empty.created') }}
         </li>
       </ul>
 
-      <!-- Seitliches Bearbeitungs-Panel für das aktuell ausgewählte Rezept -->
       <div class="edit-panel" v-if="editing">
-        <h4>Rezept bearbeiten</h4>
+        <h4>{{ t('recipes.my.editTitle') }}</h4>
 
         <div class="form-row">
           <div class="form-field">
-            <label>Titel</label>
+            <label>{{ t('recipes.form.title') }}</label>
             <input v-model="editing.title" type="text" />
           </div>
           <div class="form-field">
-            <label>Bild-URL</label>
+            <label>{{ t('recipes.form.imageUrl') }}</label>
             <input v-model="editing.imageUrl" type="url" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-field small">
-            <label>Vorbereitungszeit (Min.)</label>
+            <label>{{ t('recipes.form.prepTime') }}</label>
             <input v-model.number="editing.prepTimeMinutes" type="number" min="0" />
           </div>
           <div class="form-field small">
-            <label>Kochzeit (Min.)</label>
+            <label>{{ t('recipes.form.cookTime') }}</label>
             <input v-model.number="editing.cookTimeMinutes" type="number" min="0" />
           </div>
           <div class="form-field small">
-            <label>Portionen</label>
+            <label>{{ t('recipes.form.servings') }}</label>
             <input v-model.number="editing.servings" type="number" min="0" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-field">
-            <label>Schwierigkeit</label>
+            <label>{{ t('recipes.form.difficulty') }}</label>
             <input v-model="editing.difficulty" type="text" />
           </div>
           <div class="form-field">
-            <label>Kategorie / Küche</label>
+            <label>{{ t('recipes.form.category') }}</label>
             <input v-model="editing.category" type="text" />
           </div>
           <div class="form-field small">
-            <label>Bewertung</label>
+            <label>{{ t('recipes.form.rating') }}</label>
             <input v-model.number="editing.rating" type="number" min="0" max="5" step="0.1" />
           </div>
         </div>
 
         <div class="form-field">
-          <label>Zutaten</label>
+          <label>{{ t('recipes.form.ingredients') }}</label>
           <textarea v-model="editing.ingredients" rows="3"></textarea>
         </div>
 
         <div class="form-field">
-          <label>Zubereitung</label>
+          <label>{{ t('recipes.form.instructions') }}</label>
           <textarea v-model="editing.instructions" rows="5"></textarea>
         </div>
 
         <div class="form-toggle-row">
           <label class="toggle-item">
             <input type="checkbox" v-model="editing.favorite" />
-            <span>Als Favorit markieren</span>
+            <span>{{ t('recipes.status.favorite') }}</span>
           </label>
           <label class="toggle-item">
             <input type="checkbox" v-model="editing.published" />
-            <span>Auf Startseite anzeigen</span>
+            <span>{{ t('recipes.status.showOnHome') }}</span>
           </label>
         </div>
 
-        <!-- Buttons zum Speichern und Abbrechen -->
         <div class="edit-buttons">
-          <button class="submit-btn" @click="updateRecipe">Änderungen speichern</button>
-          <button class="cancel-btn" @click="cancelEdit">Abbrechen</button>
+          <button class="submit-btn" @click="updateRecipe">{{ t('recipes.actions.saveChanges') }}</button>
+          <button class="cancel-btn" @click="cancelEdit">{{ t('recipes.actions.cancel') }}</button>
         </div>
         <p v-if="editFormError" class="error-text">
           {{ editFormError }}
@@ -596,15 +533,14 @@ const closeFavoriteDetails = () => {
       </div>
     </div>
 
-    <!-- Zweite Karte: Grid mit allen Favoriten + Overlay-Details -->
     <div class="list-card">
-      <h3 class="recipes-title">Deine Favoriten</h3>
+      <h3 class="recipes-title">{{ t('recipes.my.favoritesTitle') }}</h3>
 
-      <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
+      <p v-if="loading" class="status-text">{{ t('recipes.loading') }}</p>
       <div v-else-if="error" class="status-text error">
-        <p>Fehler: {{ error }}</p>
+        <p>{{ t('recipes.errors.prefix') }} {{ error }}</p>
         <a v-if="loginRequired" href="/login" class="login-link">
-          Zum Login
+          {{ t('recipes.actions.login') }}
         </a>
       </div>
 
@@ -626,15 +562,15 @@ const closeFavoriteDetails = () => {
               <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
               <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
               <span v-if="r.rating" class="pill pill-rating">
-                ★ {{ r.rating.toFixed(1) }}
+                {{ t('recipes.status.rating', { rating: r.rating.toFixed(1) }) }}
               </span>
             </p>
 
             <p class="card-times">
               <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
-                ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
+                {{ t('recipes.status.totalTime', { minutes: r.prepTimeMinutes + r.cookTimeMinutes }) }}
               </span>
-              <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
+              <span v-if="r.servings"> - {{ t('recipes.status.servings', { count: r.servings }) }}</span>
             </p>
 
             <p class="card-ingredients">
@@ -643,39 +579,37 @@ const closeFavoriteDetails = () => {
           </div>
         </article>
 
-        <!-- Hinweis, falls noch keine Favoriten markiert wurden -->
         <p v-if="favorites.length === 0" class="status-text">
-          Du hast noch keine Favoriten. Markiere Rezepte als Favoriten, um sie hier zu sehen.
+          {{ t('recipes.empty.favorites') }}
         </p>
       </div>
     </div>
 
-    <!-- Overlay mit Detailansicht für ausgewähltes Lieblingsrezept -->
     <div v-if="selectedFavorite" class="overlay" @click.self="closeFavoriteDetails">
       <div class="overlay-card">
-        <button class="overlay-close" @click="closeFavoriteDetails">×</button>
+        <button class="overlay-close" @click="closeFavoriteDetails">x</button>
 
         <h3 class="overlay-title">{{ selectedFavorite.title }}</h3>
 
         <p class="overlay-meta">
           <span v-if="selectedFavorite.category">{{ selectedFavorite.category }}</span>
-          <span v-if="selectedFavorite.difficulty"> • {{ selectedFavorite.difficulty }}</span>
-          <span v-if="selectedFavorite.rating"> • ★ {{ selectedFavorite.rating.toFixed(1) }}</span>
+          <span v-if="selectedFavorite.difficulty"> - {{ selectedFavorite.difficulty }}</span>
+          <span v-if="selectedFavorite.rating"> - {{ t('recipes.status.rating', { rating: selectedFavorite.rating.toFixed(1) }) }}</span>
         </p>
 
         <p class="overlay-meta">
           <span v-if="selectedFavorite.prepTimeMinutes || selectedFavorite.cookTimeMinutes">
-            ⏱ {{ selectedFavorite.prepTimeMinutes + selectedFavorite.cookTimeMinutes }} min
+            {{ t('recipes.status.totalTime', { minutes: selectedFavorite.prepTimeMinutes + selectedFavorite.cookTimeMinutes }) }}
           </span>
           <span v-if="selectedFavorite.servings">
-            • 🍽 {{ selectedFavorite.servings }} Portionen
+            - {{ t('recipes.status.servings', { count: selectedFavorite.servings }) }}
           </span>
         </p>
 
-        <h4 class="overlay-subtitle">Zutaten</h4>
+        <h4 class="overlay-subtitle">{{ t('recipes.form.ingredients') }}</h4>
         <p class="overlay-text">{{ selectedFavorite.ingredients }}</p>
 
-        <h4 class="overlay-subtitle">Zubereitung</h4>
+        <h4 class="overlay-subtitle">{{ t('recipes.form.instructions') }}</h4>
         <p class="overlay-text">{{ selectedFavorite.instructions }}</p>
       </div>
     </div>
@@ -757,7 +691,6 @@ textarea {
   outline: none;
 }
 
-/* Fokuszustand hebt das aktive Feld farblich hervor */
 input:focus,
 textarea:focus {
   border-color: #26b6b8;
@@ -783,7 +716,6 @@ textarea {
   color: #486b68;
 }
 
-/* Checkbox selbst nicht auf volle Breite ziehen */
 .toggle-item input {
   width: auto;
 }
@@ -802,7 +734,6 @@ textarea {
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Hover-Effekt für Submit-Button */
 .submit-btn:hover {
   background: #b96593;
   box-shadow: 0 3px 12px rgba(191, 140, 167, 0.5);
@@ -983,6 +914,7 @@ textarea {
   display: flex;
   gap: 10px;
 }
+
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

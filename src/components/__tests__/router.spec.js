@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { i18n, setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
@@ -41,6 +42,7 @@ describe('App routing', () => {
       json: async () => [],
     })
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
+    setLocale('de')
   })
 
   it('renders Home with ApiRecipeList on /', async () => {
@@ -59,7 +61,7 @@ describe('App routing', () => {
     router.push('/my-recipes')
     await router.isReady()
     const wrapper = mount(MyRecipesView, {
-      global: { plugins: [router] },
+      global: { plugins: [router, i18n] },
     })
     // Erwartung: Text für My-Recipes-Seite sichtbar
     expect(wrapper.text()).toContain('Dein persönliches Dishly-Kochbuch')
@@ -69,7 +71,7 @@ describe('App routing', () => {
     router.push('/pantry')
     await router.isReady()
     const wrapper = mount(PantryView, {
-      global: { plugins: [router] },
+      global: { plugins: [router, i18n] },
     })
     expect(wrapper.text()).toContain('Dein Vorrat')
   })
@@ -78,7 +80,7 @@ describe('App routing', () => {
     router.push('/shopping-list')
     await router.isReady()
     const wrapper = mount(ShoppingListView, {
-      global: { plugins: [router] },
+      global: { plugins: [router, i18n] },
     })
     expect(wrapper.text()).toContain('Deine Einkaufsliste')
   })

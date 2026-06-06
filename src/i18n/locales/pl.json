@@ -47,6 +47,164 @@
       "unknown": "Uwierzytelnianie nie powiodło się."
     }
   },
+  "pantry": {
+    "title": "Twoja spiżarnia",
+    "subtitle": "Śledź, jakie składniki masz w domu.",
+    "loading": "Ładowanie spiżarni...",
+    "empty": "Twoja spiżarnia jest jeszcze pusta.",
+    "form": {
+      "name": "Nazwa",
+      "namePlaceholder": "np. ryż",
+      "quantity": "Ilość",
+      "quantityPlaceholder": "2",
+      "unit": "Jednostka",
+      "unitPlaceholder": "kg",
+      "category": "Kategoria",
+      "categoryPlaceholder": "Spiżarnia"
+    },
+    "actions": {
+      "login": "Przejdź do logowania",
+      "create": "Dodaj",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "update": "Zapisz",
+      "cancel": "Anuluj"
+    },
+    "errors": {
+      "loginRequired": "Zaloguj się, aby zobaczyć swoją spiżarnię.",
+      "sessionExpired": "Zaloguj się ponownie, aby zobaczyć swoją spiżarnię.",
+      "sessionExpiredEdit": "Zaloguj się ponownie, aby edytować swoją spiżarnię.",
+      "network": "Backend jest obecnie niedostępny. Spróbuj ponownie.",
+      "load": "Nie udało się załadować spiżarni.",
+      "nameRequired": "Podaj nazwę pantry item.",
+      "validation": "Sprawdź dane pantry item.",
+      "create": "Nie udało się zapisać pantry item.",
+      "delete": "Nie udało się usunąć pantry item.",
+      "update": "Nie udało się zaktualizować pantry item.",
+      "deleteForbidden": "Nie możesz usunąć tego pantry item.",
+      "updateForbidden": "Nie możesz edytować tego pantry item.",
+      "notFound": "Nie znaleziono tego pantry item."
+    }
+  },
+  "shoppingList": {
+    "title": "Twoja lista zakupów",
+    "subtitle": "Śledź, co jeszcze chcesz kupić.",
+    "loading": "Ładowanie listy zakupów...",
+    "empty": "Twoja lista zakupów jest jeszcze pusta.",
+    "form": {
+      "name": "Nazwa",
+      "namePlaceholder": "np. pomidory",
+      "quantity": "Ilość",
+      "quantityPlaceholder": "3",
+      "unit": "Jednostka",
+      "unitPlaceholder": "sztuki",
+      "category": "Kategoria",
+      "categoryPlaceholder": "Warzywa",
+      "checked": "Zrobione"
+    },
+    "status": {
+      "open": "Otwarte",
+      "done": "Zrobione"
+    },
+    "actions": {
+      "login": "Przejdź do logowania",
+      "create": "Dodaj",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "update": "Zapisz",
+      "cancel": "Anuluj"
+    },
+    "errors": {
+      "loginRequired": "Zaloguj się, aby zobaczyć swoją listę zakupów.",
+      "sessionExpired": "Zaloguj się ponownie, aby zobaczyć swoją listę zakupów.",
+      "sessionExpiredEdit": "Zaloguj się ponownie, aby edytować swoją listę zakupów.",
+      "network": "Backend jest obecnie niedostępny. Spróbuj ponownie.",
+      "load": "Nie udało się załadować listy zakupów.",
+      "nameRequired": "Podaj nazwę shopping list item.",
+      "validation": "Sprawdź dane shopping list item.",
+      "create": "Nie udało się zapisać shopping list item.",
+      "delete": "Nie udało się usunąć shopping list item.",
+      "update": "Nie udało się zaktualizować shopping list item.",
+      "deleteForbidden": "Nie możesz usunąć tego shopping list item.",
+      "updateForbidden": "Nie możesz edytować tego shopping list item.",
+      "notFound": "Nie znaleziono tego shopping list item."
+    }
+  },
+  "recipes": {
+    "loading": "Ładowanie przepisów...",
+    "my": {
+      "createTitle": "Utwórz nowy przepis",
+      "requiredHintStart": "Wszystkie pola oznaczone",
+      "requiredHintEnd": "są wymagane.",
+      "createdTitle": "Twoje utworzone przepisy",
+      "favoritesTitle": "Twoje ulubione przepisy",
+      "editTitle": "Edytuj przepis"
+    },
+    "form": {
+      "title": "Tytuł",
+      "titlePlaceholder": "np. kremowy makaron z pomidorami",
+      "imageUrl": "URL obrazu",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "Czas przygotowania (min.)",
+      "prepTimePlaceholder": "10",
+      "cookTime": "Czas gotowania (min.)",
+      "cookTimePlaceholder": "20",
+      "servings": "Porcje",
+      "servingsPlaceholder": "2",
+      "difficulty": "Trudność",
+      "difficultyPlaceholder": "np. łatwe, średnie, trudne",
+      "category": "Kategoria / kuchnia",
+      "categoryPlaceholder": "np. włoska, deser",
+      "rating": "Ocena",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "Składniki",
+      "ingredientsPlaceholder": "Wpisz składniki oddzielone przecinkami.",
+      "instructions": "Przygotowanie",
+      "instructionsPlaceholder": "Opisz przygotowanie krok po kroku."
+    },
+    "actions": {
+      "login": "Przejdź do logowania",
+      "save": "Zapisz przepis",
+      "saveChanges": "Zapisz zmiany",
+      "edit": "Edytuj",
+      "delete": "Usuń",
+      "cancel": "Anuluj"
+    },
+    "status": {
+      "favorite": "Oznacz jako ulubione",
+      "showOnHome": "Pokaż na stronie głównej",
+      "favoriteBadge": "Ulubione",
+      "publishedBadge": "Widoczne na stronie głównej",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} min",
+      "servings": "{count} porcje"
+    },
+    "empty": {
+      "created": "Nie znaleziono przepisów. Utwórz powyżej swój pierwszy przepis Dishly.",
+      "favorites": "Nie masz jeszcze ulubionych. Oznacz przepisy jako ulubione, aby zobaczyć je tutaj."
+    },
+    "errors": {
+      "prefix": "Błąd:",
+      "loginRequired": "Zaloguj się, aby zobaczyć swoje przepisy.",
+      "sessionExpired": "Zaloguj się ponownie, aby zobaczyć swoje przepisy.",
+      "network": "Backend jest obecnie niedostępny. Spróbuj ponownie.",
+      "load": "Nie udało się załadować twoich przepisów.",
+      "requiredFields": "Wypełnij wszystkie wymagane pola.",
+      "createLoginRequired": "Zaloguj się, aby utworzyć przepis.",
+      "createSessionExpired": "Zaloguj się ponownie, aby utworzyć przepis.",
+      "createForbidden": "Nie masz uprawnień do utworzenia tego przepisu.",
+      "create": "Nie udało się zapisać przepisu.",
+      "updateLoginRequired": "Zaloguj się, aby edytować przepis.",
+      "updateSessionExpired": "Zaloguj się ponownie, aby edytować przepis.",
+      "updateForbidden": "Nie możesz edytować tego przepisu.",
+      "update": "Nie udało się zaktualizować przepisu.",
+      "deleteLoginRequired": "Zaloguj się, aby usunąć przepis.",
+      "deleteSessionExpired": "Zaloguj się ponownie, aby usunąć przepis.",
+      "deleteForbidden": "Nie możesz usunąć tego przepisu.",
+      "delete": "Nie udało się usunąć przepisu.",
+      "notFound": "Nie znaleziono przepisu."
+    }
+  },
   "dashboard": {
     "eyebrow": "Panel",
     "welcome": "Witaj ponownie, {username}",

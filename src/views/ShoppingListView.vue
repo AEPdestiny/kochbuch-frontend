@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import type { ShoppingListItem, ShoppingListItemRequest } from '@/types/shoppingList'
+
+const { t } = useI18n()
 
 const items = ref<ShoppingListItem[]>([])
 const loading = ref(true)
@@ -29,7 +32,7 @@ onMounted(() => {
 async function loadShoppingListItems() {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     items.value = []
-    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    error.value = t('shoppingList.errors.loginRequired')
     loginRequired.value = true
     loading.value = false
     return
@@ -50,28 +53,25 @@ async function loadShoppingListItems() {
 function toLoadErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu sehen.'
+      return t('shoppingList.errors.sessionExpired')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('shoppingList.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Deine Einkaufsliste konnte nicht geladen werden.'
+  return t('shoppingList.errors.load')
 }
 
 async function createShoppingListItem() {
   if (!newName.value.trim()) {
-    formError.value = 'Bitte gib einen Namen für das Shopping List Item ein.'
+    formError.value = t('shoppingList.errors.nameRequired')
     return
   }
   formError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    error.value = t('shoppingList.errors.loginRequired')
     loginRequired.value = true
     return
   }
@@ -104,25 +104,22 @@ async function createShoppingListItem() {
 function toCreateErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 400) {
-      return 'Bitte prüfe deine Eingaben für das Shopping List Item.'
+      return t('shoppingList.errors.validation')
     }
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.'
+      return t('shoppingList.errors.sessionExpiredEdit')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('shoppingList.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Shopping List Item konnte nicht gespeichert werden.'
+  return t('shoppingList.errors.create')
 }
 
 async function deleteShoppingListItem(id: number | string) {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    error.value = t('shoppingList.errors.loginRequired')
     loginRequired.value = true
     return
   }
@@ -140,23 +137,20 @@ async function deleteShoppingListItem(id: number | string) {
 function toDeleteErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.'
+      return t('shoppingList.errors.sessionExpiredEdit')
     }
     if (e.status === 403) {
-      return 'Du darfst dieses Shopping List Item nicht löschen.'
+      return t('shoppingList.errors.deleteForbidden')
     }
     if (e.status === 404) {
-      return 'Dieses Shopping List Item wurde nicht gefunden.'
+      return t('shoppingList.errors.notFound')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('shoppingList.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Shopping List Item konnte nicht gelöscht werden.'
+  return t('shoppingList.errors.delete')
 }
 
 function startEdit(item: ShoppingListItem) {
@@ -181,12 +175,12 @@ function cancelEdit() {
 
 async function updateShoppingListItem(id: number | string) {
   if (!editName.value.trim()) {
-    editError.value = 'Bitte gib einen Namen für das Shopping List Item ein.'
+    editError.value = t('shoppingList.errors.nameRequired')
     return
   }
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    error.value = t('shoppingList.errors.loginRequired')
     loginRequired.value = true
     return
   }
@@ -216,77 +210,74 @@ async function updateShoppingListItem(id: number | string) {
 function toUpdateErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 400) {
-      return 'Bitte prüfe deine Eingaben für das Shopping List Item.'
+      return t('shoppingList.errors.validation')
     }
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.'
+      return t('shoppingList.errors.sessionExpiredEdit')
     }
     if (e.status === 403) {
-      return 'Du darfst dieses Shopping List Item nicht bearbeiten.'
+      return t('shoppingList.errors.updateForbidden')
     }
     if (e.status === 404) {
-      return 'Dieses Shopping List Item wurde nicht gefunden.'
+      return t('shoppingList.errors.notFound')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('shoppingList.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Shopping List Item konnte nicht aktualisiert werden.'
+  return t('shoppingList.errors.update')
 }
 </script>
 
 <template>
   <section class="shopping-list-page">
     <div class="shopping-list-header">
-      <h1>Deine Einkaufsliste</h1>
-      <p>Behalte im Blick, was du noch einkaufen möchtest.</p>
+      <h1>{{ t('shoppingList.title') }}</h1>
+      <p>{{ t('shoppingList.subtitle') }}</p>
     </div>
 
-    <p v-if="loading" class="status-text">Einkaufsliste wird geladen…</p>
+    <p v-if="loading" class="status-text">{{ t('shoppingList.loading') }}</p>
 
     <div v-else-if="error" class="status-text error">
       <p>{{ error }}</p>
-      <a v-if="loginRequired" href="/login" class="login-link">Zum Login</a>
+      <a v-if="loginRequired" href="/login" class="login-link">{{ t('shoppingList.actions.login') }}</a>
     </div>
 
     <template v-else>
       <form class="shopping-list-form" @submit.prevent="createShoppingListItem">
         <div class="form-field">
-          <label>Name</label>
-          <input v-model="newName" type="text" placeholder="z.B. Tomaten" />
+          <label>{{ t('shoppingList.form.name') }}</label>
+          <input v-model="newName" type="text" :placeholder="t('shoppingList.form.namePlaceholder')" />
         </div>
 
         <div class="form-field small">
-          <label>Menge</label>
-          <input v-model.number="newQuantity" type="number" min="0" step="0.1" placeholder="3" />
+          <label>{{ t('shoppingList.form.quantity') }}</label>
+          <input v-model.number="newQuantity" type="number" min="0" step="0.1" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
         </div>
 
         <div class="form-field small">
-          <label>Einheit</label>
-          <input v-model="newUnit" type="text" placeholder="Stück" />
+          <label>{{ t('shoppingList.form.unit') }}</label>
+          <input v-model="newUnit" type="text" :placeholder="t('shoppingList.form.unitPlaceholder')" />
         </div>
 
         <div class="form-field">
-          <label>Kategorie</label>
-          <input v-model="newCategory" type="text" placeholder="Gemüse" />
+          <label>{{ t('shoppingList.form.category') }}</label>
+          <input v-model="newCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
         </div>
 
         <label class="checkbox-field">
           <input v-model="newChecked" type="checkbox" />
-          <span>Erledigt</span>
+          <span>{{ t('shoppingList.form.checked') }}</span>
         </label>
 
-        <button type="submit" class="submit-btn">Hinzufügen</button>
+        <button type="submit" class="submit-btn">{{ t('shoppingList.actions.create') }}</button>
       </form>
 
       <p v-if="formError" class="form-error">{{ formError }}</p>
 
       <p v-if="items.length === 0" class="status-text">
-        Deine Einkaufsliste ist noch leer.
+        {{ t('shoppingList.empty') }}
       </p>
 
       <ul v-else class="shopping-list">
@@ -308,13 +299,13 @@ function toUpdateErrorMessage(e: unknown) {
               <span v-if="item.unit">{{ item.unit }}</span>
             </p>
             <span class="checked-status">
-              {{ item.checked ? 'Erledigt' : 'Offen' }}
+              {{ item.checked ? t('shoppingList.status.done') : t('shoppingList.status.open') }}
             </span>
             <button type="button" class="edit-btn" @click="startEdit(item)">
-              Bearbeiten
+              {{ t('shoppingList.actions.edit') }}
             </button>
             <button type="button" class="delete-btn" @click="deleteShoppingListItem(item.id)">
-              Löschen
+              {{ t('shoppingList.actions.delete') }}
             </button>
           </div>
 
@@ -324,33 +315,33 @@ function toUpdateErrorMessage(e: unknown) {
             @submit.prevent="updateShoppingListItem(item.id)"
           >
             <div class="form-field">
-              <label>Name</label>
-              <input v-model="editName" type="text" placeholder="z.B. Tomaten" />
+              <label>{{ t('shoppingList.form.name') }}</label>
+              <input v-model="editName" type="text" :placeholder="t('shoppingList.form.namePlaceholder')" />
             </div>
 
             <div class="form-field small">
-              <label>Menge</label>
-              <input v-model.number="editQuantity" type="number" min="0" step="0.1" placeholder="3" />
+              <label>{{ t('shoppingList.form.quantity') }}</label>
+              <input v-model.number="editQuantity" type="number" min="0" step="0.1" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
             </div>
 
             <div class="form-field small">
-              <label>Einheit</label>
-              <input v-model="editUnit" type="text" placeholder="Stück" />
+              <label>{{ t('shoppingList.form.unit') }}</label>
+              <input v-model="editUnit" type="text" :placeholder="t('shoppingList.form.unitPlaceholder')" />
             </div>
 
             <div class="form-field">
-              <label>Kategorie</label>
-              <input v-model="editCategory" type="text" placeholder="Gemüse" />
+              <label>{{ t('shoppingList.form.category') }}</label>
+              <input v-model="editCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
             </div>
 
             <label class="checkbox-field">
               <input v-model="editChecked" type="checkbox" />
-              <span>Erledigt</span>
+              <span>{{ t('shoppingList.form.checked') }}</span>
             </label>
 
             <div class="edit-buttons">
-              <button type="submit" class="submit-btn">Speichern</button>
-              <button type="button" class="cancel-btn" @click="cancelEdit">Abbrechen</button>
+              <button type="submit" class="submit-btn">{{ t('shoppingList.actions.update') }}</button>
+              <button type="button" class="cancel-btn" @click="cancelEdit">{{ t('shoppingList.actions.cancel') }}</button>
             </div>
 
             <p v-if="editError" class="edit-error">{{ editError }}</p>

@@ -47,6 +47,164 @@
       "unknown": "Authentication failed."
     }
   },
+  "pantry": {
+    "title": "Your Pantry",
+    "subtitle": "Keep track of the ingredients you have at home.",
+    "loading": "Loading pantry...",
+    "empty": "Your pantry is still empty.",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "e.g. rice",
+      "quantity": "Quantity",
+      "quantityPlaceholder": "2",
+      "unit": "Unit",
+      "unitPlaceholder": "kg",
+      "category": "Category",
+      "categoryPlaceholder": "Pantry"
+    },
+    "actions": {
+      "login": "Go to login",
+      "create": "Add",
+      "edit": "Edit",
+      "delete": "Delete",
+      "update": "Save",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "loginRequired": "Please log in to see your pantry.",
+      "sessionExpired": "Please log in again to see your pantry.",
+      "sessionExpiredEdit": "Please log in again to edit your pantry.",
+      "network": "The backend is currently unavailable. Please try again.",
+      "load": "Your pantry could not be loaded.",
+      "nameRequired": "Please enter a name for the pantry item.",
+      "validation": "Please check your pantry item input.",
+      "create": "The pantry item could not be saved.",
+      "delete": "The pantry item could not be deleted.",
+      "update": "The pantry item could not be updated.",
+      "deleteForbidden": "You are not allowed to delete this pantry item.",
+      "updateForbidden": "You are not allowed to edit this pantry item.",
+      "notFound": "This pantry item was not found."
+    }
+  },
+  "shoppingList": {
+    "title": "Your Shopping List",
+    "subtitle": "Keep track of what you still want to buy.",
+    "loading": "Loading shopping list...",
+    "empty": "Your shopping list is still empty.",
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "e.g. tomatoes",
+      "quantity": "Quantity",
+      "quantityPlaceholder": "3",
+      "unit": "Unit",
+      "unitPlaceholder": "pieces",
+      "category": "Category",
+      "categoryPlaceholder": "Vegetables",
+      "checked": "Done"
+    },
+    "status": {
+      "open": "Open",
+      "done": "Done"
+    },
+    "actions": {
+      "login": "Go to login",
+      "create": "Add",
+      "edit": "Edit",
+      "delete": "Delete",
+      "update": "Save",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "loginRequired": "Please log in to see your shopping list.",
+      "sessionExpired": "Please log in again to see your shopping list.",
+      "sessionExpiredEdit": "Please log in again to edit your shopping list.",
+      "network": "The backend is currently unavailable. Please try again.",
+      "load": "Your shopping list could not be loaded.",
+      "nameRequired": "Please enter a name for the shopping list item.",
+      "validation": "Please check your shopping list item input.",
+      "create": "The shopping list item could not be saved.",
+      "delete": "The shopping list item could not be deleted.",
+      "update": "The shopping list item could not be updated.",
+      "deleteForbidden": "You are not allowed to delete this shopping list item.",
+      "updateForbidden": "You are not allowed to edit this shopping list item.",
+      "notFound": "This shopping list item was not found."
+    }
+  },
+  "recipes": {
+    "loading": "Loading recipes...",
+    "my": {
+      "createTitle": "Create a new recipe",
+      "requiredHintStart": "All fields marked with",
+      "requiredHintEnd": "are required.",
+      "createdTitle": "Your created recipes",
+      "favoritesTitle": "Your favorite recipes",
+      "editTitle": "Edit recipe"
+    },
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "e.g. creamy tomato pasta",
+      "imageUrl": "Image URL",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "Preparation time (min.)",
+      "prepTimePlaceholder": "10",
+      "cookTime": "Cooking time (min.)",
+      "cookTimePlaceholder": "20",
+      "servings": "Servings",
+      "servingsPlaceholder": "2",
+      "difficulty": "Difficulty",
+      "difficultyPlaceholder": "e.g. easy, medium, hard",
+      "category": "Category / cuisine",
+      "categoryPlaceholder": "e.g. Italian, dessert",
+      "rating": "Rating",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "Ingredients",
+      "ingredientsPlaceholder": "Enter ingredients separated by commas.",
+      "instructions": "Instructions",
+      "instructionsPlaceholder": "Describe the preparation step by step."
+    },
+    "actions": {
+      "login": "Go to login",
+      "save": "Save recipe",
+      "saveChanges": "Save changes",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel"
+    },
+    "status": {
+      "favorite": "Mark as favorite",
+      "showOnHome": "Show on home",
+      "favoriteBadge": "Favorite",
+      "publishedBadge": "Visible on home",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} min",
+      "servings": "{count} servings"
+    },
+    "empty": {
+      "created": "No recipes found. Create your first Dishly recipe above.",
+      "favorites": "You do not have any favorites yet. Mark recipes as favorites to see them here."
+    },
+    "errors": {
+      "prefix": "Error:",
+      "loginRequired": "Please log in to see your recipes.",
+      "sessionExpired": "Please log in again to see your recipes.",
+      "network": "The backend is currently unavailable. Please try again.",
+      "load": "Your recipes could not be loaded.",
+      "requiredFields": "Please fill in all required fields.",
+      "createLoginRequired": "Please log in to create a recipe.",
+      "createSessionExpired": "Please log in again to create a recipe.",
+      "createForbidden": "You are not allowed to create this recipe.",
+      "create": "The recipe could not be saved.",
+      "updateLoginRequired": "Please log in to edit a recipe.",
+      "updateSessionExpired": "Please log in again to edit a recipe.",
+      "updateForbidden": "You are not allowed to edit this recipe.",
+      "update": "The recipe could not be updated.",
+      "deleteLoginRequired": "Please log in to delete a recipe.",
+      "deleteSessionExpired": "Please log in again to delete a recipe.",
+      "deleteForbidden": "You are not allowed to delete this recipe.",
+      "delete": "The recipe could not be deleted.",
+      "notFound": "The recipe was not found."
+    }
+  },
   "dashboard": {
     "eyebrow": "Dashboard",
     "welcome": "Welcome back, {username}",

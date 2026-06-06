@@ -47,6 +47,164 @@
       "unknown": "فشلت المصادقة."
     }
   },
+  "pantry": {
+    "title": "مخزونك",
+    "subtitle": "تابع المكونات الموجودة لديك في المنزل.",
+    "loading": "يتم تحميل المخزون...",
+    "empty": "مخزونك لا يزال فارغاً.",
+    "form": {
+      "name": "الاسم",
+      "namePlaceholder": "مثال: أرز",
+      "quantity": "الكمية",
+      "quantityPlaceholder": "2",
+      "unit": "الوحدة",
+      "unitPlaceholder": "kg",
+      "category": "الفئة",
+      "categoryPlaceholder": "المخزون"
+    },
+    "actions": {
+      "login": "إلى تسجيل الدخول",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "update": "حفظ",
+      "cancel": "إلغاء"
+    },
+    "errors": {
+      "loginRequired": "يرجى تسجيل الدخول لرؤية مخزونك.",
+      "sessionExpired": "يرجى تسجيل الدخول مرة أخرى لرؤية مخزونك.",
+      "sessionExpiredEdit": "يرجى تسجيل الدخول مرة أخرى لتعديل مخزونك.",
+      "network": "الخادم غير متاح حالياً. يرجى المحاولة مرة أخرى.",
+      "load": "تعذر تحميل مخزونك.",
+      "nameRequired": "يرجى إدخال اسم لعنصر المخزون.",
+      "validation": "يرجى التحقق من بيانات عنصر المخزون.",
+      "create": "تعذر حفظ عنصر المخزون.",
+      "delete": "تعذر حذف عنصر المخزون.",
+      "update": "تعذر تحديث عنصر المخزون.",
+      "deleteForbidden": "لا يُسمح لك بحذف عنصر المخزون هذا.",
+      "updateForbidden": "لا يُسمح لك بتعديل عنصر المخزون هذا.",
+      "notFound": "لم يتم العثور على عنصر المخزون هذا."
+    }
+  },
+  "shoppingList": {
+    "title": "قائمة التسوق الخاصة بك",
+    "subtitle": "تابع ما تريد شراءه لاحقاً.",
+    "loading": "يتم تحميل قائمة التسوق...",
+    "empty": "قائمة التسوق الخاصة بك لا تزال فارغة.",
+    "form": {
+      "name": "الاسم",
+      "namePlaceholder": "مثال: طماطم",
+      "quantity": "الكمية",
+      "quantityPlaceholder": "3",
+      "unit": "الوحدة",
+      "unitPlaceholder": "قطع",
+      "category": "الفئة",
+      "categoryPlaceholder": "خضروات",
+      "checked": "تم"
+    },
+    "status": {
+      "open": "مفتوح",
+      "done": "تم"
+    },
+    "actions": {
+      "login": "إلى تسجيل الدخول",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "update": "حفظ",
+      "cancel": "إلغاء"
+    },
+    "errors": {
+      "loginRequired": "يرجى تسجيل الدخول لرؤية قائمة التسوق الخاصة بك.",
+      "sessionExpired": "يرجى تسجيل الدخول مرة أخرى لرؤية قائمة التسوق الخاصة بك.",
+      "sessionExpiredEdit": "يرجى تسجيل الدخول مرة أخرى لتعديل قائمة التسوق الخاصة بك.",
+      "network": "الخادم غير متاح حالياً. يرجى المحاولة مرة أخرى.",
+      "load": "تعذر تحميل قائمة التسوق الخاصة بك.",
+      "nameRequired": "يرجى إدخال اسم لعنصر قائمة التسوق.",
+      "validation": "يرجى التحقق من بيانات عنصر قائمة التسوق.",
+      "create": "تعذر حفظ عنصر قائمة التسوق.",
+      "delete": "تعذر حذف عنصر قائمة التسوق.",
+      "update": "تعذر تحديث عنصر قائمة التسوق.",
+      "deleteForbidden": "لا يُسمح لك بحذف عنصر قائمة التسوق هذا.",
+      "updateForbidden": "لا يُسمح لك بتعديل عنصر قائمة التسوق هذا.",
+      "notFound": "لم يتم العثور على عنصر قائمة التسوق هذا."
+    }
+  },
+  "recipes": {
+    "loading": "يتم تحميل الوصفات...",
+    "my": {
+      "createTitle": "إنشاء وصفة جديدة",
+      "requiredHintStart": "كل الحقول المميزة بـ",
+      "requiredHintEnd": "إلزامية.",
+      "createdTitle": "وصفاتك المنشأة",
+      "favoritesTitle": "وصفاتك المفضلة",
+      "editTitle": "تعديل الوصفة"
+    },
+    "form": {
+      "title": "العنوان",
+      "titlePlaceholder": "مثال: باستا طماطم كريمية",
+      "imageUrl": "رابط الصورة",
+      "imageUrlPlaceholder": "{protocol}example.com/recipe.jpg",
+      "prepTime": "وقت التحضير (دقيقة)",
+      "prepTimePlaceholder": "10",
+      "cookTime": "وقت الطبخ (دقيقة)",
+      "cookTimePlaceholder": "20",
+      "servings": "الحصص",
+      "servingsPlaceholder": "2",
+      "difficulty": "الصعوبة",
+      "difficultyPlaceholder": "مثال: سهل، متوسط، صعب",
+      "category": "الفئة / المطبخ",
+      "categoryPlaceholder": "مثال: إيطالي، حلوى",
+      "rating": "التقييم",
+      "ratingPlaceholder": "4.5",
+      "ingredients": "المكونات",
+      "ingredientsPlaceholder": "أدخل المكونات مفصولة بفواصل.",
+      "instructions": "طريقة التحضير",
+      "instructionsPlaceholder": "صف التحضير خطوة بخطوة."
+    },
+    "actions": {
+      "login": "إلى تسجيل الدخول",
+      "save": "حفظ الوصفة",
+      "saveChanges": "حفظ التغييرات",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "cancel": "إلغاء"
+    },
+    "status": {
+      "favorite": "وضع علامة كمفضلة",
+      "showOnHome": "إظهار على الصفحة الرئيسية",
+      "favoriteBadge": "مفضلة",
+      "publishedBadge": "مرئية على الصفحة الرئيسية",
+      "rating": "★ {rating}",
+      "totalTime": "{minutes} دقيقة",
+      "servings": "{count} حصص"
+    },
+    "empty": {
+      "created": "لم يتم العثور على وصفات. أنشئ أول وصفة Dishly أعلاه.",
+      "favorites": "ليس لديك مفضلات بعد. ضع علامة على الوصفات كمفضلة لرؤيتها هنا."
+    },
+    "errors": {
+      "prefix": "خطأ:",
+      "loginRequired": "يرجى تسجيل الدخول لرؤية وصفاتك.",
+      "sessionExpired": "يرجى تسجيل الدخول مرة أخرى لرؤية وصفاتك.",
+      "network": "الخادم غير متاح حالياً. يرجى المحاولة مرة أخرى.",
+      "load": "تعذر تحميل وصفاتك.",
+      "requiredFields": "يرجى ملء كل الحقول الإلزامية.",
+      "createLoginRequired": "يرجى تسجيل الدخول لإنشاء وصفة.",
+      "createSessionExpired": "يرجى تسجيل الدخول مرة أخرى لإنشاء وصفة.",
+      "createForbidden": "لا يُسمح لك بإنشاء هذه الوصفة.",
+      "create": "تعذر حفظ الوصفة.",
+      "updateLoginRequired": "يرجى تسجيل الدخول لتعديل وصفة.",
+      "updateSessionExpired": "يرجى تسجيل الدخول مرة أخرى لتعديل وصفة.",
+      "updateForbidden": "لا يُسمح لك بتعديل هذه الوصفة.",
+      "update": "تعذر تحديث الوصفة.",
+      "deleteLoginRequired": "يرجى تسجيل الدخول لحذف وصفة.",
+      "deleteSessionExpired": "يرجى تسجيل الدخول مرة أخرى لحذف وصفة.",
+      "deleteForbidden": "لا يُسمح لك بحذف هذه الوصفة.",
+      "delete": "تعذر حذف الوصفة.",
+      "notFound": "لم يتم العثور على الوصفة."
+    }
+  },
   "dashboard": {
     "eyebrow": "لوحة التحكم",
     "welcome": "مرحباً بعودتك، {username}",

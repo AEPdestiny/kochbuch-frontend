@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { pantryApi } from '@/shared/api/pantryApi'
 import type { PantryItem, PantryItemRequest } from '@/types/pantry'
+
+const { t } = useI18n()
 
 const items = ref<PantryItem[]>([])
 const loading = ref(true)
@@ -27,7 +30,7 @@ onMounted(() => {
 async function loadPantryItems() {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     items.value = []
-    error.value = 'Bitte melde dich an, um deinen Vorrat zu sehen.'
+    error.value = t('pantry.errors.loginRequired')
     loginRequired.value = true
     loading.value = false
     return
@@ -48,28 +51,25 @@ async function loadPantryItems() {
 function toLoadErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deinen Vorrat zu sehen.'
+      return t('pantry.errors.sessionExpired')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('pantry.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Dein Vorrat konnte nicht geladen werden.'
+  return t('pantry.errors.load')
 }
 
 async function createPantryItem() {
   if (!newName.value.trim()) {
-    formError.value = 'Bitte gib einen Namen für das Pantry Item ein.'
+    formError.value = t('pantry.errors.nameRequired')
     return
   }
   formError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um deinen Vorrat zu sehen.'
+    error.value = t('pantry.errors.loginRequired')
     loginRequired.value = true
     return
   }
@@ -100,25 +100,22 @@ async function createPantryItem() {
 function toCreateErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 400) {
-      return 'Bitte prüfe deine Eingaben für das Pantry Item.'
+      return t('pantry.errors.validation')
     }
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deinen Vorrat zu bearbeiten.'
+      return t('pantry.errors.sessionExpiredEdit')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('pantry.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Pantry Item konnte nicht gespeichert werden.'
+  return t('pantry.errors.create')
 }
 
 async function deletePantryItem(id: number | string) {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um deinen Vorrat zu sehen.'
+    error.value = t('pantry.errors.loginRequired')
     loginRequired.value = true
     return
   }
@@ -136,23 +133,20 @@ async function deletePantryItem(id: number | string) {
 function toDeleteErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deinen Vorrat zu bearbeiten.'
+      return t('pantry.errors.sessionExpiredEdit')
     }
     if (e.status === 403) {
-      return 'Du darfst dieses Pantry Item nicht löschen.'
+      return t('pantry.errors.deleteForbidden')
     }
     if (e.status === 404) {
-      return 'Dieses Pantry Item wurde nicht gefunden.'
+      return t('pantry.errors.notFound')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('pantry.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Pantry Item konnte nicht gelöscht werden.'
+  return t('pantry.errors.delete')
 }
 
 function startEdit(item: PantryItem) {
@@ -175,13 +169,13 @@ function cancelEdit() {
 
 async function updatePantryItem(id: number | string) {
   if (!editName.value.trim()) {
-    editError.value = 'Bitte gib einen Namen für das Pantry Item ein.'
+    editError.value = t('pantry.errors.nameRequired')
     return
   }
   editError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um deinen Vorrat zu sehen.'
+    error.value = t('pantry.errors.loginRequired')
     loginRequired.value = true
     return
   }
@@ -212,72 +206,69 @@ async function updatePantryItem(id: number | string) {
 function toUpdateErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 400) {
-      return 'Bitte prüfe deine Eingaben für das Pantry Item.'
+      return t('pantry.errors.validation')
     }
     if (e.status === 401) {
-      return 'Bitte melde dich erneut an, um deinen Vorrat zu bearbeiten.'
+      return t('pantry.errors.sessionExpiredEdit')
     }
     if (e.status === 403) {
-      return 'Du darfst dieses Pantry Item nicht bearbeiten.'
+      return t('pantry.errors.updateForbidden')
     }
     if (e.status === 404) {
-      return 'Dieses Pantry Item wurde nicht gefunden.'
+      return t('pantry.errors.notFound')
     }
     if (!e.status) {
-      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+      return t('pantry.errors.network')
     }
-    return e.message
   }
 
-  return e instanceof Error
-    ? e.message
-    : 'Das Pantry Item konnte nicht aktualisiert werden.'
+  return t('pantry.errors.update')
 }
 </script>
 
 <template>
   <section class="pantry-page">
     <div class="pantry-header">
-      <h1>Dein Vorrat</h1>
-      <p>Behalte im Blick, welche Zutaten du zu Hause hast.</p>
+      <h1>{{ t('pantry.title') }}</h1>
+      <p>{{ t('pantry.subtitle') }}</p>
     </div>
 
-    <p v-if="loading" class="status-text">Vorrat wird geladen…</p>
+    <p v-if="loading" class="status-text">{{ t('pantry.loading') }}</p>
 
     <div v-else-if="error" class="status-text error">
       <p>{{ error }}</p>
-      <a v-if="loginRequired" href="/login" class="login-link">Zum Login</a>
+      <a v-if="loginRequired" href="/login" class="login-link">{{ t('pantry.actions.login') }}</a>
     </div>
 
     <template v-else>
       <form class="pantry-form" @submit.prevent="createPantryItem">
         <div class="form-field">
-          <label>Name</label>
-          <input v-model="newName" type="text" placeholder="z.B. Reis" />
+          <label>{{ t('pantry.form.name') }}</label>
+          <input v-model="newName" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
         </div>
 
         <div class="form-field small">
-          <label>Menge</label>
-          <input v-model.number="newQuantity" type="number" min="0" step="0.1" placeholder="2" />
+          <label>{{ t('pantry.form.quantity') }}</label>
+          <input v-model.number="newQuantity" type="number" min="0" step="0.1" :placeholder="t('pantry.form.quantityPlaceholder')" />
         </div>
 
         <div class="form-field small">
-          <label>Einheit</label>
-          <input v-model="newUnit" type="text" placeholder="kg" />
+          <label>{{ t('pantry.form.unit') }}</label>
+          <input v-model="newUnit" type="text" :placeholder="t('pantry.form.unitPlaceholder')" />
         </div>
 
         <div class="form-field">
-          <label>Kategorie</label>
-          <input v-model="newCategory" type="text" placeholder="Vorrat" />
+          <label>{{ t('pantry.form.category') }}</label>
+          <input v-model="newCategory" type="text" :placeholder="t('pantry.form.categoryPlaceholder')" />
         </div>
 
-        <button type="submit" class="submit-btn">Hinzufügen</button>
+        <button type="submit" class="submit-btn">{{ t('pantry.actions.create') }}</button>
       </form>
 
       <p v-if="formError" class="form-error">{{ formError }}</p>
 
       <p v-if="items.length === 0" class="status-text">
-        Dein Vorrat ist noch leer.
+        {{ t('pantry.empty') }}
       </p>
 
       <ul v-else class="pantry-list">
@@ -294,10 +285,10 @@ function toUpdateErrorMessage(e: unknown) {
               <span v-if="item.unit">{{ item.unit }}</span>
             </p>
             <button type="button" class="edit-btn" @click="startEdit(item)">
-              Bearbeiten
+              {{ t('pantry.actions.edit') }}
             </button>
             <button type="button" class="delete-btn" @click="deletePantryItem(item.id)">
-              Löschen
+              {{ t('pantry.actions.delete') }}
             </button>
           </div>
           <form
@@ -306,24 +297,24 @@ function toUpdateErrorMessage(e: unknown) {
             @submit.prevent="updatePantryItem(item.id)"
           >
             <div class="form-field">
-              <label>Name</label>
-              <input v-model="editName" type="text" placeholder="z.B. Reis" />
+              <label>{{ t('pantry.form.name') }}</label>
+              <input v-model="editName" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
             </div>
             <div class="form-field small">
-              <label>Menge</label>
-              <input v-model.number="editQuantity" type="number" min="0" step="0.1" placeholder="2" />
+              <label>{{ t('pantry.form.quantity') }}</label>
+              <input v-model.number="editQuantity" type="number" min="0" step="0.1" :placeholder="t('pantry.form.quantityPlaceholder')" />
             </div>
             <div class="form-field small">
-              <label>Einheit</label>
-              <input v-model="editUnit" type="text" placeholder="kg" />
+              <label>{{ t('pantry.form.unit') }}</label>
+              <input v-model="editUnit" type="text" :placeholder="t('pantry.form.unitPlaceholder')" />
             </div>
             <div class="form-field">
-              <label>Kategorie</label>
-              <input v-model="editCategory" type="text" placeholder="Vorrat" />
+              <label>{{ t('pantry.form.category') }}</label>
+              <input v-model="editCategory" type="text" :placeholder="t('pantry.form.categoryPlaceholder')" />
             </div>
             <div class="edit-buttons">
-              <button type="submit" class="submit-btn">Speichern</button>
-              <button type="button" class="cancel-btn" @click="cancelEdit">Abbrechen</button>
+              <button type="submit" class="submit-btn">{{ t('pantry.actions.update') }}</button>
+              <button type="button" class="cancel-btn" @click="cancelEdit">{{ t('pantry.actions.cancel') }}</button>
             </div>
             <p v-if="editError" class="form-error edit-error">{{ editError }}</p>
           </form>
