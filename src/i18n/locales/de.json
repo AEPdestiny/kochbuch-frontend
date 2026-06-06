@@ -1,0 +1,39 @@
+{
+  "app": {
+    "tagline": "Deine Rezeptwelt für einfache, leckere Gerichte",
+    "footer": "© {year} Dishly - Deine Rezeptwelt. Alle Rechte vorbehalten."
+  },
+  "navigation": {
+    "home": "Startseite",
+    "dashboard": "Dashboard",
+    "myRecipes": "Meine Rezepte",
+    "pantry": "Vorrat",
+    "shoppingList": "Einkaufsliste",
+    "about": "Über Dishly",
+    "contact": "Kontakt",
+    "login": "Anmelden",
+    "register": "Registrieren",
+    "logout": "Abmelden"
+  },
+  "language": {
+    "label": "Sprache"
+  },
+  "dashboard": {
+    "eyebrow": "Dashboard",
+    "welcome": "Willkommen zurück, {username}",
+    "intro": "Dein schneller Überblick über Rezepte, Vorrat und Einkaufsliste.",
+    "loading": "Dashboard wird geladen...",
+    "statsLabel": "Dishly Statistiken",
+    "ownRecipes": "Eigene Rezepte",
+    "publishedRecipes": "Veröffentlichte Rezepte",
+    "favorites": "Favoriten",
+    "pantryItems": "Vorratsartikel",
+    "shoppingListItems": "Einkaufslisten-Items",
+    "openItems": "Noch offen",
+    "quickLinks": "Schnellzugriffe",
+    "externalSearch": "Externe Rezepte suchen",
+    "recipeError": "Rezeptdaten konnten nicht geladen werden.",
+    "pantryError": "Vorratsdaten konnten nicht geladen werden.",
+    "shoppingListError": "Einkaufslistendaten konnten nicht geladen werden."
+  }
+}

@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
 import { useAuthStore } from '@/stores/authStore'
 import router from '@/router'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 onMounted(async () => {
   authStore.initFromStorage()
@@ -38,7 +41,7 @@ async function logout() {
         <div class="tagline-box">
           <span class="tagline-deco">✦</span>
           <span class="tagline-text">
-            Deine Rezeptwelt für einfache, leckere Gerichte
+            {{ t('app.tagline') }}
           </span>
           <span class="tagline-deco">✦</span>
         </div>
@@ -46,22 +49,23 @@ async function logout() {
 
       <!-- Hauptnavigation zwischen den Seiten der App -->
       <nav class="nav-bar">
-        <RouterLink to="/" class="nav-item">Startseite</RouterLink>
-        <RouterLink v-if="authStore.isAuthenticated" to="/dashboard" class="nav-item">Dashboard</RouterLink>
-        <RouterLink to="/my-recipes" class="nav-item">Meine Rezepte</RouterLink>
-        <RouterLink v-if="authStore.isAuthenticated" to="/pantry" class="nav-item">Vorrat</RouterLink>
-        <RouterLink v-if="authStore.isAuthenticated" to="/shopping-list" class="nav-item">Einkaufsliste</RouterLink>
-        <RouterLink to="/about" class="nav-item">Über Dishly</RouterLink>
-        <RouterLink to="/contact" class="nav-item">Kontakt</RouterLink>
+        <RouterLink to="/" class="nav-item">{{ t('navigation.home') }}</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/dashboard" class="nav-item">{{ t('navigation.dashboard') }}</RouterLink>
+        <RouterLink to="/my-recipes" class="nav-item">{{ t('navigation.myRecipes') }}</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/pantry" class="nav-item">{{ t('navigation.pantry') }}</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/shopping-list" class="nav-item">{{ t('navigation.shoppingList') }}</RouterLink>
+        <RouterLink to="/about" class="nav-item">{{ t('navigation.about') }}</RouterLink>
+        <RouterLink to="/contact" class="nav-item">{{ t('navigation.contact') }}</RouterLink>
+        <LanguageSwitcher />
         <template v-if="authStore.isAuthenticated">
           <span class="nav-item user-name">{{ authStore.user?.username ?? 'User' }}</span>
           <button class="nav-item nav-button" type="button" @click="logout">
-            Abmelden
+            {{ t('navigation.logout') }}
           </button>
         </template>
         <template v-else>
-          <RouterLink to="/login" class="nav-item">Anmelden</RouterLink>
-          <RouterLink to="/register" class="nav-item">Registrieren</RouterLink>
+          <RouterLink to="/login" class="nav-item">{{ t('navigation.login') }}</RouterLink>
+          <RouterLink to="/register" class="nav-item">{{ t('navigation.register') }}</RouterLink>
         </template>
       </nav>
     </header>
@@ -71,7 +75,7 @@ async function logout() {
     </main>
 
     <footer class="main-footer">
-      © 2026 Dishly - Deine Rezeptwelt. Alle Rechte vorbehalten.
+      {{ t('app.footer', { year: 2026 }) }}
     </footer>
   </div>
 </template>

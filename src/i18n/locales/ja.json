@@ -1,0 +1,39 @@
+{
+  "app": {
+    "tagline": "シンプルでおいしい料理のためのレシピの世界",
+    "footer": "© {year} Dishly - あなたのレシピの世界。All rights reserved."
+  },
+  "navigation": {
+    "home": "ホーム",
+    "dashboard": "ダッシュボード",
+    "myRecipes": "自分のレシピ",
+    "pantry": "在庫",
+    "shoppingList": "買い物リスト",
+    "about": "Dishly について",
+    "contact": "お問い合わせ",
+    "login": "ログイン",
+    "register": "登録",
+    "logout": "ログアウト"
+  },
+  "language": {
+    "label": "言語"
+  },
+  "dashboard": {
+    "eyebrow": "ダッシュボード",
+    "welcome": "おかえりなさい、{username}",
+    "intro": "レシピ、在庫、買い物リストをすばやく確認できます。",
+    "loading": "ダッシュボードを読み込み中...",
+    "statsLabel": "Dishly 統計",
+    "ownRecipes": "自分のレシピ",
+    "publishedRecipes": "公開済みレシピ",
+    "favorites": "お気に入り",
+    "pantryItems": "在庫アイテム",
+    "shoppingListItems": "買い物リスト項目",
+    "openItems": "未完了",
+    "quickLinks": "クイックリンク",
+    "externalSearch": "外部レシピを検索",
+    "recipeError": "レシピデータを読み込めませんでした。",
+    "pantryError": "在庫データを読み込めませんでした。",
+    "shoppingListError": "買い物リストデータを読み込めませんでした。"
+  }
+}

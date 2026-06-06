@@ -1,0 +1,39 @@
+{
+  "app": {
+    "tagline": "Basit ve lezzetli yemekler için tarif dünyan",
+    "footer": "© {year} Dishly - Tarif dünyan. Tüm hakları saklıdır."
+  },
+  "navigation": {
+    "home": "Ana sayfa",
+    "dashboard": "Panel",
+    "myRecipes": "Tariflerim",
+    "pantry": "Kiler",
+    "shoppingList": "Alışveriş listesi",
+    "about": "Dishly hakkında",
+    "contact": "İletişim",
+    "login": "Giriş yap",
+    "register": "Kayıt ol",
+    "logout": "Çıkış yap"
+  },
+  "language": {
+    "label": "Dil"
+  },
+  "dashboard": {
+    "eyebrow": "Panel",
+    "welcome": "Tekrar hoş geldin, {username}",
+    "intro": "Tarifler, kiler ve alışveriş listesi için hızlı genel bakış.",
+    "loading": "Panel yükleniyor...",
+    "statsLabel": "Dishly istatistikleri",
+    "ownRecipes": "Kendi tariflerin",
+    "publishedRecipes": "Yayınlanan tarifler",
+    "favorites": "Favoriler",
+    "pantryItems": "Kiler ürünleri",
+    "shoppingListItems": "Alışveriş listesi öğeleri",
+    "openItems": "Hala açık",
+    "quickLinks": "Hızlı erişim",
+    "externalSearch": "Harici tarif ara",
+    "recipeError": "Tarif verileri yüklenemedi.",
+    "pantryError": "Kiler verileri yüklenemedi.",
+    "shoppingListError": "Alışveriş listesi verileri yüklenemedi."
+  }
+}

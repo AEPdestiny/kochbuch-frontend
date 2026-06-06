@@ -1,0 +1,39 @@
+{
+  "app": {
+    "tagline": "Your recipe world for simple, delicious meals",
+    "footer": "© {year} Dishly - Your recipe world. All rights reserved."
+  },
+  "navigation": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "myRecipes": "My Recipes",
+    "pantry": "Pantry",
+    "shoppingList": "Shopping List",
+    "about": "About Dishly",
+    "contact": "Contact",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "dashboard": {
+    "eyebrow": "Dashboard",
+    "welcome": "Welcome back, {username}",
+    "intro": "Your quick overview of recipes, pantry and shopping list.",
+    "loading": "Loading dashboard...",
+    "statsLabel": "Dishly statistics",
+    "ownRecipes": "My Recipes",
+    "publishedRecipes": "Published Recipes",
+    "favorites": "Favorites",
+    "pantryItems": "Pantry Items",
+    "shoppingListItems": "Shopping List Items",
+    "openItems": "Still Open",
+    "quickLinks": "Quick Links",
+    "externalSearch": "Search External Recipes",
+    "recipeError": "Recipe data could not be loaded.",
+    "pantryError": "Pantry data could not be loaded.",
+    "shoppingListError": "Shopping list data could not be loaded."
+  }
+}

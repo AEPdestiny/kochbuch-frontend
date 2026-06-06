@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
@@ -10,6 +11,7 @@ import type { PantryItem } from '@/types/pantry'
 import type { ShoppingListItem } from '@/types/shoppingList'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const recipes = ref<Recipe[]>([])
 const pantryItems = ref<PantryItem[]>([])
@@ -44,7 +46,7 @@ async function loadRecipes() {
     recipeError.value = null
   } catch {
     recipes.value = []
-    recipeError.value = 'Rezeptdaten konnten nicht geladen werden.'
+    recipeError.value = t('dashboard.recipeError')
   }
 }
 
@@ -54,7 +56,7 @@ async function loadPantryItems() {
     pantryError.value = null
   } catch {
     pantryItems.value = []
-    pantryError.value = 'Vorratsdaten konnten nicht geladen werden.'
+    pantryError.value = t('dashboard.pantryError')
   }
 }
 
@@ -64,7 +66,7 @@ async function loadShoppingListItems() {
     shoppingListError.value = null
   } catch {
     shoppingListItems.value = []
-    shoppingListError.value = 'Einkaufslistendaten konnten nicht geladen werden.'
+    shoppingListError.value = t('dashboard.shoppingListError')
   }
 }
 </script>
@@ -72,61 +74,61 @@ async function loadShoppingListItems() {
 <template>
   <section class="dashboard-page">
     <header class="dashboard-header">
-      <p class="eyebrow">Dashboard</p>
-      <h1>Willkommen zurück, {{ authStore.user?.username ?? 'User' }}</h1>
+      <p class="eyebrow">{{ t('dashboard.eyebrow') }}</p>
+      <h1>{{ t('dashboard.welcome', { username: authStore.user?.username ?? 'User' }) }}</h1>
       <p>
-        Dein schneller Überblick über Rezepte, Vorrat und Einkaufsliste.
+        {{ t('dashboard.intro') }}
       </p>
     </header>
 
-    <p v-if="loading" class="status-text">Dashboard wird geladen...</p>
+    <p v-if="loading" class="status-text">{{ t('dashboard.loading') }}</p>
 
     <div v-else class="dashboard-content">
-      <section class="stats-grid" aria-label="Dishly Statistiken">
+      <section class="stats-grid" :aria-label="t('dashboard.statsLabel')">
         <article class="stat-card">
-          <span class="stat-label">Eigene Rezepte</span>
+          <span class="stat-label">{{ t('dashboard.ownRecipes') }}</span>
           <strong class="stat-value">{{ recipeError ? '–' : ownRecipeCount }}</strong>
           <small v-if="recipeError">{{ recipeError }}</small>
         </article>
 
         <article class="stat-card">
-          <span class="stat-label">Veröffentlichte Rezepte</span>
+          <span class="stat-label">{{ t('dashboard.publishedRecipes') }}</span>
           <strong class="stat-value">{{ recipeError ? '–' : publishedRecipeCount }}</strong>
           <small v-if="recipeError">{{ recipeError }}</small>
         </article>
 
         <article class="stat-card">
-          <span class="stat-label">Favoriten</span>
+          <span class="stat-label">{{ t('dashboard.favorites') }}</span>
           <strong class="stat-value">{{ recipeError ? '–' : favoriteRecipeCount }}</strong>
           <small v-if="recipeError">{{ recipeError }}</small>
         </article>
 
         <article class="stat-card">
-          <span class="stat-label">Vorratsartikel</span>
+          <span class="stat-label">{{ t('dashboard.pantryItems') }}</span>
           <strong class="stat-value">{{ pantryError ? '–' : pantryItemCount }}</strong>
           <small v-if="pantryError">{{ pantryError }}</small>
         </article>
 
         <article class="stat-card">
-          <span class="stat-label">Einkaufslisten-Items</span>
+          <span class="stat-label">{{ t('dashboard.shoppingListItems') }}</span>
           <strong class="stat-value">{{ shoppingListError ? '–' : shoppingListItemCount }}</strong>
           <small v-if="shoppingListError">{{ shoppingListError }}</small>
         </article>
 
         <article class="stat-card">
-          <span class="stat-label">Noch offen</span>
+          <span class="stat-label">{{ t('dashboard.openItems') }}</span>
           <strong class="stat-value">{{ shoppingListError ? '–' : openShoppingListItemCount }}</strong>
           <small v-if="shoppingListError">{{ shoppingListError }}</small>
         </article>
       </section>
 
-      <section class="quick-links" aria-label="Schnellzugriffe">
-        <h2>Schnellzugriffe</h2>
+      <section class="quick-links" :aria-label="t('dashboard.quickLinks')">
+        <h2>{{ t('dashboard.quickLinks') }}</h2>
         <div class="quick-link-grid">
-          <RouterLink to="/my-recipes" class="quick-link">Meine Rezepte</RouterLink>
-          <RouterLink to="/pantry" class="quick-link">Vorrat</RouterLink>
-          <RouterLink to="/shopping-list" class="quick-link">Einkaufsliste</RouterLink>
-          <RouterLink to="/" class="quick-link">Externe Rezepte suchen</RouterLink>
+          <RouterLink to="/my-recipes" class="quick-link">{{ t('navigation.myRecipes') }}</RouterLink>
+          <RouterLink to="/pantry" class="quick-link">{{ t('navigation.pantry') }}</RouterLink>
+          <RouterLink to="/shopping-list" class="quick-link">{{ t('navigation.shoppingList') }}</RouterLink>
+          <RouterLink to="/" class="quick-link">{{ t('dashboard.externalSearch') }}</RouterLink>
         </div>
       </section>
     </div>

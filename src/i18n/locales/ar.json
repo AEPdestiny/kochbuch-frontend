@@ -1,0 +1,39 @@
+{
+  "app": {
+    "tagline": "عالم وصفاتك لوجبات بسيطة ولذيذة",
+    "footer": "© {year} Dishly - عالم وصفاتك. جميع الحقوق محفوظة."
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "myRecipes": "وصفاتي",
+    "pantry": "المخزون",
+    "shoppingList": "قائمة التسوق",
+    "about": "عن Dishly",
+    "contact": "تواصل",
+    "login": "تسجيل الدخول",
+    "register": "إنشاء حساب",
+    "logout": "تسجيل الخروج"
+  },
+  "language": {
+    "label": "اللغة"
+  },
+  "dashboard": {
+    "eyebrow": "لوحة التحكم",
+    "welcome": "مرحباً بعودتك، {username}",
+    "intro": "نظرة سريعة على الوصفات والمخزون وقائمة التسوق.",
+    "loading": "يتم تحميل لوحة التحكم...",
+    "statsLabel": "إحصاءات Dishly",
+    "ownRecipes": "وصفاتي",
+    "publishedRecipes": "الوصفات المنشورة",
+    "favorites": "المفضلة",
+    "pantryItems": "عناصر المخزون",
+    "shoppingListItems": "عناصر قائمة التسوق",
+    "openItems": "غير مكتمل",
+    "quickLinks": "روابط سريعة",
+    "externalSearch": "البحث عن وصفات خارجية",
+    "recipeError": "تعذر تحميل بيانات الوصفات.",
+    "pantryError": "تعذر تحميل بيانات المخزون.",
+    "shoppingListError": "تعذر تحميل بيانات قائمة التسوق."
+  }
+}

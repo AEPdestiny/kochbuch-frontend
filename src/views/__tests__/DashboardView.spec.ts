@@ -6,6 +6,7 @@ import { recipeApi } from '@/shared/api/recipeApi'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { useAuthStore } from '@/stores/authStore'
+import { i18n, setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
@@ -29,6 +30,7 @@ describe('DashboardView', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    setLocale('de')
     const authStore = useAuthStore()
     authStore.user = {
       id: 1,
@@ -57,6 +59,7 @@ describe('DashboardView', () => {
   it('calculates dashboard numbers from API data', async () => {
     const wrapper = mount(DashboardView, {
       global: {
+        plugins: [i18n],
         stubs: {
           RouterLink: {
             template: '<a><slot /></a>',
@@ -81,6 +84,7 @@ describe('DashboardView', () => {
 
     const wrapper = mount(DashboardView, {
       global: {
+        plugins: [i18n],
         stubs: {
           RouterLink: {
             template: '<a><slot /></a>',
@@ -100,6 +104,7 @@ describe('DashboardView', () => {
   it('renders quick links', async () => {
     const wrapper = mount(DashboardView, {
       global: {
+        plugins: [i18n],
         stubs: {
           RouterLink: {
             template: '<a><slot /></a>',
@@ -114,6 +119,29 @@ describe('DashboardView', () => {
     expect(wrapper.text()).toContain('Vorrat')
     expect(wrapper.text()).toContain('Einkaufsliste')
     expect(wrapper.text()).toContain('Externe Rezepte suchen')
+  })
+
+  it('renders translated dashboard labels in English', async () => {
+    setLocale('en')
+
+    const wrapper = mount(DashboardView, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Welcome back, salma')
+    expect(statValue(wrapper, 'My Recipes')).toBe('3')
+    expect(statValue(wrapper, 'Published Recipes')).toBe('1')
+    expect(statValue(wrapper, 'Pantry Items')).toBe('2')
+    expect(wrapper.text()).toContain('Search External Recipes')
   })
 })
 

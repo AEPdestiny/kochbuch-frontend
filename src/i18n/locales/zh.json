@@ -1,0 +1,39 @@
+{
+  "app": {
+    "tagline": "为简单美味餐点打造的食谱世界",
+    "footer": "© {year} Dishly - 你的食谱世界。保留所有权利。"
+  },
+  "navigation": {
+    "home": "首页",
+    "dashboard": "仪表盘",
+    "myRecipes": "我的食谱",
+    "pantry": "储藏",
+    "shoppingList": "购物清单",
+    "about": "关于 Dishly",
+    "contact": "联系",
+    "login": "登录",
+    "register": "注册",
+    "logout": "退出"
+  },
+  "language": {
+    "label": "语言"
+  },
+  "dashboard": {
+    "eyebrow": "仪表盘",
+    "welcome": "欢迎回来，{username}",
+    "intro": "快速查看食谱、储藏和购物清单。",
+    "loading": "正在加载仪表盘...",
+    "statsLabel": "Dishly 统计",
+    "ownRecipes": "我的食谱",
+    "publishedRecipes": "已发布食谱",
+    "favorites": "收藏",
+    "pantryItems": "储藏物品",
+    "shoppingListItems": "购物清单项目",
+    "openItems": "未完成",
+    "quickLinks": "快捷入口",
+    "externalSearch": "搜索外部食谱",
+    "recipeError": "无法加载食谱数据。",
+    "pantryError": "无法加载储藏数据。",
+    "shoppingListError": "无法加载购物清单数据。"
+  }
+}
