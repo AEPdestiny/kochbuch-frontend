@@ -18,6 +18,35 @@
   "language": {
     "label": "اللغة"
   },
+  "auth": {
+    "login": {
+      "title": "تسجيل الدخول",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "كلمة المرور الخاصة بك",
+      "submit": "تسجيل الدخول",
+      "loading": "جار تسجيل الدخول..."
+    },
+    "register": {
+      "title": "إنشاء حساب",
+      "username": "اسم المستخدم",
+      "usernamePlaceholder": "salma",
+      "email": "البريد الإلكتروني",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "8 أحرف على الأقل",
+      "submit": "إنشاء الحساب",
+      "loading": "جار إنشاء الحساب..."
+    },
+    "errors": {
+      "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+      "userExists": "البريد الإلكتروني أو اسم المستخدم مستخدم بالفعل.",
+      "sessionExpired": "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.",
+      "network": "الخادم غير متاح حالياً. يرجى المحاولة مرة أخرى.",
+      "unknown": "فشلت المصادقة."
+    }
+  },
   "dashboard": {
     "eyebrow": "لوحة التحكم",
     "welcome": "مرحباً بعودتك، {username}",

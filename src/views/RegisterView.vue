@@ -1,23 +1,29 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const username = ref('')
 const email = ref('')
 const password = ref('')
 
 async function submitRegister() {
-  await authStore.register({
-    username: username.value,
-    email: email.value,
-    password: password.value,
-  })
-  await router.push(getSafeRedirectPath())
+  try {
+    await authStore.register({
+      username: username.value,
+      email: email.value,
+      password: password.value,
+    })
+    await router.push(getSafeRedirectPath())
+  } catch {
+    // authStore already exposes the translated error message.
+  }
 }
 
 function getSafeRedirectPath() {
@@ -38,39 +44,39 @@ function getSafeRedirectPath() {
 <template>
   <section class="auth-page" aria-labelledby="register-title">
     <form class="auth-form" @submit.prevent="submitRegister">
-      <h1 id="register-title">Registrieren</h1>
+      <h1 id="register-title">{{ t('auth.register.title') }}</h1>
 
       <label class="field">
-        <span>Benutzername</span>
+        <span>{{ t('auth.register.username') }}</span>
         <input
           v-model="username"
           type="text"
           autocomplete="username"
           required
-          placeholder="salma"
+          :placeholder="t('auth.register.usernamePlaceholder')"
         />
       </label>
 
       <label class="field">
-        <span>E-Mail</span>
+        <span>{{ t('auth.register.email') }}</span>
         <input
           v-model="email"
           type="email"
           autocomplete="email"
           required
-          placeholder="salma@example.com"
+          :placeholder="t('auth.register.emailPlaceholder', { at: '@' })"
         />
       </label>
 
       <label class="field">
-        <span>Passwort</span>
+        <span>{{ t('auth.register.password') }}</span>
         <input
           v-model="password"
           type="password"
           autocomplete="new-password"
           minlength="8"
           required
-          placeholder="Mindestens 8 Zeichen"
+          :placeholder="t('auth.register.passwordPlaceholder')"
         />
       </label>
 
@@ -79,7 +85,7 @@ function getSafeRedirectPath() {
       </p>
 
       <button class="submit-button" type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Registrierung läuft...' : 'Konto erstellen' }}
+        {{ authStore.loading ? t('auth.register.loading') : t('auth.register.submit') }}
       </button>
     </form>
   </section>

@@ -3,9 +3,11 @@ import { createPinia, setActivePinia } from 'pinia'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/shared/api/authApi'
 import {
+  ApiClientError,
   AUTH_TOKEN_STORAGE_KEY,
   AUTH_USER_STORAGE_KEY,
 } from '@/shared/api/apiClient'
+import { setLocale } from '@/i18n'
 import type { AuthResponse, UserResponse } from '@/types/auth'
 
 vi.mock('@/shared/api/authApi', () => ({
@@ -36,6 +38,7 @@ describe('authStore', () => {
     setActivePinia(createPinia())
     sessionStorage.clear()
     vi.clearAllMocks()
+    setLocale('de')
   })
 
   it('stores the token after login', async () => {
@@ -80,5 +83,42 @@ describe('authStore', () => {
     expect(store.token).toBe('stored-token')
     expect(store.user).toEqual(user)
     expect(store.isAuthenticated).toBe(true)
+  })
+
+  it('sets translated German error for invalid login credentials', async () => {
+    vi.mocked(authApi.login).mockRejectedValue(new ApiClientError('Unauthorized', 401))
+    const store = useAuthStore()
+
+    await expect(store.login({
+      email: 'salma@example.com',
+      password: 'wrong-password',
+    })).rejects.toThrow(ApiClientError)
+
+    expect(store.error).toBe('E-Mail oder Passwort ist falsch.')
+  })
+
+  it('sets translated English error for duplicate registration', async () => {
+    setLocale('en')
+    vi.mocked(authApi.register).mockRejectedValue(new ApiClientError('Conflict', 409))
+    const store = useAuthStore()
+
+    await expect(store.register({
+      username: 'salma',
+      email: 'salma@example.com',
+      password: 'secret123',
+    })).rejects.toThrow(ApiClientError)
+
+    expect(store.error).toBe('Email or username is already taken.')
+  })
+
+  it('sets translated session-expired error when loading current user fails with 401', async () => {
+    vi.mocked(authApi.me).mockRejectedValue(new ApiClientError('Unauthorized', 401))
+    const store = useAuthStore()
+    store.token = 'expired-token'
+
+    const result = await store.loadCurrentUser()
+
+    expect(result).toBeNull()
+    expect(store.error).toBe('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.')
   })
 })

@@ -18,6 +18,35 @@
   "language": {
     "label": "Sprache"
   },
+  "auth": {
+    "login": {
+      "title": "Anmelden",
+      "email": "E-Mail",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Passwort",
+      "passwordPlaceholder": "Dein Passwort",
+      "submit": "Einloggen",
+      "loading": "Anmeldung läuft..."
+    },
+    "register": {
+      "title": "Registrieren",
+      "username": "Benutzername",
+      "usernamePlaceholder": "salma",
+      "email": "E-Mail",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Passwort",
+      "passwordPlaceholder": "Mindestens 8 Zeichen",
+      "submit": "Konto erstellen",
+      "loading": "Registrierung läuft..."
+    },
+    "errors": {
+      "invalidCredentials": "E-Mail oder Passwort ist falsch.",
+      "userExists": "E-Mail oder Benutzername ist bereits vergeben.",
+      "sessionExpired": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+      "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
+      "unknown": "Authentifizierung fehlgeschlagen."
+    }
+  },
   "dashboard": {
     "eyebrow": "Dashboard",
     "welcome": "Willkommen zurück, {username}",

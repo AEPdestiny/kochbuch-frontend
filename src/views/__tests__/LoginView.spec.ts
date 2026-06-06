@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LoginView from '@/views/LoginView.vue'
 import { authApi } from '@/shared/api/authApi'
+import { i18n, setLocale } from '@/i18n'
+import { ApiClientError } from '@/shared/api/apiClient'
 import type { AuthResponse } from '@/types/auth'
 
 vi.mock('@/shared/api/authApi', () => ({
@@ -32,6 +34,7 @@ describe('LoginView', () => {
     setActivePinia(createPinia())
     sessionStorage.clear()
     vi.clearAllMocks()
+    setLocale('de')
   })
 
   it('redirects to the return URL after successful login', async () => {
@@ -50,7 +53,7 @@ describe('LoginView', () => {
 
     const wrapper = mount(LoginView, {
       global: {
-        plugins: [router],
+        plugins: [router, i18n],
       },
     })
 
@@ -64,5 +67,76 @@ describe('LoginView', () => {
       password: 'secret123',
     })
     expect(router.currentRoute.value.path).toBe('/pantry')
+  })
+
+  it('shows German login texts by default', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/login', component: LoginView }],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Anmelden')
+    expect(wrapper.text()).toContain('Passwort')
+    expect(wrapper.find('input[type="password"]').attributes('placeholder')).toBe('Dein Passwort')
+    expect(wrapper.find('button[type="submit"]').text()).toBe('Einloggen')
+  })
+
+  it('shows English login texts and translated auth errors', async () => {
+    setLocale('en')
+    vi.mocked(authApi.login).mockRejectedValue(new ApiClientError('Unauthorized', 401))
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/login', component: LoginView }],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+
+    expect(wrapper.text()).toContain('Login')
+    expect(wrapper.find('button[type="submit"]').text()).toBe('Log in')
+
+    await wrapper.find('input[type="email"]').setValue('salma@example.com')
+    await wrapper.find('input[type="password"]').setValue('wrong-password')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Email or password is incorrect.')
+  })
+
+  it('renders Arabic login texts without errors', async () => {
+    setLocale('ar')
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/login', component: LoginView }],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+
+    expect(wrapper.text()).toContain('تسجيل الدخول')
+    expect(wrapper.text()).toContain('كلمة المرور')
   })
 })

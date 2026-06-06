@@ -18,6 +18,35 @@
   "language": {
     "label": "Dil"
   },
+  "auth": {
+    "login": {
+      "title": "Giriş yap",
+      "email": "E-posta",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Şifre",
+      "passwordPlaceholder": "Şifren",
+      "submit": "Giriş yap",
+      "loading": "Giriş yapılıyor..."
+    },
+    "register": {
+      "title": "Kayıt ol",
+      "username": "Kullanıcı adı",
+      "usernamePlaceholder": "salma",
+      "email": "E-posta",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Şifre",
+      "passwordPlaceholder": "En az 8 karakter",
+      "submit": "Hesap oluştur",
+      "loading": "Kayıt yapılıyor..."
+    },
+    "errors": {
+      "invalidCredentials": "E-posta veya şifre yanlış.",
+      "userExists": "E-posta veya kullanıcı adı zaten kullanılıyor.",
+      "sessionExpired": "Oturumun sona erdi. Lütfen tekrar giriş yap.",
+      "network": "Backend şu anda kullanılamıyor. Lütfen tekrar dene.",
+      "unknown": "Kimlik doğrulama başarısız oldu."
+    }
+  },
   "dashboard": {
     "eyebrow": "Panel",
     "welcome": "Tekrar hoş geldin, {username}",

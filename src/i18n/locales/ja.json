@@ -18,6 +18,35 @@
   "language": {
     "label": "言語"
   },
+  "auth": {
+    "login": {
+      "title": "ログイン",
+      "email": "メールアドレス",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "パスワード",
+      "passwordPlaceholder": "あなたのパスワード",
+      "submit": "ログイン",
+      "loading": "ログイン中..."
+    },
+    "register": {
+      "title": "登録",
+      "username": "ユーザー名",
+      "usernamePlaceholder": "salma",
+      "email": "メールアドレス",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "パスワード",
+      "passwordPlaceholder": "8文字以上",
+      "submit": "アカウントを作成",
+      "loading": "登録中..."
+    },
+    "errors": {
+      "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
+      "userExists": "メールアドレスまたはユーザー名は既に使用されています。",
+      "sessionExpired": "セッションの有効期限が切れました。もう一度ログインしてください。",
+      "network": "バックエンドは現在利用できません。もう一度お試しください。",
+      "unknown": "認証に失敗しました。"
+    }
+  },
   "dashboard": {
     "eyebrow": "ダッシュボード",
     "welcome": "おかえりなさい、{username}",

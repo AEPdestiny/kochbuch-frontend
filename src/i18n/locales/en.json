@@ -18,6 +18,35 @@
   "language": {
     "label": "Language"
   },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "email": "Email",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Password",
+      "passwordPlaceholder": "Your password",
+      "submit": "Log in",
+      "loading": "Logging in..."
+    },
+    "register": {
+      "title": "Register",
+      "username": "Username",
+      "usernamePlaceholder": "salma",
+      "email": "Email",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Password",
+      "passwordPlaceholder": "At least 8 characters",
+      "submit": "Create account",
+      "loading": "Registering..."
+    },
+    "errors": {
+      "invalidCredentials": "Email or password is incorrect.",
+      "userExists": "Email or username is already taken.",
+      "sessionExpired": "Your session has expired. Please log in again.",
+      "network": "The backend is currently unavailable. Please try again.",
+      "unknown": "Authentication failed."
+    }
+  },
   "dashboard": {
     "eyebrow": "Dashboard",
     "welcome": "Welcome back, {username}",

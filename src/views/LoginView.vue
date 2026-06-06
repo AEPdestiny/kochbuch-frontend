@@ -1,21 +1,27 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
 
 async function submitLogin() {
-  await authStore.login({
-    email: email.value,
-    password: password.value,
-  })
-  await router.push(getSafeRedirectPath())
+  try {
+    await authStore.login({
+      email: email.value,
+      password: password.value,
+    })
+    await router.push(getSafeRedirectPath())
+  } catch {
+    // authStore already exposes the translated error message.
+  }
 }
 
 function getSafeRedirectPath() {
@@ -36,27 +42,27 @@ function getSafeRedirectPath() {
 <template>
   <section class="auth-page" aria-labelledby="login-title">
     <form class="auth-form" @submit.prevent="submitLogin">
-      <h1 id="login-title">Anmelden</h1>
+      <h1 id="login-title">{{ t('auth.login.title') }}</h1>
 
       <label class="field">
-        <span>E-Mail</span>
+        <span>{{ t('auth.login.email') }}</span>
         <input
           v-model="email"
           type="email"
           autocomplete="email"
           required
-          placeholder="salma@example.com"
+          :placeholder="t('auth.login.emailPlaceholder', { at: '@' })"
         />
       </label>
 
       <label class="field">
-        <span>Passwort</span>
+        <span>{{ t('auth.login.password') }}</span>
         <input
           v-model="password"
           type="password"
           autocomplete="current-password"
           required
-          placeholder="Dein Passwort"
+          :placeholder="t('auth.login.passwordPlaceholder')"
         />
       </label>
 
@@ -65,7 +71,7 @@ function getSafeRedirectPath() {
       </p>
 
       <button class="submit-button" type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Anmeldung läuft...' : 'Einloggen' }}
+        {{ authStore.loading ? t('auth.login.loading') : t('auth.login.submit') }}
       </button>
     </form>
   </section>

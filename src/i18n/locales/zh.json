@@ -18,6 +18,35 @@
   "language": {
     "label": "语言"
   },
+  "auth": {
+    "login": {
+      "title": "登录",
+      "email": "电子邮箱",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "密码",
+      "passwordPlaceholder": "你的密码",
+      "submit": "登录",
+      "loading": "正在登录..."
+    },
+    "register": {
+      "title": "注册",
+      "username": "用户名",
+      "usernamePlaceholder": "salma",
+      "email": "电子邮箱",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "密码",
+      "passwordPlaceholder": "至少 8 个字符",
+      "submit": "创建账户",
+      "loading": "正在注册..."
+    },
+    "errors": {
+      "invalidCredentials": "电子邮箱或密码不正确。",
+      "userExists": "电子邮箱或用户名已被使用。",
+      "sessionExpired": "你的会话已过期。请重新登录。",
+      "network": "后端当前不可用。请重试。",
+      "unknown": "身份验证失败。"
+    }
+  },
   "dashboard": {
     "eyebrow": "仪表盘",
     "welcome": "欢迎回来，{username}",

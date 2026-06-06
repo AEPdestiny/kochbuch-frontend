@@ -18,6 +18,35 @@
   "language": {
     "label": "Język"
   },
+  "auth": {
+    "login": {
+      "title": "Zaloguj",
+      "email": "E-mail",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Hasło",
+      "passwordPlaceholder": "Twoje hasło",
+      "submit": "Zaloguj",
+      "loading": "Logowanie..."
+    },
+    "register": {
+      "title": "Zarejestruj",
+      "username": "Nazwa użytkownika",
+      "usernamePlaceholder": "salma",
+      "email": "E-mail",
+      "emailPlaceholder": "salma{at}example.com",
+      "password": "Hasło",
+      "passwordPlaceholder": "Co najmniej 8 znaków",
+      "submit": "Utwórz konto",
+      "loading": "Rejestracja..."
+    },
+    "errors": {
+      "invalidCredentials": "E-mail lub hasło jest nieprawidłowe.",
+      "userExists": "E-mail lub nazwa użytkownika jest już zajęta.",
+      "sessionExpired": "Twoja sesja wygasła. Zaloguj się ponownie.",
+      "network": "Backend jest obecnie niedostępny. Spróbuj ponownie.",
+      "unknown": "Uwierzytelnianie nie powiodło się."
+    }
+  },
   "dashboard": {
     "eyebrow": "Panel",
     "welcome": "Witaj ponownie, {username}",

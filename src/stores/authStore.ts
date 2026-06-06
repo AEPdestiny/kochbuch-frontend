@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authApi } from '@/shared/api/authApi'
+import { i18n } from '@/i18n'
 import {
   ApiClientError,
   AUTH_TOKEN_STORAGE_KEY,
@@ -59,7 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
       return user.value
     } catch (e) {
       logout()
-      error.value = toFriendlyAuthError(e)
+      error.value = toFriendlyAuthError(e, 'auth.errors.sessionExpired')
       return null
     } finally {
       loading.value = false
@@ -92,23 +93,25 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function toFriendlyAuthError(e: unknown) {
+  function toFriendlyAuthError(e: unknown, unauthorizedKey = 'auth.errors.invalidCredentials') {
     if (e instanceof ApiClientError) {
       if (e.status === 401) {
-        return 'E-Mail oder Passwort ist falsch.'
+        return translateAuthError(unauthorizedKey)
       }
       if (e.status === 409) {
-        return 'E-Mail oder Benutzername ist bereits vergeben.'
+        return translateAuthError('auth.errors.userExists')
       }
       if (!e.status) {
-        return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+        return translateAuthError('auth.errors.network')
       }
-      return e.message
+      return translateAuthError('auth.errors.unknown')
     }
 
-    return e instanceof Error
-      ? e.message
-      : 'Authentifizierung fehlgeschlagen.'
+    return translateAuthError('auth.errors.unknown')
+  }
+
+  function translateAuthError(key: string) {
+    return i18n.global.t(key)
   }
 
   return {
