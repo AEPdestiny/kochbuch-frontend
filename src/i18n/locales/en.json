@@ -1,7 +1,8 @@
 {
   "app": {
     "tagline": "Your recipe world for simple, delicious meals",
-    "footer": "© {year} Dishly - Your recipe world. All rights reserved."
+    "footer": "© {year} Dishly - Your recipe world. All rights reserved.",
+    "userFallback": "User"
   },
   "navigation": {
     "home": "Home",
@@ -138,7 +139,9 @@
       "requiredHintEnd": "are required.",
       "createdTitle": "Your created recipes",
       "favoritesTitle": "Your favorite recipes",
-      "editTitle": "Edit recipe"
+      "editTitle": "Edit recipe",
+      "pageTitle": "Your personal Dishly cookbook",
+      "pageSubtitle": "Create, save and manage your own recipes. Mark favorites and decide which dishes appear on the home page."
     },
     "form": {
       "title": "Title",
@@ -250,5 +253,23 @@
       "servings": "{count} servings",
       "rating": "? {rating}"
     }
+  },
+  "about": {
+    "hello": "Hi, I am Salma.",
+    "headline": "The person behind Dishly",
+    "whatTitle": "What is Dishly?",
+    "whatBody": "Dishly is a digital cookbook where you collect recipes in one place. It is about simple, delicious dishes you can find again anytime, so your favorite meals do not get lost in notes or screenshots.",
+    "findTitle": "What you will find here",
+    "findBody": "On the home page you will find public recipes that you can search and filter. At the top you can search by title, category or keyword to find dishes quickly. Under My Recipes you can create, edit and delete your own dishes, mark favorites and choose which ones appear on the home page.",
+    "cookingTitle": "For me, cooking means...",
+    "cookingBody": "Cooking should be practical for everyday life, relaxed and still feel a little special. That is exactly how Dishly should feel.",
+    "profileAlt": "Salma - creator of Dishly"
+  },
+  "contact": {
+    "title": "Contact",
+    "cardTitle": "Write to us",
+    "description": "Do you have feedback, ideas or a feature request for Dishly? I am happy to hear from you.",
+    "emailIntro": "Just write to",
+    "emailOutro": "and I will get back to you as soon as possible."
   }
 }

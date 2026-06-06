@@ -1,7 +1,8 @@
 {
   "app": {
     "tagline": "为简单美味餐点打造的食谱世界",
-    "footer": "© {year} Dishly - 你的食谱世界。保留所有权利。"
+    "footer": "© {year} Dishly - 你的食谱世界。保留所有权利。",
+    "userFallback": "用户"
   },
   "navigation": {
     "home": "首页",
@@ -138,7 +139,9 @@
       "requiredHintEnd": "的字段都是必填项。",
       "createdTitle": "你创建的食谱",
       "favoritesTitle": "你的收藏食谱",
-      "editTitle": "编辑食谱"
+      "editTitle": "编辑食谱",
+      "pageTitle": "你的 Dishly 个人食谱",
+      "pageSubtitle": "创建、保存和管理你的食谱。标记收藏并决定哪些菜肴显示在首页。"
     },
     "form": {
       "title": "标题",
@@ -250,5 +253,23 @@
       "servings": "{count} ?",
       "rating": "? {rating}"
     }
+  },
+  "about": {
+    "hello": "嗨，我是 Salma。",
+    "headline": "Dishly 背后的人",
+    "whatTitle": "Dishly 是什么？",
+    "whatBody": "Dishly 是一本数字食谱，用来把你的食谱收集在一个地方。它关注简单而美味的菜肴，让你随时找回喜爱的食物。",
+    "findTitle": "这里有什么",
+    "findBody": "首页上有可搜索和筛选的公开食谱。在我的食谱中，你可以创建、编辑和删除自己的菜肴，标记收藏并选择哪些显示在首页。",
+    "cookingTitle": "对我来说，烹饪意味着...",
+    "cookingBody": "烹饪应该适合日常生活，轻松而又有一点特别。Dishly 也应该是这样的感觉。",
+    "profileAlt": "Salma - Dishly 创建者"
+  },
+  "contact": {
+    "title": "联系",
+    "cardTitle": "写信给我们",
+    "description": "你对 Dishly 有反馈、想法或功能建议吗？我很乐意收到你的消息。",
+    "emailIntro": "请写信到",
+    "emailOutro": "我会尽快回复你。"
   }
 }

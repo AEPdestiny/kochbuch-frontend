@@ -15,7 +15,6 @@ vi.mock('@/shared/api/recipeApi', () => ({
   },
 }))
 
-// Views, die über Routen erreichbar sind
 import HomeView from '@/views/HomeView.vue'
 import MyRecipesView from '@/views/MyRecipesView.vue'
 import PantryView from '@/views/PantryView.vue'
@@ -23,7 +22,6 @@ import ShoppingListView from '@/views/ShoppingListView.vue'
 import AboutView from '@/views/AboutView.vue'
 import ContactView from '@/views/ContactView.vue'
 
-// Test-Router mit denselben Routen wie in der App
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -50,14 +48,12 @@ describe('App routing', () => {
   })
 
   it('renders Home with ApiRecipeList on /', async () => {
-    // Zielroute setzen und warten, bis der Router bereit ist
     router.push('/')
     await router.isReady()
-    // HomeView mit Router mounten
     const wrapper = mount(HomeView, {
       global: { plugins: [router, i18n] },
     })
-    // Erwartung: Text aus der Home-Seite vorhanden
+
     expect(wrapper.html()).toContain('Entdecke Gerichte')
   })
 
@@ -67,7 +63,7 @@ describe('App routing', () => {
     const wrapper = mount(MyRecipesView, {
       global: { plugins: [router, i18n] },
     })
-    // Erwartung: Text für My-Recipes-Seite sichtbar
+
     expect(wrapper.text()).toContain('Dein persönliches Dishly-Kochbuch')
   })
 
@@ -93,19 +89,60 @@ describe('App routing', () => {
     router.push('/about')
     await router.isReady()
     const wrapper = mount(AboutView, {
-      global: { plugins: [router] },
+      global: { plugins: [router, i18n] },
     })
-    // Erwartung: Headline der About-Seite
+
     expect(wrapper.text()).toContain('Die Person hinter Dishly')
+  })
+
+  it('renders AboutView in English', async () => {
+    setLocale('en')
+    router.push('/about')
+    await router.isReady()
+    const wrapper = mount(AboutView, {
+      global: { plugins: [router, i18n] },
+    })
+
+    expect(wrapper.text()).toContain('The person behind Dishly')
+    expect(wrapper.text()).not.toContain('Die Person hinter Dishly')
   })
 
   it('renders ContactView on /contact', async () => {
     router.push('/contact')
     await router.isReady()
     const wrapper = mount(ContactView, {
-      global: { plugins: [router] },
+      global: { plugins: [router, i18n] },
     })
-    // Erwartung: E-Mail-Adresse aus der Contact-Seite
+
+    expect(wrapper.text()).toContain('Schreib uns')
     expect(wrapper.text()).toContain('Dishly.Rezepte@gmx.de')
+  })
+
+  it('renders ContactView in English', async () => {
+    setLocale('en')
+    router.push('/contact')
+    await router.isReady()
+    const wrapper = mount(ContactView, {
+      global: { plugins: [router, i18n] },
+    })
+
+    expect(wrapper.text()).toContain('Write to us')
+    expect(wrapper.text()).toContain('Dishly.Rezepte@gmx.de')
+  })
+
+  it('renders About and Contact with Arabic direction enabled', async () => {
+    setLocale('ar')
+    router.push('/about')
+    await router.isReady()
+    const aboutWrapper = mount(AboutView, {
+      global: { plugins: [router, i18n] },
+    })
+    const contactWrapper = mount(ContactView, {
+      global: { plugins: [router, i18n] },
+    })
+
+    expect(document.documentElement.dir).toBe('rtl')
+    expect(aboutWrapper.text().length).toBeGreaterThan(0)
+    expect(contactWrapper.text().length).toBeGreaterThan(0)
   })
 })

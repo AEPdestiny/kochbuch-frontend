@@ -1,7 +1,8 @@
 {
   "app": {
     "tagline": "Basit ve lezzetli yemekler için tarif dünyan",
-    "footer": "© {year} Dishly - Tarif dünyan. Tüm hakları saklıdır."
+    "footer": "© {year} Dishly - Tarif dünyan. Tüm hakları saklıdır.",
+    "userFallback": "Kullanıcı"
   },
   "navigation": {
     "home": "Ana sayfa",
@@ -138,7 +139,9 @@
       "requiredHintEnd": "zorunludur.",
       "createdTitle": "Oluşturduğun tarifler",
       "favoritesTitle": "Favori tariflerin",
-      "editTitle": "Tarifi düzenle"
+      "editTitle": "Tarifi düzenle",
+      "pageTitle": "Kişisel Dishly yemek kitabın",
+      "pageSubtitle": "Kendi tariflerini oluştur, kaydet ve yönet. Favorileri işaretle ve hangi yemeklerin ana sayfada görüneceğine karar ver."
     },
     "form": {
       "title": "Başlık",
@@ -250,5 +253,23 @@
       "servings": "{count} porsiyon",
       "rating": "? {rating}"
     }
+  },
+  "about": {
+    "hello": "Merhaba, ben Salma.",
+    "headline": "Dishly arkasındaki kişi",
+    "whatTitle": "Dishly nedir?",
+    "whatBody": "Dishly, tariflerini tek bir yerde topladığın dijital bir yemek kitabıdır. Basit ve lezzetli yemekleri istediğin zaman yeniden bulabilmen içindir; böylece favori yemeklerin notlar veya ekran görüntüleri arasında kaybolmaz.",
+    "findTitle": "Burada ne bulursun",
+    "findBody": "Ana sayfada arayabileceğin ve filtreleyebileceğin herkese açık tarifler bulursun. Üstte başlık, kategori veya anahtar kelime ile hızlıca yemek arayabilirsin. Tariflerim bölümünde kendi yemeklerini oluşturabilir, düzenleyebilir ve silebilir, favorileri işaretleyebilir ve hangilerinin ana sayfada görüneceğini seçebilirsin.",
+    "cookingTitle": "Benim için yemek yapmak...",
+    "cookingBody": "Yemek yapmak günlük hayata uygun, rahat ve yine de biraz özel hissettirmeli. Dishly de tam olarak böyle hissettirmeli.",
+    "profileAlt": "Salma - Dishly oluşturucusu"
+  },
+  "contact": {
+    "title": "İletişim",
+    "cardTitle": "Bize yaz",
+    "description": "Dishly için geri bildirimin, fikrin veya bir özellik isteğin var mı? Mesajını duymaktan memnun olurum.",
+    "emailIntro": "Bize yaz:",
+    "emailOutro": "ve sana en kısa sürede geri döneceğim."
   }
 }

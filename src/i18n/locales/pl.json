@@ -1,7 +1,8 @@
 {
   "app": {
     "tagline": "Twój świat prostych i smacznych przepisów",
-    "footer": "© {year} Dishly - Twój świat przepisów. Wszelkie prawa zastrzeżone."
+    "footer": "© {year} Dishly - Twój świat przepisów. Wszelkie prawa zastrzeżone.",
+    "userFallback": "Użytkownik"
   },
   "navigation": {
     "home": "Strona główna",
@@ -138,7 +139,9 @@
       "requiredHintEnd": "są wymagane.",
       "createdTitle": "Twoje utworzone przepisy",
       "favoritesTitle": "Twoje ulubione przepisy",
-      "editTitle": "Edytuj przepis"
+      "editTitle": "Edytuj przepis",
+      "pageTitle": "Twoja osobista książka kucharska Dishly",
+      "pageSubtitle": "Twórz, zapisuj i zarządzaj własnymi przepisami. Oznaczaj ulubione i decyduj, które dania pojawią się na stronie głównej."
     },
     "form": {
       "title": "Tytuł",
@@ -250,5 +253,23 @@
       "servings": "{count} porcje",
       "rating": "? {rating}"
     }
+  },
+  "about": {
+    "hello": "Cześć, jestem Salma.",
+    "headline": "Osoba stojąca za Dishly",
+    "whatTitle": "Czym jest Dishly?",
+    "whatBody": "Dishly to cyfrowa książka kucharska, w której zbierasz przepisy w jednym miejscu. Chodzi o proste, smaczne dania, które możesz zawsze odnaleźć, aby ulubione posiłki nie gubiły się w notatkach lub zrzutach ekranu.",
+    "findTitle": "Co tutaj znajdziesz",
+    "findBody": "Na stronie głównej znajdziesz publiczne przepisy, które możesz przeszukiwać i filtrować. U góry możesz szukać według tytułu, kategorii lub słowa kluczowego. W Moich przepisach możesz tworzyć, edytować i usuwać własne dania, oznaczać ulubione oraz wybierać, które pojawią się na stronie głównej.",
+    "cookingTitle": "Gotowanie oznacza dla mnie...",
+    "cookingBody": "Gotowanie powinno być praktyczne na co dzień, spokojne i jednocześnie trochę wyjątkowe. Właśnie tak powinno działać Dishly.",
+    "profileAlt": "Salma - twórczyni Dishly"
+  },
+  "contact": {
+    "title": "Kontakt",
+    "cardTitle": "Napisz do nas",
+    "description": "Masz opinię, pomysł lub prośbę o funkcję dla Dishly? Chętnie przeczytam Twoją wiadomość.",
+    "emailIntro": "Napisz po prostu na",
+    "emailOutro": "a odpowiem tak szybko, jak to możliwe."
   }
 }

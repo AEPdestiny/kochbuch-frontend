@@ -58,7 +58,7 @@ async function logout() {
         <RouterLink to="/contact" class="nav-item">{{ t('navigation.contact') }}</RouterLink>
         <LanguageSwitcher />
         <template v-if="authStore.isAuthenticated">
-          <span class="nav-item user-name">{{ authStore.user?.username ?? 'User' }}</span>
+          <span class="nav-item user-name">{{ authStore.user?.username ?? t('app.userFallback') }}</span>
           <button class="nav-item nav-button" type="button" @click="logout">
             {{ t('navigation.logout') }}
           </button>

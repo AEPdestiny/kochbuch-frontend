@@ -1,16 +1,16 @@
 <script setup lang="ts">
-//Bilder importieren
+import { useI18n } from 'vue-i18n'
 import profileImg from '../assets/salma-profile.jpg'
 import food1 from '../assets/food1.jpg'
 import food2 from '../assets/food2.jpg'
 import food3 from '../assets/food3.jpg'
+
+const { t } = useI18n()
 </script>
 
 <template>
-  <!-- About-Seite mit dreispaltigem Layout: Food-Bilder, Text, Portrait -->
   <section class="about">
     <div class="about-layout">
-      <!-- Linke Spalte: Bilder von Gerichten -->
       <div class="food-column">
         <div class="food-grid">
           <img :src="food1" alt="Dishly recipe 1" />
@@ -19,38 +19,25 @@ import food3 from '../assets/food3.jpg'
         </div>
       </div>
 
-      <!-- Mittlere Spalte: Textkarte mit Erklärung zu Dishly -->
       <div class="intro-column">
         <div class="intro-card">
-          <p class="hello-text">Hi, ich bin Salma.</p>
-          <h1 class="headline">Die Person hinter Dishly</h1>
+          <p class="hello-text">{{ t('about.hello') }}</p>
+          <h1 class="headline">{{ t('about.headline') }}</h1>
 
-          <h2 class="section-title">Was ist Dishly?</h2>
-          <p class="intro-body">
-            Dishly ist ein digitales Kochbuch, in dem du Rezepte an einem Ort sammelst.
-            Es geht um einfache, leckere Gerichte, die du jederzeit wiederfinden kannst,
-            damit deine Lieblingsessen nicht in Notizen oder Screenshots verloren gehen.
-          </p>
+          <h2 class="section-title">{{ t('about.whatTitle') }}</h2>
+          <p class="intro-body">{{ t('about.whatBody') }}</p>
 
-          <h2 class="section-title">Was du hier findest</h2>
-          <p class="intro-body">
-            Auf der Startseite findest du öffentliche Rezepte, die du durchsuchen und filtern kannst.
-            Oben kannst du nach Titel, Kategorie oder Stichwort suchen, um Gerichte schnell zu finden.
-            Unter „Meine Rezepte“ kannst du eigene Gerichte erstellen, bearbeiten und löschen,
-            Favoriten markieren und auswählen, welche davon auch auf der Startseite erscheinen.
-          </p>
+          <h2 class="section-title">{{ t('about.findTitle') }}</h2>
+          <p class="intro-body">{{ t('about.findBody') }}</p>
 
-          <h2 class="section-title">Kochen bedeutet für mich...</h2>
-          <p class="intro-body">
-            Kochen soll alltagstauglich, entspannt und trotzdem ein bisschen besonders sein.
-            Genau so soll sich Dishly anfühlen.
-          </p>
+          <h2 class="section-title">{{ t('about.cookingTitle') }}</h2>
+          <p class="intro-body">{{ t('about.cookingBody') }}</p>
         </div>
       </div>
 
       <div class="portrait-column">
         <div class="portrait-wrapper">
-          <img :src="profileImg" alt="Salma - Erstellerin von Dishly" class="portrait-img" />
+          <img :src="profileImg" :alt="t('about.profileAlt')" class="portrait-img" />
         </div>
       </div>
     </div>
@@ -58,7 +45,6 @@ import food3 from '../assets/food3.jpg'
 </template>
 
 <style scoped>
-/* Gesamtbreite begrenzen und zentrieren */
 .about {
   width: 100%;
   max-width: 1200px;
@@ -66,7 +52,6 @@ import food3 from '../assets/food3.jpg'
   padding: 0 6vw;
 }
 
-/* Dreispaltiges Grid-Layout für Bilder, Text und Portrait */
 .about-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
@@ -159,7 +144,6 @@ import food3 from '../assets/food3.jpg'
   border: 3px solid #ffffff;
 }
 
-/* Anpassung für Tablets/Mobile: alles untereinander anzeigen */
 @media (max-width: 960px) {
   .about-layout {
     grid-template-columns: minmax(0, 1fr);

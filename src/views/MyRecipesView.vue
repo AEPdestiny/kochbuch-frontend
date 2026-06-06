@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import RecipeList from '../components/RecipeList.vue'// bindet die RecipeList-Komponente ein
+import { useI18n } from 'vue-i18n'
+import RecipeList from '../components/RecipeList.vue'
+
+const { t } = useI18n()
 </script>
 
 <template>
-  <!-- Seite für das persönliche Kochbuch des Nutzers -->
   <section class="my-recipes-page">
-    <!-- Einleitender Header mit Titel und kurzer Erklärung -->
     <header class="my-recipes-header">
-      <h2 class="page-title">Dein persönliches Dishly-Kochbuch</h2>
+      <h2 class="page-title">{{ t('recipes.my.pageTitle') }}</h2>
       <p class="page-subtitle">
-        Erstelle, speichere und verwalte deine eigenen Rezepte. Markiere Favoriten
-        und entscheide, welche Gerichte auf der Startseite erscheinen.
+        {{ t('recipes.my.pageSubtitle') }}
       </p>
     </header>
 

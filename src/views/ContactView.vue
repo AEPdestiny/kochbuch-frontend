@@ -1,23 +1,26 @@
-<template>
-  <!-- Kontakt-Seite mit Karte und Mail-Link -->
-  <section class="contact">
-    <h1 class="page-title">Kontakt</h1>
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 
-    <!-- Kontaktkarte mit Icon, Text und E-Mail-Adresse -->
+const { t } = useI18n()
+</script>
+
+<template>
+  <section class="contact">
+    <h1 class="page-title">{{ t('contact.title') }}</h1>
+
     <div class="contact-card">
-      <div class="icon-circle">✉️</div>
-      <h2 class="section-title">Schreib uns</h2>
+      <div class="icon-circle">✉</div>
+      <h2 class="section-title">{{ t('contact.cardTitle') }}</h2>
       <p>
-        Hast du Feedback, Ideen oder einen Funktionswunsch für Dishly?
-        Ich freue mich über deine Nachricht.
+        {{ t('contact.description') }}
       </p>
 
       <p>
-        Schreib einfach an
+        {{ t('contact.emailIntro') }}
         <a href="mailto:Dishly.Rezepte@gmx.de" class="email-link">
           Dishly.Rezepte@gmx.de
         </a>
-        und ich melde mich so schnell wie möglich zurück.
+        {{ t('contact.emailOutro') }}
       </p>
     </div>
   </section>
@@ -83,14 +86,12 @@ p {
   color: #2b1b23;
 }
 
-/* E-Mail-Link farblich hervorgehoben */
 .email-link {
   color: #26b6b8;
   font-weight: 600;
   text-decoration: none;
 }
 
-/* Unterstrichen für bessere Erkennbarkeit als Link */
 .email-link:hover {
   text-decoration: underline;
 }

@@ -1,7 +1,8 @@
 {
   "app": {
     "tagline": "シンプルでおいしい料理のためのレシピの世界",
-    "footer": "© {year} Dishly - あなたのレシピの世界。All rights reserved."
+    "footer": "© {year} Dishly - あなたのレシピの世界。All rights reserved.",
+    "userFallback": "ユーザー"
   },
   "navigation": {
     "home": "ホーム",
@@ -138,7 +139,9 @@
       "requiredHintEnd": "必須です。",
       "createdTitle": "作成したレシピ",
       "favoritesTitle": "お気に入りレシピ",
-      "editTitle": "レシピを編集"
+      "editTitle": "レシピを編集",
+      "pageTitle": "あなたの Dishly クックブック",
+      "pageSubtitle": "自分のレシピを作成、保存、管理します。お気に入りをマークし、ホームに表示する料理を選べます。"
     },
     "form": {
       "title": "タイトル",
@@ -250,5 +253,23 @@
       "servings": "{count} ??",
       "rating": "? {rating}"
     }
+  },
+  "about": {
+    "hello": "こんにちは、Salma です。",
+    "headline": "Dishly の作り手",
+    "whatTitle": "Dishly とは？",
+    "whatBody": "Dishly は、レシピを一か所に集めるデジタルクックブックです。いつでも見つけられるシンプルでおいしい料理を大切にしています。",
+    "findTitle": "ここで見つかるもの",
+    "findBody": "ホームでは検索とフィルターができる公開レシピを見つけられます。マイレシピでは自分の料理を作成、編集、削除し、お気に入りやホーム表示を選べます。",
+    "cookingTitle": "私にとって料理とは...",
+    "cookingBody": "料理は毎日に合い、気軽で、それでも少し特別に感じられるものであってほしい。Dishly もそう感じられるべきです。",
+    "profileAlt": "Salma - Dishly の作成者"
+  },
+  "contact": {
+    "title": "お問い合わせ",
+    "cardTitle": "メッセージを送る",
+    "description": "Dishly へのフィードバック、アイデア、機能リクエストはありますか？ご連絡をお待ちしています。",
+    "emailIntro": "こちらへ送ってください",
+    "emailOutro": "できるだけ早く返信します。"
   }
 }

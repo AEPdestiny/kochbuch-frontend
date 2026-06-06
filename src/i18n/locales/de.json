@@ -1,7 +1,8 @@
 {
   "app": {
     "tagline": "Deine Rezeptwelt für einfache, leckere Gerichte",
-    "footer": "© {year} Dishly - Deine Rezeptwelt. Alle Rechte vorbehalten."
+    "footer": "© {year} Dishly - Deine Rezeptwelt. Alle Rechte vorbehalten.",
+    "userFallback": "User"
   },
   "navigation": {
     "home": "Startseite",
@@ -138,7 +139,9 @@
       "requiredHintEnd": "markierten Felder sind Pflichtfelder.",
       "createdTitle": "Deine erstellten Rezepte",
       "favoritesTitle": "Deine Favoriten",
-      "editTitle": "Rezept bearbeiten"
+      "editTitle": "Rezept bearbeiten",
+      "pageTitle": "Dein persönliches Dishly-Kochbuch",
+      "pageSubtitle": "Erstelle, speichere und verwalte deine eigenen Rezepte. Markiere Favoriten und entscheide, welche Gerichte auf der Startseite erscheinen."
     },
     "form": {
       "title": "Titel",
@@ -250,5 +253,23 @@
       "servings": "{count} Portionen",
       "rating": "? {rating}"
     }
+  },
+  "about": {
+    "hello": "Hi, ich bin Salma.",
+    "headline": "Die Person hinter Dishly",
+    "whatTitle": "Was ist Dishly?",
+    "whatBody": "Dishly ist ein digitales Kochbuch, in dem du Rezepte an einem Ort sammelst. Es geht um einfache, leckere Gerichte, die du jederzeit wiederfinden kannst, damit deine Lieblingsessen nicht in Notizen oder Screenshots verloren gehen.",
+    "findTitle": "Was du hier findest",
+    "findBody": "Auf der Startseite findest du öffentliche Rezepte, die du durchsuchen und filtern kannst. Oben kannst du nach Titel, Kategorie oder Stichwort suchen, um Gerichte schnell zu finden. Unter Meine Rezepte kannst du eigene Gerichte erstellen, bearbeiten und löschen, Favoriten markieren und auswählen, welche davon auch auf der Startseite erscheinen.",
+    "cookingTitle": "Kochen bedeutet für mich...",
+    "cookingBody": "Kochen soll alltagstauglich, entspannt und trotzdem ein bisschen besonders sein. Genau so soll sich Dishly anfühlen.",
+    "profileAlt": "Salma - Erstellerin von Dishly"
+  },
+  "contact": {
+    "title": "Kontakt",
+    "cardTitle": "Schreib uns",
+    "description": "Hast du Feedback, Ideen oder einen Funktionswunsch für Dishly? Ich freue mich über deine Nachricht.",
+    "emailIntro": "Schreib einfach an",
+    "emailOutro": "und ich melde mich so schnell wie möglich zurück."
   }
 }
