@@ -5,15 +5,20 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import type { Recipe } from '@/types/recipe'
 
+type RecipeSource = 'external' | 'dishly'
+type DisplayRecipe = Recipe & {
+  source: RecipeSource
+}
+
 const search = ref('') // Suchtext für das Input-Feld
-const recipes = ref<Recipe[]>([]) // kombinierte Liste, die im Grid angezeigt wird
+const recipes = ref<DisplayRecipe[]>([]) // kombinierte Liste, die im Grid angezeigt wird
 const allExternal = ref<Recipe[]>([]) // alle geladenen externen API-Rezepte
 const ownPublished = ref<Recipe[]>([]) // eigene veröffentlichte Rezepte aus dem Backend
 
 // Laden/Fehler/ausgewähltes Rezept
 const loading = ref(true)
 const error = ref<string | null>(null)
-const selected = ref<Recipe | null>(null)
+const selected = ref<DisplayRecipe | null>(null)
 
 const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
 const SEARCH_DEBOUNCE_MS = 400
@@ -39,10 +44,15 @@ const buildView = () => {
   const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
   const externalSlice = shuffled.slice(0, EXTERNAL_CHUNK)
   recipes.value = [
-    ...externalSlice,
-    ...matchingPublished,
+    ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
+    ...matchingPublished.map(recipe => toDisplayRecipe(recipe, 'dishly')),
   ]
 }
+
+const toDisplayRecipe = (recipe: Recipe, source: RecipeSource): DisplayRecipe => ({
+  ...recipe,
+  source,
+})
 
 // Lädt externe und eigene veröffentlichte Rezepte parallel vom Backend
 const loadRecipes = async () => {
@@ -120,7 +130,7 @@ const filterRecipes = (items: Recipe[], q: string) => {
 }
 
 // Öffnet das Detail-Overlay für ein ausgewähltes Rezept
-const openDetails = (recipe: Recipe) => {
+const openDetails = (recipe: DisplayRecipe) => {
   selected.value = recipe
 }
 // Schließt das Detail-Overlay wieder
@@ -184,6 +194,12 @@ const shuffleRecipes = () => {
             <h3 class="card-title">{{ r.title }}</h3>
 
             <p class="card-meta">
+              <span
+                class="pill source-pill"
+                :class="r.source === 'dishly' ? 'source-pill-dishly' : 'source-pill-external'"
+              >
+                {{ r.source === 'dishly' ? 'Dishly' : 'Extern' }}
+              </span>
               <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
               <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
               <span v-if="r.rating" class="pill pill-rating">
@@ -404,6 +420,22 @@ const shuffleRecipes = () => {
 .pill-rating {
   background: #fff5c7;
   color: #b38700;
+}
+
+.source-pill {
+  font-weight: 800;
+}
+
+.source-pill-dishly {
+  background: #eefaf8;
+  color: #1d8e90;
+  border: 1px solid #8fd5cc;
+}
+
+.source-pill-external {
+  background: #fff7fb;
+  color: #b96593;
+  border: 1px solid #f6d9ea;
 }
 
 .card-times {

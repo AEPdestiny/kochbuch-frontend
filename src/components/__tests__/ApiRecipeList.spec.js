@@ -41,6 +41,34 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Test Pasta')
   })
 
+  it('shows an "Extern" badge for external recipes', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const firstCard = wrapper.find('.recipe-card')
+    expect(firstCard.text()).toContain('Extern')
+    expect(firstCard.text()).toContain('External Pasta')
+  })
+
+  it('shows a "Dishly" badge for own published recipes', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Published Pasta', 'noodles', 'Italian'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const firstCard = wrapper.find('.recipe-card')
+    expect(firstCard.text()).toContain('Dishly')
+    expect(firstCard.text()).toContain('Published Pasta')
+  })
+
   it('shows an error when initial loading fails', async () => {
     vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(
       new Error('Error while loading recipes'),
