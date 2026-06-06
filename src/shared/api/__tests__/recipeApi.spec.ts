@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { apiClient } from '@/shared/api/apiClient'
 import type { RecipeResponse } from '@/types/recipe'
@@ -13,6 +13,10 @@ vi.mock('@/shared/api/apiClient', () => ({
 }))
 
 describe('recipeApi', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('getMyRecipes calls /recipes/mine and returns recipes', async () => {
     const recipes: RecipeResponse[] = [
       {
@@ -37,5 +41,23 @@ describe('recipeApi', () => {
 
     expect(apiClient.get).toHaveBeenCalledWith('/recipes/mine')
     expect(result).toEqual(recipes)
+  })
+
+  it('getExternalRecipes calls /recipes/external without params when search is empty', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
+
+    await recipeApi.getExternalRecipes()
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', { params: undefined })
+  })
+
+  it('getExternalRecipes calls /recipes/external with search param', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
+
+    await recipeApi.getExternalRecipes(' chicken ')
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', {
+      params: { search: 'chicken' },
+    })
   })
 })

@@ -1,7 +1,7 @@
 /**Zeigt auf der Startseite öffentliche API-Rezepte plus eigene veröffentlichte Rezepte.*/
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import type { Recipe } from '@/types/recipe'
 
@@ -16,6 +16,9 @@ const error = ref<string | null>(null)
 const selected = ref<Recipe | null>(null)
 
 const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
+const SEARCH_DEBOUNCE_MS = 400
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+let externalRequestCounter = 0
 
 //erstellt eine zufällige Reihenfolge der übergebenen Rezepte
 const shuffleArray = (items: Recipe[]): Recipe[] => {
@@ -31,11 +34,13 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
 
 // Baut die aktuell sichtbare Liste aus zufälligen externen Rezepten + eigenen veröffentlichten
 const buildView = () => {
-  const shuffled = shuffleArray(allExternal.value)
+  const q = search.value.toLowerCase().trim()
+  const matchingPublished = filterRecipes(ownPublished.value, q)
+  const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
   const externalSlice = shuffled.slice(0, EXTERNAL_CHUNK)
   recipes.value = [
     ...externalSlice,
-    ...ownPublished.value,
+    ...matchingPublished,
   ]
 }
 
@@ -63,16 +68,56 @@ onMounted(() => {
   loadRecipes()
 })
 
-// Abgeleitete Liste, gefiltert nach Suchbegriff in Titel, Zutaten oder Kategorie
-const filtered = computed(() => {
-  const q = search.value.toLowerCase().trim()
-  if (!q) return recipes.value
-  return recipes.value.filter(r =>
+watch(search, value => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  const query = value.trim()
+  if (query.length > 0 && query.length < 2) {
+    buildView()
+    return
+  }
+
+  searchTimeout = setTimeout(() => {
+    loadExternalRecipes(query)
+  }, SEARCH_DEBOUNCE_MS)
+})
+
+const loadExternalRecipes = async (query: string) => {
+  const requestId = ++externalRequestCounter
+  try {
+    const external = query
+      ? await recipeApi.getExternalRecipes(query)
+      : await recipeApi.getExternalRecipes()
+    if (requestId !== externalRequestCounter) {
+      return
+    }
+
+    allExternal.value = external
+    buildView()
+    error.value = null
+  } catch (e: any) {
+    if (requestId !== externalRequestCounter) {
+      return
+    }
+
+    allExternal.value = []
+    buildView()
+    error.value = e.message ?? 'Externe Rezepte konnten nicht geladen werden.'
+  }
+}
+
+const filtered = computed(() => recipes.value)
+
+const filterRecipes = (items: Recipe[], q: string) => {
+  if (!q) return items
+  return items.filter(r =>
     r.title.toLowerCase().includes(q) ||
     r.ingredients.toLowerCase().includes(q) ||
     r.category.toLowerCase().includes(q)
   )
-})
+}
 
 // Öffnet das Detail-Overlay für ein ausgewähltes Rezept
 const openDetails = (recipe: Recipe) => {
@@ -117,9 +162,13 @@ const shuffleRecipes = () => {
 
     <section class="list-wrap">
       <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
-      <p v-else-if="error" class="status-text error">Fehler: {{ error }}</p>
+      <p v-else-if="error && filtered.length === 0" class="status-text error">Fehler: {{ error }}</p>
 
       <div v-else class="recipe-grid">
+        <p v-if="error" class="status-text error">
+          Fehler: {{ error }}
+        </p>
+
         <!-- Karten für alle gefilterten Rezepte -->
         <article
           v-for="r in filtered"

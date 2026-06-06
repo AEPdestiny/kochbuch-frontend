@@ -12,8 +12,9 @@ export const recipeApi = {
     return response.data
   },
 
-  async getExternalRecipes(): Promise<RecipeResponse[]> {
-    const response = await apiClient.get<RecipeResponse[]>('/recipes/external')
+  async getExternalRecipes(search?: string): Promise<RecipeResponse[]> {
+    const params = search?.trim() ? { search: search.trim() } : undefined
+    const response = await apiClient.get<RecipeResponse[]>('/recipes/external', { params })
     return response.data
   },
 
