@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const username = ref('')
@@ -16,7 +17,21 @@ async function submitRegister() {
     email: email.value,
     password: password.value,
   })
-  await router.push('/')
+  await router.push(getSafeRedirectPath())
+}
+
+function getSafeRedirectPath() {
+  const redirect = route.query.redirect
+  if (
+    typeof redirect === 'string' &&
+    redirect.startsWith('/') &&
+    redirect !== '/login' &&
+    redirect !== '/register'
+  ) {
+    return redirect
+  }
+
+  return '/'
 }
 </script>
 

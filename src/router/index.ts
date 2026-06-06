@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,16 +17,19 @@ const router = createRouter({
       path: '/my-recipes',
       name: 'my-recipes',
       component: () => import('../views/MyRecipesView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/pantry',
       name: 'pantry',
       component: () => import('../views/PantryView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/shopping-list',
       name: 'shopping-list',
       component: () => import('../views/ShoppingListView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       // About-Seite mit Informationen zur App
@@ -50,6 +54,39 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue'),
     },
   ],
+})
+
+router.beforeEach(async to => {
+  if (!to.meta.requiresAuth) {
+    return true
+  }
+
+  const authStore = useAuthStore()
+  if (!authStore.token) {
+    authStore.initFromStorage()
+  }
+
+  if (!authStore.token) {
+    return {
+      path: '/login',
+      query: { redirect: to.fullPath },
+    }
+  }
+
+  if (authStore.user) {
+    return true
+  }
+
+  const currentUser = await authStore.loadCurrentUser()
+  if (currentUser) {
+    return true
+  }
+
+  authStore.logout()
+  return {
+    path: '/login',
+    query: { redirect: to.fullPath },
+  }
 })
 
 export default router
