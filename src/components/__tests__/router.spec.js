@@ -15,6 +15,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
 // Views, die über Routen erreichbar sind
 import HomeView from '@/views/HomeView.vue'
 import MyRecipesView from '@/views/MyRecipesView.vue'
+import PantryView from '@/views/PantryView.vue'
 import AboutView from '@/views/AboutView.vue'
 import ContactView from '@/views/ContactView.vue'
 
@@ -24,6 +25,7 @@ const router = createRouter({
   routes: [
     { path: '/', component: HomeView },
     { path: '/my-recipes', component: MyRecipesView },
+    { path: '/pantry', component: PantryView },
     { path: '/about', component: AboutView },
     { path: '/contact', component: ContactView },
   ],
@@ -59,6 +61,15 @@ describe('App routing', () => {
     })
     // Erwartung: Text für My-Recipes-Seite sichtbar
     expect(wrapper.text()).toContain('Your personal Dishly cookbook')
+  })
+
+  it('renders PantryView on /pantry', async () => {
+    router.push('/pantry')
+    await router.isReady()
+    const wrapper = mount(PantryView, {
+      global: { plugins: [router] },
+    })
+    expect(wrapper.text()).toContain('Dein Vorrat')
   })
 
   it('renders AboutView on /about', async () => {

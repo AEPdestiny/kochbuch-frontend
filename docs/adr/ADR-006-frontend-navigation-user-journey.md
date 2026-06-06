@@ -10,25 +10,25 @@ Vorgeschlagen
 
 ## Kontext
 
-Das Frontend besitzt aktuell eine oeffentliche Navigation mit den Bereichen
-Home, My Recipes, About und Contact. Das Backend unterstuetzt inzwischen
-Registrierung, Login, `GET /auth/me` und geschuetzte Recipe-Write-Endpunkte.
+Das Frontend besitzt aktuell eine öffentliche Navigation mit den Bereichen
+Home, My Recipes, About und Contact. Das Backend unterstützt inzwischen
+Registrierung, Login, `GET /auth/me` und geschützte Recipe-Write-Endpunkte.
 Bevor Login- und Register-Views implementiert werden, soll festgelegt werden,
-wie sich die Navigation fuer Gaeste und eingeloggte Nutzer verhaelt.
+wie sich die Navigation für Gäste und eingeloggte Nutzer verhält.
 
 ## Aktuelle Navigation
 
-- Home: oeffentliche Startseite mit externen Rezepten, Suche und Shuffle.
-- My Recipes: Seite fuer eigene Rezepte mit CRUD-Funktionen und Favoriten.
-- About: oeffentliche Informationsseite.
-- Contact: oeffentliche Kontaktseite.
+- Home: öffentliche Startseite mit externen Rezepten, Suche und Shuffle.
+- My Recipes: Seite für eigene Rezepte mit CRUD-Funktionen und Favoriten.
+- About: öffentliche Informationsseite.
+- Contact: öffentliche Kontaktseite.
 
 Aktuell unterscheidet die Navigation noch nicht zwischen Gast und
 eingeloggtem User.
 
 ## Entscheidungsvorschlag
 
-Die Navigation wird schrittweise auth-faehig gemacht, ohne bestehende Seiten
+Die Navigation wird schrittweise auth-fähig gemacht, ohne bestehende Seiten
 sofort grundlegend umzubauen.
 
 ### Gast-Navigation
@@ -42,11 +42,11 @@ Ein nicht eingeloggter Nutzer sieht:
 - Login
 - Registrieren
 
-Home, About und Contact bleiben vollstaendig oeffentlich. My Recipes darf
-zunaechst sichtbar bleiben, muss aber bei schreibenden Aktionen klar auf Login
+Home, About und Contact bleiben vollständig öffentlich. My Recipes darf
+zunächst sichtbar bleiben, muss aber bei schreibenden Aktionen klar auf Login
 hinweisen.
 
-### Navigation fuer eingeloggte Nutzer
+### Navigation für eingeloggte Nutzer
 
 Ein eingeloggter Nutzer sieht:
 
@@ -57,14 +57,14 @@ Ein eingeloggter Nutzer sieht:
 - Username
 - Logout
 
-Login und Registrieren werden fuer eingeloggte Nutzer ausgeblendet. Der
+Login und Registrieren werden für eingeloggte Nutzer ausgeblendet. Der
 Username signalisiert den aktuellen Auth-Status. Ein eigenes Profil ist in
 diesem Schritt nicht erforderlich.
 
 ## Login- und Register-Fluss
 
 - Einstiegspunkt: Header-Aktionen `Login` und `Registrieren`.
-- Login erfolgreich: Weiterleitung zur vorher gewuenschten Seite, falls
+- Login erfolgreich: Weiterleitung zur vorher gewünschten Seite, falls
   vorhanden; sonst zu `My Recipes`.
 - Registrierung erfolgreich: Weiterleitung zu `My Recipes`, da der User direkt
   eingeloggt wird.
@@ -75,10 +75,10 @@ diesem Schritt nicht erforderlich.
 
 ## Rezept-Funktionen
 
-Oeffentlich:
+Öffentlich:
 
 - Rezepte ansehen
-- Veroeffentlichte Rezepte ansehen
+- Veröffentlichte Rezepte ansehen
 - Einzelnes Rezept ansehen
 - Externe Rezepte ansehen
 
@@ -86,11 +86,11 @@ Login erforderlich:
 
 - Rezept erstellen
 - Rezept bearbeiten
-- Rezept loeschen
+- Rezept löschen
 
-Die oeffentlichen Read-Endpunkte bleiben ohne Token nutzbar. Fuer
+Die öffentlichen Read-Endpunkte bleiben ohne Token nutzbar. Für
 `POST /recipes`, `PUT /recipes/{id}` und `DELETE /recipes/{id}` wird ein
-Bearer Token benoetigt.
+Bearer Token benötigt.
 
 ## Header-Konzept
 
@@ -105,7 +105,7 @@ User:
 - Logout
 
 Der Header soll den Auth-Status knapp und eindeutig zeigen. Es wird kein
-groesseres Profilmenue eingefuehrt, solange noch keine Profilseite existiert.
+größeres Profilmenü eingeführt, solange noch keine Profilseite existiert.
 
 ## Route-Konzept
 
@@ -114,14 +114,14 @@ Neue Routen:
 - `/login`
 - `/register`
 
-Zukuenftige geschuetzte Bereiche:
+Zukünftige geschützte Bereiche:
 
 - `/profile` oder `/me`
 - user-bezogene Rezeptlisten
-- spaetere Fachmodule wie Pantry, ShoppingList oder MealPlan
+- spätere Fachmodule wie Pantry, ShoppingList oder MealPlan
 
-Route Guards werden erst eingefuehrt, wenn es tatsaechlich geschuetzte
-Frontend-Seiten gibt. Fuer diesen Schritt reicht es, schreibende Aktionen
+Route Guards werden erst eingeführt, wenn es tatsächlich geschützte
+Frontend-Seiten gibt. Für diesen Schritt reicht es, schreibende Aktionen
 innerhalb der bestehenden Seiten auth-bewusst zu behandeln.
 
 ## UI-Migrationsplan
@@ -129,41 +129,41 @@ innerhalb der bestehenden Seiten auth-bewusst zu behandeln.
 1. Login- und Register-Views isoliert anlegen.
 2. Header minimal um Auth-Aktionen erweitern.
 3. Auth Store beim App-Start initialisieren.
-4. My Recipes nicht vollstaendig umbauen, sondern zuerst nur Create/Edit/Delete
+4. My Recipes nicht vollständig umbauen, sondern zuerst nur Create/Edit/Delete
    mit Auth-Status und Authorization Header verbinden.
 5. 401- und 403-Fehler in bestehenden Recipe-Flows sichtbar machen.
-6. Erst spaeter pruefen, ob My Recipes als ganze Seite einen Route Guard
+6. Erst später prüfen, ob My Recipes als ganze Seite einen Route Guard
    bekommen soll.
 
-Dieser Ablauf verhindert einen Big-Bang-Refactor und erhaelt die bestehenden
-Recipe-Ansichten so weit wie moeglich.
+Dieser Ablauf verhindert einen Big-Bang-Refactor und erhält die bestehenden
+Recipe-Ansichten so weit wie möglich.
 
 ## Risiken
 
 - My Recipes ist fachlich teilweise privat, bleibt aber vorerst sichtbar. Das
-  kann fuer Nutzer uneindeutig wirken, wenn Schreibaktionen erst beim Klick
+  kann für Nutzer uneindeutig wirken, wenn Schreibaktionen erst beim Klick
   Login verlangen.
-- `sessionStorage` schuetzt nicht gegen XSS. Fuer das MVP ist es akzeptiert,
+- `sessionStorage` schützt nicht gegen XSS. Für das MVP ist es akzeptiert,
   langfristig sollte HttpOnly-Cookie-basierte Auth erneut bewertet werden.
-- Bei direkter Weiterleitung nach Login muss der urspruengliche Zielpfad sauber
+- Bei direkter Weiterleitung nach Login muss der ursprüngliche Zielpfad sauber
   gespeichert werden, ohne offene Redirects zu erlauben.
-- Bestehende Fetch-Aufrufe in Recipe-Komponenten koennen waehrend der
+- Bestehende Fetch-Aufrufe in Recipe-Komponenten können während der
   Migration parallel zum neuen Axios Client existieren.
 
 ## Empfehlungen
 
-- Login und Registrierung zuerst als kleine, eigenstaendige Views umsetzen.
+- Login und Registrierung zuerst als kleine, eigenständige Views umsetzen.
 - Header-Anpassung danach separat vornehmen.
-- Recipe-Schreiboperationen erst im naechsten Schritt auf den zentralen API
+- Recipe-Schreiboperationen erst im nächsten Schritt auf den zentralen API
   Client migrieren.
-- Oeffentliche Read-Funktionen bewusst unveraendert lassen.
-- Route Guards erst einfuehren, wenn eine Seite wirklich vollstaendig
-  geschuetzt werden soll.
+- Öffentliche Read-Funktionen bewusst unverändert lassen.
+- Route Guards erst einführen, wenn eine Seite wirklich vollständig
+  geschützt werden soll.
 
 ## Nicht Teil dieser Entscheidung
 
 - Keine Implementierung von Login/Register Views
 - Keine Route Guards
-- Keine Frontend-Codeaenderungen in diesem Schritt
-- Keine Backend-Aenderungen
+- Keine Frontend-Codeänderungen in diesem Schritt
+- Keine Backend-Änderungen
 - Keine neuen Fachmodule

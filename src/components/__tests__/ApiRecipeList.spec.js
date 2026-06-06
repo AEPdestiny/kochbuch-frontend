@@ -5,6 +5,7 @@ import { recipeApi } from '@/shared/api/recipeApi'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
+    getExternalRecipes: vi.fn(),
     getPublishedRecipes: vi.fn(),
   },
 }))
@@ -14,16 +15,12 @@ describe('ApiRecipeList.vue', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
   })
 
   it('shows loading text while recipes are being fetched', () => {
-    // fetch so mocken, dass er ein leeres Ergebnis liefert
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    })
-
+    // recipeApi liefert standardmaessig leere Ergebnisse
     // Komponente mounten, der initiale State sollte "Loading…" anzeigen
     const wrapper = mount(ApiRecipeList)
 
@@ -48,11 +45,8 @@ describe('ApiRecipeList.vue', () => {
       },
     ]
 
-    // fetch so mocken, dass Fake-Rezepte zurückgegeben werden
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => fakeRecipes,
-    })
+    // recipeApi so mocken, dass Fake-Rezepte zurückgegeben werden
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue(fakeRecipes)
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
@@ -64,12 +58,10 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows an error when loading fails', async () => {
-    // fetch so mocken, dass ok:false zurückkommt (HTTP-Fehler)
-    vi.spyOn(global, 'fetch').mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: async () => ({}),
-    })
+    // recipeApi so mocken, dass ein Ladefehler zurückkommt
+    vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(
+      new Error('Error while loading recipes'),
+    )
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
@@ -110,11 +102,8 @@ describe('ApiRecipeList.vue', () => {
       },
     ]
 
-    // fetch-Mock liefert externe Rezepte, published kommt aus recipeApi
-    vi.spyOn(global, 'fetch').mockResolvedValueOnce({
-      ok: true,
-      json: async () => fakeRecipes,
-    })
+    // recipeApi liefert externe Rezepte, published bleibt leer
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue(fakeRecipes)
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)

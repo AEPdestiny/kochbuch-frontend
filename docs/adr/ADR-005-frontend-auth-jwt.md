@@ -11,28 +11,28 @@ Akzeptiert
 ## Kontext
 
 Das Backend stellt JWT-basierte Authentifizierung bereit. Recipe-Write-
-Endpunkte benoetigen einen Bearer Token, waehrend Recipe-Read-Endpunkte
-oeffentlich bleiben. Das Vue-Frontend nutzt aktuell direkte Fetch-Aufrufe in
+Endpunkte benötigen einen Bearer Token, während Recipe-Read-Endpunkte
+öffentlich bleiben. Das Vue-Frontend nutzt aktuell direkte Fetch-Aufrufe in
 Komponenten.
 
 ## Entscheidung
 
-Das Frontend erhaelt eine kleine Auth-Infrastruktur:
+Das Frontend erhält eine kleine Auth-Infrastruktur:
 
 - Pinia `authStore`
 - zentrale Axios-Instanz
 - JWT-Speicherung in `sessionStorage`
-- vorbereitete Auth-API fuer Registrierung, Login und `/auth/me`
-- spaetere Authorization Header fuer geschuetzte Recipe-Write-Requests
+- vorbereitete Auth-API für Registrierung, Login und `/auth/me`
+- spätere Authorization Header für geschützte Recipe-Write-Requests
 
 Login/Register Views, Navigation und Recipe-Komponenten werden in diesem
-Schritt noch nicht geaendert.
+Schritt noch nicht geändert.
 
 ## Konsequenzen
 
 - Token-Handling wird zentralisiert.
-- Komponenten muessen spaeter keine Header manuell setzen.
-- Oeffentliche GET-Endpunkte bleiben ohne Token nutzbar.
+- Komponenten müssen später keine Header manuell setzen.
+- Öffentliche GET-Endpunkte bleiben ohne Token nutzbar.
 - `sessionStorage` ist MVP-tauglich, aber nicht so sicher wie HttpOnly Cookies.
 
 ## Nicht Teil dieser Entscheidung

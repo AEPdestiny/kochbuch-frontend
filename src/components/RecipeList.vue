@@ -2,29 +2,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { recipeApi } from '@/shared/api/recipeApi'
+import type { Recipe } from '@/types/recipe'
 
 const props = defineProps<{ search?: string }>()
 
-// Typdefinition für ein Rezept-Objekt, so wie es vom Backend kommt
-type Recipe = {
-  id: number | string
-  title: string
-  imageUrl: string
-  prepTimeMinutes: number
-  cookTimeMinutes: number
-  servings: number
-  difficulty: string
-  category: string
-  rating: number
-  ingredients: string
-  instructions: string
-  favorite: boolean
-  published: boolean
-}
 // Liste aller Rezepte, Lade-Status und Fehlermeldung
 const recipes = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const loginRequired = ref(false)
 // Zusätzlicher State nur für Formular-Validierungsfehler
 const formError = ref<string | null>(null)
 const editFormError = ref<string | null>(null)
@@ -47,25 +33,49 @@ const editing = ref<Recipe | null>(null) // Referenz auf das Rezept, das aktuell
 
 const selectedFavorite = ref<Recipe | null>(null) // Referenz auf das aktuell ausgewählte Lieblingsrezept
 
-// Lädt alle Rezepte vom Backend-Endpoint /recipes
+// Lädt die eigenen Rezepte vom Backend-Endpoint /recipes/mine
 const loadRecipes = async () => {
-  // Request ueber den zentralen API Client schicken, um alle Rezepte zu laden
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    recipes.value = []
+    error.value = 'Bitte melde dich an, um deine Rezepte zu sehen.'
+    loginRequired.value = true
+    loading.value = false
+    return
+  }
+
   try {
-    const result = await recipeApi.getRecipes()
-    // Liste zunaechst leeren und dann mit den geladenen Rezepten fuellen
+    const result = await recipeApi.getMyRecipes()
+    // Liste zunächst leeren und dann mit den geladenen Rezepten füllen
       recipes.value = []
       result.forEach(r => {
         recipes.value.push(r)
       })
       error.value = null
+      loginRequired.value = false
   } catch (err: unknown) {
-      // Fehler im Log ausgeben und Fehlermeldung im State setzen
-      console.log('error', err)
-      error.value = err instanceof Error ? err.message : 'Unknown error'
+      // Fehlermeldung im State setzen
+      error.value = toLoadRecipesErrorMessage(err)
+      loginRequired.value = err instanceof ApiClientError && err.status === 401
   } finally {
       // Lade-Status immer beenden, egal ob Erfolg oder Fehler
       loading.value = false
   }
+}
+
+const toLoadRecipesErrorMessage = (e: unknown) => {
+  if (e instanceof ApiClientError) {
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um deine Rezepte zu sehen.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Deine Rezepte konnten nicht geladen werden.'
 }
 
 // Neues Rezept anlegen und ans Backend senden
@@ -448,7 +458,12 @@ const closeFavoriteDetails = () => {
       <h3 class="recipes-title">Your created recipes</h3>
 
       <p v-if="loading" class="status-text">Loading recipes…</p>
-      <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
+      <div v-else-if="error" class="status-text error">
+        <p>Error: {{ error }}</p>
+        <a v-if="loginRequired" href="/login" class="login-link">
+          Zum Login
+        </a>
+      </div>
 
       <!-- Wenn geladen und kein Fehler: Liste der gefilterten Rezepte -->
       <ul v-else class="recipes">
@@ -586,7 +601,12 @@ const closeFavoriteDetails = () => {
       <h3 class="recipes-title">Your favorite recipes</h3>
 
       <p v-if="loading" class="status-text">Loading recipes…</p>
-      <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
+      <div v-else-if="error" class="status-text error">
+        <p>Error: {{ error }}</p>
+        <a v-if="loginRequired" href="/login" class="login-link">
+          Zum Login
+        </a>
+      </div>
 
       <div v-else class="recipe-grid">
         <article
@@ -819,6 +839,22 @@ textarea {
 .status-text.error {
   color: #a14c2b;
   font-weight: 600;
+}
+
+.status-text.error p {
+  margin-bottom: 10px;
+}
+
+.login-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #cc7da9;
+  color: #ffffff;
+  padding: 8px 16px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .recipes {

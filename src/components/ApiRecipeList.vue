@@ -3,23 +3,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { recipeApi } from '@/shared/api/recipeApi'
+import type { Recipe } from '@/types/recipe'
 
-// Rezept-Typ für externe und eigene Rezepte
-type Recipe = {
-  id: number | string
-  title: string
-  imageUrl: string
-  prepTimeMinutes: number
-  cookTimeMinutes: number
-  servings: number
-  difficulty: string
-  category: string
-  rating: number
-  ingredients: string
-  instructions: string
-  favorite?: boolean
-  published?: boolean
-}
 const search = ref('') // Suchtext für das Input-Feld
 const recipes = ref<Recipe[]>([]) // kombinierte Liste, die im Grid angezeigt wird
 const allExternal = ref<Recipe[]>([]) // alle geladenen externen API-Rezepte
@@ -30,7 +15,6 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<Recipe | null>(null)
 
-const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL ?? 'http://localhost:8080'// Backend-Basis-URL (aus Env, sonst lokal)
 const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
 
 //erstellt eine zufällige Reihenfolge der übergebenen Rezepte
@@ -59,16 +43,10 @@ const buildView = () => {
 const loadRecipes = async () => {
   loading.value = true
   try {
-    const [extRes, own] = await Promise.all([
-      fetch(baseUrl + '/recipes/external'),
+    const [external, own] = await Promise.all([
+      recipeApi.getExternalRecipes(),
       recipeApi.getPublishedRecipes(),
     ])
-
-    if (!extRes.ok) {
-      throw new Error('Error while loading recipes')
-    }
-
-    const external: Recipe[] = await extRes.json()
 
     allExternal.value = external
     ownPublished.value = own

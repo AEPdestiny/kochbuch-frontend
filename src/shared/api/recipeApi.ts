@@ -1,23 +1,5 @@
 import { apiClient } from './apiClient'
-
-export type RecipeRequest = {
-  title: string
-  imageUrl: string
-  prepTimeMinutes: number
-  cookTimeMinutes: number
-  servings: number
-  difficulty: string
-  category: string
-  rating: number
-  ingredients: string
-  instructions: string
-  favorite: boolean
-  published: boolean
-}
-
-export type RecipeResponse = RecipeRequest & {
-  id: number | string
-}
+import type { RecipeRequest, RecipeResponse } from '@/types/recipe'
 
 export const recipeApi = {
   async getRecipes(): Promise<RecipeResponse[]> {
@@ -27,6 +9,16 @@ export const recipeApi = {
 
   async getPublishedRecipes(): Promise<RecipeResponse[]> {
     const response = await apiClient.get<RecipeResponse[]>('/recipes/published')
+    return response.data
+  },
+
+  async getExternalRecipes(): Promise<RecipeResponse[]> {
+    const response = await apiClient.get<RecipeResponse[]>('/recipes/external')
+    return response.data
+  },
+
+  async getMyRecipes(): Promise<RecipeResponse[]> {
+    const response = await apiClient.get<RecipeResponse[]>('/recipes/mine')
     return response.data
   },
 

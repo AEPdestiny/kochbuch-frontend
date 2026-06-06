@@ -50,7 +50,7 @@ async function submitLogin() {
       </p>
 
       <button class="submit-button" type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Login laeuft...' : 'Einloggen' }}
+        {{ authStore.loading ? 'Login läuft...' : 'Einloggen' }}
       </button>
     </form>
   </section>

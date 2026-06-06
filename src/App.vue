@@ -48,6 +48,7 @@ async function logout() {
       <nav class="nav-bar">
         <RouterLink to="/" class="nav-item">Home</RouterLink>
         <RouterLink to="/my-recipes" class="nav-item">Your recipes</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/pantry" class="nav-item">Vorrat</RouterLink>
         <RouterLink to="/about" class="nav-item">About</RouterLink>
         <RouterLink to="/contact" class="nav-item">Contact</RouterLink>
         <template v-if="authStore.isAuthenticated">

@@ -64,7 +64,7 @@ async function submitRegister() {
       </p>
 
       <button class="submit-button" type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Registrierung laeuft...' : 'Konto erstellen' }}
+        {{ authStore.loading ? 'Registrierung läuft...' : 'Konto erstellen' }}
       </button>
     </form>
   </section>

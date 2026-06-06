@@ -18,6 +18,11 @@ const router = createRouter({
       component: () => import('../views/MyRecipesView.vue'),
     },
     {
+      path: '/pantry',
+      name: 'pantry',
+      component: () => import('../views/PantryView.vue'),
+    },
+    {
       // About-Seite mit Informationen zur App
       path: '/about',
       name: 'about',

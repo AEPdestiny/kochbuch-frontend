@@ -2,11 +2,12 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RecipeList from '@/components/RecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
-import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getRecipes: vi.fn(),
+    getMyRecipes: vi.fn(),
     createRecipe: vi.fn(),
     updateRecipe: vi.fn(),
     deleteRecipe: vi.fn(),
@@ -20,10 +21,12 @@ describe('RecipeList.vue', () => {
     vi.clearAllMocks()
     sessionStorage.clear()
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
   })
 
-  it('loads /recipes and shows "Your created recipes" with items', async () => {
-    // Fake-Daten für initiales GET /recipes
+  it('loads /recipes/mine and shows "Your created recipes" with items for logged-in users', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    // Fake-Daten für initiales GET /recipes/mine
     const fakeRecipes = [
       {
         id: 1,
@@ -42,16 +45,45 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    // fetch so mocken, dass diese Fake-Daten zurückkommen
-    vi.mocked(recipeApi.getRecipes).mockResolvedValue(fakeRecipes)
+    // recipeApi so mocken, dass diese Fake-Daten zurückkommen
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(fakeRecipes)
 
     const wrapper = mount(RecipeList)
 
     await flushPromises()
 
     // Erwartung: Überschrift + Rezepttitel sichtbar
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getRecipes).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Your created recipes')
     expect(wrapper.text()).toContain('Test Pasta')
+  })
+
+  it('does not load recipes without login and shows a hint', async () => {
+    const wrapper = mount(RecipeList)
+
+    await flushPromises()
+
+    expect(recipeApi.getMyRecipes).not.toHaveBeenCalled()
+    expect(recipeApi.getRecipes).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte melde dich an, um deine Rezepte zu sehen.')
+    const loginLink = wrapper.find('a.login-link')
+    expect(loginLink.exists()).toBe(true)
+    expect(loginLink.attributes('href')).toBe('/login')
+    expect(loginLink.text()).toBe('Zum Login')
+  })
+
+  it('shows a readable message when loading my recipes returns 401', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockRejectedValue(
+      new ApiClientError('Missing or invalid Bearer token.', 401),
+    )
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Bitte melde dich erneut an, um deine Rezepte zu sehen.')
   })
 
   it('creates a recipe via form submit', async () => {
@@ -91,8 +123,8 @@ describe('RecipeList.vue', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    // Erwartung: letzter fetch war ein POST auf /recipes
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    // Erwartung: initialer Read lief über recipeApi, Create über recipeApi.createRecipe
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.createRecipe).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'New Dish',
@@ -121,7 +153,7 @@ describe('RecipeList.vue', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getMyRecipes).not.toHaveBeenCalled()
     expect(recipeApi.createRecipe).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu erstellen.')
   })
@@ -134,8 +166,8 @@ describe('RecipeList.vue', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    // Erwartung: kein zusätzlicher fetch (also kein POST)
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    // Erwartung: kein zusätzlicher Create-Request
+    expect(recipeApi.getMyRecipes).not.toHaveBeenCalled()
     // Validierungsfehlermeldung sichtbar
     expect(wrapper.text()).toContain('Please fill in all required fields.')
   })
@@ -161,7 +193,7 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
@@ -169,7 +201,7 @@ describe('RecipeList.vue', () => {
     // Edit-Button des ersten Rezepts anklicken, um Edit-Panel zu öffnen
     await wrapper.find('.link-btn').trigger('click')
 
-    // Zweites fetch: PUT /recipes/1 -> aktualisiertes Rezept zurück
+    // Update-Request liefert das aktualisierte Rezept zurück
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({
       ...initial[0],
       title: 'Updated Title',
@@ -185,7 +217,7 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Erwartung: PUT auf /recipes/1 wurde abgesetzt
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.updateRecipe).toHaveBeenCalledWith(
       1,
       expect.objectContaining({
@@ -199,6 +231,7 @@ describe('RecipeList.vue', () => {
   })
 
   it('does not update a recipe without login', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const initial = [
       {
         id: 1,
@@ -217,10 +250,11 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
+    sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
 
     await wrapper.find('.link-btn').trigger('click')
     const titleInput = wrapper.find('.edit-panel input[type="text"]')
@@ -230,7 +264,7 @@ describe('RecipeList.vue', () => {
     await saveBtn.trigger('click')
     await flushPromises()
 
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.updateRecipe).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu bearbeiten.')
   })
@@ -256,12 +290,12 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
 
-    // Zweites fetch: DELETE /recipes/1
+    // Delete-Request erfolgreich mocken
     vi.mocked(recipeApi.deleteRecipe).mockResolvedValue()
 
     // Delete-Button klicken
@@ -270,12 +304,13 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Erwartung: DELETE auf /recipes/1
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.deleteRecipe).toHaveBeenCalledWith(1)
     expect(wrapper.text()).not.toContain('To Delete')
   })
 
   it('does not delete a recipe without login', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const initial = [
       {
         id: 1,
@@ -294,21 +329,23 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
+    sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
 
     const deleteBtn = wrapper.find('.link-btn.danger')
     await deleteBtn.trigger('click')
     await flushPromises()
 
-    expect(recipeApi.getRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.deleteRecipe).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu löschen.')
   })
 
   it('shows only favorite recipes in favorites grid', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     // Zwei Rezepte: eines favorite, eines nicht
     const initial = [
       {
@@ -343,7 +380,7 @@ describe('RecipeList.vue', () => {
       },
     ]
 
-    vi.mocked(recipeApi.getRecipes).mockResolvedValue(initial)
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
 
     const wrapper = mount(RecipeList)
     await flushPromises()
