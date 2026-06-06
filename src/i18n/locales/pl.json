@@ -14,7 +14,8 @@
     "contact": "Kontakt",
     "login": "Zaloguj",
     "register": "Zarejestruj",
-    "logout": "Wyloguj"
+    "logout": "Wyloguj",
+    "mealPlan": "Plan tygodnia"
   },
   "language": {
     "label": "Język"
@@ -227,31 +228,31 @@
     "shoppingListError": "Nie udało się załadować danych listy zakupów."
   },
   "home": {
-    "description": "Odkrywaj dania z ca?ego ?wiata i znajd? sw?j kolejny ulubiony przepis.",
-    "searchPlaceholder": "Szukaj po tytule, kuchni lub sk?adnikach",
-    "searchAria": "Szukaj przepis?w po tytule, kuchni lub sk?adnikach",
+    "description": "Odkrywaj dania z całego świata i znajdź swój kolejny ulubiony przepis.",
+    "searchPlaceholder": "Szukaj po tytule, kuchni lub składnikach",
+    "searchAria": "Szukaj przepisów po tytule, kuchni lub składnikach",
     "shuffle": "Wymieszaj przepisy",
-    "loading": "Przepisy s? ?adowane...",
-    "empty": "Nie znaleziono pasuj?cych przepis?w.",
+    "loading": "Przepisy są ładowane...",
+    "empty": "Nie znaleziono pasujących przepisów.",
     "errors": {
-      "prefix": "B??d:",
-      "externalSearch": "Nie uda?o si? za?adowa? zewn?trznych przepis?w.",
-      "initialLoad": "Nie uda?o si? za?adowa? przepis?w."
+      "prefix": "Błąd:",
+      "externalSearch": "Nie udało się załadować zewnętrznych przepisów.",
+      "initialLoad": "Nie udało się załadować przepisów."
     },
     "source": {
-      "external": "Zewn?trzne",
+      "external": "Zewnętrzne",
       "dishly": "Dishly"
     },
     "overlay": {
-      "ingredients": "Sk?adniki",
+      "ingredients": "Składniki",
       "instructions": "Przygotowanie",
-      "source": "?r?d?o",
+      "source": "Źródło",
       "close": "Zamknij"
     },
     "meta": {
       "minutes": "{minutes} min",
       "servings": "{count} porcje",
-      "rating": "? {rating}"
+      "rating": "★ {rating}"
     }
   },
   "about": {
@@ -271,5 +272,42 @@
     "description": "Masz opinię, pomysł lub prośbę o funkcję dla Dishly? Chętnie przeczytam Twoją wiadomość.",
     "emailIntro": "Napisz po prostu na",
     "emailOutro": "a odpowiem tak szybko, jak to możliwe."
+  },
+  "mealPlan": {
+    "title": "Plan tygodnia",
+    "subtitle": "Zaplanuj w?asne przepisy na bie??cy tydzie?.",
+    "loading": "?adowanie planu tygodnia...",
+    "plannedRecipe": "Zaplanowany przepis",
+    "week": {
+      "current": "Bie??cy tydzie?"
+    },
+    "form": {
+      "recipe": "Przepis",
+      "chooseRecipe": "Wybierz przepis"
+    },
+    "empty": {
+      "day": "Nie zaplanowano jeszcze przepisu.",
+      "noRecipes": "Nie masz jeszcze w?asnych przepis?w do zaplanowania."
+    },
+    "actions": {
+      "add": "Zaplanuj przepis",
+      "remove": "Usu?",
+      "save": "Zapisz"
+    },
+    "errors": {
+      "load": "Nie uda?o si? za?adowa? planu tygodnia.",
+      "save": "Nie uda?o si? zaplanowa? przepisu.",
+      "remove": "Nie uda?o si? usun?? przepisu.",
+      "noRecipeSelected": "Najpierw wybierz przepis."
+    },
+    "days": {
+      "monday": "Poniedzia?ek",
+      "tuesday": "Wtorek",
+      "wednesday": "?roda",
+      "thursday": "Czwartek",
+      "friday": "Pi?tek",
+      "saturday": "Sobota",
+      "sunday": "Niedziela"
+    }
   }
 }

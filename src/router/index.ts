@@ -38,6 +38,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/meal-plan',
+      name: 'meal-plan',
+      component: () => import('../views/MealPlanView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       // About-Seite mit Informationen zur App
       path: '/about',
       name: 'about',

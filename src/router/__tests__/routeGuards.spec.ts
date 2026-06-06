@@ -60,6 +60,13 @@ describe('route guards', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/dashboard')
   })
 
+  it('redirects guests from /meal-plan to login with redirect query', async () => {
+    await router.push('/meal-plan')
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/meal-plan')
+  })
+
   it('allows authenticated users to open protected routes', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))

@@ -14,7 +14,8 @@
     "contact": "Contact",
     "login": "Login",
     "register": "Register",
-    "logout": "Logout"
+    "logout": "Logout",
+    "mealPlan": "Meal Plan"
   },
   "language": {
     "label": "Language"
@@ -251,7 +252,7 @@
     "meta": {
       "minutes": "{minutes} min",
       "servings": "{count} servings",
-      "rating": "? {rating}"
+      "rating": "★ {rating}"
     }
   },
   "about": {
@@ -271,5 +272,42 @@
     "description": "Do you have feedback, ideas or a feature request for Dishly? I am happy to hear from you.",
     "emailIntro": "Just write to",
     "emailOutro": "and I will get back to you as soon as possible."
+  },
+  "mealPlan": {
+    "title": "Meal Plan",
+    "subtitle": "Plan your own recipes for the current week.",
+    "loading": "Loading meal plan...",
+    "plannedRecipe": "Planned recipe",
+    "week": {
+      "current": "Current week"
+    },
+    "form": {
+      "recipe": "Recipe",
+      "chooseRecipe": "Choose a recipe"
+    },
+    "empty": {
+      "day": "No recipe planned yet.",
+      "noRecipes": "You do not have any own recipes to plan yet."
+    },
+    "actions": {
+      "add": "Plan recipe",
+      "remove": "Remove",
+      "save": "Save"
+    },
+    "errors": {
+      "load": "The meal plan could not be loaded.",
+      "save": "The recipe could not be planned.",
+      "remove": "The recipe could not be removed.",
+      "noRecipeSelected": "Please choose a recipe first."
+    },
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
   }
 }

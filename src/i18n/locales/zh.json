@@ -14,7 +14,8 @@
     "contact": "联系",
     "login": "登录",
     "register": "注册",
-    "logout": "退出"
+    "logout": "退出",
+    "mealPlan": "????"
   },
   "language": {
     "label": "语言"
@@ -227,31 +228,31 @@
     "shoppingListError": "无法加载购物清单数据。"
   },
   "home": {
-    "description": "????????????????????????",
-    "searchPlaceholder": "???????????",
-    "searchAria": "?????????????",
-    "shuffle": "??????",
-    "loading": "??????...",
-    "empty": "?????????",
+    "description": "探索来自世界各地的菜肴，找到你的下一道最爱食谱。",
+    "searchPlaceholder": "按标题、菜系或食材搜索",
+    "searchAria": "按标题、菜系或食材搜索食谱",
+    "shuffle": "重新随机食谱",
+    "loading": "正在加载食谱...",
+    "empty": "未找到匹配的食谱。",
     "errors": {
-      "prefix": "???",
-      "externalSearch": "?????????",
-      "initialLoad": "???????"
+      "prefix": "错误：",
+      "externalSearch": "无法加载外部食谱。",
+      "initialLoad": "无法加载食谱。"
     },
     "source": {
-      "external": "??",
+      "external": "外部",
       "dishly": "Dishly"
     },
     "overlay": {
-      "ingredients": "??",
-      "instructions": "??",
-      "source": "??",
-      "close": "??"
+      "ingredients": "食材",
+      "instructions": "做法",
+      "source": "来源",
+      "close": "关闭"
     },
     "meta": {
-      "minutes": "{minutes} ??",
-      "servings": "{count} ?",
-      "rating": "? {rating}"
+      "minutes": "{minutes} 分钟",
+      "servings": "{count} 份",
+      "rating": "★ {rating}"
     }
   },
   "about": {
@@ -271,5 +272,42 @@
     "description": "你对 Dishly 有反馈、想法或功能建议吗？我很乐意收到你的消息。",
     "emailIntro": "请写信到",
     "emailOutro": "我会尽快回复你。"
+  },
+  "mealPlan": {
+    "title": "????",
+    "subtitle": "????????????",
+    "loading": "????????...",
+    "plannedRecipe": "??????",
+    "week": {
+      "current": "???"
+    },
+    "form": {
+      "recipe": "??",
+      "chooseRecipe": "????"
+    },
+    "empty": {
+      "day": "????????",
+      "noRecipes": "???????????????"
+    },
+    "actions": {
+      "add": "????",
+      "remove": "??",
+      "save": "??"
+    },
+    "errors": {
+      "load": "?????????",
+      "save": "????????",
+      "remove": "????????",
+      "noRecipeSelected": "?????????"
+    },
+    "days": {
+      "monday": "???",
+      "tuesday": "???",
+      "wednesday": "???",
+      "thursday": "???",
+      "friday": "???",
+      "saturday": "???",
+      "sunday": "???"
+    }
   }
 }

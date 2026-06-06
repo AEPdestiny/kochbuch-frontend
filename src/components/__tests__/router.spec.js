@@ -2,11 +2,13 @@ import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { i18n, setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getRecipes: vi.fn(),
+    getMyRecipes: vi.fn(),
     getExternalRecipes: vi.fn(),
     getPublishedRecipes: vi.fn(),
     createRecipe: vi.fn(),
@@ -15,10 +17,19 @@ vi.mock('@/shared/api/recipeApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/mealPlanApi', () => ({
+  mealPlanApi: {
+    getWeek: vi.fn(),
+    setDay: vi.fn(),
+    deleteDay: vi.fn(),
+  },
+}))
+
 import HomeView from '@/views/HomeView.vue'
 import MyRecipesView from '@/views/MyRecipesView.vue'
 import PantryView from '@/views/PantryView.vue'
 import ShoppingListView from '@/views/ShoppingListView.vue'
+import MealPlanView from '@/views/MealPlanView.vue'
 import AboutView from '@/views/AboutView.vue'
 import ContactView from '@/views/ContactView.vue'
 
@@ -29,6 +40,7 @@ const router = createRouter({
     { path: '/my-recipes', component: MyRecipesView },
     { path: '/pantry', component: PantryView },
     { path: '/shopping-list', component: ShoppingListView },
+    { path: '/meal-plan', component: MealPlanView },
     { path: '/about', component: AboutView },
     { path: '/contact', component: ContactView },
   ],
@@ -42,8 +54,14 @@ describe('App routing', () => {
       json: async () => [],
     })
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [],
+    })
     setLocale('de')
   })
 
@@ -83,6 +101,15 @@ describe('App routing', () => {
       global: { plugins: [router, i18n] },
     })
     expect(wrapper.text()).toContain('Deine Einkaufsliste')
+  })
+
+  it('renders MealPlanView on /meal-plan', async () => {
+    router.push('/meal-plan')
+    await router.isReady()
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [router, i18n] },
+    })
+    expect(wrapper.text()).toContain('Wochenplan')
   })
 
   it('renders AboutView on /about', async () => {

@@ -14,7 +14,8 @@
     "contact": "Kontakt",
     "login": "Anmelden",
     "register": "Registrieren",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "mealPlan": "Wochenplan"
   },
   "language": {
     "label": "Sprache"
@@ -227,9 +228,9 @@
     "shoppingListError": "Einkaufslistendaten konnten nicht geladen werden."
   },
   "home": {
-    "description": "Entdecke Gerichte aus aller Welt und finde dein n?chstes Lieblingsrezept.",
-    "searchPlaceholder": "Nach Titel, K?che oder Zutaten suchen",
-    "searchAria": "Rezepte nach Titel, K?che oder Zutaten suchen",
+    "description": "Entdecke Gerichte aus aller Welt und finde dein nächstes Lieblingsrezept.",
+    "searchPlaceholder": "Nach Titel, Küche oder Zutaten suchen",
+    "searchAria": "Rezepte nach Titel, Küche oder Zutaten suchen",
     "shuffle": "Rezepte neu mischen",
     "loading": "Rezepte werden geladen...",
     "empty": "Keine passenden Rezepte gefunden.",
@@ -246,12 +247,12 @@
       "ingredients": "Zutaten",
       "instructions": "Zubereitung",
       "source": "Quelle",
-      "close": "Schlie?en"
+      "close": "Schließen"
     },
     "meta": {
       "minutes": "{minutes} min",
       "servings": "{count} Portionen",
-      "rating": "? {rating}"
+      "rating": "★ {rating}"
     }
   },
   "about": {
@@ -271,5 +272,42 @@
     "description": "Hast du Feedback, Ideen oder einen Funktionswunsch für Dishly? Ich freue mich über deine Nachricht.",
     "emailIntro": "Schreib einfach an",
     "emailOutro": "und ich melde mich so schnell wie möglich zurück."
+  },
+  "mealPlan": {
+    "title": "Wochenplan",
+    "subtitle": "Plane deine eigenen Rezepte f?r die aktuelle Woche.",
+    "loading": "Wochenplan wird geladen...",
+    "plannedRecipe": "Geplantes Rezept",
+    "week": {
+      "current": "Aktuelle Woche"
+    },
+    "form": {
+      "recipe": "Rezept",
+      "chooseRecipe": "Rezept ausw?hlen"
+    },
+    "empty": {
+      "day": "Noch kein Rezept geplant.",
+      "noRecipes": "Du hast noch keine eigenen Rezepte zum Planen."
+    },
+    "actions": {
+      "add": "Rezept planen",
+      "remove": "Entfernen",
+      "save": "Speichern"
+    },
+    "errors": {
+      "load": "Der Wochenplan konnte nicht geladen werden.",
+      "save": "Das Rezept konnte nicht geplant werden.",
+      "remove": "Das Rezept konnte nicht entfernt werden.",
+      "noRecipeSelected": "Bitte w?hle zuerst ein Rezept aus."
+    },
+    "days": {
+      "monday": "Montag",
+      "tuesday": "Dienstag",
+      "wednesday": "Mittwoch",
+      "thursday": "Donnerstag",
+      "friday": "Freitag",
+      "saturday": "Samstag",
+      "sunday": "Sonntag"
+    }
   }
 }

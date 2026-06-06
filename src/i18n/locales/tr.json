@@ -14,7 +14,8 @@
     "contact": "İletişim",
     "login": "Giriş yap",
     "register": "Kayıt ol",
-    "logout": "Çıkış yap"
+    "logout": "Çıkış yap",
+    "mealPlan": "Haftal?k plan"
   },
   "language": {
     "label": "Dil"
@@ -227,16 +228,16 @@
     "shoppingListError": "Alışveriş listesi verileri yüklenemedi."
   },
   "home": {
-    "description": "D?nyan?n d?rt bir yan?ndan yemekleri ke?fet ve yeni favori tarifini bul.",
-    "searchPlaceholder": "Ba?l?k, mutfak veya malzemeye g?re ara",
-    "searchAria": "Tarifleri ba?l?k, mutfak veya malzemeye g?re ara",
-    "shuffle": "Tarifleri kar??t?r",
-    "loading": "Tarifler y?kleniyor...",
-    "empty": "E?le?en tarif bulunamad?.",
+    "description": "Dünyanın dört bir yanından yemekleri keşfet ve yeni favori tarifini bul.",
+    "searchPlaceholder": "Başlık, mutfak veya malzemeye göre ara",
+    "searchAria": "Tarifleri başlık, mutfak veya malzemeye göre ara",
+    "shuffle": "Tarifleri karıştır",
+    "loading": "Tarifler yükleniyor...",
+    "empty": "Eşleşen tarif bulunamadı.",
     "errors": {
       "prefix": "Hata:",
-      "externalSearch": "Harici tarifler y?klenemedi.",
-      "initialLoad": "Tarifler y?klenemedi."
+      "externalSearch": "Harici tarifler yüklenemedi.",
+      "initialLoad": "Tarifler yüklenemedi."
     },
     "source": {
       "external": "Harici",
@@ -244,14 +245,14 @@
     },
     "overlay": {
       "ingredients": "Malzemeler",
-      "instructions": "Haz?rlan??",
+      "instructions": "Hazırlanış",
       "source": "Kaynak",
       "close": "Kapat"
     },
     "meta": {
       "minutes": "{minutes} dk",
       "servings": "{count} porsiyon",
-      "rating": "? {rating}"
+      "rating": "★ {rating}"
     }
   },
   "about": {
@@ -271,5 +272,42 @@
     "description": "Dishly için geri bildirimin, fikrin veya bir özellik isteğin var mı? Mesajını duymaktan memnun olurum.",
     "emailIntro": "Bize yaz:",
     "emailOutro": "ve sana en kısa sürede geri döneceğim."
+  },
+  "mealPlan": {
+    "title": "Haftal?k plan",
+    "subtitle": "Kendi tariflerini g?ncel hafta i?in planla.",
+    "loading": "Haftal?k plan y?kleniyor...",
+    "plannedRecipe": "Planlanan tarif",
+    "week": {
+      "current": "G?ncel hafta"
+    },
+    "form": {
+      "recipe": "Tarif",
+      "chooseRecipe": "Tarif se?"
+    },
+    "empty": {
+      "day": "Hen?z tarif planlanmad?.",
+      "noRecipes": "Planlamak i?in hen?z kendi tarifin yok."
+    },
+    "actions": {
+      "add": "Tarif planla",
+      "remove": "Kald?r",
+      "save": "Kaydet"
+    },
+    "errors": {
+      "load": "Haftal?k plan y?klenemedi.",
+      "save": "Tarif planlanamad?.",
+      "remove": "Tarif kald?r?lamad?.",
+      "noRecipeSelected": "L?tfen ?nce bir tarif se?."
+    },
+    "days": {
+      "monday": "Pazartesi",
+      "tuesday": "Sal?",
+      "wednesday": "?ar?amba",
+      "thursday": "Per?embe",
+      "friday": "Cuma",
+      "saturday": "Cumartesi",
+      "sunday": "Pazar"
+    }
   }
 }

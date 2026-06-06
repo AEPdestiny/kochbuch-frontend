@@ -52,6 +52,7 @@ describe('App navigation', () => {
     expect(wrapper.text()).toContain('Startseite')
     expect(wrapper.text()).toContain('Anmelden')
     expect(wrapper.text()).not.toContain('Dashboard')
+    expect(wrapper.text()).not.toContain('Wochenplan')
   })
 
   it('shows Dashboard navigation for authenticated users', () => {
@@ -73,6 +74,7 @@ describe('App navigation', () => {
     })
 
     expect(wrapper.text()).toContain('Dashboard')
+    expect(wrapper.text()).toContain('Wochenplan')
   })
 
   it('switches navigation to English and stores the locale', async () => {

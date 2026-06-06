@@ -54,6 +54,7 @@ async function logout() {
         <RouterLink to="/my-recipes" class="nav-item">{{ t('navigation.myRecipes') }}</RouterLink>
         <RouterLink v-if="authStore.isAuthenticated" to="/pantry" class="nav-item">{{ t('navigation.pantry') }}</RouterLink>
         <RouterLink v-if="authStore.isAuthenticated" to="/shopping-list" class="nav-item">{{ t('navigation.shoppingList') }}</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/meal-plan" class="nav-item">{{ t('navigation.mealPlan') }}</RouterLink>
         <RouterLink to="/about" class="nav-item">{{ t('navigation.about') }}</RouterLink>
         <RouterLink to="/contact" class="nav-item">{{ t('navigation.contact') }}</RouterLink>
         <LanguageSwitcher />
