@@ -53,6 +53,13 @@ describe('route guards', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/my-recipes')
   })
 
+  it('redirects guests from /dashboard to login with redirect query', async () => {
+    await router.push('/dashboard')
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/dashboard')
+  })
+
   it('allows authenticated users to open protected routes', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))

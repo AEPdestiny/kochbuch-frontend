@@ -47,6 +47,7 @@ async function logout() {
       <!-- Hauptnavigation zwischen den Seiten der App -->
       <nav class="nav-bar">
         <RouterLink to="/" class="nav-item">Startseite</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/dashboard" class="nav-item">Dashboard</RouterLink>
         <RouterLink to="/my-recipes" class="nav-item">Meine Rezepte</RouterLink>
         <RouterLink v-if="authStore.isAuthenticated" to="/pantry" class="nav-item">Vorrat</RouterLink>
         <RouterLink v-if="authStore.isAuthenticated" to="/shopping-list" class="nav-item">Einkaufsliste</RouterLink>

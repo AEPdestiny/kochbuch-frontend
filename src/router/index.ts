@@ -13,6 +13,12 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../views/DashboardView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       // Seite zum Verwalten der eigenen Rezepte (CRUD + Favoriten)
       path: '/my-recipes',
       name: 'my-recipes',
