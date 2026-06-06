@@ -339,3 +339,95 @@ Bitte melde dich an, um deinen Vorrat zu sehen.
 ```
 
 - Der Link/Button `Zum Login` verweist auf `/login`.
+
+## Einkaufsliste CRUD testen
+
+Als User einloggen:
+
+- Mit einem bestehenden User einloggen, zum Beispiel `salma@example.com`.
+- Erwartetes Ergebnis: Der User ist eingeloggt und der Navigationspunkt
+  `Einkaufsliste` ist sichtbar.
+
+Einkaufsliste öffnen:
+
+```text
+http://localhost:5173/shopping-list
+```
+
+Shopping-List Item erstellen:
+
+```text
+Name: Milch
+Menge: 2
+Einheit: Liter
+Kategorie: Getränke
+Erledigt: nein
+```
+
+Erwartetes Ergebnis:
+
+- Klick auf `Hinzufügen` erstellt das Shopping-List Item.
+- `Milch` erscheint in der Liste.
+- Menge `2`, Einheit `Liter`, Kategorie `Getränke` und Status `Offen` sind sichtbar.
+- Das Formular wird nach dem Speichern geleert.
+
+Item bearbeiten:
+
+- Beim Item `Milch` auf `Bearbeiten` klicken.
+- Werte ändern:
+
+```text
+Name: Hafermilch
+Menge: 3
+Einheit: Liter
+Kategorie: Getränke
+Erledigt: ja
+```
+
+Erwartetes Ergebnis:
+
+- Klick auf `Speichern` aktualisiert das Shopping-List Item.
+- `Hafermilch` erscheint in der Liste.
+- Menge `3`, Einheit `Liter`, Kategorie `Getränke` und Status `Erledigt` sind sichtbar.
+- Der Edit-Modus wird geschlossen.
+
+checked/Erledigt-Status ändern:
+
+- Beim Item `Hafermilch` erneut auf `Bearbeiten` klicken.
+- Checkbox `Erledigt` ändern.
+- Auf `Speichern` klicken.
+
+Erwartetes Ergebnis:
+
+- Der Status wechselt zwischen `Offen` und `Erledigt`.
+- Die Änderung bleibt in der Liste sichtbar.
+
+Item löschen:
+
+- Beim Item `Hafermilch` auf `Löschen` klicken.
+
+Erwartetes Ergebnis:
+
+- Das Shopping-List Item wird gelöscht.
+- `Hafermilch` verschwindet aus der Liste.
+- Wenn keine weiteren Items vorhanden sind, erscheint:
+
+```text
+Deine Einkaufsliste ist noch leer.
+```
+
+Ohne Login prüfen:
+
+- Ausloggen.
+- `http://localhost:5173/shopping-list` öffnen.
+
+Erwartetes Ergebnis:
+
+- Es wird keine Shopping-List-Anfrage an das Backend ausgelöst.
+- Die Seite zeigt den Hinweis:
+
+```text
+Bitte melde dich an, um deine Einkaufsliste zu sehen.
+```
+
+- Der Link/Button `Zum Login` verweist auf `/login`.

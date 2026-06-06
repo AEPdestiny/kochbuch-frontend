@@ -23,6 +23,11 @@ const router = createRouter({
       component: () => import('../views/PantryView.vue'),
     },
     {
+      path: '/shopping-list',
+      name: 'shopping-list',
+      component: () => import('../views/ShoppingListView.vue'),
+    },
+    {
       // About-Seite mit Informationen zur App
       path: '/about',
       name: 'about',

@@ -96,14 +96,14 @@ const shuffleRecipes = () => {
     <!-- Hero-Bereich mit Intro-Text und Suche -->
     <section class="hero">
       <p class="hero-desc">
-        Discover dishes from all around the world and find your next favorite recipe.
+        Entdecke Gerichte aus aller Welt und finde dein nächstes Lieblingsrezept.
       </p>
       <input
         v-model="search"
         class="search-input"
         type="search"
-        placeholder="Search by title, cuisine or ingredients"
-        aria-label="Search recipes by title, cuisine or ingredients"
+        placeholder="Nach Titel, Küche oder Zutaten suchen"
+        aria-label="Rezepte nach Titel, Küche oder Zutaten suchen"
       />
     </section>
 
@@ -111,13 +111,13 @@ const shuffleRecipes = () => {
     <div class="shuffle-wrap">
       <button class="shuffle-btn" type="button" @click="shuffleRecipes">
         <span class="shuffle-icon">🔀</span>
-        <span>Shuffle recipes</span>
+        <span>Rezepte neu mischen</span>
       </button>
     </div>
 
     <section class="list-wrap">
-      <p v-if="loading" class="status-text">Loading recipes…</p>
-      <p v-else-if="error" class="status-text error">Error: {{ error }}</p>
+      <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
+      <p v-else-if="error" class="status-text error">Fehler: {{ error }}</p>
 
       <div v-else class="recipe-grid">
         <!-- Karten für alle gefilterten Rezepte -->
@@ -146,7 +146,7 @@ const shuffleRecipes = () => {
               <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
                 ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
               </span>
-              <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
+              <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
             </p>
 
             <p class="card-ingredients">
@@ -157,7 +157,7 @@ const shuffleRecipes = () => {
 
         <!-- Hinweis, wenn kein Treffer zur Suche passt -->
         <p v-if="!loading && filtered.length === 0" class="status-text">
-          No matching recipes found.
+          Keine passenden Rezepte gefunden.
         </p>
       </div>
     </section>
@@ -179,13 +179,13 @@ const shuffleRecipes = () => {
           <span v-if="selected.prepTimeMinutes || selected.cookTimeMinutes">
             ⏱ {{ selected.prepTimeMinutes + selected.cookTimeMinutes }} min
           </span>
-          <span v-if="selected.servings"> • 🍽 {{ selected.servings }} servings</span>
+          <span v-if="selected.servings"> • 🍽 {{ selected.servings }} Portionen</span>
         </p>
 
-        <h4 class="overlay-subtitle">Ingredients</h4>
+        <h4 class="overlay-subtitle">Zutaten</h4>
         <p class="overlay-text">{{ selected.ingredients }}</p>
 
-        <h4 class="overlay-subtitle">Instructions</h4>
+        <h4 class="overlay-subtitle">Zubereitung</h4>
         <p class="overlay-text">{{ selected.instructions }}</p>
       </div>
     </div>

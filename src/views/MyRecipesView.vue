@@ -7,10 +7,10 @@ import RecipeList from '../components/RecipeList.vue'// bindet die RecipeList-Ko
   <section class="my-recipes-page">
     <!-- Einleitender Header mit Titel und kurzer Erklärung -->
     <header class="my-recipes-header">
-      <h2 class="page-title">Your personal Dishly cookbook</h2>
+      <h2 class="page-title">Dein persönliches Dishly-Kochbuch</h2>
       <p class="page-subtitle">
-        Create, save and manage your own recipes. Mark favorites and decide which dishes
-        should appear on the Home page.
+        Erstelle, speichere und verwalte deine eigenen Rezepte. Markiere Favoriten
+        und entscheide, welche Gerichte auf der Startseite erscheinen.
       </p>
     </header>
 

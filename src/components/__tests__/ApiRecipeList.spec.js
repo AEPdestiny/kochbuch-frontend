@@ -24,7 +24,7 @@ describe('ApiRecipeList.vue', () => {
     // Komponente mounten, der initiale State sollte "Loading…" anzeigen
     const wrapper = mount(ApiRecipeList)
 
-    expect(wrapper.text()).toContain('Loading recipes…')
+    expect(wrapper.text()).toContain('Rezepte werden geladen...')
   })
 
   it('loads recipes and renders cards', async () => {
@@ -67,8 +67,8 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    // Erwartung: Fehlermeldung mit „Error:“ wird angezeigt
-    expect(wrapper.text()).toContain('Error:')
+    // Erwartung: Fehlermeldung mit „Fehler:“ wird angezeigt
+    expect(wrapper.text()).toContain('Fehler:')
   })
 
   it('filters recipes by search term', async () => {

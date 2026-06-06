@@ -86,7 +86,7 @@ const createRecipe = async () => {
     !newIngredients.value.trim() ||
     !newInstructions.value.trim()
   ) {
-    formError.value = 'Please fill in all required fields.'
+    formError.value = 'Bitte fülle alle Pflichtfelder aus.'
     return
   }
   formError.value = null
@@ -173,7 +173,7 @@ const updateRecipe = async () => {
     !editing.value.ingredients.trim() ||
     !editing.value.instructions.trim()
   ) {
-    editFormError.value = 'Please fill in all required fields.'
+    editFormError.value = 'Bitte fülle alle Pflichtfelder aus.'
     return
   }
   editFormError.value = null
@@ -313,9 +313,9 @@ const closeFavoriteDetails = () => {
   <section class="recipe-manager">
     <!-- Karte mit Formular zum Anlegen eines neuen Rezepts -->
     <div class="form-card">
-      <h3 class="form-title">Create a new recipe</h3>
+      <h3 class="form-title">Neues Rezept erstellen</h3>
       <p class="form-subtitle">
-        All fields marked with <span class="required-star">*</span> are required.
+        Alle mit <span class="required-star">*</span> markierten Felder sind Pflichtfelder.
       </p>
 
       <!-- Neues Rezept wird per createRecipe() gespeichert -->
@@ -324,17 +324,17 @@ const closeFavoriteDetails = () => {
         <div class="form-row">
           <div class="form-field">
             <label>
-              Title <span class="required-star">*</span>
+              Titel <span class="required-star">*</span>
             </label>
             <input
               v-model="newTitle"
               type="text"
-              placeholder="e.g. Creamy Tomato Pasta"
+              placeholder="z. B. Cremige Tomatenpasta"
             />
           </div>
 
           <div class="form-field">
-            <label>Image URL</label>
+            <label>Bild-URL</label>
             <input
               v-model="newImageUrl"
               type="url"
@@ -346,7 +346,7 @@ const closeFavoriteDetails = () => {
         <!-- Zweite Zeile: Zeiten + Portionen -->
         <div class="form-row">
           <div class="form-field small">
-            <label>Prep time (min)</label>
+            <label>Vorbereitungszeit (Min.)</label>
             <input
               v-model.number="newPrepTime"
               type="number"
@@ -355,7 +355,7 @@ const closeFavoriteDetails = () => {
             />
           </div>
           <div class="form-field small">
-            <label>Cook time (min)</label>
+            <label>Kochzeit (Min.)</label>
             <input
               v-model.number="newCookTime"
               type="number"
@@ -364,7 +364,7 @@ const closeFavoriteDetails = () => {
             />
           </div>
           <div class="form-field small">
-            <label>Servings</label>
+            <label>Portionen</label>
             <input
               v-model.number="newServings"
               type="number"
@@ -377,23 +377,23 @@ const closeFavoriteDetails = () => {
         <!-- Dritte Zeile: Difficulty, Kategorie, Rating -->
         <div class="form-row">
           <div class="form-field">
-            <label>Difficulty</label>
+            <label>Schwierigkeit</label>
             <input
               v-model="newDifficulty"
               type="text"
-              placeholder="e.g. easy, medium, hard"
+              placeholder="z. B. einfach, mittel, schwer"
             />
           </div>
           <div class="form-field">
-            <label>Category / Cuisine</label>
+            <label>Kategorie / Küche</label>
             <input
               v-model="newCategory"
               type="text"
-              placeholder="e.g. Italian, Dessert"
+              placeholder="z. B. Italienisch, Dessert"
             />
           </div>
           <div class="form-field small">
-            <label>Rating</label>
+            <label>Bewertung</label>
             <input
               v-model.number="newRating"
               type="number"
@@ -408,24 +408,24 @@ const closeFavoriteDetails = () => {
         <!-- Zutaten-Eingabe -->
         <div class="form-field">
           <label>
-            Ingredients <span class="required-star">*</span>
+            Zutaten <span class="required-star">*</span>
           </label>
           <textarea
             v-model="newIngredients"
             rows="3"
-            placeholder="List your ingredients, separated by commas."
+            placeholder="Zutaten mit Kommas getrennt eintragen."
           ></textarea>
         </div>
 
         <!-- Anweisungen-Eingabe -->
         <div class="form-field">
           <label>
-            Instructions <span class="required-star">*</span>
+            Zubereitung <span class="required-star">*</span>
           </label>
           <textarea
             v-model="newInstructions"
             rows="5"
-            placeholder="Write your step-by-step instructions."
+            placeholder="Beschreibe die Zubereitung Schritt für Schritt."
           ></textarea>
         </div>
 
@@ -433,17 +433,17 @@ const closeFavoriteDetails = () => {
         <div class="form-toggle-row">
           <label class="toggle-item">
             <input type="checkbox" v-model="newFavorite" />
-            <span>Mark as favorite</span>
+            <span>Als Favorit markieren</span>
           </label>
           <label class="toggle-item">
             <input type="checkbox" v-model="newPublished" />
-            <span>Show on Home (published)</span>
+            <span>Auf Startseite anzeigen</span>
           </label>
         </div>
 
         <!-- Submit-Button -->
         <button type="submit" class="submit-btn">
-          Save recipe
+          Rezept speichern
         </button>
 
         <!-- nur die Formular-Fehlermeldung anzeigen -->
@@ -455,11 +455,11 @@ const closeFavoriteDetails = () => {
 
     <!-- Karte mit Liste der selbst erstellten Rezepte + Edit-Panel -->
     <div class="list-card">
-      <h3 class="recipes-title">Your created recipes</h3>
+      <h3 class="recipes-title">Deine erstellten Rezepte</h3>
 
-      <p v-if="loading" class="status-text">Loading recipes…</p>
+      <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
       <div v-else-if="error" class="status-text error">
-        <p>Error: {{ error }}</p>
+        <p>Fehler: {{ error }}</p>
         <a v-if="loginRequired" href="/login" class="login-link">
           Zum Login
         </a>
@@ -489,13 +489,13 @@ const closeFavoriteDetails = () => {
                     <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
                       ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
                     </span>
-                    <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
+                    <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
                   </p>
                 </div>
                 <!-- Badges für Favorit / veröffentlicht -->
                 <div class="badge-column">
-                  <span v-if="r.favorite" class="badge badge-fav">★ Favorite</span>
-                  <span v-if="r.published" class="badge badge-published">Published on Home</span>
+                  <span v-if="r.favorite" class="badge badge-fav">★ Favorit</span>
+                  <span v-if="r.published" class="badge badge-published">Auf Startseite sichtbar</span>
                 </div>
               </div>
 
@@ -506,8 +506,8 @@ const closeFavoriteDetails = () => {
 
               <!-- Aktionen: Edit und Delete -->
               <div class="card-actions">
-                <button class="link-btn" @click.stop="startEdit(r)">Edit</button>
-                <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Delete</button>
+                <button class="link-btn" @click.stop="startEdit(r)">Bearbeiten</button>
+                <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">Löschen</button>
               </div>
             </div>
           </div>
@@ -515,80 +515,80 @@ const closeFavoriteDetails = () => {
 
         <!-- Hinweis, wenn kein Rezept zur Suche passt -->
         <li v-if="!loading && filtered.length === 0" class="none-found">
-          No recipes found. Create your first Dishly recipe above.
+          Keine Rezepte gefunden. Erstelle oben dein erstes Dishly-Rezept.
         </li>
       </ul>
 
       <!-- Seitliches Bearbeitungs-Panel für das aktuell ausgewählte Rezept -->
       <div class="edit-panel" v-if="editing">
-        <h4>Edit recipe</h4>
+        <h4>Rezept bearbeiten</h4>
 
         <div class="form-row">
           <div class="form-field">
-            <label>Title</label>
+            <label>Titel</label>
             <input v-model="editing.title" type="text" />
           </div>
           <div class="form-field">
-            <label>Image URL</label>
+            <label>Bild-URL</label>
             <input v-model="editing.imageUrl" type="url" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-field small">
-            <label>Prep time (min)</label>
+            <label>Vorbereitungszeit (Min.)</label>
             <input v-model.number="editing.prepTimeMinutes" type="number" min="0" />
           </div>
           <div class="form-field small">
-            <label>Cook time (min)</label>
+            <label>Kochzeit (Min.)</label>
             <input v-model.number="editing.cookTimeMinutes" type="number" min="0" />
           </div>
           <div class="form-field small">
-            <label>Servings</label>
+            <label>Portionen</label>
             <input v-model.number="editing.servings" type="number" min="0" />
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-field">
-            <label>Difficulty</label>
+            <label>Schwierigkeit</label>
             <input v-model="editing.difficulty" type="text" />
           </div>
           <div class="form-field">
-            <label>Category / Cuisine</label>
+            <label>Kategorie / Küche</label>
             <input v-model="editing.category" type="text" />
           </div>
           <div class="form-field small">
-            <label>Rating</label>
+            <label>Bewertung</label>
             <input v-model.number="editing.rating" type="number" min="0" max="5" step="0.1" />
           </div>
         </div>
 
         <div class="form-field">
-          <label>Ingredients</label>
+          <label>Zutaten</label>
           <textarea v-model="editing.ingredients" rows="3"></textarea>
         </div>
 
         <div class="form-field">
-          <label>Instructions</label>
+          <label>Zubereitung</label>
           <textarea v-model="editing.instructions" rows="5"></textarea>
         </div>
 
         <div class="form-toggle-row">
           <label class="toggle-item">
             <input type="checkbox" v-model="editing.favorite" />
-            <span>Mark as favorite</span>
+            <span>Als Favorit markieren</span>
           </label>
           <label class="toggle-item">
             <input type="checkbox" v-model="editing.published" />
-            <span>Show on Home (published)</span>
+            <span>Auf Startseite anzeigen</span>
           </label>
         </div>
 
         <!-- Buttons zum Speichern und Abbrechen -->
         <div class="edit-buttons">
-          <button class="submit-btn" @click="updateRecipe">Save changes</button>
-          <button class="cancel-btn" @click="cancelEdit">Cancel</button>
+          <button class="submit-btn" @click="updateRecipe">Änderungen speichern</button>
+          <button class="cancel-btn" @click="cancelEdit">Abbrechen</button>
         </div>
         <p v-if="editFormError" class="error-text">
           {{ editFormError }}
@@ -598,11 +598,11 @@ const closeFavoriteDetails = () => {
 
     <!-- Zweite Karte: Grid mit allen Favoriten + Overlay-Details -->
     <div class="list-card">
-      <h3 class="recipes-title">Your favorite recipes</h3>
+      <h3 class="recipes-title">Deine Favoriten</h3>
 
-      <p v-if="loading" class="status-text">Loading recipes…</p>
+      <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
       <div v-else-if="error" class="status-text error">
-        <p>Error: {{ error }}</p>
+        <p>Fehler: {{ error }}</p>
         <a v-if="loginRequired" href="/login" class="login-link">
           Zum Login
         </a>
@@ -634,7 +634,7 @@ const closeFavoriteDetails = () => {
               <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
                 ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
               </span>
-              <span v-if="r.servings"> • 🍽 {{ r.servings }} servings</span>
+              <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
             </p>
 
             <p class="card-ingredients">
@@ -645,7 +645,7 @@ const closeFavoriteDetails = () => {
 
         <!-- Hinweis, falls noch keine Favoriten markiert wurden -->
         <p v-if="favorites.length === 0" class="status-text">
-          You have no favorite recipes yet. Mark recipes as favorites to see them here.
+          Du hast noch keine Favoriten. Markiere Rezepte als Favoriten, um sie hier zu sehen.
         </p>
       </div>
     </div>
@@ -668,14 +668,14 @@ const closeFavoriteDetails = () => {
             ⏱ {{ selectedFavorite.prepTimeMinutes + selectedFavorite.cookTimeMinutes }} min
           </span>
           <span v-if="selectedFavorite.servings">
-            • 🍽 {{ selectedFavorite.servings }} servings
+            • 🍽 {{ selectedFavorite.servings }} Portionen
           </span>
         </p>
 
-        <h4 class="overlay-subtitle">Ingredients</h4>
+        <h4 class="overlay-subtitle">Zutaten</h4>
         <p class="overlay-text">{{ selectedFavorite.ingredients }}</p>
 
-        <h4 class="overlay-subtitle">Instructions</h4>
+        <h4 class="overlay-subtitle">Zubereitung</h4>
         <p class="overlay-text">{{ selectedFavorite.instructions }}</p>
       </div>
     </div>

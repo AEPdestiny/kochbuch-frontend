@@ -1,0 +1,602 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import type { ShoppingListItem, ShoppingListItemRequest } from '@/types/shoppingList'
+
+const items = ref<ShoppingListItem[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+const formError = ref<string | null>(null)
+const loginRequired = ref(false)
+const newName = ref('')
+const newQuantity = ref<number | null>(null)
+const newUnit = ref('')
+const newCategory = ref('')
+const newChecked = ref(false)
+const editingId = ref<number | string | null>(null)
+const editName = ref('')
+const editQuantity = ref<number | null>(null)
+const editUnit = ref('')
+const editCategory = ref('')
+const editChecked = ref(false)
+const editError = ref<string | null>(null)
+
+onMounted(() => {
+  loadShoppingListItems()
+})
+
+async function loadShoppingListItems() {
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    items.value = []
+    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    loginRequired.value = true
+    loading.value = false
+    return
+  }
+
+  try {
+    items.value = await shoppingListApi.getShoppingListItems()
+    error.value = null
+    loginRequired.value = false
+  } catch (e: unknown) {
+    error.value = toLoadErrorMessage(e)
+    loginRequired.value = e instanceof ApiClientError && e.status === 401
+  } finally {
+    loading.value = false
+  }
+}
+
+function toLoadErrorMessage(e: unknown) {
+  if (e instanceof ApiClientError) {
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu sehen.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Deine Einkaufsliste konnte nicht geladen werden.'
+}
+
+async function createShoppingListItem() {
+  if (!newName.value.trim()) {
+    formError.value = 'Bitte gib einen Namen für das Shopping List Item ein.'
+    return
+  }
+  formError.value = null
+
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    loginRequired.value = true
+    return
+  }
+
+  try {
+    const created = await shoppingListApi.createShoppingListItem({
+      name: newName.value,
+      quantity: newQuantity.value,
+      unit: newUnit.value,
+      category: newCategory.value,
+      checked: newChecked.value,
+    })
+    items.value.push(created)
+    newName.value = ''
+    newQuantity.value = null
+    newUnit.value = ''
+    newCategory.value = ''
+    newChecked.value = false
+    formError.value = null
+    error.value = null
+  } catch (e: unknown) {
+    formError.value = toCreateErrorMessage(e)
+    if (e instanceof ApiClientError && e.status === 401) {
+      error.value = formError.value
+      loginRequired.value = true
+    }
+  }
+}
+
+function toCreateErrorMessage(e: unknown) {
+  if (e instanceof ApiClientError) {
+    if (e.status === 400) {
+      return 'Bitte prüfe deine Eingaben für das Shopping List Item.'
+    }
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Das Shopping List Item konnte nicht gespeichert werden.'
+}
+
+async function deleteShoppingListItem(id: number | string) {
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    loginRequired.value = true
+    return
+  }
+
+  try {
+    await shoppingListApi.deleteShoppingListItem(id)
+    items.value = items.value.filter(item => item.id !== id)
+    error.value = null
+  } catch (e: unknown) {
+    error.value = toDeleteErrorMessage(e)
+    loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
+function toDeleteErrorMessage(e: unknown) {
+  if (e instanceof ApiClientError) {
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.'
+    }
+    if (e.status === 403) {
+      return 'Du darfst dieses Shopping List Item nicht löschen.'
+    }
+    if (e.status === 404) {
+      return 'Dieses Shopping List Item wurde nicht gefunden.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Das Shopping List Item konnte nicht gelöscht werden.'
+}
+
+function startEdit(item: ShoppingListItem) {
+  editingId.value = item.id
+  editName.value = item.name
+  editQuantity.value = item.quantity ?? null
+  editUnit.value = item.unit ?? ''
+  editCategory.value = item.category ?? ''
+  editChecked.value = item.checked
+  editError.value = null
+}
+
+function cancelEdit() {
+  editingId.value = null
+  editName.value = ''
+  editQuantity.value = null
+  editUnit.value = ''
+  editCategory.value = ''
+  editChecked.value = false
+  editError.value = null
+}
+
+async function updateShoppingListItem(id: number | string) {
+  if (!editName.value.trim()) {
+    editError.value = 'Bitte gib einen Namen für das Shopping List Item ein.'
+    return
+  }
+
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = 'Bitte melde dich an, um deine Einkaufsliste zu sehen.'
+    loginRequired.value = true
+    return
+  }
+
+  const request: ShoppingListItemRequest = {
+    name: editName.value,
+    quantity: editQuantity.value,
+    unit: editUnit.value,
+    category: editCategory.value,
+    checked: editChecked.value,
+  }
+
+  try {
+    const updated = await shoppingListApi.updateShoppingListItem(id, request)
+    items.value = items.value.map(item => (item.id === id ? updated : item))
+    cancelEdit()
+    error.value = null
+  } catch (e: unknown) {
+    editError.value = toUpdateErrorMessage(e)
+    if (e instanceof ApiClientError && e.status === 401) {
+      error.value = editError.value
+      loginRequired.value = true
+    }
+  }
+}
+
+function toUpdateErrorMessage(e: unknown) {
+  if (e instanceof ApiClientError) {
+    if (e.status === 400) {
+      return 'Bitte prüfe deine Eingaben für das Shopping List Item.'
+    }
+    if (e.status === 401) {
+      return 'Bitte melde dich erneut an, um deine Einkaufsliste zu bearbeiten.'
+    }
+    if (e.status === 403) {
+      return 'Du darfst dieses Shopping List Item nicht bearbeiten.'
+    }
+    if (e.status === 404) {
+      return 'Dieses Shopping List Item wurde nicht gefunden.'
+    }
+    if (!e.status) {
+      return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'
+    }
+    return e.message
+  }
+
+  return e instanceof Error
+    ? e.message
+    : 'Das Shopping List Item konnte nicht aktualisiert werden.'
+}
+</script>
+
+<template>
+  <section class="shopping-list-page">
+    <div class="shopping-list-header">
+      <h1>Deine Einkaufsliste</h1>
+      <p>Behalte im Blick, was du noch einkaufen möchtest.</p>
+    </div>
+
+    <p v-if="loading" class="status-text">Einkaufsliste wird geladen…</p>
+
+    <div v-else-if="error" class="status-text error">
+      <p>{{ error }}</p>
+      <a v-if="loginRequired" href="/login" class="login-link">Zum Login</a>
+    </div>
+
+    <template v-else>
+      <form class="shopping-list-form" @submit.prevent="createShoppingListItem">
+        <div class="form-field">
+          <label>Name</label>
+          <input v-model="newName" type="text" placeholder="z.B. Tomaten" />
+        </div>
+
+        <div class="form-field small">
+          <label>Menge</label>
+          <input v-model.number="newQuantity" type="number" min="0" step="0.1" placeholder="3" />
+        </div>
+
+        <div class="form-field small">
+          <label>Einheit</label>
+          <input v-model="newUnit" type="text" placeholder="Stück" />
+        </div>
+
+        <div class="form-field">
+          <label>Kategorie</label>
+          <input v-model="newCategory" type="text" placeholder="Gemüse" />
+        </div>
+
+        <label class="checkbox-field">
+          <input v-model="newChecked" type="checkbox" />
+          <span>Erledigt</span>
+        </label>
+
+        <button type="submit" class="submit-btn">Hinzufügen</button>
+      </form>
+
+      <p v-if="formError" class="form-error">{{ formError }}</p>
+
+      <p v-if="items.length === 0" class="status-text">
+        Deine Einkaufsliste ist noch leer.
+      </p>
+
+      <ul v-else class="shopping-list">
+        <li
+          v-for="item in items"
+          :key="item.id"
+          class="shopping-item"
+          :class="{ checked: item.checked }"
+        >
+          <div>
+            <h2>{{ item.name }}</h2>
+            <p v-if="item.category" class="item-meta">{{ item.category }}</p>
+          </div>
+          <div class="item-side">
+            <p class="item-quantity">
+              <span v-if="item.quantity !== null && item.quantity !== undefined">
+                {{ item.quantity }}
+              </span>
+              <span v-if="item.unit">{{ item.unit }}</span>
+            </p>
+            <span class="checked-status">
+              {{ item.checked ? 'Erledigt' : 'Offen' }}
+            </span>
+            <button type="button" class="edit-btn" @click="startEdit(item)">
+              Bearbeiten
+            </button>
+            <button type="button" class="delete-btn" @click="deleteShoppingListItem(item.id)">
+              Löschen
+            </button>
+          </div>
+
+          <form
+            v-if="editingId === item.id"
+            class="edit-form"
+            @submit.prevent="updateShoppingListItem(item.id)"
+          >
+            <div class="form-field">
+              <label>Name</label>
+              <input v-model="editName" type="text" placeholder="z.B. Tomaten" />
+            </div>
+
+            <div class="form-field small">
+              <label>Menge</label>
+              <input v-model.number="editQuantity" type="number" min="0" step="0.1" placeholder="3" />
+            </div>
+
+            <div class="form-field small">
+              <label>Einheit</label>
+              <input v-model="editUnit" type="text" placeholder="Stück" />
+            </div>
+
+            <div class="form-field">
+              <label>Kategorie</label>
+              <input v-model="editCategory" type="text" placeholder="Gemüse" />
+            </div>
+
+            <label class="checkbox-field">
+              <input v-model="editChecked" type="checkbox" />
+              <span>Erledigt</span>
+            </label>
+
+            <div class="edit-buttons">
+              <button type="submit" class="submit-btn">Speichern</button>
+              <button type="button" class="cancel-btn" @click="cancelEdit">Abbrechen</button>
+            </div>
+
+            <p v-if="editError" class="edit-error">{{ editError }}</p>
+          </form>
+        </li>
+      </ul>
+    </template>
+  </section>
+</template>
+
+<style scoped>
+.shopping-list-page {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  padding: 34px 24px;
+}
+
+.shopping-list-header {
+  margin-bottom: 24px;
+}
+
+.shopping-list-header h1 {
+  color: #cc7da9;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.shopping-list-header p,
+.status-text {
+  color: #486b68;
+  font-size: 1rem;
+}
+
+.status-text.error {
+  color: #a14c2b;
+  font-weight: 600;
+}
+
+.status-text.error p {
+  margin-bottom: 10px;
+}
+
+.login-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #cc7da9;
+  color: #ffffff;
+  padding: 8px 16px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.shopping-list-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label,
+.checkbox-field {
+  color: #486b68;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.form-field input {
+  border: 1.5px solid #c3e7e1;
+  border-radius: 10px;
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.checkbox-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.submit-btn {
+  border: none;
+  border-radius: 999px;
+  background: #cc7da9;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 9px 16px;
+}
+
+.form-error {
+  color: #a14c2b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.shopping-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.shopping-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  background: #f4fbfa;
+  padding: 14px 16px;
+}
+
+.shopping-item.checked {
+  opacity: 0.72;
+}
+
+.shopping-item h2 {
+  color: #2b1b23;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+}
+
+.item-meta,
+.item-quantity {
+  color: #486b68;
+  font-size: 0.95rem;
+}
+
+.item-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-quantity {
+  display: inline-flex;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.checked-status {
+  border-radius: 999px;
+  background: #e0f5f2;
+  color: #26b6b8;
+  font-size: 0.84rem;
+  font-weight: 800;
+  padding: 5px 10px;
+}
+
+.shopping-item.checked .checked-status {
+  background: #fbe5f0;
+  color: #cc7da9;
+}
+
+.edit-btn,
+.delete-btn,
+.cancel-btn {
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.edit-btn {
+  color: #26b6b8;
+}
+
+.delete-btn,
+.cancel-btn {
+  color: #a14c2b;
+}
+
+.edit-btn:hover {
+  background: #e0f5f2;
+}
+
+.delete-btn:hover {
+  background: #fff0eb;
+}
+
+.cancel-btn:hover {
+  background: #fff0eb;
+}
+
+.edit-form {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto auto;
+  gap: 12px;
+  align-items: end;
+  border-top: 1px solid #c3e7e1;
+  padding-top: 14px;
+}
+
+.edit-buttons {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.edit-error {
+  grid-column: 1 / -1;
+  color: #a14c2b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .shopping-list-form,
+  .edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .shopping-item {
+    grid-template-columns: 1fr;
+  }
+
+  .item-side {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+</style>

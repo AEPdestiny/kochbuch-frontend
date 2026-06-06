@@ -95,10 +95,10 @@ export const useAuthStore = defineStore('auth', () => {
   function toFriendlyAuthError(e: unknown) {
     if (e instanceof ApiClientError) {
       if (e.status === 401) {
-        return 'Email oder Passwort ist falsch.'
+        return 'E-Mail oder Passwort ist falsch.'
       }
       if (e.status === 409) {
-        return 'Email oder Username ist bereits vergeben.'
+        return 'E-Mail oder Benutzername ist bereits vergeben.'
       }
       if (!e.status) {
         return 'Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.'

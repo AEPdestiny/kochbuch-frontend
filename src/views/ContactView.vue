@@ -1,23 +1,23 @@
 <template>
   <!-- Kontakt-Seite mit Karte und Mail-Link -->
   <section class="contact">
-    <h1 class="page-title">Contact</h1>
+    <h1 class="page-title">Kontakt</h1>
 
     <!-- Kontaktkarte mit Icon, Text und E-Mail-Adresse -->
     <div class="contact-card">
       <div class="icon-circle">✉️</div>
-      <h2 class="section-title">Get in touch</h2>
+      <h2 class="section-title">Schreib uns</h2>
       <p>
-        Got feedback, ideas or a new feature you would love to see on Dishly?
-        I would be happy to hear from you.
+        Hast du Feedback, Ideen oder einen Funktionswunsch für Dishly?
+        Ich freue mich über deine Nachricht.
       </p>
 
       <p>
-        Just drop a message to
+        Schreib einfach an
         <a href="mailto:Dishly.Rezepte@gmx.de" class="email-link">
           Dishly.Rezepte@gmx.de
         </a>
-        and I’ll get back to you as soon as possible.
+        und ich melde mich so schnell wie möglich zurück.
       </p>
     </div>
   </section>

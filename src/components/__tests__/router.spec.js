@@ -16,6 +16,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
 import HomeView from '@/views/HomeView.vue'
 import MyRecipesView from '@/views/MyRecipesView.vue'
 import PantryView from '@/views/PantryView.vue'
+import ShoppingListView from '@/views/ShoppingListView.vue'
 import AboutView from '@/views/AboutView.vue'
 import ContactView from '@/views/ContactView.vue'
 
@@ -26,6 +27,7 @@ const router = createRouter({
     { path: '/', component: HomeView },
     { path: '/my-recipes', component: MyRecipesView },
     { path: '/pantry', component: PantryView },
+    { path: '/shopping-list', component: ShoppingListView },
     { path: '/about', component: AboutView },
     { path: '/contact', component: ContactView },
   ],
@@ -50,7 +52,7 @@ describe('App routing', () => {
       global: { plugins: [router] },
     })
     // Erwartung: Text aus der Home-Seite vorhanden
-    expect(wrapper.html()).toContain('Discover dishes')
+    expect(wrapper.html()).toContain('Entdecke Gerichte')
   })
 
   it('renders MyRecipesView on /my-recipes', async () => {
@@ -60,7 +62,7 @@ describe('App routing', () => {
       global: { plugins: [router] },
     })
     // Erwartung: Text für My-Recipes-Seite sichtbar
-    expect(wrapper.text()).toContain('Your personal Dishly cookbook')
+    expect(wrapper.text()).toContain('Dein persönliches Dishly-Kochbuch')
   })
 
   it('renders PantryView on /pantry', async () => {
@@ -72,6 +74,15 @@ describe('App routing', () => {
     expect(wrapper.text()).toContain('Dein Vorrat')
   })
 
+  it('renders ShoppingListView on /shopping-list', async () => {
+    router.push('/shopping-list')
+    await router.isReady()
+    const wrapper = mount(ShoppingListView, {
+      global: { plugins: [router] },
+    })
+    expect(wrapper.text()).toContain('Deine Einkaufsliste')
+  })
+
   it('renders AboutView on /about', async () => {
     router.push('/about')
     await router.isReady()
@@ -79,7 +90,7 @@ describe('App routing', () => {
       global: { plugins: [router] },
     })
     // Erwartung: Headline der About-Seite
-    expect(wrapper.text()).toContain('The person behind Dishly')
+    expect(wrapper.text()).toContain('Die Person hinter Dishly')
   })
 
   it('renders ContactView on /contact', async () => {

@@ -22,35 +22,35 @@ import food3 from '../assets/food3.jpg'
       <!-- Mittlere Spalte: Textkarte mit Erklärung zu Dishly -->
       <div class="intro-column">
         <div class="intro-card">
-          <p class="hello-text">Hi, I’m Salma.</p>
-          <h1 class="headline">The person behind Dishly</h1>
+          <p class="hello-text">Hi, ich bin Salma.</p>
+          <h1 class="headline">Die Person hinter Dishly</h1>
 
-          <h2 class="section-title">What is Dishly?</h2>
+          <h2 class="section-title">Was ist Dishly?</h2>
           <p class="intro-body">
-            Dishly is a digital cookbook where you can collect recipes in one place.
-            It’s all about simple, tasty dishes you can revisit whenever you want,
-            so your favorite meals don’t get lost in notes or screenshots.
+            Dishly ist ein digitales Kochbuch, in dem du Rezepte an einem Ort sammelst.
+            Es geht um einfache, leckere Gerichte, die du jederzeit wiederfinden kannst,
+            damit deine Lieblingsessen nicht in Notizen oder Screenshots verloren gehen.
           </p>
 
-          <h2 class="section-title">What you’ll find here</h2>
+          <h2 class="section-title">Was du hier findest</h2>
           <p class="intro-body">
-            "Home" has public recipes that you can browse and filter.
-            At the top you can search by title, category or keywords to quickly find dishes.
-            Under “Your recipes” you can create, edit and delete your own dishes,
-            mark favorites and choose which ones should also appear on Home.
+            Auf der Startseite findest du öffentliche Rezepte, die du durchsuchen und filtern kannst.
+            Oben kannst du nach Titel, Kategorie oder Stichwort suchen, um Gerichte schnell zu finden.
+            Unter „Meine Rezepte“ kannst du eigene Gerichte erstellen, bearbeiten und löschen,
+            Favoriten markieren und auswählen, welche davon auch auf der Startseite erscheinen.
           </p>
 
-          <h2 class="section-title">Cooking, for me …</h2>
+          <h2 class="section-title">Kochen bedeutet für mich...</h2>
           <p class="intro-body">
-            Cooking should be everyday friendly, low-stress and still a bit special,
-            that’s what I want Dishly to feel like.
+            Kochen soll alltagstauglich, entspannt und trotzdem ein bisschen besonders sein.
+            Genau so soll sich Dishly anfühlen.
           </p>
         </div>
       </div>
 
       <div class="portrait-column">
         <div class="portrait-wrapper">
-          <img :src="profileImg" alt="Salma – creator of Dishly" class="portrait-img" />
+          <img :src="profileImg" alt="Salma - Erstellerin von Dishly" class="portrait-img" />
         </div>
       </div>
     </div>

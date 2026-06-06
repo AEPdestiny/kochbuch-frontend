@@ -38,7 +38,7 @@ async function logout() {
         <div class="tagline-box">
           <span class="tagline-deco">✦</span>
           <span class="tagline-text">
-            Your Recipeworld for simple, tasty recipes
+            Deine Rezeptwelt für einfache, leckere Gerichte
           </span>
           <span class="tagline-deco">✦</span>
         </div>
@@ -46,19 +46,20 @@ async function logout() {
 
       <!-- Hauptnavigation zwischen den Seiten der App -->
       <nav class="nav-bar">
-        <RouterLink to="/" class="nav-item">Home</RouterLink>
-        <RouterLink to="/my-recipes" class="nav-item">Your recipes</RouterLink>
+        <RouterLink to="/" class="nav-item">Startseite</RouterLink>
+        <RouterLink to="/my-recipes" class="nav-item">Meine Rezepte</RouterLink>
         <RouterLink v-if="authStore.isAuthenticated" to="/pantry" class="nav-item">Vorrat</RouterLink>
-        <RouterLink to="/about" class="nav-item">About</RouterLink>
-        <RouterLink to="/contact" class="nav-item">Contact</RouterLink>
+        <RouterLink v-if="authStore.isAuthenticated" to="/shopping-list" class="nav-item">Einkaufsliste</RouterLink>
+        <RouterLink to="/about" class="nav-item">Über Dishly</RouterLink>
+        <RouterLink to="/contact" class="nav-item">Kontakt</RouterLink>
         <template v-if="authStore.isAuthenticated">
           <span class="nav-item user-name">{{ authStore.user?.username ?? 'User' }}</span>
           <button class="nav-item nav-button" type="button" @click="logout">
-            Logout
+            Abmelden
           </button>
         </template>
         <template v-else>
-          <RouterLink to="/login" class="nav-item">Login</RouterLink>
+          <RouterLink to="/login" class="nav-item">Anmelden</RouterLink>
           <RouterLink to="/register" class="nav-item">Registrieren</RouterLink>
         </template>
       </nav>
@@ -69,7 +70,7 @@ async function logout() {
     </main>
 
     <footer class="main-footer">
-      © 2026 Dishly – Your recipe hub. All rights reserved.
+      © 2026 Dishly - Deine Rezeptwelt. Alle Rechte vorbehalten.
     </footer>
   </div>
 </template>

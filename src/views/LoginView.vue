@@ -21,10 +21,10 @@ async function submitLogin() {
 <template>
   <section class="auth-page" aria-labelledby="login-title">
     <form class="auth-form" @submit.prevent="submitLogin">
-      <h1 id="login-title">Login</h1>
+      <h1 id="login-title">Anmelden</h1>
 
       <label class="field">
-        <span>Email</span>
+        <span>E-Mail</span>
         <input
           v-model="email"
           type="email"
@@ -50,7 +50,7 @@ async function submitLogin() {
       </p>
 
       <button class="submit-button" type="submit" :disabled="authStore.loading">
-        {{ authStore.loading ? 'Login läuft...' : 'Einloggen' }}
+        {{ authStore.loading ? 'Anmeldung läuft...' : 'Einloggen' }}
       </button>
     </form>
   </section>

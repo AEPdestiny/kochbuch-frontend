@@ -26,7 +26,7 @@ async function submitRegister() {
       <h1 id="register-title">Registrieren</h1>
 
       <label class="field">
-        <span>Username</span>
+        <span>Benutzername</span>
         <input
           v-model="username"
           type="text"
@@ -37,7 +37,7 @@ async function submitRegister() {
       </label>
 
       <label class="field">
-        <span>Email</span>
+        <span>E-Mail</span>
         <input
           v-model="email"
           type="email"

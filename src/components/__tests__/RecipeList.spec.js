@@ -24,7 +24,7 @@ describe('RecipeList.vue', () => {
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
   })
 
-  it('loads /recipes/mine and shows "Your created recipes" with items for logged-in users', async () => {
+  it('loads /recipes/mine and shows "Deine erstellten Rezepte" with items for logged-in users', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     // Fake-Daten für initiales GET /recipes/mine
     const fakeRecipes = [
@@ -55,7 +55,7 @@ describe('RecipeList.vue', () => {
     // Erwartung: Überschrift + Rezepttitel sichtbar
     expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.getRecipes).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Your created recipes')
+    expect(wrapper.text()).toContain('Deine erstellten Rezepte')
     expect(wrapper.text()).toContain('Test Pasta')
   })
 
@@ -110,13 +110,13 @@ describe('RecipeList.vue', () => {
 
     // Formularfelder mit Testwerten befüllen
     await wrapper
-      .find('input[placeholder="e.g. Creamy Tomato Pasta"]')
+      .find('input[placeholder="z. B. Cremige Tomatenpasta"]')
       .setValue('New Dish')
     await wrapper
-      .find('textarea[placeholder="List your ingredients, separated by commas."]')
+      .find('textarea[placeholder="Zutaten mit Kommas getrennt eintragen."]')
       .setValue('x')
     await wrapper
-      .find('textarea[placeholder="Write your step-by-step instructions."]')
+      .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
       .setValue('y')
 
     // Formular absenden
@@ -141,13 +141,13 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     await wrapper
-      .find('input[placeholder="e.g. Creamy Tomato Pasta"]')
+      .find('input[placeholder="z. B. Cremige Tomatenpasta"]')
       .setValue('New Dish')
     await wrapper
-      .find('textarea[placeholder="List your ingredients, separated by commas."]')
+      .find('textarea[placeholder="Zutaten mit Kommas getrennt eintragen."]')
       .setValue('x')
     await wrapper
-      .find('textarea[placeholder="Write your step-by-step instructions."]')
+      .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
       .setValue('y')
 
     await wrapper.find('form').trigger('submit.prevent')
@@ -169,7 +169,7 @@ describe('RecipeList.vue', () => {
     // Erwartung: kein zusätzlicher Create-Request
     expect(recipeApi.getMyRecipes).not.toHaveBeenCalled()
     // Validierungsfehlermeldung sichtbar
-    expect(wrapper.text()).toContain('Please fill in all required fields.')
+    expect(wrapper.text()).toContain('Bitte fülle alle Pflichtfelder aus.')
   })
 
   it('updates a recipe via edit panel', async () => {
