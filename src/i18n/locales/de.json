@@ -222,5 +222,33 @@
     "recipeError": "Rezeptdaten konnten nicht geladen werden.",
     "pantryError": "Vorratsdaten konnten nicht geladen werden.",
     "shoppingListError": "Einkaufslistendaten konnten nicht geladen werden."
+  },
+  "home": {
+    "description": "Entdecke Gerichte aus aller Welt und finde dein n?chstes Lieblingsrezept.",
+    "searchPlaceholder": "Nach Titel, K?che oder Zutaten suchen",
+    "searchAria": "Rezepte nach Titel, K?che oder Zutaten suchen",
+    "shuffle": "Rezepte neu mischen",
+    "loading": "Rezepte werden geladen...",
+    "empty": "Keine passenden Rezepte gefunden.",
+    "errors": {
+      "prefix": "Fehler:",
+      "externalSearch": "Externe Rezepte konnten nicht geladen werden.",
+      "initialLoad": "Rezepte konnten nicht geladen werden."
+    },
+    "source": {
+      "external": "Extern",
+      "dishly": "Dishly"
+    },
+    "overlay": {
+      "ingredients": "Zutaten",
+      "instructions": "Zubereitung",
+      "source": "Quelle",
+      "close": "Schlie?en"
+    },
+    "meta": {
+      "minutes": "{minutes} min",
+      "servings": "{count} Portionen",
+      "rating": "? {rating}"
+    }
   }
 }

@@ -222,5 +222,33 @@
     "recipeError": "Tarif verileri yüklenemedi.",
     "pantryError": "Kiler verileri yüklenemedi.",
     "shoppingListError": "Alışveriş listesi verileri yüklenemedi."
+  },
+  "home": {
+    "description": "D?nyan?n d?rt bir yan?ndan yemekleri ke?fet ve yeni favori tarifini bul.",
+    "searchPlaceholder": "Ba?l?k, mutfak veya malzemeye g?re ara",
+    "searchAria": "Tarifleri ba?l?k, mutfak veya malzemeye g?re ara",
+    "shuffle": "Tarifleri kar??t?r",
+    "loading": "Tarifler y?kleniyor...",
+    "empty": "E?le?en tarif bulunamad?.",
+    "errors": {
+      "prefix": "Hata:",
+      "externalSearch": "Harici tarifler y?klenemedi.",
+      "initialLoad": "Tarifler y?klenemedi."
+    },
+    "source": {
+      "external": "Harici",
+      "dishly": "Dishly"
+    },
+    "overlay": {
+      "ingredients": "Malzemeler",
+      "instructions": "Haz?rlan??",
+      "source": "Kaynak",
+      "close": "Kapat"
+    },
+    "meta": {
+      "minutes": "{minutes} dk",
+      "servings": "{count} porsiyon",
+      "rating": "? {rating}"
+    }
   }
 }

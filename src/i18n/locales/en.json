@@ -222,5 +222,33 @@
     "recipeError": "Recipe data could not be loaded.",
     "pantryError": "Pantry data could not be loaded.",
     "shoppingListError": "Shopping list data could not be loaded."
+  },
+  "home": {
+    "description": "Discover dishes from around the world and find your next favorite recipe.",
+    "searchPlaceholder": "Search by title, cuisine or ingredients",
+    "searchAria": "Search recipes by title, cuisine or ingredients",
+    "shuffle": "Shuffle recipes",
+    "loading": "Loading recipes...",
+    "empty": "No matching recipes found.",
+    "errors": {
+      "prefix": "Error:",
+      "externalSearch": "External recipes could not be loaded.",
+      "initialLoad": "Recipes could not be loaded."
+    },
+    "source": {
+      "external": "External",
+      "dishly": "Dishly"
+    },
+    "overlay": {
+      "ingredients": "Ingredients",
+      "instructions": "Instructions",
+      "source": "Source",
+      "close": "Close"
+    },
+    "meta": {
+      "minutes": "{minutes} min",
+      "servings": "{count} servings",
+      "rating": "? {rating}"
+    }
   }
 }

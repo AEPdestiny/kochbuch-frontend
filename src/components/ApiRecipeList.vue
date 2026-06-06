@@ -2,6 +2,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
 import type { Recipe } from '@/types/recipe'
 
@@ -19,6 +20,7 @@ const ownPublished = ref<Recipe[]>([]) // eigene veröffentlichte Rezepte aus de
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<DisplayRecipe | null>(null)
+const { t } = useI18n()
 
 const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
 const SEARCH_DEBOUNCE_MS = 400
@@ -68,7 +70,7 @@ const loadRecipes = async () => {
     buildView()
     error.value = null
   } catch (e: any) {
-    error.value = e.message ?? 'Unknown error'
+    error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
     loading.value = false
   }
@@ -107,14 +109,14 @@ const loadExternalRecipes = async (query: string) => {
     allExternal.value = external
     buildView()
     error.value = null
-  } catch (e: any) {
+  } catch {
     if (requestId !== externalRequestCounter) {
       return
     }
 
     allExternal.value = []
     buildView()
-    error.value = e.message ?? 'Externe Rezepte konnten nicht geladen werden.'
+    error.value = t('home.errors.externalSearch')
   }
 }
 
@@ -151,32 +153,34 @@ const shuffleRecipes = () => {
     <!-- Hero-Bereich mit Intro-Text und Suche -->
     <section class="hero">
       <p class="hero-desc">
-        Entdecke Gerichte aus aller Welt und finde dein nächstes Lieblingsrezept.
+        {{ t('home.description') }}
       </p>
       <input
         v-model="search"
         class="search-input"
         type="search"
-        placeholder="Nach Titel, Küche oder Zutaten suchen"
-        aria-label="Rezepte nach Titel, Küche oder Zutaten suchen"
+        :placeholder="t('home.searchPlaceholder')"
+        :aria-label="t('home.searchAria')"
       />
     </section>
 
     <!-- Shuffle-Button zum Neu-Mischen der externen Rezepte -->
     <div class="shuffle-wrap">
       <button class="shuffle-btn" type="button" @click="shuffleRecipes">
-        <span class="shuffle-icon">🔀</span>
-        <span>Rezepte neu mischen</span>
+        <span class="shuffle-icon">↻</span>
+        <span>{{ t('home.shuffle') }}</span>
       </button>
     </div>
 
     <section class="list-wrap">
-      <p v-if="loading" class="status-text">Rezepte werden geladen...</p>
-      <p v-else-if="error && filtered.length === 0" class="status-text error">Fehler: {{ error }}</p>
+      <p v-if="loading" class="status-text">{{ t('home.loading') }}</p>
+      <p v-else-if="error && filtered.length === 0" class="status-text error">
+        {{ t('home.errors.prefix') }} {{ error }}
+      </p>
 
       <div v-else class="recipe-grid">
         <p v-if="error" class="status-text error">
-          Fehler: {{ error }}
+          {{ t('home.errors.prefix') }} {{ error }}
         </p>
 
         <!-- Karten für alle gefilterten Rezepte -->
@@ -198,20 +202,20 @@ const shuffleRecipes = () => {
                 class="pill source-pill"
                 :class="r.source === 'dishly' ? 'source-pill-dishly' : 'source-pill-external'"
               >
-                {{ r.source === 'dishly' ? 'Dishly' : 'Extern' }}
+                {{ r.source === 'dishly' ? t('home.source.dishly') : t('home.source.external') }}
               </span>
               <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
               <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
               <span v-if="r.rating" class="pill pill-rating">
-                ★ {{ r.rating.toFixed(1) }}
+                {{ t('home.meta.rating', { rating: r.rating.toFixed(1) }) }}
               </span>
             </p>
 
             <p class="card-times">
               <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
-                ⏱ {{ r.prepTimeMinutes + r.cookTimeMinutes }} min
+                {{ t('home.meta.minutes', { minutes: r.prepTimeMinutes + r.cookTimeMinutes }) }}
               </span>
-              <span v-if="r.servings"> • 🍽 {{ r.servings }} Portionen</span>
+              <span v-if="r.servings"> · {{ t('home.meta.servings', { count: r.servings }) }}</span>
             </p>
 
             <p class="card-ingredients">
@@ -222,7 +226,7 @@ const shuffleRecipes = () => {
 
         <!-- Hinweis, wenn kein Treffer zur Suche passt -->
         <p v-if="!loading && filtered.length === 0" class="status-text">
-          Keine passenden Rezepte gefunden.
+          {{ t('home.empty') }}
         </p>
       </div>
     </section>
@@ -230,27 +234,32 @@ const shuffleRecipes = () => {
     <!-- Overlay mit Detailansicht zum ausgewählten Rezept -->
     <div v-if="selected" class="overlay" @click.self="closeDetails">
       <div class="overlay-card">
-        <button class="overlay-close" @click="closeDetails">×</button>
+        <button class="overlay-close" :aria-label="t('home.overlay.close')" @click="closeDetails">x</button>
 
         <h3 class="overlay-title">{{ selected.title }}</h3>
 
         <p class="overlay-meta">
           <span v-if="selected.category">{{ selected.category }}</span>
-          <span v-if="selected.difficulty"> • {{ selected.difficulty }}</span>
-          <span v-if="selected.rating"> • ★ {{ selected.rating.toFixed(1) }}</span>
+          <span v-if="selected.difficulty"> · {{ selected.difficulty }}</span>
+          <span v-if="selected.rating"> · {{ t('home.meta.rating', { rating: selected.rating.toFixed(1) }) }}</span>
         </p>
 
         <p class="overlay-meta">
           <span v-if="selected.prepTimeMinutes || selected.cookTimeMinutes">
-            ⏱ {{ selected.prepTimeMinutes + selected.cookTimeMinutes }} min
+            {{ t('home.meta.minutes', { minutes: selected.prepTimeMinutes + selected.cookTimeMinutes }) }}
           </span>
-          <span v-if="selected.servings"> • 🍽 {{ selected.servings }} Portionen</span>
+          <span v-if="selected.servings"> · {{ t('home.meta.servings', { count: selected.servings }) }}</span>
         </p>
 
-        <h4 class="overlay-subtitle">Zutaten</h4>
+        <p class="overlay-meta">
+          <strong>{{ t('home.overlay.source') }}:</strong>
+          <span>{{ selected.source === 'dishly' ? t('home.source.dishly') : t('home.source.external') }}</span>
+        </p>
+
+        <h4 class="overlay-subtitle">{{ t('home.overlay.ingredients') }}</h4>
         <p class="overlay-text">{{ selected.ingredients }}</p>
 
-        <h4 class="overlay-subtitle">Zubereitung</h4>
+        <h4 class="overlay-subtitle">{{ t('home.overlay.instructions') }}</h4>
         <p class="overlay-text">{{ selected.instructions }}</p>
       </div>
     </div>

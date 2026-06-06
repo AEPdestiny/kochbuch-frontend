@@ -7,6 +7,8 @@ import { i18n, setLocale } from '@/i18n'
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getRecipes: vi.fn(),
+    getExternalRecipes: vi.fn(),
+    getPublishedRecipes: vi.fn(),
     createRecipe: vi.fn(),
     updateRecipe: vi.fn(),
     deleteRecipe: vi.fn(),
@@ -42,6 +44,8 @@ describe('App routing', () => {
       json: async () => [],
     })
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
     setLocale('de')
   })
 
@@ -51,7 +55,7 @@ describe('App routing', () => {
     await router.isReady()
     // HomeView mit Router mounten
     const wrapper = mount(HomeView, {
-      global: { plugins: [router] },
+      global: { plugins: [router, i18n] },
     })
     // Erwartung: Text aus der Home-Seite vorhanden
     expect(wrapper.html()).toContain('Entdecke Gerichte')

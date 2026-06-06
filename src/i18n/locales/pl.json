@@ -222,5 +222,33 @@
     "recipeError": "Nie udało się załadować danych przepisów.",
     "pantryError": "Nie udało się załadować danych spiżarni.",
     "shoppingListError": "Nie udało się załadować danych listy zakupów."
+  },
+  "home": {
+    "description": "Odkrywaj dania z ca?ego ?wiata i znajd? sw?j kolejny ulubiony przepis.",
+    "searchPlaceholder": "Szukaj po tytule, kuchni lub sk?adnikach",
+    "searchAria": "Szukaj przepis?w po tytule, kuchni lub sk?adnikach",
+    "shuffle": "Wymieszaj przepisy",
+    "loading": "Przepisy s? ?adowane...",
+    "empty": "Nie znaleziono pasuj?cych przepis?w.",
+    "errors": {
+      "prefix": "B??d:",
+      "externalSearch": "Nie uda?o si? za?adowa? zewn?trznych przepis?w.",
+      "initialLoad": "Nie uda?o si? za?adowa? przepis?w."
+    },
+    "source": {
+      "external": "Zewn?trzne",
+      "dishly": "Dishly"
+    },
+    "overlay": {
+      "ingredients": "Sk?adniki",
+      "instructions": "Przygotowanie",
+      "source": "?r?d?o",
+      "close": "Zamknij"
+    },
+    "meta": {
+      "minutes": "{minutes} min",
+      "servings": "{count} porcje",
+      "rating": "? {rating}"
+    }
   }
 }

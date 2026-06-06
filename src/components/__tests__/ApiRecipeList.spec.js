@@ -1,7 +1,8 @@
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, config } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { i18n, setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
@@ -14,12 +15,15 @@ describe('ApiRecipeList.vue', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    setLocale('de')
+    config.global.plugins = [i18n]
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
   })
 
   afterEach(() => {
     vi.useRealTimers()
+    config.global.plugins = []
   })
 
   it('shows loading text while recipes are being fetched', () => {
@@ -67,6 +71,49 @@ describe('ApiRecipeList.vue', () => {
     const firstCard = wrapper.find('.recipe-card')
     expect(firstCard.text()).toContain('Dishly')
     expect(firstCard.text()).toContain('Published Pasta')
+  })
+
+  it('shows translated English home UI while keeping recipe data unchanged', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'Chicken Pasta', 'noodles', 'Italian'),
+    ])
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Dishly Kartoffelsuppe', 'Kartoffeln', 'Deutsch'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Discover dishes from around the world')
+    expect(wrapper.find('input[type="search"]').attributes('placeholder')).toBe(
+      'Search by title, cuisine or ingredients',
+    )
+    expect(wrapper.text()).toContain('Shuffle recipes')
+    expect(wrapper.text()).toContain('External')
+    expect(wrapper.text()).toContain('Dishly')
+    expect(wrapper.text()).toContain('Chicken Pasta')
+    expect(wrapper.text()).toContain('Italian')
+    expect(wrapper.text()).toContain('Dishly Kartoffelsuppe')
+    expect(wrapper.text()).toContain('Kartoffeln')
+  })
+
+  it('shows translated overlay labels without translating recipe content', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('.recipe-card').trigger('click')
+
+    expect(wrapper.text()).toContain('Quelle')
+    expect(wrapper.text()).toContain('Zutaten')
+    expect(wrapper.text()).toContain('Zubereitung')
+    expect(wrapper.text()).toContain('External Pasta')
+    expect(wrapper.text()).toContain('noodles')
+    expect(wrapper.text()).toContain('cook')
   })
 
   it('shows an error when initial loading fails', async () => {
@@ -175,6 +222,39 @@ describe('ApiRecipeList.vue', () => {
 
     expect(wrapper.text()).toContain('Published Chicken Soup')
     expect(wrapper.text()).toContain('Fehler:')
+    expect(wrapper.text()).toContain('Externe Rezepte konnten nicht geladen werden.')
+  })
+
+  it('shows translated error text when external search fails in English', async () => {
+    setLocale('en')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getExternalRecipes)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('TheMealDB unavailable'))
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Published Chicken Soup', 'chicken', 'Soup'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('chicken')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Published Chicken Soup')
+    expect(wrapper.text()).toContain('Error:')
+    expect(wrapper.text()).toContain('External recipes could not be loaded.')
+  })
+
+  it('renders Arabic home UI without errors', async () => {
+    setLocale('ar')
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.find('.hero-desc').exists()).toBe(true)
+    expect(document.documentElement.dir).toBe('rtl')
   })
 })
 
