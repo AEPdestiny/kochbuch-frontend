@@ -1,0 +1,218 @@
+import { mount, flushPromises, config } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import RecipeDetailView from '@/views/RecipeDetailView.vue'
+import { recipeApi } from '@/shared/api/recipeApi'
+import { restaurantApi } from '@/shared/api/restaurantApi'
+import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { i18n, setLocale } from '@/i18n'
+
+const back = vi.fn()
+const push = vi.fn()
+let routeName = 'external-recipe-detail'
+
+vi.mock('vue-router', () => ({
+  RouterLink: {
+    props: ['to'],
+    template: '<a :href="to"><slot /></a>',
+  },
+  useRoute: () => ({
+    name: routeName,
+    params: { id: '716429' },
+  }),
+  useRouter: () => ({ back, push }),
+}))
+
+vi.mock('@/shared/api/recipeApi', () => ({
+  recipeApi: {
+    getExternalRecipeDetail: vi.fn(),
+    getRecipe: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/api/restaurantApi', () => ({
+  restaurantApi: {
+    searchRestaurants: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/api/shoppingListApi', () => ({
+  shoppingListApi: {
+    createShoppingListItem: vi.fn(),
+  },
+}))
+
+describe('RecipeDetailView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    routeName = 'external-recipe-detail'
+    sessionStorage.clear()
+    setLocale('de')
+    config.global.plugins = [i18n]
+    vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue(externalDetail())
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue(localRecipe())
+    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
+    vi.mocked(shoppingListApi.createShoppingListItem).mockResolvedValue({
+      id: 1,
+      name: 'pasta',
+      quantity: 2,
+      unit: 'cups',
+      category: 'Rezeptzutat',
+      checked: false,
+      recipeId: '716429',
+      recipeTitle: 'Pasta with Garlic',
+      createdAt: '2026-06-06T00:00:00Z',
+      updatedAt: '2026-06-06T00:00:00Z',
+    })
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: vi.fn(),
+      },
+    })
+  })
+
+  it('loads external recipe details and shows ingredients and steps', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(recipeApi.getExternalRecipeDetail).toHaveBeenCalledWith('716429')
+    expect(wrapper.text()).toContain('Pasta with Garlic')
+    expect(wrapper.text()).toContain('510 kcal')
+    expect(wrapper.text()).toContain('2 cups pasta')
+    expect(wrapper.text()).toContain('Cook pasta.')
+  })
+
+  it('adds all ingredients to the shopping list with recipe context', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
+      name: 'pasta',
+      quantity: 2,
+      unit: 'cups',
+      category: 'Rezeptzutat',
+      checked: false,
+      recipeId: '716429',
+      recipeTitle: 'Pasta with Garlic',
+    })
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(2)
+  })
+
+  it('adds one ingredient to the shopping list', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.small-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(1)
+  })
+
+  it('searches restaurants with recipe title and coordinates', async () => {
+    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([
+      {
+        name: 'Pasta Place',
+        address: 'Pasta Street 1',
+        distanceMeters: 850,
+        googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=52.5201,13.4052',
+        latitude: 52.5201,
+        longitude: 13.4052,
+      },
+    ])
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405 } } as GeolocationPosition)
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.findAll('.secondary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchRestaurants).toHaveBeenCalledWith({
+      query: 'Pasta with Garlic',
+      latitude: 52.52,
+      longitude: 13.405,
+    })
+    expect(wrapper.text()).toContain('Pasta Place')
+  })
+
+  it('shows location denied errors', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((_success: PositionCallback, error?: PositionErrorCallback | null) => {
+      error?.({ code: 1 } as GeolocationPositionError)
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.findAll('.secondary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Standortzugriff wurde verweigert.')
+  })
+
+  it('loads local Dishly recipes from /recipes/{id}', async () => {
+    routeName = 'recipe-detail'
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(recipeApi.getRecipe).toHaveBeenCalledWith('716429')
+    expect(wrapper.text()).toContain('Dishly Pasta')
+    expect(wrapper.text()).toContain('Tomaten')
+  })
+
+  it('uses a safe fallback for the back button when no history exists', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.back-button').trigger('click')
+
+    expect(push).toHaveBeenCalledWith('/')
+  })
+})
+
+function externalDetail() {
+  return {
+    id: 716429,
+    externalId: '716429',
+    source: 'spoonacular',
+    title: 'Pasta with Garlic',
+    imageUrl: 'https://example.com/pasta.jpg',
+    prepTimeMinutes: 0,
+    cookTimeMinutes: 20,
+    readyInMinutes: 20,
+    servings: 2,
+    category: 'main course',
+    tags: ['main course', 'vegetarian'],
+    calories: 510,
+    ingredients: [
+      { name: 'pasta', original: '2 cups pasta', amount: 2, unit: 'cups' },
+      { name: 'olive oil', original: '1 tbsp olive oil', amount: 1, unit: 'tbsp' },
+    ],
+    instructions: 'Cook pasta.',
+    steps: ['Cook pasta.', 'Serve warm.'],
+    sourceUrl: 'https://example.com/source',
+  }
+}
+
+function localRecipe() {
+  return {
+    id: 1,
+    title: 'Dishly Pasta',
+    imageUrl: '',
+    prepTimeMinutes: 5,
+    cookTimeMinutes: 10,
+    servings: 2,
+    difficulty: 'easy',
+    category: 'Italian',
+    rating: 4.5,
+    ingredients: 'Tomaten, Pasta',
+    instructions: 'Kochen',
+    favorite: false,
+    published: true,
+  }
+}

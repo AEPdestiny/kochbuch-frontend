@@ -3,6 +3,8 @@ export type ShoppingListItemRequest = {
   quantity?: number | null
   unit?: string | null
   category?: string | null
+  recipeId?: string | null
+  recipeTitle?: string | null
   checked: boolean
 }
 

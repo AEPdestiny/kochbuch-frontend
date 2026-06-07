@@ -130,6 +130,9 @@
       "deleteForbidden": "Bu shopping list item silme iznin yok.",
       "updateForbidden": "Bu shopping list item düzenleme iznin yok.",
       "notFound": "Bu shopping list item bulunamadı."
+    },
+    "groups": {
+      "manual": "Manuel"
     }
   },
   "recipes": {
@@ -326,6 +329,40 @@
       "friday": "Cuma",
       "saturday": "Cumartesi",
       "sunday": "Pazar"
+    }
+  },
+  "recipeDetail": {
+    "loading": "Tarif y?kleniyor...",
+    "actions": {
+      "back": "Geri",
+      "addAllToShoppingList": "T?m malzemeleri al??veri? listesine ekle",
+      "addOne": "+ Ekle",
+      "addToMealPlan": "Haftal?k plana ekle"
+    },
+    "meta": {
+      "calories": "{calories} kcal",
+      "time": "{minutes} dk",
+      "servings": "{count} porsiyon"
+    },
+    "ingredients": {
+      "title": "Malzemeler"
+    },
+    "instructions": {
+      "title": "Haz?rl?k",
+      "empty": "Haz?rl?k bilgisi yok."
+    },
+    "restaurants": {
+      "title": "Uygun restoranlar"
+    },
+    "shopping": {
+      "category": "Tarif malzemesi",
+      "addedOne": "Malzeme al??veri? listesine eklendi.",
+      "addedAll": "T?m malzemeler al??veri? listesine eklendi."
+    },
+    "errors": {
+      "load": "Tarif y?klenemedi.",
+      "shopping": "Malzemeler al??veri? listesine eklenemedi.",
+      "loginRequiredShopping": "Malzemeleri al??veri? listesine eklemek i?in l?tfen giri? yap."
     }
   }
 }

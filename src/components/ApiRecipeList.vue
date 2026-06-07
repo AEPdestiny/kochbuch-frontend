@@ -1,39 +1,36 @@
-/**Zeigt auf der Startseite öffentliche API-Rezepte plus eigene veröffentlichte Rezepte.*/
-
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
-import { restaurantApi } from '@/shared/api/restaurantApi'
 import type { Recipe } from '@/types/recipe'
-import type { RestaurantResponse } from '@/types/restaurant'
 
 type RecipeSource = 'external' | 'dishly'
 type DisplayRecipe = Recipe & {
   source: RecipeSource
 }
 
-const search = ref('') // Suchtext für das Input-Feld
-const recipes = ref<DisplayRecipe[]>([]) // kombinierte Liste, die im Grid angezeigt wird
-const allExternal = ref<Recipe[]>([]) // alle geladenen externen API-Rezepte
-const ownPublished = ref<Recipe[]>([]) // eigene veröffentlichte Rezepte aus dem Backend
-
-// Laden/Fehler/ausgewähltes Rezept
+const search = ref('')
+const recipes = ref<DisplayRecipe[]>([])
+const allExternal = ref<Recipe[]>([])
+const ownPublished = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-const selected = ref<DisplayRecipe | null>(null)
-const restaurantLoading = ref(false)
-const restaurantError = ref<string | null>(null)
-const restaurants = ref<RestaurantResponse[]>([])
-const restaurantSearched = ref(false)
 const { t } = useI18n()
+const router = useRouter()
 
-const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
+const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 
-//erstellt eine zufällige Reihenfolge der übergebenen Rezepte
+const filtered = computed(() => recipes.value)
+
+const toDisplayRecipe = (recipe: Recipe, source: RecipeSource): DisplayRecipe => ({
+  ...recipe,
+  source,
+})
+
 const shuffleArray = (items: Recipe[]): Recipe[] => {
   const arr: Recipe[] = [...items]
   for (let i = arr.length - 1; i > 0; i--) {
@@ -45,7 +42,15 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
   return arr
 }
 
-// Baut die aktuell sichtbare Liste aus zufälligen externen Rezepten + eigenen veröffentlichten
+const filterRecipes = (items: Recipe[], q: string) => {
+  if (!q) return items
+  return items.filter(r =>
+    r.title.toLowerCase().includes(q) ||
+    r.ingredients.toLowerCase().includes(q) ||
+    r.category.toLowerCase().includes(q),
+  )
+}
+
 const buildView = () => {
   const q = search.value.toLowerCase().trim()
   const matchingPublished = filterRecipes(ownPublished.value, q)
@@ -57,12 +62,6 @@ const buildView = () => {
   ]
 }
 
-const toDisplayRecipe = (recipe: Recipe, source: RecipeSource): DisplayRecipe => ({
-  ...recipe,
-  source,
-})
-
-// Lädt externe und eigene veröffentlichte Rezepte parallel vom Backend
 const loadRecipes = async () => {
   loading.value = true
   try {
@@ -81,26 +80,6 @@ const loadRecipes = async () => {
     loading.value = false
   }
 }
-
-onMounted(() => {
-  loadRecipes()
-})
-
-watch(search, value => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
-
-  const query = value.trim()
-  if (query.length > 0 && query.length < 2) {
-    buildView()
-    return
-  }
-
-  searchTimeout = setTimeout(() => {
-    loadExternalRecipes(query)
-  }, SEARCH_DEBOUNCE_MS)
-})
 
 const loadExternalRecipes = async (query: string) => {
   const requestId = ++externalRequestCounter
@@ -126,86 +105,42 @@ const loadExternalRecipes = async (query: string) => {
   }
 }
 
-const filtered = computed(() => recipes.value)
-
-const filterRecipes = (items: Recipe[], q: string) => {
-  if (!q) return items
-  return items.filter(r =>
-    r.title.toLowerCase().includes(q) ||
-    r.ingredients.toLowerCase().includes(q) ||
-    r.category.toLowerCase().includes(q)
-  )
-}
-
-// Öffnet das Detail-Overlay für ein ausgewähltes Rezept
 const openDetails = (recipe: DisplayRecipe) => {
-  selected.value = recipe
-  resetRestaurantSearch()
+  if (recipe.source === 'external') {
+    router.push(`/recipe/external/${recipe.externalId ?? recipe.id}`)
+    return
+  }
+  router.push(`/recipe/${recipe.id}`)
 }
-// Schließt das Detail-Overlay wieder
-const closeDetails = () => {
-  selected.value = null
-  resetRestaurantSearch()
-}
-// Mischt die externen Rezepte neu und baut die Ansicht erneut auf
+
 const shuffleRecipes = () => {
   if (!allExternal.value.length) return
   buildView()
 }
 
-const resetRestaurantSearch = () => {
-  restaurantLoading.value = false
-  restaurantError.value = null
-  restaurants.value = []
-  restaurantSearched.value = false
-}
+onMounted(() => {
+  loadRecipes()
+})
 
-const findNearbyRestaurants = async () => {
-  if (!selected.value) return
-  if (!navigator.geolocation) {
-    restaurantError.value = t('restaurants.errors.geolocationUnsupported')
-    restaurants.value = []
+watch(search, value => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  const query = value.trim()
+  if (query.length > 0 && query.length < 2) {
+    buildView()
     return
   }
 
-  restaurantLoading.value = true
-  restaurantError.value = null
-  restaurants.value = []
-  restaurantSearched.value = true
-
-  try {
-    const position = await currentPosition()
-    restaurants.value = await restaurantApi.searchRestaurants({
-      query: selected.value.title,
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-    })
-  } catch (e: any) {
-    restaurants.value = []
-    restaurantError.value = geolocationDenied(e)
-      ? t('restaurants.errors.locationDenied')
-      : t('restaurants.errors.searchFailed')
-  } finally {
-    restaurantLoading.value = false
-  }
-}
-
-const currentPosition = (): Promise<GeolocationPosition> => new Promise((resolve, reject) => {
-  navigator.geolocation.getCurrentPosition(resolve, reject)
+  searchTimeout = setTimeout(() => {
+    loadExternalRecipes(query)
+  }, SEARCH_DEBOUNCE_MS)
 })
-
-const geolocationDenied = (error: unknown) =>
-  typeof error === 'object'
-  && error !== null
-  && 'code' in error
-  && Number((error as GeolocationPositionError).code) === 1
-
 </script>
 
 <template>
-  <!-- Gesamte Home-Sektion mit Suchfeld, Shuffle-Button und Rezeptliste -->
   <section class="home-wrap">
-    <!-- Hero-Bereich mit Intro-Text und Suche -->
     <section class="hero">
       <p class="hero-desc">
         {{ t('home.description') }}
@@ -219,7 +154,6 @@ const geolocationDenied = (error: unknown) =>
       />
     </section>
 
-    <!-- Shuffle-Button zum Neu-Mischen der externen Rezepte -->
     <div class="shuffle-wrap">
       <button class="shuffle-btn" type="button" @click="shuffleRecipes">
         <span class="shuffle-icon">↻</span>
@@ -238,14 +172,13 @@ const geolocationDenied = (error: unknown) =>
           {{ t('home.errors.prefix') }} {{ error }}
         </p>
 
-        <!-- Karten für alle gefilterten Rezepte -->
         <article
           v-for="r in filtered"
-          :key="`${r.title}-${r.id}`"
+          :key="`${r.source}-${r.id}`"
           class="recipe-card"
           @click="openDetails(r)"
         >
-          <div class="image-wrap" v-if="r.imageUrl">
+          <div v-if="r.imageUrl" class="image-wrap">
             <img :src="r.imageUrl" :alt="r.title" />
           </div>
 
@@ -279,91 +212,11 @@ const geolocationDenied = (error: unknown) =>
           </div>
         </article>
 
-        <!-- Hinweis, wenn kein Treffer zur Suche passt -->
         <p v-if="!loading && filtered.length === 0" class="status-text">
           {{ t('home.empty') }}
         </p>
       </div>
     </section>
-
-    <!-- Overlay mit Detailansicht zum ausgewählten Rezept -->
-    <div v-if="selected" class="overlay" @click.self="closeDetails">
-      <div class="overlay-card">
-        <button class="overlay-close" :aria-label="t('home.overlay.close')" @click="closeDetails">x</button>
-
-        <h3 class="overlay-title">{{ selected.title }}</h3>
-
-        <p class="overlay-meta">
-          <span v-if="selected.category">{{ selected.category }}</span>
-          <span v-if="selected.difficulty"> · {{ selected.difficulty }}</span>
-          <span v-if="selected.rating"> · {{ t('home.meta.rating', { rating: selected.rating.toFixed(1) }) }}</span>
-        </p>
-
-        <p class="overlay-meta">
-          <span v-if="selected.prepTimeMinutes || selected.cookTimeMinutes">
-            {{ t('home.meta.minutes', { minutes: selected.prepTimeMinutes + selected.cookTimeMinutes }) }}
-          </span>
-          <span v-if="selected.servings"> · {{ t('home.meta.servings', { count: selected.servings }) }}</span>
-        </p>
-
-        <p class="overlay-meta">
-          <strong>{{ t('home.overlay.source') }}:</strong>
-          <span>{{ selected.source === 'dishly' ? t('home.source.dishly') : t('home.source.external') }}</span>
-        </p>
-
-        <h4 class="overlay-subtitle">{{ t('home.overlay.ingredients') }}</h4>
-        <p class="overlay-text">{{ selected.ingredients }}</p>
-
-        <h4 class="overlay-subtitle">{{ t('home.overlay.instructions') }}</h4>
-        <p class="overlay-text">{{ selected.instructions }}</p>
-
-        <section class="restaurant-section">
-          <button
-            class="restaurant-search-btn"
-            type="button"
-            :disabled="restaurantLoading"
-            @click="findNearbyRestaurants"
-          >
-            {{ t('restaurants.actions.findNearby') }}
-          </button>
-          <p class="restaurant-hint">
-            {{ t('restaurants.disclaimer') }}
-          </p>
-
-          <p v-if="restaurantLoading" class="restaurant-status">
-            {{ t('restaurants.loading.search') }}
-          </p>
-          <p v-else-if="restaurantError" class="restaurant-status error">
-            {{ restaurantError }}
-          </p>
-          <p v-else-if="restaurantSearched && restaurants.length === 0" class="restaurant-status">
-            {{ t('restaurants.empty') }}
-          </p>
-
-          <ul v-if="restaurants.length" class="restaurant-list">
-            <li
-              v-for="restaurant in restaurants"
-              :key="`${restaurant.name}-${restaurant.latitude}-${restaurant.longitude}`"
-              class="restaurant-item"
-            >
-              <strong>{{ restaurant.name }}</strong>
-              <span v-if="restaurant.address">{{ restaurant.address }}</span>
-              <span>
-                {{ t('restaurants.distanceMeters', { distance: restaurant.distanceMeters }) }}
-              </span>
-              <a
-                class="restaurant-map-link"
-                :href="restaurant.googleMapsUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {{ t('restaurants.openInMaps') }}
-              </a>
-            </li>
-          </ul>
-        </section>
-      </div>
-    </div>
   </section>
 </template>
 
@@ -469,7 +322,7 @@ const geolocationDenied = (error: unknown) =>
   display: flex;
   flex-direction: column;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
-  border-color 0.15s ease;
+    border-color 0.15s ease;
   cursor: pointer;
 }
 
@@ -558,130 +411,5 @@ const geolocationDenied = (error: unknown) =>
   font-size: 0.95rem;
   color: #324240;
   margin-top: 4px;
-}
-
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 20, 25, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 40;
-}
-
-.overlay-card {
-  max-width: 700px;
-  width: 90%;
-  max-height: 85vh;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
-  padding: 22px 24px 20px 24px;
-  overflow-y: auto;
-}
-
-.overlay-close {
-  border: none;
-  background: transparent;
-  font-size: 1.6rem;
-  line-height: 1;
-  float: right;
-  cursor: pointer;
-  color: #486b68;
-}
-
-.overlay-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #cc7da9;
-  margin: 4px 0 6px 0;
-}
-
-.overlay-meta {
-  font-size: 0.95rem;
-  color: #486b68;
-  margin-bottom: 6px;
-}
-
-.overlay-subtitle {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #26b6b8;
-  margin-top: 14px;
-  margin-bottom: 6px;
-}
-
-.overlay-text {
-  font-size: 0.95rem;
-  color: #2b1b23;
-  white-space: pre-line;
-}
-
-.restaurant-section {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid #e0f5f2;
-}
-
-.restaurant-search-btn,
-.restaurant-map-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 999px;
-  background: #26b6b8;
-  color: #ffffff;
-  padding: 8px 14px;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.restaurant-search-btn:disabled {
-  cursor: wait;
-  opacity: 0.72;
-}
-
-.restaurant-status {
-  margin-top: 10px;
-  color: #486b68;
-}
-
-.restaurant-hint {
-  margin-top: 8px;
-  color: #486b68;
-  font-size: 0.9rem;
-}
-
-.restaurant-status.error {
-  color: #a14c2b;
-  font-weight: 700;
-}
-
-.restaurant-list {
-  list-style: none;
-  padding: 0;
-  margin: 12px 0 0 0;
-  display: grid;
-  gap: 10px;
-}
-
-.restaurant-item {
-  background: #f4fbfa;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
-  padding: 12px;
-  display: grid;
-  gap: 5px;
-  color: #2b1b23;
-}
-
-.restaurant-map-link {
-  width: fit-content;
-  margin-top: 4px;
-  background: #cc7da9;
-  font-size: 0.9rem;
 }
 </style>

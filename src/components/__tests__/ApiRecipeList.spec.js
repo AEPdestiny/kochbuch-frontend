@@ -2,8 +2,13 @@ import { mount, flushPromises, config } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
-import { restaurantApi } from '@/shared/api/restaurantApi'
 import { i18n, setLocale } from '@/i18n'
+
+const push = vi.fn()
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push }),
+}))
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
@@ -12,33 +17,20 @@ vi.mock('@/shared/api/recipeApi', () => ({
   },
 }))
 
-vi.mock('@/shared/api/restaurantApi', () => ({
-  restaurantApi: {
-    searchRestaurants: vi.fn(),
-  },
-}))
-
 describe('ApiRecipeList.vue', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    push.mockClear()
     setLocale('de')
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
-    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: {
-        getCurrentPosition: vi.fn(),
-      },
-    })
   })
 
   afterEach(() => {
     vi.useRealTimers()
     config.global.plugins = []
-    vi.unstubAllGlobals()
   })
 
   it('shows loading text while recipes are being fetched', () => {
@@ -62,9 +54,8 @@ describe('ApiRecipeList.vue', () => {
 
   it('shows an "Extern" badge for external recipes', async () => {
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+      recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
-    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -75,7 +66,6 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows a "Dishly" badge for own published recipes', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Published Pasta', 'noodles', 'Italian'),
     ])
@@ -86,6 +76,30 @@ describe('ApiRecipeList.vue', () => {
     const firstCard = wrapper.find('.recipe-card')
     expect(firstCard.text()).toContain('Dishly')
     expect(firstCard.text()).toContain('Published Pasta')
+  })
+
+  it('navigates external recipe cards to the external detail route', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+
+    expect(push).toHaveBeenCalledWith('/recipe/external/716429')
+  })
+
+  it('navigates Dishly recipe cards to the local detail route', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Published Pasta', 'noodles', 'Italian'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+
+    expect(push).toHaveBeenCalledWith('/recipe/10')
   })
 
   it('shows translated English home UI while keeping recipe data unchanged', async () => {
@@ -113,168 +127,10 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Kartoffeln')
   })
 
-  it('shows translated overlay labels without translating recipe content', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-
-    await wrapper.find('.recipe-card').trigger('click')
-
-    expect(wrapper.text()).toContain('Quelle')
-    expect(wrapper.text()).toContain('Zutaten')
-    expect(wrapper.text()).toContain('Zubereitung')
-    expect(wrapper.text()).toContain('External Pasta')
-    expect(wrapper.text()).toContain('noodles')
-    expect(wrapper.text()).toContain('cook')
-  })
-
-  it('shows the nearby restaurant button in the recipe overlay', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-    await wrapper.find('.recipe-card').trigger('click')
-
-    expect(wrapper.text()).toContain('Passende Restaurants finden')
-    expect(wrapper.text()).toContain(
-      'Die Ergebnisse basieren auf Restauranttyp und Umgebung, nicht auf garantierten Speisekarten.',
-    )
-  })
-
-  it('searches restaurants with recipe title and browser coordinates', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([
-      restaurant('Pasta Place'),
-    ])
-    navigator.geolocation.getCurrentPosition.mockImplementation(success => {
-      success({
-        coords: {
-          latitude: 52.52,
-          longitude: 13.405,
-        },
-      })
-    })
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-    await wrapper.find('.recipe-card').trigger('click')
-    await wrapper.find('.restaurant-search-btn').trigger('click')
-    await flushPromises()
-
-    expect(restaurantApi.searchRestaurants).toHaveBeenCalledWith({
-      query: 'External Pasta',
-      latitude: 52.52,
-      longitude: 13.405,
-    })
-    expect(wrapper.text()).toContain('Pasta Place')
-    expect(wrapper.text()).toContain('Pasta Street 1, Berlin')
-    expect(wrapper.text()).toContain('850 m entfernt')
-    expect(wrapper.text()).toContain('In Google Maps öffnen')
-    expect(wrapper.find('.restaurant-map-link').attributes('href')).toBe(
-      'https://www.google.com/maps/search/?api=1&query=52.5201,13.4052',
-    )
-  })
-
-  it('shows an error when location access is denied', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-    navigator.geolocation.getCurrentPosition.mockImplementation((_success, error) => {
-      error({ code: 1 })
-    })
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-    await wrapper.find('.recipe-card').trigger('click')
-    await wrapper.find('.restaurant-search-btn').trigger('click')
-    await flushPromises()
-
-    expect(restaurantApi.searchRestaurants).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Standortzugriff wurde verweigert.')
-  })
-
-  it('shows an error when geolocation is not supported', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-    Object.defineProperty(navigator, 'geolocation', {
-      configurable: true,
-      value: undefined,
-    })
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-    await wrapper.find('.recipe-card').trigger('click')
-    await wrapper.find('.restaurant-search-btn').trigger('click')
-    await flushPromises()
-
-    expect(restaurantApi.searchRestaurants).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Dein Browser unterstützt keine Standortabfrage.')
-  })
-
-  it('shows an error when restaurant search fails', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-    vi.mocked(restaurantApi.searchRestaurants).mockRejectedValue(new Error('Backend unavailable'))
-    navigator.geolocation.getCurrentPosition.mockImplementation(success => {
-      success({
-        coords: {
-          latitude: 52.52,
-          longitude: 13.405,
-        },
-      })
-    })
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-    await wrapper.find('.recipe-card').trigger('click')
-    await wrapper.find('.restaurant-search-btn').trigger('click')
-    await flushPromises()
-
-    expect(restaurantApi.searchRestaurants).toHaveBeenCalledWith({
-      query: 'External Pasta',
-      latitude: 52.52,
-      longitude: 13.405,
-    })
-    expect(wrapper.text()).toContain('Restaurants konnten nicht geladen werden.')
-  })
-
-  it('shows an empty state when no restaurants are found', async () => {
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'External Pasta', 'noodles', 'Italian'),
-    ])
-    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
-    navigator.geolocation.getCurrentPosition.mockImplementation(success => {
-      success({
-        coords: {
-          latitude: 52.52,
-          longitude: 13.405,
-        },
-      })
-    })
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-    await wrapper.find('.recipe-card').trigger('click')
-    await wrapper.find('.restaurant-search-btn').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Keine Restaurants gefunden.')
-  })
-
   it('shows an error when initial loading fails', async () => {
     vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(
       new Error('Error while loading recipes'),
     )
-    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -362,7 +218,7 @@ describe('ApiRecipeList.vue', () => {
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
       .mockResolvedValueOnce([])
-      .mockRejectedValueOnce(new Error('TheMealDB unavailable'))
+      .mockRejectedValueOnce(new Error('Spoonacular unavailable'))
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Published Chicken Soup', 'chicken', 'Soup'),
     ])
@@ -379,28 +235,6 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Externe Rezepte konnten nicht geladen werden.')
   })
 
-  it('shows translated error text when external search fails in English', async () => {
-    setLocale('en')
-    vi.useFakeTimers()
-    vi.mocked(recipeApi.getExternalRecipes)
-      .mockResolvedValueOnce([])
-      .mockRejectedValueOnce(new Error('TheMealDB unavailable'))
-    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
-      recipe(10, 'Published Chicken Soup', 'chicken', 'Soup'),
-    ])
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-
-    await wrapper.find('input[type="search"]').setValue('chicken')
-    await vi.advanceTimersByTimeAsync(400)
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Published Chicken Soup')
-    expect(wrapper.text()).toContain('Error:')
-    expect(wrapper.text()).toContain('External recipes could not be loaded.')
-  })
-
   it('renders Arabic home UI without errors', async () => {
     setLocale('ar')
 
@@ -412,7 +246,7 @@ describe('ApiRecipeList.vue', () => {
   })
 })
 
-function recipe(id, title, ingredients, category) {
+function recipe(id, title, ingredients, category, overrides = {}) {
   return {
     id,
     title,
@@ -425,16 +259,8 @@ function recipe(id, title, ingredients, category) {
     rating: 4.5,
     ingredients,
     instructions: 'cook',
-  }
-}
-
-function restaurant(name) {
-  return {
-    name,
-    address: 'Pasta Street 1, Berlin',
-    distanceMeters: 850,
-    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=52.5201,13.4052',
-    latitude: 52.5201,
-    longitude: 13.4052,
+    favorite: false,
+    published: true,
+    ...overrides,
   }
 }

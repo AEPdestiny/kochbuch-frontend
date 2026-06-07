@@ -13,6 +13,16 @@ const router = createRouter({
       component: HomeView,
     },
     {
+      path: '/recipe/external/:id',
+      name: 'external-recipe-detail',
+      component: () => import('../views/RecipeDetailView.vue'),
+    },
+    {
+      path: '/recipe/:id',
+      name: 'recipe-detail',
+      component: () => import('../views/RecipeDetailView.vue'),
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),

@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient'
-import type { RecipeRequest, RecipeResponse } from '@/types/recipe'
+import type { ExternalRecipeDetailResponse, RecipeRequest, RecipeResponse } from '@/types/recipe'
 
 export const recipeApi = {
   async getRecipes(): Promise<RecipeResponse[]> {
@@ -15,6 +15,16 @@ export const recipeApi = {
   async getExternalRecipes(search?: string): Promise<RecipeResponse[]> {
     const params = search?.trim() ? { search: search.trim() } : undefined
     const response = await apiClient.get<RecipeResponse[]>('/recipes/external', { params })
+    return response.data
+  },
+
+  async getExternalRecipeDetail(id: number | string): Promise<ExternalRecipeDetailResponse> {
+    const response = await apiClient.get<ExternalRecipeDetailResponse>(`/recipes/external/${id}`)
+    return response.data
+  },
+
+  async getRecipe(id: number | string): Promise<RecipeResponse> {
+    const response = await apiClient.get<RecipeResponse>(`/recipes/${id}`)
     return response.data
   },
 

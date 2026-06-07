@@ -130,6 +130,9 @@
       "deleteForbidden": "Nie możesz usunąć tego shopping list item.",
       "updateForbidden": "Nie możesz edytować tego shopping list item.",
       "notFound": "Nie znaleziono tego shopping list item."
+    },
+    "groups": {
+      "manual": "R?cznie"
     }
   },
   "recipes": {
@@ -326,6 +329,40 @@
       "friday": "Pi?tek",
       "saturday": "Sobota",
       "sunday": "Niedziela"
+    }
+  },
+  "recipeDetail": {
+    "loading": "?adowanie przepisu...",
+    "actions": {
+      "back": "Wstecz",
+      "addAllToShoppingList": "Dodaj wszystkie sk?adniki do listy zakup?w",
+      "addOne": "+ Dodaj",
+      "addToMealPlan": "Dodaj do planu tygodnia"
+    },
+    "meta": {
+      "calories": "{calories} kcal",
+      "time": "{minutes} min",
+      "servings": "{count} porcje"
+    },
+    "ingredients": {
+      "title": "Sk?adniki"
+    },
+    "instructions": {
+      "title": "Przygotowanie",
+      "empty": "Brak instrukcji przygotowania."
+    },
+    "restaurants": {
+      "title": "Pasuj?ce restauracje"
+    },
+    "shopping": {
+      "category": "Sk?adnik przepisu",
+      "addedOne": "Sk?adnik dodano do listy zakup?w.",
+      "addedAll": "Wszystkie sk?adniki dodano do listy zakup?w."
+    },
+    "errors": {
+      "load": "Nie uda?o si? za?adowa? przepisu.",
+      "shopping": "Nie uda?o si? doda? sk?adnik?w do listy zakup?w.",
+      "loginRequiredShopping": "Zaloguj si?, aby doda? sk?adniki do listy zakup?w."
     }
   }
 }

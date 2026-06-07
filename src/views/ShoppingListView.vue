@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
@@ -24,6 +24,15 @@ const editUnit = ref('')
 const editCategory = ref('')
 const editChecked = ref(false)
 const editError = ref<string | null>(null)
+
+const groupedItems = computed(() => {
+  const groups = new Map<string, ShoppingListItem[]>()
+  for (const item of items.value) {
+    const groupName = item.recipeTitle?.trim() || t('shoppingList.groups.manual')
+    groups.set(groupName, [...(groups.get(groupName) ?? []), item])
+  }
+  return Array.from(groups.entries()).map(([title, groupItems]) => ({ title, items: groupItems }))
+})
 
 onMounted(() => {
   loadShoppingListItems()
@@ -185,12 +194,19 @@ async function updateShoppingListItem(id: number | string) {
     return
   }
 
+  const existing = items.value.find(item => item.id === id)
   const request: ShoppingListItemRequest = {
     name: editName.value,
     quantity: editQuantity.value,
     unit: editUnit.value,
     category: editCategory.value,
     checked: editChecked.value,
+  }
+  if (existing?.recipeId) {
+    request.recipeId = existing.recipeId
+  }
+  if (existing?.recipeTitle) {
+    request.recipeTitle = existing.recipeTitle
   }
 
   try {
@@ -280,74 +296,80 @@ function toUpdateErrorMessage(e: unknown) {
         {{ t('shoppingList.empty') }}
       </p>
 
-      <ul v-else class="shopping-list">
-        <li
-          v-for="item in items"
-          :key="item.id"
-          class="shopping-item"
-          :class="{ checked: item.checked }"
-        >
-          <div>
-            <h2>{{ item.name }}</h2>
-            <p v-if="item.category" class="item-meta">{{ item.category }}</p>
-          </div>
-          <div class="item-side">
-            <p class="item-quantity">
-              <span v-if="item.quantity !== null && item.quantity !== undefined">
-                {{ item.quantity }}
-              </span>
-              <span v-if="item.unit">{{ item.unit }}</span>
-            </p>
-            <span class="checked-status">
-              {{ item.checked ? t('shoppingList.status.done') : t('shoppingList.status.open') }}
-            </span>
-            <button type="button" class="edit-btn" @click="startEdit(item)">
-              {{ t('shoppingList.actions.edit') }}
-            </button>
-            <button type="button" class="delete-btn" @click="deleteShoppingListItem(item.id)">
-              {{ t('shoppingList.actions.delete') }}
-            </button>
-          </div>
+      <div v-else class="shopping-groups">
+        <section v-for="group in groupedItems" :key="group.title" class="shopping-group">
+          <h2 class="group-title">{{ group.title }}</h2>
 
-          <form
-            v-if="editingId === item.id"
-            class="edit-form"
-            @submit.prevent="updateShoppingListItem(item.id)"
-          >
-            <div class="form-field">
-              <label>{{ t('shoppingList.form.name') }}</label>
-              <input v-model="editName" type="text" :placeholder="t('shoppingList.form.namePlaceholder')" />
-            </div>
+          <ul class="shopping-list">
+            <li
+              v-for="item in group.items"
+              :key="item.id"
+              class="shopping-item"
+              :class="{ checked: item.checked }"
+            >
+              <div>
+                <h3>{{ item.name }}</h3>
+                <p v-if="item.category" class="item-meta">{{ item.category }}</p>
+              </div>
+              <div class="item-side">
+                <p class="item-quantity">
+                  <span v-if="item.quantity !== null && item.quantity !== undefined">
+                    {{ item.quantity }}
+                  </span>
+                  <span v-if="item.unit">{{ item.unit }}</span>
+                </p>
+                <span class="checked-status">
+                  {{ item.checked ? t('shoppingList.status.done') : t('shoppingList.status.open') }}
+                </span>
+                <button type="button" class="edit-btn" @click="startEdit(item)">
+                  {{ t('shoppingList.actions.edit') }}
+                </button>
+                <button type="button" class="delete-btn" @click="deleteShoppingListItem(item.id)">
+                  {{ t('shoppingList.actions.delete') }}
+                </button>
+              </div>
 
-            <div class="form-field small">
-              <label>{{ t('shoppingList.form.quantity') }}</label>
-              <input v-model.number="editQuantity" type="number" min="0" step="0.1" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
-            </div>
+              <form
+                v-if="editingId === item.id"
+                class="edit-form"
+                @submit.prevent="updateShoppingListItem(item.id)"
+              >
+                <div class="form-field">
+                  <label>{{ t('shoppingList.form.name') }}</label>
+                  <input v-model="editName" type="text" :placeholder="t('shoppingList.form.namePlaceholder')" />
+                </div>
 
-            <div class="form-field small">
-              <label>{{ t('shoppingList.form.unit') }}</label>
-              <input v-model="editUnit" type="text" :placeholder="t('shoppingList.form.unitPlaceholder')" />
-            </div>
+                <div class="form-field small">
+                  <label>{{ t('shoppingList.form.quantity') }}</label>
+                  <input v-model.number="editQuantity" type="number" min="0" step="0.1" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
+                </div>
 
-            <div class="form-field">
-              <label>{{ t('shoppingList.form.category') }}</label>
-              <input v-model="editCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
-            </div>
+                <div class="form-field small">
+                  <label>{{ t('shoppingList.form.unit') }}</label>
+                  <input v-model="editUnit" type="text" :placeholder="t('shoppingList.form.unitPlaceholder')" />
+                </div>
 
-            <label class="checkbox-field">
-              <input v-model="editChecked" type="checkbox" />
-              <span>{{ t('shoppingList.form.checked') }}</span>
-            </label>
+                <div class="form-field">
+                  <label>{{ t('shoppingList.form.category') }}</label>
+                  <input v-model="editCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
+                </div>
 
-            <div class="edit-buttons">
-              <button type="submit" class="submit-btn">{{ t('shoppingList.actions.update') }}</button>
-              <button type="button" class="cancel-btn" @click="cancelEdit">{{ t('shoppingList.actions.cancel') }}</button>
-            </div>
+                <label class="checkbox-field">
+                  <input v-model="editChecked" type="checkbox" />
+                  <span>{{ t('shoppingList.form.checked') }}</span>
+                </label>
 
-            <p v-if="editError" class="edit-error">{{ editError }}</p>
-          </form>
-        </li>
-      </ul>
+                <div class="edit-buttons">
+                  <button type="submit" class="submit-btn">{{ t('shoppingList.actions.update') }}</button>
+                  <button type="button" class="cancel-btn" @click="cancelEdit">{{ t('shoppingList.actions.cancel') }}</button>
+                </div>
+
+                <p v-if="editError" class="edit-error">{{ editError }}</p>
+              </form>
+            </li>
+          </ul>
+        </section>
+      </div>
     </template>
   </section>
 </template>
@@ -464,6 +486,23 @@ function toUpdateErrorMessage(e: unknown) {
   gap: 12px;
 }
 
+.shopping-groups {
+  display: grid;
+  gap: 18px;
+}
+
+.shopping-group {
+  display: grid;
+  gap: 10px;
+}
+
+.group-title {
+  color: #cc7da9;
+  font-size: 1.2rem;
+  font-weight: 900;
+  margin: 0;
+}
+
 .shopping-item {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -479,7 +518,7 @@ function toUpdateErrorMessage(e: unknown) {
   opacity: 0.72;
 }
 
-.shopping-item h2 {
+.shopping-item h3 {
   color: #2b1b23;
   font-size: 1.1rem;
   font-weight: 800;

@@ -60,4 +60,24 @@ describe('recipeApi', () => {
       params: { search: 'chicken' },
     })
   })
+
+  it('getExternalRecipeDetail calls /recipes/external/{id}', async () => {
+    const detail = { id: 716429, title: 'Pasta' }
+    vi.mocked(apiClient.get).mockResolvedValue({ data: detail })
+
+    const result = await recipeApi.getExternalRecipeDetail(716429)
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external/716429')
+    expect(result).toEqual(detail)
+  })
+
+  it('getRecipe calls /recipes/{id}', async () => {
+    const recipe = { id: 1, title: 'Dishly Pasta' }
+    vi.mocked(apiClient.get).mockResolvedValue({ data: recipe })
+
+    const result = await recipeApi.getRecipe(1)
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/1')
+    expect(result).toEqual(recipe)
+  })
 })

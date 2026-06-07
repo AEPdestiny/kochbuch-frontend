@@ -130,6 +130,9 @@
       "deleteForbidden": "You are not allowed to delete this shopping list item.",
       "updateForbidden": "You are not allowed to edit this shopping list item.",
       "notFound": "This shopping list item was not found."
+    },
+    "groups": {
+      "manual": "Manual"
     }
   },
   "recipes": {
@@ -326,6 +329,40 @@
       "friday": "Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
+    }
+  },
+  "recipeDetail": {
+    "loading": "Loading recipe...",
+    "actions": {
+      "back": "Back",
+      "addAllToShoppingList": "Add all ingredients to shopping list",
+      "addOne": "+ Add",
+      "addToMealPlan": "Add to meal plan"
+    },
+    "meta": {
+      "calories": "{calories} kcal",
+      "time": "{minutes} min",
+      "servings": "{count} servings"
+    },
+    "ingredients": {
+      "title": "Ingredients"
+    },
+    "instructions": {
+      "title": "Instructions",
+      "empty": "No instructions available."
+    },
+    "restaurants": {
+      "title": "Matching restaurants"
+    },
+    "shopping": {
+      "category": "Recipe ingredient",
+      "addedOne": "Ingredient added to shopping list.",
+      "addedAll": "All ingredients added to shopping list."
+    },
+    "errors": {
+      "load": "The recipe could not be loaded.",
+      "shopping": "Ingredients could not be added to the shopping list.",
+      "loginRequiredShopping": "Please log in to add ingredients to your shopping list."
     }
   }
 }

@@ -107,6 +107,22 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('Milk')
   })
 
+  it('groups shopping list items by recipe title', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('Pasta', 2, 'cups', 'Recipe ingredient', false), recipeId: '716429', recipeTitle: 'Pasta with Garlic' },
+      item('Milk', 1, 'l', 'Dairy', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Pasta with Garlic')
+    expect(wrapper.text()).toContain('Manuell')
+    expect(wrapper.text()).toContain('Pasta')
+    expect(wrapper.text()).toContain('Milk')
+  })
+
   it('shows checked status', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
