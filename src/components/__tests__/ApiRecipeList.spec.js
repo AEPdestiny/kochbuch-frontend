@@ -197,6 +197,53 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Standortzugriff wurde verweigert.')
   })
 
+  it('shows an error when geolocation is not supported', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: undefined,
+    })
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+    await wrapper.find('.restaurant-search-btn').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchRestaurants).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Dein Browser unterstützt keine Standortabfrage.')
+  })
+
+  it('shows an error when restaurant search fails', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+    vi.mocked(restaurantApi.searchRestaurants).mockRejectedValue(new Error('Backend unavailable'))
+    navigator.geolocation.getCurrentPosition.mockImplementation(success => {
+      success({
+        coords: {
+          latitude: 52.52,
+          longitude: 13.405,
+        },
+      })
+    })
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+    await wrapper.find('.restaurant-search-btn').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchRestaurants).toHaveBeenCalledWith({
+      query: 'External Pasta',
+      latitude: 52.52,
+      longitude: 13.405,
+    })
+    expect(wrapper.text()).toContain('Restaurants konnten nicht geladen werden.')
+  })
+
   it('shows an empty state when no restaurants are found', async () => {
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian'),
