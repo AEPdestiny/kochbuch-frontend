@@ -255,6 +255,23 @@
       "rating": "★ {rating}"
     }
   },
+  "restaurants": {
+    "actions": {
+      "findNearby": "العثور على مطعم قريب"
+    },
+    "loading": {
+      "location": "جارٍ طلب موقعك...",
+      "search": "جارٍ البحث عن مطاعم..."
+    },
+    "empty": "لم يتم العثور على مطاعم.",
+    "errors": {
+      "geolocationUnsupported": "متصفحك لا يدعم الوصول إلى الموقع.",
+      "locationDenied": "تم رفض الوصول إلى الموقع.",
+      "searchFailed": "تعذر تحميل المطاعم."
+    },
+    "openInMaps": "افتح في خرائط Google",
+    "distanceMeters": "يبعد {distance} م"
+  },
   "about": {
     "hello": "مرحبا، أنا سلمى.",
     "headline": "الشخص وراء Dishly",

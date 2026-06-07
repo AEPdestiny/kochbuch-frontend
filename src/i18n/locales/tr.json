@@ -255,6 +255,23 @@
       "rating": "★ {rating}"
     }
   },
+  "restaurants": {
+    "actions": {
+      "findNearby": "Yakındaki restoranı bul"
+    },
+    "loading": {
+      "location": "Konum isteniyor...",
+      "search": "Restoranlar aranıyor..."
+    },
+    "empty": "Restoran bulunamadı.",
+    "errors": {
+      "geolocationUnsupported": "Tarayıcınız konum erişimini desteklemiyor.",
+      "locationDenied": "Konum erişimi reddedildi.",
+      "searchFailed": "Restoranlar yüklenemedi."
+    },
+    "openInMaps": "Google Maps'te aç",
+    "distanceMeters": "{distance} m uzakta"
+  },
   "about": {
     "hello": "Merhaba, ben Salma.",
     "headline": "Dishly arkasındaki kişi",

@@ -4,7 +4,9 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { restaurantApi } from '@/shared/api/restaurantApi'
 import type { Recipe } from '@/types/recipe'
+import type { RestaurantResponse } from '@/types/restaurant'
 
 type RecipeSource = 'external' | 'dishly'
 type DisplayRecipe = Recipe & {
@@ -20,6 +22,10 @@ const ownPublished = ref<Recipe[]>([]) // eigene veröffentlichte Rezepte aus de
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<DisplayRecipe | null>(null)
+const restaurantLoading = ref(false)
+const restaurantError = ref<string | null>(null)
+const restaurants = ref<RestaurantResponse[]>([])
+const restaurantSearched = ref(false)
 const { t } = useI18n()
 
 const EXTERNAL_CHUNK = 20// wie viele API-Rezepte gleichzeitig anzeigen
@@ -134,16 +140,65 @@ const filterRecipes = (items: Recipe[], q: string) => {
 // Öffnet das Detail-Overlay für ein ausgewähltes Rezept
 const openDetails = (recipe: DisplayRecipe) => {
   selected.value = recipe
+  resetRestaurantSearch()
 }
 // Schließt das Detail-Overlay wieder
 const closeDetails = () => {
   selected.value = null
+  resetRestaurantSearch()
 }
 // Mischt die externen Rezepte neu und baut die Ansicht erneut auf
 const shuffleRecipes = () => {
   if (!allExternal.value.length) return
   buildView()
 }
+
+const resetRestaurantSearch = () => {
+  restaurantLoading.value = false
+  restaurantError.value = null
+  restaurants.value = []
+  restaurantSearched.value = false
+}
+
+const findNearbyRestaurants = async () => {
+  if (!selected.value) return
+  if (!navigator.geolocation) {
+    restaurantError.value = t('restaurants.errors.geolocationUnsupported')
+    restaurants.value = []
+    return
+  }
+
+  restaurantLoading.value = true
+  restaurantError.value = null
+  restaurants.value = []
+  restaurantSearched.value = true
+
+  try {
+    const position = await currentPosition()
+    restaurants.value = await restaurantApi.searchRestaurants({
+      query: selected.value.title,
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    })
+  } catch (e: any) {
+    restaurants.value = []
+    restaurantError.value = geolocationDenied(e)
+      ? t('restaurants.errors.locationDenied')
+      : t('restaurants.errors.searchFailed')
+  } finally {
+    restaurantLoading.value = false
+  }
+}
+
+const currentPosition = (): Promise<GeolocationPosition> => new Promise((resolve, reject) => {
+  navigator.geolocation.getCurrentPosition(resolve, reject)
+})
+
+const geolocationDenied = (error: unknown) =>
+  typeof error === 'object'
+  && error !== null
+  && 'code' in error
+  && Number((error as GeolocationPositionError).code) === 1
 
 </script>
 
@@ -261,6 +316,49 @@ const shuffleRecipes = () => {
 
         <h4 class="overlay-subtitle">{{ t('home.overlay.instructions') }}</h4>
         <p class="overlay-text">{{ selected.instructions }}</p>
+
+        <section class="restaurant-section">
+          <button
+            class="restaurant-search-btn"
+            type="button"
+            :disabled="restaurantLoading"
+            @click="findNearbyRestaurants"
+          >
+            {{ t('restaurants.actions.findNearby') }}
+          </button>
+
+          <p v-if="restaurantLoading" class="restaurant-status">
+            {{ t('restaurants.loading.search') }}
+          </p>
+          <p v-else-if="restaurantError" class="restaurant-status error">
+            {{ restaurantError }}
+          </p>
+          <p v-else-if="restaurantSearched && restaurants.length === 0" class="restaurant-status">
+            {{ t('restaurants.empty') }}
+          </p>
+
+          <ul v-if="restaurants.length" class="restaurant-list">
+            <li
+              v-for="restaurant in restaurants"
+              :key="`${restaurant.name}-${restaurant.latitude}-${restaurant.longitude}`"
+              class="restaurant-item"
+            >
+              <strong>{{ restaurant.name }}</strong>
+              <span v-if="restaurant.address">{{ restaurant.address }}</span>
+              <span>
+                {{ t('restaurants.distanceMeters', { distance: restaurant.distanceMeters }) }}
+              </span>
+              <a
+                class="restaurant-map-link"
+                :href="restaurant.googleMapsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ t('restaurants.openInMaps') }}
+              </a>
+            </li>
+          </ul>
+        </section>
       </div>
     </div>
   </section>
@@ -515,5 +613,66 @@ const shuffleRecipes = () => {
   font-size: 0.95rem;
   color: #2b1b23;
   white-space: pre-line;
+}
+
+.restaurant-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #e0f5f2;
+}
+
+.restaurant-search-btn,
+.restaurant-map-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: #26b6b8;
+  color: #ffffff;
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.restaurant-search-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.restaurant-status {
+  margin-top: 10px;
+  color: #486b68;
+}
+
+.restaurant-status.error {
+  color: #a14c2b;
+  font-weight: 700;
+}
+
+.restaurant-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.restaurant-item {
+  background: #f4fbfa;
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  gap: 5px;
+  color: #2b1b23;
+}
+
+.restaurant-map-link {
+  width: fit-content;
+  margin-top: 4px;
+  background: #cc7da9;
+  font-size: 0.9rem;
 }
 </style>

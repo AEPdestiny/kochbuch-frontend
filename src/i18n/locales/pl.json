@@ -255,6 +255,23 @@
       "rating": "★ {rating}"
     }
   },
+  "restaurants": {
+    "actions": {
+      "findNearby": "Znajdź restaurację w pobliżu"
+    },
+    "loading": {
+      "location": "Pobieranie lokalizacji...",
+      "search": "Wyszukiwanie restauracji..."
+    },
+    "empty": "Nie znaleziono restauracji.",
+    "errors": {
+      "geolocationUnsupported": "Twoja przeglądarka nie obsługuje dostępu do lokalizacji.",
+      "locationDenied": "Odmówiono dostępu do lokalizacji.",
+      "searchFailed": "Nie udało się załadować restauracji."
+    },
+    "openInMaps": "Otwórz w Google Maps",
+    "distanceMeters": "{distance} m stąd"
+  },
   "about": {
     "hello": "Cześć, jestem Salma.",
     "headline": "Osoba stojąca za Dishly",

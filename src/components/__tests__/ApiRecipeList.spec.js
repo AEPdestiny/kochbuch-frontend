@@ -2,12 +2,19 @@ import { mount, flushPromises, config } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { restaurantApi } from '@/shared/api/restaurantApi'
 import { i18n, setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getExternalRecipes: vi.fn(),
     getPublishedRecipes: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/api/restaurantApi', () => ({
+  restaurantApi: {
+    searchRestaurants: vi.fn(),
   },
 }))
 
@@ -19,11 +26,19 @@ describe('ApiRecipeList.vue', () => {
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
+    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: vi.fn(),
+      },
+    })
   })
 
   afterEach(() => {
     vi.useRealTimers()
     config.global.plugins = []
+    vi.unstubAllGlobals()
   })
 
   it('shows loading text while recipes are being fetched', () => {
@@ -114,6 +129,95 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('External Pasta')
     expect(wrapper.text()).toContain('noodles')
     expect(wrapper.text()).toContain('cook')
+  })
+
+  it('shows the nearby restaurant button in the recipe overlay', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+
+    expect(wrapper.text()).toContain('Restaurant in der Nähe finden')
+  })
+
+  it('searches restaurants with recipe title and browser coordinates', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([
+      restaurant('Pasta Place'),
+    ])
+    navigator.geolocation.getCurrentPosition.mockImplementation(success => {
+      success({
+        coords: {
+          latitude: 52.52,
+          longitude: 13.405,
+        },
+      })
+    })
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+    await wrapper.find('.restaurant-search-btn').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchRestaurants).toHaveBeenCalledWith({
+      query: 'External Pasta',
+      latitude: 52.52,
+      longitude: 13.405,
+    })
+    expect(wrapper.text()).toContain('Pasta Place')
+    expect(wrapper.text()).toContain('Pasta Street 1, Berlin')
+    expect(wrapper.text()).toContain('850 m entfernt')
+    expect(wrapper.text()).toContain('In Google Maps öffnen')
+    expect(wrapper.find('.restaurant-map-link').attributes('href')).toBe(
+      'https://www.google.com/maps/search/?api=1&query=52.5201,13.4052',
+    )
+  })
+
+  it('shows an error when location access is denied', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+    navigator.geolocation.getCurrentPosition.mockImplementation((_success, error) => {
+      error({ code: 1 })
+    })
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+    await wrapper.find('.restaurant-search-btn').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchRestaurants).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Standortzugriff wurde verweigert.')
+  })
+
+  it('shows an empty state when no restaurants are found', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian'),
+    ])
+    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
+    navigator.geolocation.getCurrentPosition.mockImplementation(success => {
+      success({
+        coords: {
+          latitude: 52.52,
+          longitude: 13.405,
+        },
+      })
+    })
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('.recipe-card').trigger('click')
+    await wrapper.find('.restaurant-search-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Keine Restaurants gefunden.')
   })
 
   it('shows an error when initial loading fails', async () => {
@@ -271,5 +375,16 @@ function recipe(id, title, ingredients, category) {
     rating: 4.5,
     ingredients,
     instructions: 'cook',
+  }
+}
+
+function restaurant(name) {
+  return {
+    name,
+    address: 'Pasta Street 1, Berlin',
+    distanceMeters: 850,
+    googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=52.5201,13.4052',
+    latitude: 52.5201,
+    longitude: 13.4052,
   }
 }

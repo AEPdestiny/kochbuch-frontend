@@ -255,6 +255,23 @@
       "rating": "★ {rating}"
     }
   },
+  "restaurants": {
+    "actions": {
+      "findNearby": "近くのレストランを探す"
+    },
+    "loading": {
+      "location": "位置情報を取得しています...",
+      "search": "レストランを検索しています..."
+    },
+    "empty": "レストランが見つかりませんでした。",
+    "errors": {
+      "geolocationUnsupported": "このブラウザは位置情報に対応していません。",
+      "locationDenied": "位置情報へのアクセスが拒否されました。",
+      "searchFailed": "レストランを読み込めませんでした。"
+    },
+    "openInMaps": "Google マップで開く",
+    "distanceMeters": "{distance} m 先"
+  },
   "about": {
     "hello": "こんにちは、Salma です。",
     "headline": "Dishly の作り手",

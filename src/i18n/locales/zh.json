@@ -255,6 +255,23 @@
       "rating": "★ {rating}"
     }
   },
+  "restaurants": {
+    "actions": {
+      "findNearby": "查找附近餐厅"
+    },
+    "loading": {
+      "location": "正在请求你的位置...",
+      "search": "正在搜索餐厅..."
+    },
+    "empty": "未找到餐厅。",
+    "errors": {
+      "geolocationUnsupported": "你的浏览器不支持位置访问。",
+      "locationDenied": "位置访问被拒绝。",
+      "searchFailed": "无法加载餐厅。"
+    },
+    "openInMaps": "在 Google 地图中打开",
+    "distanceMeters": "距离 {distance} 米"
+  },
   "about": {
     "hello": "嗨，我是 Salma。",
     "headline": "Dishly 背后的人",

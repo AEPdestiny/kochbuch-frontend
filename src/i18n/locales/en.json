@@ -255,6 +255,23 @@
       "rating": "★ {rating}"
     }
   },
+  "restaurants": {
+    "actions": {
+      "findNearby": "Find a restaurant nearby"
+    },
+    "loading": {
+      "location": "Requesting your location...",
+      "search": "Searching restaurants..."
+    },
+    "empty": "No restaurants found.",
+    "errors": {
+      "geolocationUnsupported": "Your browser does not support location access.",
+      "locationDenied": "Location access was denied.",
+      "searchFailed": "Restaurants could not be loaded."
+    },
+    "openInMaps": "Open in Google Maps",
+    "distanceMeters": "{distance} m away"
+  },
   "about": {
     "hello": "Hi, I am Salma.",
     "headline": "The person behind Dishly",
