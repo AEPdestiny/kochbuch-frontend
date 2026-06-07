@@ -257,13 +257,14 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "Restaurant in der Nähe finden"
+      "findNearby": "Passende Restaurants finden"
     },
     "loading": {
       "location": "Standort wird abgefragt...",
       "search": "Restaurants werden gesucht..."
     },
     "empty": "Keine Restaurants gefunden.",
+    "disclaimer": "Die Ergebnisse basieren auf Restauranttyp und Umgebung, nicht auf garantierten Speisekarten.",
     "errors": {
       "geolocationUnsupported": "Dein Browser unterstützt keine Standortabfrage.",
       "locationDenied": "Standortzugriff wurde verweigert.",

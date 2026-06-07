@@ -140,7 +140,10 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
     await wrapper.find('.recipe-card').trigger('click')
 
-    expect(wrapper.text()).toContain('Restaurant in der Nähe finden')
+    expect(wrapper.text()).toContain('Passende Restaurants finden')
+    expect(wrapper.text()).toContain(
+      'Die Ergebnisse basieren auf Restauranttyp und Umgebung, nicht auf garantierten Speisekarten.',
+    )
   })
 
   it('searches restaurants with recipe title and browser coordinates', async () => {

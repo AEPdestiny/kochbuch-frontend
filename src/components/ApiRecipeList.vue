@@ -326,6 +326,9 @@ const geolocationDenied = (error: unknown) =>
           >
             {{ t('restaurants.actions.findNearby') }}
           </button>
+          <p class="restaurant-hint">
+            {{ t('restaurants.disclaimer') }}
+          </p>
 
           <p v-if="restaurantLoading" class="restaurant-status">
             {{ t('restaurants.loading.search') }}
@@ -644,6 +647,12 @@ const geolocationDenied = (error: unknown) =>
 .restaurant-status {
   margin-top: 10px;
   color: #486b68;
+}
+
+.restaurant-hint {
+  margin-top: 8px;
+  color: #486b68;
+  font-size: 0.9rem;
 }
 
 .restaurant-status.error {

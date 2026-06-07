@@ -257,13 +257,14 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "Find a restaurant nearby"
+      "findNearby": "Find matching restaurants"
     },
     "loading": {
       "location": "Requesting your location...",
       "search": "Searching restaurants..."
     },
     "empty": "No restaurants found.",
+    "disclaimer": "Results are based on restaurant type and location, not guaranteed menu items.",
     "errors": {
       "geolocationUnsupported": "Your browser does not support location access.",
       "locationDenied": "Location access was denied.",

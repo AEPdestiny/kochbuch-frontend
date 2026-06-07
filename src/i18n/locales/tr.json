@@ -257,13 +257,14 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "Yakındaki restoranı bul"
+      "findNearby": "Uygun restoranları bul"
     },
     "loading": {
       "location": "Konum isteniyor...",
       "search": "Restoranlar aranıyor..."
     },
     "empty": "Restoran bulunamadı.",
+    "disclaimer": "Sonuçlar restoran türüne ve konuma dayanır, menüdeki yemekler garanti edilmez.",
     "errors": {
       "geolocationUnsupported": "Tarayıcınız konum erişimini desteklemiyor.",
       "locationDenied": "Konum erişimi reddedildi.",

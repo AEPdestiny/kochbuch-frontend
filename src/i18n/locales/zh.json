@@ -257,13 +257,14 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "查找附近餐厅"
+      "findNearby": "查找匹配的餐厅"
     },
     "loading": {
       "location": "正在请求你的位置...",
       "search": "正在搜索餐厅..."
     },
     "empty": "未找到餐厅。",
+    "disclaimer": "结果基于餐厅类型和位置，不保证菜单中一定有该菜品。",
     "errors": {
       "geolocationUnsupported": "你的浏览器不支持位置访问。",
       "locationDenied": "位置访问被拒绝。",

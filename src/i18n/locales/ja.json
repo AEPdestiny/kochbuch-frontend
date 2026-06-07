@@ -257,13 +257,14 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "近くのレストランを探す"
+      "findNearby": "関連するレストランを探す"
     },
     "loading": {
       "location": "位置情報を取得しています...",
       "search": "レストランを検索しています..."
     },
     "empty": "レストランが見つかりませんでした。",
+    "disclaimer": "結果はレストランの種類と周辺情報に基づいており、メニュー掲載を保証するものではありません。",
     "errors": {
       "geolocationUnsupported": "このブラウザは位置情報に対応していません。",
       "locationDenied": "位置情報へのアクセスが拒否されました。",
