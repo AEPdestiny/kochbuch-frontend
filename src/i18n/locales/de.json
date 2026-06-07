@@ -275,7 +275,7 @@
   },
   "mealPlan": {
     "title": "Wochenplan",
-    "subtitle": "Plane deine eigenen Rezepte f?r die aktuelle Woche.",
+    "subtitle": "Plane deine eigenen Rezepte für die aktuelle Woche.",
     "loading": "Wochenplan wird geladen...",
     "plannedRecipe": "Geplantes Rezept",
     "week": {
@@ -283,7 +283,7 @@
     },
     "form": {
       "recipe": "Rezept",
-      "chooseRecipe": "Rezept ausw?hlen"
+      "chooseRecipe": "Rezept auswählen"
     },
     "empty": {
       "day": "Noch kein Rezept geplant.",
