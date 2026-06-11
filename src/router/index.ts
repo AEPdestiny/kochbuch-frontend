@@ -29,6 +29,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       // Seite zum Verwalten der eigenen Rezepte (CRUD + Favoriten)
       path: '/my-recipes',
       name: 'my-recipes',

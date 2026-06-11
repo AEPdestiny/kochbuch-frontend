@@ -48,7 +48,7 @@ describe('recipeApi', () => {
 
     await recipeApi.getExternalRecipes()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', { params: undefined })
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', undefined)
   })
 
   it('getExternalRecipes calls /recipes/external with search param', async () => {
@@ -58,6 +58,28 @@ describe('recipeApi', () => {
 
     expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', {
       params: { search: 'chicken' },
+    })
+  })
+
+  it('getExternalRecipes forwards supported filters', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
+
+    await recipeApi.getExternalRecipes(' bowl ', {
+      vegan: true,
+      glutenFree: true,
+      maxPrepTime: 25,
+      mealType: 'lunch',
+      highProtein: true,
+    })
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', {
+      params: {
+        search: 'bowl',
+        diet: 'vegan',
+        intolerances: 'gluten',
+        maxReadyTime: 25,
+        type: 'lunch',
+      },
     })
   })
 

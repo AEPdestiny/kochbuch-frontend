@@ -2,6 +2,7 @@ import { apiClient } from './apiClient'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeMatchResponse,
+  RecipeSearchFilters,
   RecipeRequest,
   RecipeResponse,
 } from '@/types/recipe'
@@ -17,9 +18,27 @@ export const recipeApi = {
     return response.data
   },
 
-  async getExternalRecipes(search?: string): Promise<RecipeResponse[]> {
-    const params = search?.trim() ? { search: search.trim() } : undefined
-    const response = await apiClient.get<RecipeResponse[]>('/recipes/external', { params })
+  async getExternalRecipes(search?: string, filters?: RecipeSearchFilters): Promise<RecipeResponse[]> {
+    const params: Record<string, string | number> = {}
+    if (search?.trim()) {
+      params.search = search.trim()
+    }
+    const diet = toDiet(filters)
+    const intolerances = toIntolerances(filters)
+    if (diet) {
+      params.diet = diet
+    }
+    if (intolerances) {
+      params.intolerances = intolerances
+    }
+    if (filters?.maxPrepTime && filters.maxPrepTime > 0) {
+      params.maxReadyTime = filters.maxPrepTime
+    }
+    if (filters?.mealType) {
+      params.type = filters.mealType
+    }
+    const config = Object.keys(params).length ? { params } : undefined
+    const response = await apiClient.get<RecipeResponse[]>('/recipes/external', config)
     return response.data
   },
 
@@ -61,4 +80,18 @@ export const recipeApi = {
   async deleteRecipe(id: number | string): Promise<void> {
     await apiClient.delete(`/recipes/${id}`)
   },
+}
+
+function toDiet(filters?: RecipeSearchFilters) {
+  if (!filters) return undefined
+  if (filters.vegan) return 'vegan'
+  if (filters.vegetarian) return 'vegetarian'
+  return undefined
+}
+
+function toIntolerances(filters?: RecipeSearchFilters) {
+  if (!filters) return undefined
+  const values = []
+  if (filters.glutenFree) values.push('gluten')
+  return values.join(',') || undefined
 }

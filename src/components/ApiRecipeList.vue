@@ -2,18 +2,32 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { pantryApi } from '@/shared/api/pantryApi'
+import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
-import type { Recipe } from '@/types/recipe'
+import type { Recipe, RecipeSearchFilters } from '@/types/recipe'
 
 type RecipeSource = 'external' | 'dishly'
 type DisplayRecipe = Recipe & {
   source: RecipeSource
+  recommendationReasons: string[]
 }
 
 const search = ref('')
+const vegan = ref(false)
+const vegetarian = ref(false)
+const glutenFree = ref(false)
+const calorieConscious = ref(false)
+const highProtein = ref(false)
+const budgetFriendly = ref(false)
+const maxPrepTime = ref<number | null>(null)
+const mealType = ref('')
+const contextSearch = ref('')
 const recipes = ref<DisplayRecipe[]>([])
 const allExternal = ref<Recipe[]>([])
 const ownPublished = ref<Recipe[]>([])
+const pantryIngredients = ref<string[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const { t } = useI18n()
@@ -29,6 +43,7 @@ const filtered = computed(() => recipes.value)
 const toDisplayRecipe = (recipe: Recipe, source: RecipeSource): DisplayRecipe => ({
   ...recipe,
   source,
+  recommendationReasons: recommendationReasons(recipe, source),
 })
 
 const shuffleArray = (items: Recipe[]): Recipe[] => {
@@ -43,12 +58,7 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
 }
 
 const filterRecipes = (items: Recipe[], q: string) => {
-  if (!q) return items
-  return items.filter(r =>
-    r.title.toLowerCase().includes(q) ||
-    r.ingredients.toLowerCase().includes(q) ||
-    r.category.toLowerCase().includes(q),
-  )
+  return items.filter(r => matchesText(r, q) && matchesLocalFilters(r))
 }
 
 const buildView = () => {
@@ -65,8 +75,9 @@ const buildView = () => {
 const loadRecipes = async () => {
   loading.value = true
   try {
+    await loadPersonalization()
     const [external, own] = await Promise.all([
-      recipeApi.getExternalRecipes(),
+      fetchExternalRecipes(),
       recipeApi.getPublishedRecipes(),
     ])
 
@@ -84,9 +95,7 @@ const loadRecipes = async () => {
 const loadExternalRecipes = async (query: string) => {
   const requestId = ++externalRequestCounter
   try {
-    const external = query
-      ? await recipeApi.getExternalRecipes(query)
-      : await recipeApi.getExternalRecipes()
+    const external = await fetchExternalRecipes(query)
     if (requestId !== externalRequestCounter) {
       return
     }
@@ -122,12 +131,12 @@ onMounted(() => {
   loadRecipes()
 })
 
-watch(search, value => {
+watch([search, vegan, vegetarian, glutenFree, calorieConscious, highProtein, budgetFriendly, maxPrepTime, mealType, contextSearch], () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 
-  const query = value.trim()
+  const query = search.value.trim()
   if (query.length > 0 && query.length < 2) {
     buildView()
     return
@@ -137,6 +146,124 @@ watch(search, value => {
     loadExternalRecipes(query)
   }, SEARCH_DEBOUNCE_MS)
 })
+
+async function loadPersonalization() {
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    return
+  }
+
+  const [profileResult, pantryResult] = await Promise.allSettled([
+    profileApi.getPreferences(),
+    pantryApi.getPantryItems(),
+  ])
+
+  if (profileResult.status === 'fulfilled') {
+    const preferences = profileResult.value
+    vegan.value = preferences.vegan
+    vegetarian.value = preferences.vegetarian
+    glutenFree.value = preferences.glutenFree
+    calorieConscious.value = preferences.calorieConscious
+    highProtein.value = preferences.highProtein
+    budgetFriendly.value = preferences.budgetFriendly
+    maxPrepTime.value = preferences.maxPrepTimeMinutes ?? null
+  }
+
+  if (pantryResult.status === 'fulfilled') {
+    pantryIngredients.value = pantryResult.value
+      .map(item => item.name.toLowerCase())
+      .filter(Boolean)
+  }
+}
+
+function currentFilters(): RecipeSearchFilters {
+  return {
+    vegan: vegan.value,
+    vegetarian: vegetarian.value,
+    glutenFree: glutenFree.value,
+    calorieConscious: calorieConscious.value,
+    highProtein: highProtein.value,
+    budgetFriendly: budgetFriendly.value,
+    maxPrepTime: maxPrepTime.value,
+    mealType: mealType.value,
+    context: contextSearch.value,
+  }
+}
+
+function activeFilters(): RecipeSearchFilters | undefined {
+  const filters = currentFilters()
+  const hasActiveFilter = Object.entries(filters).some(([, value]) => {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value > 0
+    return Boolean(value)
+  })
+  return hasActiveFilter ? filters : undefined
+}
+
+function fetchExternalRecipes(query = search.value) {
+  const externalQuery = buildExternalQuery(query)
+  const filters = activeFilters()
+  if (!externalQuery && !filters) {
+    return recipeApi.getExternalRecipes()
+  }
+  if (externalQuery && !filters) {
+    return recipeApi.getExternalRecipes(externalQuery)
+  }
+  if (!externalQuery && filters) {
+    return recipeApi.getExternalRecipes(undefined, filters)
+  }
+  return recipeApi.getExternalRecipes(externalQuery, filters)
+}
+
+function buildExternalQuery(query = search.value) {
+  const parts = [query.trim(), contextToQuery(contextSearch.value)].filter(Boolean)
+  if (highProtein.value) parts.push('high protein')
+  if (calorieConscious.value) parts.push('low calorie')
+  if (budgetFriendly.value) parts.push('cheap')
+  return parts.join(' ').trim() || undefined
+}
+
+function contextToQuery(value: string) {
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) return ''
+  if (normalized.includes('gestresst')) return 'quick easy'
+  if (normalized.includes('günstig') || normalized.includes('guenstig')) return 'cheap budget'
+  if (normalized.includes('date')) return 'date night'
+  return normalized
+}
+
+function matchesText(recipe: Recipe, query: string) {
+  if (!query) return true
+  const haystack = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  return haystack.includes(query)
+}
+
+function matchesLocalFilters(recipe: Recipe) {
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  const totalTime = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
+  if (maxPrepTime.value && totalTime > maxPrepTime.value) return false
+  if (calorieConscious.value && recipe.calories && recipe.calories > 650) return false
+  if (mealType.value && !text.includes(mealType.value.toLowerCase())) return false
+  if (vegan.value && !text.includes('vegan')) return false
+  if (vegetarian.value && !text.includes('vegetarian') && !text.includes('vegetarisch')) return false
+  if (glutenFree.value && !text.includes('gluten')) return false
+  if (highProtein.value && !/(protein|chicken|egg|fish|tofu|beans)/.test(text)) return false
+  if (budgetFriendly.value && !/(cheap|budget|günstig|guenstig|preiswert)/.test(text)) return false
+  return true
+}
+
+function recommendationReasons(recipe: Recipe, source: RecipeSource) {
+  const reasons: string[] = []
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  if (source === 'external' && vegan.value) reasons.push(t('home.reasons.vegan'))
+  if (source === 'external' && vegetarian.value) reasons.push(t('home.reasons.vegetarian'))
+  if (source === 'external' && glutenFree.value) reasons.push(t('home.reasons.glutenFree'))
+  if (calorieConscious.value && recipe.calories && recipe.calories <= 650) reasons.push(t('home.reasons.calorieConscious'))
+  if (maxPrepTime.value && (recipe.prepTimeMinutes + recipe.cookTimeMinutes) <= maxPrepTime.value) reasons.push(t('home.reasons.time'))
+  if (highProtein.value && /(protein|chicken|egg|fish|tofu|beans)/.test(text)) reasons.push(t('home.reasons.highProtein'))
+  const pantryHit = pantryIngredients.value.find(ingredient => text.includes(ingredient))
+  if (pantryHit) reasons.push(t('home.reasons.pantry', { ingredient: pantryHit }))
+  return reasons.slice(0, 3)
+}
 </script>
 
 <template>
@@ -152,6 +279,32 @@ watch(search, value => {
         :placeholder="t('home.searchPlaceholder')"
         :aria-label="t('home.searchAria')"
       />
+      <div class="filter-panel" aria-label="Recipe filters">
+        <label><input v-model="vegan" type="checkbox" /> {{ t('home.filters.vegan') }}</label>
+        <label><input v-model="vegetarian" type="checkbox" /> {{ t('home.filters.vegetarian') }}</label>
+        <label><input v-model="glutenFree" type="checkbox" /> {{ t('home.filters.glutenFree') }}</label>
+        <label><input v-model="calorieConscious" type="checkbox" /> {{ t('home.filters.calorieConscious') }}</label>
+        <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
+        <label><input v-model="budgetFriendly" type="checkbox" /> {{ t('home.filters.budgetFriendly') }}</label>
+        <label>
+          {{ t('home.filters.maxPrepTime') }}
+          <input v-model.number="maxPrepTime" class="small-input" min="1" type="number" />
+        </label>
+        <label>
+          {{ t('home.filters.mealType') }}
+          <select v-model="mealType" class="small-input">
+            <option value="">{{ t('home.filters.anyMealType') }}</option>
+            <option value="breakfast">{{ t('home.filters.breakfast') }}</option>
+            <option value="lunch">{{ t('home.filters.lunch') }}</option>
+            <option value="dinner">{{ t('home.filters.dinner') }}</option>
+            <option value="snack">{{ t('home.filters.snack') }}</option>
+          </select>
+        </label>
+        <label class="context-filter">
+          {{ t('home.filters.context') }}
+          <input v-model="contextSearch" class="small-input" type="text" :placeholder="t('home.filters.contextPlaceholder')" />
+        </label>
+      </div>
     </section>
 
     <div class="shuffle-wrap">
@@ -209,6 +362,10 @@ watch(search, value => {
             <p class="card-ingredients">
               {{ r.ingredients }}
             </p>
+
+            <ul v-if="r.recommendationReasons.length" class="reason-list">
+              <li v-for="reason in r.recommendationReasons" :key="reason">{{ reason }}</li>
+            </ul>
           </div>
         </article>
 
@@ -256,6 +413,39 @@ watch(search, value => {
 
 .search-input:focus {
   border: 2px solid #26b6b8;
+}
+
+.filter-panel {
+  margin: 18px auto 0;
+  max-width: 860px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.filter-panel label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #486b68;
+  font-size: 0.9rem;
+}
+
+.filter-panel .context-filter {
+  border-radius: 12px;
+}
+
+.small-input {
+  max-width: 150px;
+  border: 1px solid #8fd5cc;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
 }
 
 .shuffle-wrap {
@@ -411,5 +601,12 @@ watch(search, value => {
   font-size: 0.95rem;
   color: #324240;
   margin-top: 4px;
+}
+
+.reason-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: #2f6f62;
+  font-size: 0.9rem;
 }
 </style>

@@ -1,6 +1,7 @@
 import { apiClient } from './apiClient'
 import type {
   MealPlanEntryResponse,
+  MealSlot,
   MealPlanWeekResponse,
 } from '@/types/mealPlan'
 
@@ -21,5 +22,16 @@ export const mealPlanApi = {
 
   async deleteDay(date: string): Promise<void> {
     await apiClient.delete(`/meal-plan/days/${date}`)
+  },
+
+  async setSlot(date: string, slot: MealSlot, recipeId: number): Promise<MealPlanEntryResponse> {
+    const response = await apiClient.put<MealPlanEntryResponse>(`/meal-plan/days/${date}/slots/${slot}`, {
+      recipeId,
+    })
+    return response.data
+  },
+
+  async deleteSlot(date: string, slot: MealSlot): Promise<void> {
+    await apiClient.delete(`/meal-plan/days/${date}/slots/${slot}`)
   },
 }

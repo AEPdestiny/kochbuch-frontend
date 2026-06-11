@@ -1,5 +1,7 @@
 import type { RecipeResponse } from './recipe'
 
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
 export type MealPlanEntryRequest = {
   recipeId: number
 }
@@ -7,6 +9,7 @@ export type MealPlanEntryRequest = {
 export type MealPlanEntryResponse = {
   id: number | string
   plannedDate: string
+  mealSlot?: MealSlot | string | null
   recipe: RecipeResponse
 }
 

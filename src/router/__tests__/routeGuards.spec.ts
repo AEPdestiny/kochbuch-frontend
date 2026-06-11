@@ -60,6 +60,13 @@ describe('route guards', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/dashboard')
   })
 
+  it('redirects guests from /profile to login with redirect query', async () => {
+    await router.push('/profile')
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/profile')
+  })
+
   it('redirects guests from /meal-plan to login with redirect query', async () => {
     await router.push('/meal-plan')
 

@@ -52,6 +52,7 @@ describe('App navigation', () => {
     expect(wrapper.text()).toContain('Startseite')
     expect(wrapper.text()).toContain('Anmelden')
     expect(wrapper.text()).not.toContain('Dashboard')
+    expect(wrapper.text()).not.toContain('Profil')
     expect(wrapper.text()).not.toContain('Wochenplan')
   })
 
@@ -74,6 +75,7 @@ describe('App navigation', () => {
     })
 
     expect(wrapper.text()).toContain('Dashboard')
+    expect(wrapper.text()).toContain('Profil')
     expect(wrapper.text()).toContain('Wochenplan')
   })
 

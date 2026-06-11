@@ -62,6 +62,26 @@ describe('mealPlanApi', () => {
     expect(apiClient.delete).toHaveBeenCalledWith('/meal-plan/days/2026-06-03')
   })
 
+  it('setSlot calls PUT /meal-plan/days/{date}/slots/{slot}', async () => {
+    const entry = { ...entryResponse('2026-06-03'), mealSlot: 'breakfast' }
+    vi.mocked(apiClient.put).mockResolvedValue({ data: entry })
+
+    const result = await mealPlanApi.setSlot('2026-06-03', 'breakfast', 1)
+
+    expect(apiClient.put).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/breakfast', {
+      recipeId: 1,
+    })
+    expect(result).toEqual(entry)
+  })
+
+  it('deleteSlot calls DELETE /meal-plan/days/{date}/slots/{slot}', async () => {
+    vi.mocked(apiClient.delete).mockResolvedValue({})
+
+    await mealPlanApi.deleteSlot('2026-06-03', 'snack')
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack')
+  })
+
   it('getWeek forwards ApiClientError from apiClient', async () => {
     const error = new ApiClientError('Missing or invalid Bearer token.', 401)
     vi.mocked(apiClient.get).mockRejectedValue(error)
@@ -96,6 +116,7 @@ function entryResponse(plannedDate: string): MealPlanEntryResponse {
   return {
     id: 1,
     plannedDate,
+    mealSlot: 'dinner',
     recipe: {
       id: 1,
       title: 'Pasta',

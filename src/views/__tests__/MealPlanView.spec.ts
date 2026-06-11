@@ -12,6 +12,8 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
     getWeek: vi.fn(),
     setDay: vi.fn(),
     deleteDay: vi.fn(),
+    setSlot: vi.fn(),
+    deleteSlot: vi.fn(),
   },
 }))
 
@@ -43,6 +45,10 @@ describe('MealPlanView', () => {
     expect(wrapper.findAll('.day-card')).toHaveLength(7)
     expect(wrapper.text()).toContain('Montag')
     expect(wrapper.text()).toContain('Sonntag')
+    expect(wrapper.text()).toContain('Frühstück')
+    expect(wrapper.text()).toContain('Mittagessen')
+    expect(wrapper.text()).toContain('Abendessen')
+    expect(wrapper.text()).toContain('Snack')
     expect(wrapper.text()).toContain('Pasta')
     expect(wrapper.text()).toContain('Soup')
   })
@@ -60,7 +66,7 @@ describe('MealPlanView', () => {
   })
 
   it('sets a recipe for a day', async () => {
-    vi.mocked(mealPlanApi.setDay).mockResolvedValue(entry('2026-06-02', recipe(2, 'Soup')))
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(2, 'Soup'), 'breakfast'))
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
     })
@@ -72,12 +78,12 @@ describe('MealPlanView', () => {
     await tuesdayCard.find('.primary-button').trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.setDay).toHaveBeenCalledWith('2026-06-02', 2)
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', 2)
     expect(wrapper.text()).toContain('Soup')
   })
 
   it('removes a planned recipe', async () => {
-    vi.mocked(mealPlanApi.deleteDay).mockResolvedValue()
+    vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
     })
@@ -86,7 +92,7 @@ describe('MealPlanView', () => {
     await wrapper.find('.secondary-button').trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.deleteDay).toHaveBeenCalledWith('2026-06-01')
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
     expect(wrapper.find('.secondary-button').exists()).toBe(false)
   })
 
@@ -119,14 +125,15 @@ function weekResponse(): MealPlanWeekResponse {
   return {
     weekStart: '2026-06-01',
     weekEnd: '2026-06-07',
-    entries: [entry('2026-06-01', recipe(1, 'Pasta'))],
+    entries: [entry('2026-06-01', recipe(1, 'Pasta'), 'dinner')],
   }
 }
 
-function entry(plannedDate: string, recipeResponse: RecipeResponse) {
+function entry(plannedDate: string, recipeResponse: RecipeResponse, mealSlot = 'dinner') {
   return {
     id: plannedDate,
     plannedDate,
+    mealSlot,
     recipe: recipeResponse,
   }
 }

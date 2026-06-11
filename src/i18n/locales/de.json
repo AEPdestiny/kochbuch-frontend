@@ -15,7 +15,8 @@
     "login": "Anmelden",
     "register": "Registrieren",
     "logout": "Abmelden",
-    "mealPlan": "Wochenplan"
+    "mealPlan": "Wochenplan",
+    "profile": "Profil"
   },
   "language": {
     "label": "Sprache"
@@ -284,6 +285,32 @@
       "minutes": "{minutes} min",
       "servings": "{count} Portionen",
       "rating": "★ {rating}"
+    },
+    "filters": {
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarisch",
+      "glutenFree": "Glutenfrei",
+      "calorieConscious": "Kalorienarm",
+      "highProtein": "Proteinreich",
+      "budgetFriendly": "Günstig",
+      "maxPrepTime": "Max. Zeit",
+      "mealType": "Kategorie",
+      "anyMealType": "Alle",
+      "breakfast": "Frühstück",
+      "lunch": "Mittagessen",
+      "dinner": "Abendessen",
+      "snack": "Snack",
+      "context": "Kontext",
+      "contextPlaceholder": "gestresst, günstig, Date-Abend"
+    },
+    "reasons": {
+      "vegan": "Vegan passend zu deinem Profil",
+      "vegetarian": "Vegetarisch passend zu deinem Profil",
+      "glutenFree": "Glutenfrei passend zu deinem Profil",
+      "calorieConscious": "Passt zu deinem Ziel: kalorienbewusst",
+      "highProtein": "Passt zu deinem Ziel: proteinreich",
+      "time": "Passt zu deiner gewünschten Kochzeit",
+      "pantry": "Verwendet Zutaten aus deinem Vorrat: {ingredient}"
     }
   },
   "restaurants": {
@@ -359,6 +386,12 @@
       "saturday": "Samstag",
       "sunday": "Sonntag"
     },
+    "slots": {
+      "breakfast": "Frühstück",
+      "lunch": "Mittagessen",
+      "dinner": "Abendessen",
+      "snack": "Snack"
+    },
     "summary": {
       "totalCalories": "Gesamt-Kalorien: {calories} kcal"
     },
@@ -406,7 +439,8 @@
     "mealPlan": {
       "title": "Zum Wochenplan hinzufügen",
       "subtitle": "Wähle einen Tag in der aktuellen Woche.",
-      "added": "Rezept wurde zum Wochenplan hinzugefügt."
+      "added": "Rezept wurde zum Wochenplan hinzugefügt.",
+      "freeSlot": "Frei"
     }
   },
   "ai": {
@@ -414,5 +448,47 @@
     "title": "Dishly KI-Assistent",
     "placeholder": "KI-Assistent ist vorbereitet, Backend folgt.",
     "close": "Schließen"
+  },
+  "profile": {
+    "eyebrow": "Profil",
+    "title": "Deine Präferenzen",
+    "subtitle": "Speichere Vorlieben, Abneigungen, Allergien und Ziele für bessere Empfehlungen.",
+    "loading": "Profil wird geladen...",
+    "form": {
+      "likes": "Vorlieben",
+      "likesPlaceholder": "z.B. Pasta, Curry, Tomaten",
+      "dislikes": "Abneigungen",
+      "dislikesPlaceholder": "z.B. Pilze, Oliven",
+      "allergies": "Allergien",
+      "allergiesPlaceholder": "z.B. Nüsse, Erdnüsse",
+      "dietaryStyles": "Ernährungsstil",
+      "goals": "Ziele",
+      "maxPrepTimeMinutes": "Maximale Zubereitungszeit in Minuten",
+      "calorieGoal": "Kalorienziel"
+    },
+    "options": {
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarisch",
+      "glutenFree": "Glutenfrei",
+      "lactoseFree": "Laktosefrei",
+      "highProtein": "Proteinreich",
+      "calorieConscious": "Kalorienbewusst",
+      "budgetFriendly": "Budgetfreundlich"
+    },
+    "actions": {
+      "save": "Präferenzen speichern",
+      "saving": "Wird gespeichert..."
+    },
+    "success": {
+      "saved": "Präferenzen wurden gespeichert."
+    },
+    "errors": {
+      "loginRequired": "Bitte melde dich an, um dein Profil zu bearbeiten.",
+      "sessionExpired": "Bitte melde dich erneut an, um dein Profil zu bearbeiten.",
+      "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
+      "load": "Deine Präferenzen konnten nicht geladen werden.",
+      "save": "Deine Präferenzen konnten nicht gespeichert werden.",
+      "validation": "Bitte prüfe deine Eingaben."
+    }
   }
 }

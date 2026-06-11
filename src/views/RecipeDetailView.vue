@@ -53,6 +53,7 @@ const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
 const mealPlanLoading = ref(false)
+const plannedEntries = ref<{ plannedDate: string; mealSlot?: string | null; recipe: { title: string } }[]>([])
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
 const weekDays = computed(() => {
@@ -64,6 +65,13 @@ const weekDays = computed(() => {
       date: formatDate(addDays(monday, index)),
     }))
 })
+
+const mealSlots = [
+  { key: 'breakfast', labelKey: 'mealPlan.slots.breakfast' },
+  { key: 'lunch', labelKey: 'mealPlan.slots.lunch' },
+  { key: 'dinner', labelKey: 'mealPlan.slots.dinner' },
+  { key: 'snack', labelKey: 'mealPlan.slots.snack' },
+]
 
 onMounted(() => {
   loadRecipe()
@@ -246,7 +254,7 @@ const geolocationDenied = (error: unknown) =>
   && 'code' in error
   && Number((error as GeolocationPositionError).code) === 1
 
-function openMealPlanModal() {
+async function openMealPlanModal() {
   mealPlanMessage.value = null
   mealPlanError.value = null
   if (!recipe.value) return
@@ -259,14 +267,23 @@ function openMealPlanModal() {
     return
   }
   mealPlanModalOpen.value = true
+  mealPlanLoading.value = true
+  try {
+    const week = await mealPlanApi.getWeek()
+    plannedEntries.value = week.entries
+  } catch {
+    plannedEntries.value = []
+  } finally {
+    mealPlanLoading.value = false
+  }
 }
 
-async function addToMealPlan(date: string) {
+async function addToMealPlan(date: string, slot: string) {
   if (!recipe.value) return
   mealPlanLoading.value = true
   mealPlanError.value = null
   try {
-    await mealPlanApi.setDay(date, Number(recipe.value.id))
+    await mealPlanApi.setSlot(date, slot as 'breakfast' | 'lunch' | 'dinner' | 'snack', Number(recipe.value.id))
     mealPlanMessage.value = t('recipeDetail.mealPlan.added')
     mealPlanModalOpen.value = false
   } catch {
@@ -274,6 +291,12 @@ async function addToMealPlan(date: string) {
   } finally {
     mealPlanLoading.value = false
   }
+}
+
+function plannedTitle(date: string, slot: string) {
+  return plannedEntries.value.find(entry =>
+    entry.plannedDate === date && (entry.mealSlot ?? 'dinner') === slot,
+  )?.recipe.title
 }
 
 function startOfCurrentWeek() {
@@ -389,18 +412,24 @@ function formatDate(date: Date) {
       <section class="meal-plan-modal" :aria-label="t('recipeDetail.mealPlan.title')">
         <h2>{{ t('recipeDetail.mealPlan.title') }}</h2>
         <p>{{ t('recipeDetail.mealPlan.subtitle') }}</p>
+        <p v-if="mealPlanLoading" class="status-text">{{ t('mealPlan.loading') }}</p>
         <div class="day-buttons">
-          <button
-            v-for="day in weekDays"
-            :key="day.date"
-            type="button"
-            class="day-button"
-            :disabled="mealPlanLoading"
-            @click="addToMealPlan(day.date)"
-          >
+          <div v-for="day in weekDays" :key="day.date" class="day-button-group">
             <strong>{{ day.label }}</strong>
             <span>{{ day.date }}</span>
-          </button>
+            <button
+              v-for="slot in mealSlots"
+              :key="slot.key"
+              type="button"
+              class="day-button"
+              :disabled="mealPlanLoading"
+              @click="addToMealPlan(day.date, slot.key)"
+            >
+              <span>{{ t(slot.labelKey) }}</span>
+              <small v-if="plannedTitle(day.date, slot.key)">{{ plannedTitle(day.date, slot.key) }}</small>
+              <small v-else>{{ t('recipeDetail.mealPlan.freeSlot') }}</small>
+            </button>
+          </div>
         </div>
         <button type="button" class="cancel-modal" @click="mealPlanModalOpen = false">
           {{ t('recipeDetail.actions.cancel') }}
@@ -618,8 +647,25 @@ function formatDate(date: Date) {
 
 .day-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.day-button-group {
+  border: 1px solid #d6eee9;
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.day-button-group > strong {
+  color: #2b1b23;
+}
+
+.day-button-group > span {
+  color: #486b68;
+  font-size: 0.85rem;
 }
 
 .day-button {
@@ -630,7 +676,7 @@ function formatDate(date: Date) {
   cursor: pointer;
   display: grid;
   gap: 4px;
-  padding: 12px;
+  padding: 9px 10px;
   text-align: left;
 }
 
@@ -639,8 +685,13 @@ function formatDate(date: Date) {
 }
 
 .day-button span {
-  color: #486b68;
+  color: #2f6f62;
   font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.day-button small {
+  color: #486b68;
 }
 
 .cancel-modal {

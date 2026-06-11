@@ -23,6 +23,18 @@ export type RecipeResponse = RecipeRequest & {
 
 export type Recipe = RecipeResponse
 
+export type RecipeSearchFilters = {
+  vegan?: boolean
+  vegetarian?: boolean
+  glutenFree?: boolean
+  calorieConscious?: boolean
+  highProtein?: boolean
+  budgetFriendly?: boolean
+  maxPrepTime?: number | null
+  mealType?: string
+  context?: string
+}
+
 export type ExternalRecipeIngredient = {
   name: string
   original?: string | null

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import RecipeDetailView from '@/views/RecipeDetailView.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { restaurantApi } from '@/shared/api/restaurantApi'
+import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
@@ -36,6 +37,13 @@ vi.mock('@/shared/api/restaurantApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/mealPlanApi', () => ({
+  mealPlanApi: {
+    getWeek: vi.fn(),
+    setSlot: vi.fn(),
+  },
+}))
+
 vi.mock('@/shared/api/shoppingListApi', () => ({
   shoppingListApi: {
     createShoppingListItem: vi.fn(),
@@ -52,6 +60,22 @@ describe('RecipeDetailView', () => {
     vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue(externalDetail())
     vi.mocked(recipeApi.getRecipe).mockResolvedValue(localRecipe())
     vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-08',
+      weekEnd: '2026-06-14',
+      entries: [{
+        id: 1,
+        plannedDate: '2026-06-08',
+        mealSlot: 'dinner',
+        recipe: localRecipe(),
+      }],
+    })
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 2,
+      plannedDate: '2026-06-08',
+      mealSlot: 'breakfast',
+      recipe: localRecipe(),
+    })
     vi.mocked(shoppingListApi.createShoppingListItem).mockResolvedValue({
       id: 1,
       name: 'pasta',
@@ -163,6 +187,25 @@ describe('RecipeDetailView', () => {
     expect(recipeApi.getRecipe).toHaveBeenCalledWith('716429')
     expect(wrapper.text()).toContain('Dishly Pasta')
     expect(wrapper.text()).toContain('Tomaten')
+  })
+
+  it('opens meal plan modal and adds local recipe to selected slot', async () => {
+    routeName = 'recipe-detail'
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.getWeek).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('Abendessen')
+    expect(wrapper.text()).toContain('Dishly Pasta')
+
+    await wrapper.find('.day-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-08', 'breakfast', 1)
   })
 
   it('uses a safe fallback for the back button when no history exists', async () => {

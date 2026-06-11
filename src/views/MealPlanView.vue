@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
-import type { MealPlanEntryResponse, MealPlanWeekResponse } from '@/types/mealPlan'
+import type { MealPlanEntryResponse, MealPlanWeekResponse, MealSlot } from '@/types/mealPlan'
 import type { RecipeResponse } from '@/types/recipe'
 
 type WeekDay = {
@@ -19,7 +19,7 @@ const error = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const week = ref<MealPlanWeekResponse | null>(null)
 const recipes = ref<RecipeResponse[]>([])
-const selectedRecipeByDate = ref<Record<string, string>>({})
+const selectedRecipeBySlot = ref<Record<string, string>>({})
 
 const dayKeys = [
   'monday',
@@ -29,6 +29,13 @@ const dayKeys = [
   'friday',
   'saturday',
   'sunday',
+]
+
+const mealSlots: { key: MealSlot; labelKey: string }[] = [
+  { key: 'breakfast', labelKey: 'mealPlan.slots.breakfast' },
+  { key: 'lunch', labelKey: 'mealPlan.slots.lunch' },
+  { key: 'dinner', labelKey: 'mealPlan.slots.dinner' },
+  { key: 'snack', labelKey: 'mealPlan.slots.snack' },
 ]
 
 const weekDays = computed<WeekDay[]>(() => {
@@ -69,8 +76,9 @@ async function loadData() {
   }
 }
 
-async function saveDay(date: string) {
-  const recipeId = selectedRecipeByDate.value[date]
+async function saveDay(date: string, slot: MealSlot = 'dinner') {
+  const key = slotKey(date, slot)
+  const recipeId = selectedRecipeBySlot.value[key]
   if (!recipeId) {
     actionError.value = t('mealPlan.errors.noRecipeSelected')
     return
@@ -78,51 +86,51 @@ async function saveDay(date: string) {
 
   try {
     actionError.value = null
-    const saved = await mealPlanApi.setDay(date, Number(recipeId))
+    const saved = await mealPlanApi.setSlot(date, slot, Number(recipeId))
     upsertEntry(saved)
-    selectedRecipeByDate.value[date] = String(saved.recipe.id)
+    selectedRecipeBySlot.value[key] = String(saved.recipe.id)
   } catch {
     actionError.value = t('mealPlan.errors.save')
   }
 }
 
-async function removeDay(date: string) {
+async function removeDay(date: string, slot: MealSlot = 'dinner') {
   try {
     actionError.value = null
-    await mealPlanApi.deleteDay(date)
+    await mealPlanApi.deleteSlot(date, slot)
     if (week.value) {
-      week.value.entries = week.value.entries.filter(entry => entry.plannedDate !== date)
+      week.value.entries = week.value.entries.filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
     }
-    selectedRecipeByDate.value[date] = ''
+    selectedRecipeBySlot.value[slotKey(date, slot)] = ''
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
 }
 
 async function clearWeek() {
-  const plannedDates = [...(week.value?.entries ?? [])].map(entry => entry.plannedDate)
-  if (!plannedDates.length) {
+  const plannedEntries = [...(week.value?.entries ?? [])]
+  if (!plannedEntries.length) {
     return
   }
   try {
     actionError.value = null
-    await Promise.all(plannedDates.map(date => mealPlanApi.deleteDay(date)))
+    await Promise.all(plannedEntries.map(entry => mealPlanApi.deleteSlot(entry.plannedDate, normalizedSlot(entry))))
     if (week.value) {
       week.value.entries = []
     }
-    selectedRecipeByDate.value = {}
+    selectedRecipeBySlot.value = {}
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
 }
 
-function entryFor(date: string) {
-  return week.value?.entries.find(entry => entry.plannedDate === date)
+function entryFor(date: string, slot: MealSlot = 'dinner') {
+  return week.value?.entries.find(entry => entry.plannedDate === date && normalizedSlot(entry) === slot)
 }
 
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
-  selectedRecipeByDate.value = Object.fromEntries(
-    entries.map(entry => [entry.plannedDate, String(entry.recipe.id)]),
+  selectedRecipeBySlot.value = Object.fromEntries(
+    entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), String(entry.recipe.id)]),
   )
 }
 
@@ -130,12 +138,23 @@ function upsertEntry(entry: MealPlanEntryResponse) {
   if (!week.value) {
     return
   }
-  const existingIndex = week.value.entries.findIndex(item => item.plannedDate === entry.plannedDate)
+  const existingIndex = week.value.entries.findIndex(item => item.plannedDate === entry.plannedDate && normalizedSlot(item) === normalizedSlot(entry))
   if (existingIndex >= 0) {
     week.value.entries.splice(existingIndex, 1, entry)
   } else {
     week.value.entries.push(entry)
   }
+}
+
+function slotKey(date: string, slot: MealSlot) {
+  return `${date}-${slot}`
+}
+
+function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
+  if (entry.mealSlot === 'breakfast' || entry.mealSlot === 'lunch' || entry.mealSlot === 'snack') {
+    return entry.mealSlot
+  }
+  return 'dinner'
 }
 
 function startOfCurrentWeek() {
@@ -188,34 +207,37 @@ function formatDate(date: Date) {
           <span>{{ day.date }}</span>
         </div>
 
-        <div v-if="entryFor(day.date)" class="planned-recipe">
-          <span class="planned-label">{{ t('mealPlan.plannedRecipe') }}</span>
-          <strong>{{ entryFor(day.date)?.recipe.title }}</strong>
-        </div>
-        <p v-else class="empty-day">{{ t('mealPlan.empty.day') }}</p>
+        <div v-for="slot in mealSlots" :key="slot.key" class="slot-block">
+          <h3>{{ t(slot.labelKey) }}</h3>
+          <div v-if="entryFor(day.date, slot.key)" class="planned-recipe">
+            <span class="planned-label">{{ t('mealPlan.plannedRecipe') }}</span>
+            <strong>{{ entryFor(day.date, slot.key)?.recipe.title }}</strong>
+          </div>
+          <p v-else class="empty-day">{{ t('mealPlan.empty.day') }}</p>
 
-        <label class="recipe-select">
-          <span>{{ t('mealPlan.form.recipe') }}</span>
-          <select v-model="selectedRecipeByDate[day.date]" :disabled="recipes.length === 0">
-            <option value="">{{ t('mealPlan.form.chooseRecipe') }}</option>
-            <option v-for="recipe in recipes" :key="recipe.id" :value="String(recipe.id)">
-              {{ recipe.title }}
-            </option>
-          </select>
-        </label>
+          <label class="recipe-select">
+            <span>{{ t('mealPlan.form.recipe') }}</span>
+            <select v-model="selectedRecipeBySlot[slotKey(day.date, slot.key)]" :disabled="recipes.length === 0">
+              <option value="">{{ t('mealPlan.form.chooseRecipe') }}</option>
+              <option v-for="recipe in recipes" :key="recipe.id" :value="String(recipe.id)">
+                {{ recipe.title }}
+              </option>
+            </select>
+          </label>
 
-        <div class="actions">
-          <button type="button" class="primary-button" :disabled="recipes.length === 0" @click="saveDay(day.date)">
-            {{ entryFor(day.date) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
-          </button>
-          <button
-            v-if="entryFor(day.date)"
-            type="button"
-            class="secondary-button"
-            @click="removeDay(day.date)"
-          >
-            {{ t('mealPlan.actions.remove') }}
-          </button>
+          <div class="actions">
+            <button type="button" class="primary-button" :disabled="recipes.length === 0" @click="saveDay(day.date, slot.key)">
+              {{ entryFor(day.date, slot.key) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
+            </button>
+            <button
+              v-if="entryFor(day.date, slot.key)"
+              type="button"
+              class="secondary-button"
+              @click="removeDay(day.date, slot.key)"
+            >
+              {{ t('mealPlan.actions.remove') }}
+            </button>
+          </div>
         </div>
       </article>
     </section>
@@ -292,9 +314,23 @@ function formatDate(date: Date) {
   font-size: 0.88rem;
 }
 
+.slot-block {
+  border-top: 1px solid #d6eee9;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.slot-block h3 {
+  color: #2f6f62;
+  font-size: 0.98rem;
+  margin: 0;
+}
+
 .planned-recipe,
 .empty-day {
-  min-height: 56px;
+  min-height: 48px;
 }
 
 .planned-recipe {

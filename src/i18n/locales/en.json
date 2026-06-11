@@ -15,7 +15,8 @@
     "login": "Login",
     "register": "Register",
     "logout": "Logout",
-    "mealPlan": "Meal Plan"
+    "mealPlan": "Meal Plan",
+    "profile": "Profile"
   },
   "language": {
     "label": "Language"
@@ -284,6 +285,32 @@
       "minutes": "{minutes} min",
       "servings": "{count} servings",
       "rating": "★ {rating}"
+    },
+    "filters": {
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "glutenFree": "Gluten-free",
+      "calorieConscious": "Low calorie",
+      "highProtein": "High protein",
+      "budgetFriendly": "Budget friendly",
+      "maxPrepTime": "Max. time",
+      "mealType": "Category",
+      "anyMealType": "Any",
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack",
+      "context": "Context",
+      "contextPlaceholder": "stressed, cheap, date night"
+    },
+    "reasons": {
+      "vegan": "Vegan match for your profile",
+      "vegetarian": "Vegetarian match for your profile",
+      "glutenFree": "Gluten-free match for your profile",
+      "calorieConscious": "Matches your goal: calorie conscious",
+      "highProtein": "Matches your goal: high protein",
+      "time": "Fits your preferred cooking time",
+      "pantry": "Uses ingredients from your pantry: {ingredient}"
     }
   },
   "restaurants": {
@@ -359,6 +386,12 @@
       "saturday": "Saturday",
       "sunday": "Sunday"
     },
+    "slots": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
     "summary": {
       "totalCalories": "Total calories: {calories} kcal"
     },
@@ -406,7 +439,8 @@
     "mealPlan": {
       "title": "Add to meal plan",
       "subtitle": "Choose a day in the current week.",
-      "added": "Recipe added to meal plan."
+      "added": "Recipe added to meal plan.",
+      "freeSlot": "Free"
     }
   },
   "ai": {
@@ -414,5 +448,47 @@
     "title": "Dishly AI Assistant",
     "placeholder": "The AI assistant is prepared; backend integration follows.",
     "close": "Close"
+  },
+  "profile": {
+    "eyebrow": "Profile",
+    "title": "Your preferences",
+    "subtitle": "Save likes, dislikes, allergies, and goals for better recommendations.",
+    "loading": "Loading profile...",
+    "form": {
+      "likes": "Likes",
+      "likesPlaceholder": "e.g. pasta, curry, tomatoes",
+      "dislikes": "Dislikes",
+      "dislikesPlaceholder": "e.g. mushrooms, olives",
+      "allergies": "Allergies",
+      "allergiesPlaceholder": "e.g. nuts, peanuts",
+      "dietaryStyles": "Dietary style",
+      "goals": "Goals",
+      "maxPrepTimeMinutes": "Maximum prep time in minutes",
+      "calorieGoal": "Calorie goal"
+    },
+    "options": {
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "glutenFree": "Gluten-free",
+      "lactoseFree": "Lactose-free",
+      "highProtein": "High protein",
+      "calorieConscious": "Calorie conscious",
+      "budgetFriendly": "Budget friendly"
+    },
+    "actions": {
+      "save": "Save preferences",
+      "saving": "Saving..."
+    },
+    "success": {
+      "saved": "Preferences saved."
+    },
+    "errors": {
+      "loginRequired": "Please log in to edit your profile.",
+      "sessionExpired": "Please log in again to edit your profile.",
+      "network": "The backend is currently unavailable. Please try again.",
+      "load": "Your preferences could not be loaded.",
+      "save": "Your preferences could not be saved.",
+      "validation": "Please check your input."
+    }
   }
 }
