@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { pantryApi } from '@/shared/api/pantryApi'
+import { recipeApi } from '@/shared/api/recipeApi'
 import type { PantryItem, PantryItemRequest } from '@/types/pantry'
+import type { ExternalRecipeMatchResponse } from '@/types/recipe'
 
 const { t } = useI18n()
+const router = useRouter()
 
 const items = ref<PantryItem[]>([])
 const loading = ref(true)
@@ -22,6 +26,13 @@ const editQuantity = ref<number | null>(null)
 const editUnit = ref('')
 const editCategory = ref('')
 const editError = ref<string | null>(null)
+const barcode = ref('')
+const barcodeLoading = ref(false)
+const barcodeMessage = ref<string | null>(null)
+const barcodeError = ref<string | null>(null)
+const recipeMatches = ref<ExternalRecipeMatchResponse[]>([])
+const recipeMatchLoading = ref(false)
+const recipeMatchError = ref<string | null>(null)
 
 onMounted(() => {
   loadPantryItems()
@@ -224,6 +235,62 @@ function toUpdateErrorMessage(e: unknown) {
 
   return t('pantry.errors.update')
 }
+
+async function lookupBarcode() {
+  const value = barcode.value.trim()
+  if (!value) {
+    barcodeError.value = t('pantry.barcode.errors.required')
+    barcodeMessage.value = null
+    return
+  }
+
+  barcodeLoading.value = true
+  barcodeError.value = null
+  barcodeMessage.value = null
+  try {
+    const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(value)}.json`)
+    if (!response.ok) {
+      throw new Error('OpenFoodFacts unavailable')
+    }
+    const data = await response.json()
+    const productName = data?.product?.product_name || data?.product?.generic_name
+    if (!productName) {
+      barcodeError.value = t('pantry.barcode.errors.notFound')
+      return
+    }
+    newName.value = productName
+    newCategory.value = data?.product?.categories_tags?.[0]?.replace(/^en:/, '') ?? newCategory.value
+    barcodeMessage.value = t('pantry.barcode.found', { name: productName })
+  } catch {
+    barcodeError.value = t('pantry.barcode.errors.lookup')
+  } finally {
+    barcodeLoading.value = false
+  }
+}
+
+async function findRecipesWithPantryItems() {
+  const ingredients = items.value.map(item => item.name).filter(Boolean)
+  if (!ingredients.length) {
+    recipeMatchError.value = t('pantry.recipeSearch.errors.noIngredients')
+    recipeMatches.value = []
+    return
+  }
+
+  recipeMatchLoading.value = true
+  recipeMatchError.value = null
+  try {
+    recipeMatches.value = await recipeApi.findExternalRecipesByIngredients(ingredients)
+  } catch {
+    recipeMatchError.value = t('pantry.recipeSearch.errors.load')
+    recipeMatches.value = []
+  } finally {
+    recipeMatchLoading.value = false
+  }
+}
+
+function openRecipe(match: ExternalRecipeMatchResponse) {
+  router.push(`/recipe/external/${match.externalId ?? match.id}`)
+}
 </script>
 
 <template>
@@ -241,6 +308,52 @@ function toUpdateErrorMessage(e: unknown) {
     </div>
 
     <template v-else>
+      <section class="pantry-toolbox">
+        <div class="tool-card">
+          <h2>{{ t('pantry.barcode.title') }}</h2>
+          <p>{{ t('pantry.barcode.subtitle') }}</p>
+          <div class="barcode-row">
+            <input v-model="barcode" type="text" :placeholder="t('pantry.barcode.placeholder')" />
+            <button type="button" class="submit-btn" :disabled="barcodeLoading" @click="lookupBarcode">
+              {{ barcodeLoading ? t('pantry.barcode.loading') : t('pantry.barcode.action') }}
+            </button>
+          </div>
+          <p v-if="barcodeMessage" class="form-success">{{ barcodeMessage }}</p>
+          <p v-if="barcodeError" class="form-error">{{ barcodeError }}</p>
+        </div>
+
+        <div class="tool-card">
+          <h2>{{ t('pantry.recipeSearch.title') }}</h2>
+          <p>{{ t('pantry.recipeSearch.subtitle') }}</p>
+          <button type="button" class="submit-btn" :disabled="recipeMatchLoading" @click="findRecipesWithPantryItems">
+            {{ recipeMatchLoading ? t('pantry.recipeSearch.loading') : t('pantry.recipeSearch.action') }}
+          </button>
+          <p v-if="recipeMatchError" class="form-error">{{ recipeMatchError }}</p>
+        </div>
+      </section>
+
+      <section v-if="recipeMatches.length" class="recipe-matches">
+        <h2>{{ t('pantry.recipeSearch.results') }}</h2>
+        <article v-for="match in recipeMatches" :key="match.id" class="recipe-match">
+          <img v-if="match.imageUrl" :src="match.imageUrl" :alt="match.title" />
+          <div>
+            <h3>{{ match.title }}</h3>
+            <p>
+              {{ t('pantry.recipeSearch.match', { used: match.usedIngredientCount, missed: match.missedIngredientCount }) }}
+            </p>
+            <p v-if="match.usedIngredients.length">
+              <strong>{{ t('pantry.recipeSearch.used') }}:</strong> {{ match.usedIngredients.join(', ') }}
+            </p>
+            <p v-if="match.missedIngredients.length">
+              <strong>{{ t('pantry.recipeSearch.missing') }}:</strong> {{ match.missedIngredients.join(', ') }}
+            </p>
+            <button type="button" class="edit-btn" @click="openRecipe(match)">
+              {{ t('pantry.recipeSearch.open') }}
+            </button>
+          </div>
+        </article>
+      </section>
+
       <form class="pantry-form" @submit.prevent="createPantryItem">
         <div class="form-field">
           <label>{{ t('pantry.form.name') }}</label>
@@ -419,6 +532,79 @@ function toUpdateErrorMessage(e: unknown) {
   margin-bottom: 14px;
 }
 
+.form-success {
+  color: #1d8e90;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.pantry-toolbox {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.tool-card,
+.recipe-match {
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px 16px;
+}
+
+.tool-card h2,
+.recipe-matches h2 {
+  color: #cc7da9;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.tool-card p,
+.recipe-match p {
+  color: #486b68;
+  font-size: 0.95rem;
+}
+
+.barcode-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.barcode-row input {
+  border: 1.5px solid #c3e7e1;
+  border-radius: 10px;
+  flex: 1;
+  font: inherit;
+  padding: 8px 10px;
+}
+
+.recipe-matches {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.recipe-match {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 14px;
+}
+
+.recipe-match img {
+  width: 110px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.recipe-match h3 {
+  color: #2b1b23;
+  margin-bottom: 4px;
+}
+
 .pantry-list {
   list-style: none;
   padding: 0;
@@ -530,6 +716,12 @@ function toUpdateErrorMessage(e: unknown) {
   .pantry-form,
   .edit-form {
     grid-template-columns: 1fr;
+  }
+
+  .barcode-row,
+  .recipe-match {
+    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .pantry-item {

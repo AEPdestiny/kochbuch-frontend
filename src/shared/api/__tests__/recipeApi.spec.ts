@@ -80,4 +80,14 @@ describe('recipeApi', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/recipes/1')
     expect(result).toEqual(recipe)
   })
+
+  it('findExternalRecipesByIngredients calls /recipes/external/by-ingredients with comma separated ingredients', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
+
+    await recipeApi.findExternalRecipesByIngredients(['tomato', 'pasta'])
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external/by-ingredients', {
+      params: { ingredients: 'tomato,pasta' },
+    })
+  })
 })

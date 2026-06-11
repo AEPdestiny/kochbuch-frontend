@@ -86,6 +86,34 @@
       "deleteForbidden": "You are not allowed to delete this pantry item.",
       "updateForbidden": "You are not allowed to edit this pantry item.",
       "notFound": "This pantry item was not found."
+    },
+    "barcode": {
+      "title": "Barcode fallback",
+      "subtitle": "Enter a barcode and use the product name from OpenFoodFacts.",
+      "placeholder": "Enter barcode",
+      "action": "Search barcode",
+      "loading": "Searching barcode...",
+      "found": "{name} was found and added to the form.",
+      "errors": {
+        "required": "Please enter a barcode.",
+        "notFound": "No product name was found for this barcode.",
+        "lookup": "Barcode could not be checked."
+      }
+    },
+    "recipeSearch": {
+      "title": "Find recipes with my ingredients",
+      "subtitle": "Find external recipe ideas based on your pantry.",
+      "action": "Find recipes",
+      "loading": "Searching recipes...",
+      "results": "Matching recipe ideas",
+      "match": "{used} used, {missed} missing",
+      "used": "Used ingredients",
+      "missing": "Missing ingredients",
+      "open": "Open recipe",
+      "errors": {
+        "noIngredients": "Add pantry items first.",
+        "load": "Matching recipes could not be loaded."
+      }
     }
   },
   "shoppingList": {
@@ -313,7 +341,8 @@
     "actions": {
       "add": "Plan recipe",
       "remove": "Remove",
-      "save": "Save"
+      "save": "Save",
+      "clearWeek": "Clear week"
     },
     "errors": {
       "load": "The meal plan could not be loaded.",
@@ -329,6 +358,12 @@
       "friday": "Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
+    },
+    "summary": {
+      "totalCalories": "Total calories: {calories} kcal"
+    },
+    "swipe": {
+      "placeholder": "Swipe planning is coming later."
     }
   },
   "recipeDetail": {
@@ -337,7 +372,8 @@
       "back": "Back",
       "addAllToShoppingList": "Add all ingredients to shopping list",
       "addOne": "+ Add",
-      "addToMealPlan": "Add to meal plan"
+      "addToMealPlan": "Add to meal plan",
+      "cancel": "Cancel"
     },
     "meta": {
       "calories": "{calories} kcal",
@@ -362,7 +398,21 @@
     "errors": {
       "load": "The recipe could not be loaded.",
       "shopping": "Ingredients could not be added to the shopping list.",
-      "loginRequiredShopping": "Please log in to add ingredients to your shopping list."
+      "loginRequiredShopping": "Please log in to add ingredients to your shopping list.",
+      "externalMealPlan": "External recipes cannot be planned directly in the MVP yet. Save your own recipe to plan it.",
+      "loginRequiredMealPlan": "Please log in to add recipes to your meal plan.",
+      "mealPlan": "The recipe could not be added to the meal plan."
+    },
+    "mealPlan": {
+      "title": "Add to meal plan",
+      "subtitle": "Choose a day in the current week.",
+      "added": "Recipe added to meal plan."
     }
+  },
+  "ai": {
+    "button": "AI assistant",
+    "title": "Dishly AI Assistant",
+    "placeholder": "The AI assistant is prepared; backend integration follows.",
+    "close": "Close"
   }
 }

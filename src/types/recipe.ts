@@ -48,3 +48,15 @@ export type ExternalRecipeDetailResponse = {
   steps: string[]
   sourceUrl?: string | null
 }
+
+export type ExternalRecipeMatchResponse = {
+  id: number | string
+  externalId?: string | null
+  source: 'spoonacular' | string
+  title: string
+  imageUrl: string
+  usedIngredientCount: number
+  missedIngredientCount: number
+  usedIngredients: string[]
+  missedIngredients: string[]
+}

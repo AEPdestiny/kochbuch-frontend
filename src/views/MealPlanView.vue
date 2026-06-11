@@ -40,6 +40,11 @@ const weekDays = computed<WeekDay[]>(() => {
   }))
 })
 
+const totalCalories = computed(() => {
+  const entries = week.value?.entries ?? []
+  return entries.reduce((sum, entry) => sum + (entry.recipe.calories ?? 0), 0)
+})
+
 onMounted(() => {
   loadData()
 })
@@ -89,6 +94,23 @@ async function removeDay(date: string) {
       week.value.entries = week.value.entries.filter(entry => entry.plannedDate !== date)
     }
     selectedRecipeByDate.value[date] = ''
+  } catch {
+    actionError.value = t('mealPlan.errors.remove')
+  }
+}
+
+async function clearWeek() {
+  const plannedDates = [...(week.value?.entries ?? [])].map(entry => entry.plannedDate)
+  if (!plannedDates.length) {
+    return
+  }
+  try {
+    actionError.value = null
+    await Promise.all(plannedDates.map(date => mealPlanApi.deleteDay(date)))
+    if (week.value) {
+      week.value.entries = []
+    }
+    selectedRecipeByDate.value = {}
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
@@ -152,6 +174,13 @@ function formatDate(date: Date) {
     <section v-else class="week-grid" :aria-label="t('mealPlan.title')">
       <p v-if="actionError" class="status-text error full-width">{{ actionError }}</p>
       <p v-if="recipes.length === 0" class="status-text full-width">{{ t('mealPlan.empty.noRecipes') }}</p>
+      <div class="week-summary full-width">
+        <span>{{ t('mealPlan.summary.totalCalories', { calories: totalCalories }) }}</span>
+        <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
+          {{ t('mealPlan.actions.clearWeek') }}
+        </button>
+        <span class="swipe-placeholder">{{ t('mealPlan.swipe.placeholder') }}</span>
+      </div>
 
       <article v-for="day in weekDays" :key="day.date" class="day-card">
         <div class="day-card-header">
@@ -309,8 +338,28 @@ function formatDate(date: Date) {
   margin-top: auto;
 }
 
+.week-summary {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 14px;
+  color: #486b68;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.swipe-placeholder {
+  color: #a14c2b;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .primary-button,
-.secondary-button {
+.secondary-button,
+.clear-week-button {
   border-radius: 999px;
   padding: 8px 14px;
   font-weight: 700;
@@ -328,7 +377,8 @@ function formatDate(date: Date) {
   cursor: not-allowed;
 }
 
-.secondary-button {
+.secondary-button,
+.clear-week-button {
   background: #ffffff;
   border: 1px solid #c3e7e1;
   color: #486b68;

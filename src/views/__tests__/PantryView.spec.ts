@@ -15,6 +15,12 @@ vi.mock('@/shared/api/pantryApi', () => ({
   },
 }))
 
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}))
+
 describe('PantryView', () => {
   beforeEach(() => {
     vi.clearAllMocks()

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { restaurantApi } from '@/shared/api/restaurantApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import type {
   ExternalRecipeDetailResponse,
@@ -48,8 +49,21 @@ const restaurantLoading = ref(false)
 const restaurantError = ref<string | null>(null)
 const restaurants = ref<RestaurantResponse[]>([])
 const restaurantSearched = ref(false)
+const mealPlanModalOpen = ref(false)
+const mealPlanError = ref<string | null>(null)
+const mealPlanMessage = ref<string | null>(null)
+const mealPlanLoading = ref(false)
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
+const weekDays = computed(() => {
+  const monday = startOfCurrentWeek()
+  return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    .map((key, index) => ({
+      key,
+      label: t(`mealPlan.days.${key}`),
+      date: formatDate(addDays(monday, index)),
+    }))
+})
 
 onMounted(() => {
   loadRecipe()
@@ -231,6 +245,57 @@ const geolocationDenied = (error: unknown) =>
   && error !== null
   && 'code' in error
   && Number((error as GeolocationPositionError).code) === 1
+
+function openMealPlanModal() {
+  mealPlanMessage.value = null
+  mealPlanError.value = null
+  if (!recipe.value) return
+  if (recipe.value.source !== 'dishly') {
+    mealPlanError.value = t('recipeDetail.errors.externalMealPlan')
+    return
+  }
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    mealPlanError.value = t('recipeDetail.errors.loginRequiredMealPlan')
+    return
+  }
+  mealPlanModalOpen.value = true
+}
+
+async function addToMealPlan(date: string) {
+  if (!recipe.value) return
+  mealPlanLoading.value = true
+  mealPlanError.value = null
+  try {
+    await mealPlanApi.setDay(date, Number(recipe.value.id))
+    mealPlanMessage.value = t('recipeDetail.mealPlan.added')
+    mealPlanModalOpen.value = false
+  } catch {
+    mealPlanError.value = t('recipeDetail.errors.mealPlan')
+  } finally {
+    mealPlanLoading.value = false
+  }
+}
+
+function startOfCurrentWeek() {
+  const now = new Date()
+  const day = now.getDay() === 0 ? 7 : now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - day + 1)
+  return monday
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setDate(date.getDate() + days)
+  return next
+}
+
+function formatDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 </script>
 
 <template>
@@ -270,13 +335,15 @@ const geolocationDenied = (error: unknown) =>
           <button type="button" class="secondary-button" @click="findNearbyRestaurants">
             {{ t('restaurants.actions.findNearby') }}
           </button>
-          <RouterLink class="secondary-button" to="/meal-plan">
+          <button type="button" class="secondary-button" @click="openMealPlanModal">
             {{ t('recipeDetail.actions.addToMealPlan') }}
-          </RouterLink>
+          </button>
         </div>
 
         <p v-if="shoppingMessage" class="status-text success">{{ shoppingMessage }}</p>
         <p v-if="shoppingError" class="status-text error">{{ shoppingError }}</p>
+        <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
+        <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
       </div>
 
       <section class="detail-section">
@@ -317,6 +384,29 @@ const geolocationDenied = (error: unknown) =>
         </ul>
       </section>
     </article>
+
+    <div v-if="mealPlanModalOpen" class="modal-backdrop" @click.self="mealPlanModalOpen = false">
+      <section class="meal-plan-modal" :aria-label="t('recipeDetail.mealPlan.title')">
+        <h2>{{ t('recipeDetail.mealPlan.title') }}</h2>
+        <p>{{ t('recipeDetail.mealPlan.subtitle') }}</p>
+        <div class="day-buttons">
+          <button
+            v-for="day in weekDays"
+            :key="day.date"
+            type="button"
+            class="day-button"
+            :disabled="mealPlanLoading"
+            @click="addToMealPlan(day.date)"
+          >
+            <strong>{{ day.label }}</strong>
+            <span>{{ day.date }}</span>
+          </button>
+        </div>
+        <button type="button" class="cancel-modal" @click="mealPlanModalOpen = false">
+          {{ t('recipeDetail.actions.cancel') }}
+        </button>
+      </section>
+    </div>
   </section>
 </template>
 
@@ -495,6 +585,74 @@ const geolocationDenied = (error: unknown) =>
 .restaurant-list a {
   color: #cc7da9;
   font-weight: 800;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 20, 25, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.meal-plan-modal {
+  width: min(620px, 100%);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.24);
+}
+
+.meal-plan-modal h2 {
+  color: #cc7da9;
+  margin-bottom: 8px;
+}
+
+.meal-plan-modal p {
+  color: #486b68;
+  margin-bottom: 16px;
+}
+
+.day-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.day-button {
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  background: #f4fbfa;
+  color: #2b1b23;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  text-align: left;
+}
+
+.day-button:hover {
+  border-color: #26b6b8;
+}
+
+.day-button span {
+  color: #486b68;
+  font-size: 0.9rem;
+}
+
+.cancel-modal {
+  margin-top: 16px;
+  border: none;
+  border-radius: 999px;
+  background: #fff0eb;
+  color: #a14c2b;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 9px 16px;
 }
 
 @media (max-width: 760px) {

@@ -86,6 +86,34 @@
       "deleteForbidden": "Nie możesz usunąć tego pantry item.",
       "updateForbidden": "Nie możesz edytować tego pantry item.",
       "notFound": "Nie znaleziono tego pantry item."
+    },
+    "barcode": {
+      "title": "R?czny kod kreskowy",
+      "subtitle": "Wpisz kod kreskowy i pobierz nazw? produktu z OpenFoodFacts.",
+      "placeholder": "Wpisz kod kreskowy",
+      "action": "Szukaj kodu",
+      "loading": "Szukanie kodu...",
+      "found": "Znaleziono {name} i wpisano do formularza.",
+      "errors": {
+        "required": "Wpisz kod kreskowy.",
+        "notFound": "Nie znaleziono nazwy produktu dla tego kodu.",
+        "lookup": "Nie uda?o si? sprawdzi? kodu."
+      }
+    },
+    "recipeSearch": {
+      "title": "Znajd? przepisy z moich sk?adnik?w",
+      "subtitle": "Znajd? pomys?y na przepisy na podstawie zapas?w.",
+      "action": "Znajd? przepisy",
+      "loading": "Szukanie przepis?w...",
+      "results": "Pasuj?ce pomys?y na przepisy",
+      "match": "{used} u?yte, {missed} brakuj?ce",
+      "used": "U?yte sk?adniki",
+      "missing": "Brakuj?ce sk?adniki",
+      "open": "Otw?rz przepis",
+      "errors": {
+        "noIngredients": "Najpierw dodaj produkty do zapas?w.",
+        "load": "Nie uda?o si? za?adowa? pasuj?cych przepis?w."
+      }
     }
   },
   "shoppingList": {
@@ -313,7 +341,8 @@
     "actions": {
       "add": "Zaplanuj przepis",
       "remove": "Usu?",
-      "save": "Zapisz"
+      "save": "Zapisz",
+      "clearWeek": "Wyczy?? tydzie?"
     },
     "errors": {
       "load": "Nie uda?o si? za?adowa? planu tygodnia.",
@@ -329,6 +358,12 @@
       "friday": "Pi?tek",
       "saturday": "Sobota",
       "sunday": "Niedziela"
+    },
+    "summary": {
+      "totalCalories": "??czne kalorie: {calories} kcal"
+    },
+    "swipe": {
+      "placeholder": "Planowanie gestem pojawi si? p??niej."
     }
   },
   "recipeDetail": {
@@ -337,7 +372,8 @@
       "back": "Wstecz",
       "addAllToShoppingList": "Dodaj wszystkie sk?adniki do listy zakup?w",
       "addOne": "+ Dodaj",
-      "addToMealPlan": "Dodaj do planu tygodnia"
+      "addToMealPlan": "Dodaj do planu tygodnia",
+      "cancel": "Anuluj"
     },
     "meta": {
       "calories": "{calories} kcal",
@@ -362,7 +398,21 @@
     "errors": {
       "load": "Nie uda?o si? za?adowa? przepisu.",
       "shopping": "Nie uda?o si? doda? sk?adnik?w do listy zakup?w.",
-      "loginRequiredShopping": "Zaloguj si?, aby doda? sk?adniki do listy zakup?w."
+      "loginRequiredShopping": "Zaloguj si?, aby doda? sk?adniki do listy zakup?w.",
+      "externalMealPlan": "Zewn?trznych przepis?w nie mo?na jeszcze planowa? bezpo?rednio w MVP. Zapisz w?asny przepis, aby go zaplanowa?.",
+      "loginRequiredMealPlan": "Zaloguj si?, aby doda? przepisy do planu tygodnia.",
+      "mealPlan": "Nie uda?o si? doda? przepisu do planu tygodnia."
+    },
+    "mealPlan": {
+      "title": "Dodaj do planu tygodnia",
+      "subtitle": "Wybierz dzie? w bie??cym tygodniu.",
+      "added": "Przepis dodano do planu tygodnia."
     }
+  },
+  "ai": {
+    "button": "Asystent AI",
+    "title": "Asystent AI Dishly",
+    "placeholder": "Asystent AI jest przygotowany; integracja backendu pojawi si? p??niej.",
+    "close": "Zamknij"
   }
 }

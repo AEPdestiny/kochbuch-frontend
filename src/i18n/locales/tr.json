@@ -86,6 +86,34 @@
       "deleteForbidden": "Bu pantry item silme iznin yok.",
       "updateForbidden": "Bu pantry item düzenleme iznin yok.",
       "notFound": "Bu pantry item bulunamadı."
+    },
+    "barcode": {
+      "title": "Barkod yede?i",
+      "subtitle": "Barkod gir ve ?r?n ad?n? OpenFoodFacts ?zerinden al.",
+      "placeholder": "Barkod gir",
+      "action": "Barkod ara",
+      "loading": "Barkod aran?yor...",
+      "found": "{name} bulundu ve forma aktar?ld?.",
+      "errors": {
+        "required": "L?tfen barkod gir.",
+        "notFound": "Bu barkod i?in ?r?n ad? bulunamad?.",
+        "lookup": "Barkod kontrol edilemedi."
+      }
+    },
+    "recipeSearch": {
+      "title": "Malzemelerimle tarif bul",
+      "subtitle": "Stoklar?na g?re harici tarif fikirleri bul.",
+      "action": "Tarif bul",
+      "loading": "Tarifler aran?yor...",
+      "results": "Uygun tarif fikirleri",
+      "match": "{used} kullan?l?yor, {missed} eksik",
+      "used": "Kullan?lan malzemeler",
+      "missing": "Eksik malzemeler",
+      "open": "Tarifi a?",
+      "errors": {
+        "noIngredients": "?nce stok ?r?n? ekle.",
+        "load": "Uygun tarifler y?klenemedi."
+      }
     }
   },
   "shoppingList": {
@@ -313,7 +341,8 @@
     "actions": {
       "add": "Tarif planla",
       "remove": "Kald?r",
-      "save": "Kaydet"
+      "save": "Kaydet",
+      "clearWeek": "Haftay? temizle"
     },
     "errors": {
       "load": "Haftal?k plan y?klenemedi.",
@@ -329,6 +358,12 @@
       "friday": "Cuma",
       "saturday": "Cumartesi",
       "sunday": "Pazar"
+    },
+    "summary": {
+      "totalCalories": "Toplam kalori: {calories} kcal"
+    },
+    "swipe": {
+      "placeholder": "Kayd?rmal? planlama daha sonra gelecek."
     }
   },
   "recipeDetail": {
@@ -337,7 +372,8 @@
       "back": "Geri",
       "addAllToShoppingList": "T?m malzemeleri al??veri? listesine ekle",
       "addOne": "+ Ekle",
-      "addToMealPlan": "Haftal?k plana ekle"
+      "addToMealPlan": "Haftal?k plana ekle",
+      "cancel": "?ptal"
     },
     "meta": {
       "calories": "{calories} kcal",
@@ -362,7 +398,21 @@
     "errors": {
       "load": "Tarif y?klenemedi.",
       "shopping": "Malzemeler al??veri? listesine eklenemedi.",
-      "loginRequiredShopping": "Malzemeleri al??veri? listesine eklemek i?in l?tfen giri? yap."
+      "loginRequiredShopping": "Malzemeleri al??veri? listesine eklemek i?in l?tfen giri? yap.",
+      "externalMealPlan": "Harici tarifler MVP i?inde hen?z do?rudan planlanamaz. Planlamak i?in kendi tarifini kaydet.",
+      "loginRequiredMealPlan": "Tarifleri haftal?k plana eklemek i?in l?tfen giri? yap.",
+      "mealPlan": "Tarif haftal?k plana eklenemedi."
+    },
+    "mealPlan": {
+      "title": "Haftal?k plana ekle",
+      "subtitle": "Bu haftadan bir g?n se?.",
+      "added": "Tarif haftal?k plana eklendi."
     }
+  },
+  "ai": {
+    "button": "AI asistan",
+    "title": "Dishly AI Asistan?",
+    "placeholder": "AI asistan haz?rland?; backend entegrasyonu daha sonra gelecek.",
+    "close": "Kapat"
   }
 }

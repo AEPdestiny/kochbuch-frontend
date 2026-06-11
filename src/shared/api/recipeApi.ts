@@ -1,5 +1,10 @@
 import { apiClient } from './apiClient'
-import type { ExternalRecipeDetailResponse, RecipeRequest, RecipeResponse } from '@/types/recipe'
+import type {
+  ExternalRecipeDetailResponse,
+  ExternalRecipeMatchResponse,
+  RecipeRequest,
+  RecipeResponse,
+} from '@/types/recipe'
 
 export const recipeApi = {
   async getRecipes(): Promise<RecipeResponse[]> {
@@ -20,6 +25,13 @@ export const recipeApi = {
 
   async getExternalRecipeDetail(id: number | string): Promise<ExternalRecipeDetailResponse> {
     const response = await apiClient.get<ExternalRecipeDetailResponse>(`/recipes/external/${id}`)
+    return response.data
+  },
+
+  async findExternalRecipesByIngredients(ingredients: string[]): Promise<ExternalRecipeMatchResponse[]> {
+    const response = await apiClient.get<ExternalRecipeMatchResponse[]>('/recipes/external/by-ingredients', {
+      params: { ingredients: ingredients.join(',') },
+    })
     return response.data
   },
 

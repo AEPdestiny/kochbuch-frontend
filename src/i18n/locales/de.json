@@ -86,6 +86,34 @@
       "deleteForbidden": "Du darfst dieses Pantry Item nicht löschen.",
       "updateForbidden": "Du darfst dieses Pantry Item nicht bearbeiten.",
       "notFound": "Dieses Pantry Item wurde nicht gefunden."
+    },
+    "barcode": {
+      "title": "Barcode-Fallback",
+      "subtitle": "Gib einen Barcode ein und übernimm den Produktnamen aus OpenFoodFacts.",
+      "placeholder": "Barcode eingeben",
+      "action": "Barcode suchen",
+      "loading": "Barcode wird gesucht...",
+      "found": "{name} wurde gefunden und ins Formular übernommen.",
+      "errors": {
+        "required": "Bitte gib einen Barcode ein.",
+        "notFound": "Für diesen Barcode wurde kein Produktname gefunden.",
+        "lookup": "Barcode konnte nicht geprüft werden."
+      }
+    },
+    "recipeSearch": {
+      "title": "Rezepte mit meinen Zutaten finden",
+      "subtitle": "Finde externe Rezeptideen auf Basis deines Vorrats.",
+      "action": "Rezepte finden",
+      "loading": "Rezepte werden gesucht...",
+      "results": "Passende Rezeptideen",
+      "match": "{used} verwendet, {missed} fehlt",
+      "used": "Verwendete Zutaten",
+      "missing": "Fehlende Zutaten",
+      "open": "Rezept öffnen",
+      "errors": {
+        "noIngredients": "Lege zuerst Vorratsartikel an.",
+        "load": "Passende Rezepte konnten nicht geladen werden."
+      }
     }
   },
   "shoppingList": {
@@ -313,13 +341,14 @@
     "actions": {
       "add": "Rezept planen",
       "remove": "Entfernen",
-      "save": "Speichern"
+      "save": "Speichern",
+      "clearWeek": "Woche leeren"
     },
     "errors": {
       "load": "Der Wochenplan konnte nicht geladen werden.",
       "save": "Das Rezept konnte nicht geplant werden.",
       "remove": "Das Rezept konnte nicht entfernt werden.",
-      "noRecipeSelected": "Bitte w?hle zuerst ein Rezept aus."
+      "noRecipeSelected": "Bitte wähle zuerst ein Rezept aus."
     },
     "days": {
       "monday": "Montag",
@@ -329,15 +358,22 @@
       "friday": "Freitag",
       "saturday": "Samstag",
       "sunday": "Sonntag"
+    },
+    "summary": {
+      "totalCalories": "Gesamt-Kalorien: {calories} kcal"
+    },
+    "swipe": {
+      "placeholder": "Swipe-Planung kommt später."
     }
   },
   "recipeDetail": {
     "loading": "Rezept wird geladen...",
     "actions": {
-      "back": "Zur?ck",
-      "addAllToShoppingList": "Alle Zutaten zur Einkaufsliste hinzuf?gen",
-      "addOne": "+ Hinzuf?gen",
-      "addToMealPlan": "Zum Wochenplan hinzuf?gen"
+      "back": "Zurück",
+      "addAllToShoppingList": "Alle Zutaten zur Einkaufsliste hinzufügen",
+      "addOne": "+ Hinzufügen",
+      "addToMealPlan": "Zum Wochenplan hinzufügen",
+      "cancel": "Abbrechen"
     },
     "meta": {
       "calories": "{calories} kcal",
@@ -349,20 +385,34 @@
     },
     "instructions": {
       "title": "Zubereitung",
-      "empty": "Keine Zubereitung verf?gbar."
+      "empty": "Keine Zubereitung verfügbar."
     },
     "restaurants": {
       "title": "Passende Restaurants"
     },
     "shopping": {
       "category": "Rezeptzutat",
-      "addedOne": "Zutat wurde zur Einkaufsliste hinzugef?gt.",
-      "addedAll": "Alle Zutaten wurden zur Einkaufsliste hinzugef?gt."
+      "addedOne": "Zutat wurde zur Einkaufsliste hinzugefügt.",
+      "addedAll": "Alle Zutaten wurden zur Einkaufsliste hinzugefügt."
     },
     "errors": {
       "load": "Das Rezept konnte nicht geladen werden.",
-      "shopping": "Zutaten konnten nicht zur Einkaufsliste hinzugef?gt werden.",
-      "loginRequiredShopping": "Bitte melde dich an, um Zutaten zur Einkaufsliste hinzuzuf?gen."
+      "shopping": "Zutaten konnten nicht zur Einkaufsliste hinzugefügt werden.",
+      "loginRequiredShopping": "Bitte melde dich an, um Zutaten zur Einkaufsliste hinzuzufügen.",
+      "externalMealPlan": "Externe Rezepte können im MVP noch nicht direkt geplant werden. Speichere ein eigenes Rezept, um es zu planen.",
+      "loginRequiredMealPlan": "Bitte melde dich an, um Rezepte zum Wochenplan hinzuzufügen.",
+      "mealPlan": "Das Rezept konnte nicht zum Wochenplan hinzugefügt werden."
+    },
+    "mealPlan": {
+      "title": "Zum Wochenplan hinzufügen",
+      "subtitle": "Wähle einen Tag in der aktuellen Woche.",
+      "added": "Rezept wurde zum Wochenplan hinzugefügt."
     }
+  },
+  "ai": {
+    "button": "KI-Assistent",
+    "title": "Dishly KI-Assistent",
+    "placeholder": "KI-Assistent ist vorbereitet, Backend folgt.",
+    "close": "Schließen"
   }
 }
