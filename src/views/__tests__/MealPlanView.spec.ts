@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { profileApi } from '@/shared/api/profileApi'
 import { i18n, setLocale } from '@/i18n'
 import type { MealPlanWeekResponse } from '@/types/mealPlan'
 import type { RecipeResponse } from '@/types/recipe'
@@ -24,6 +25,12 @@ vi.mock('@/shared/api/recipeApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/profileApi', () => ({
+  profileApi: {
+    getPreferences: vi.fn(),
+  },
+}))
+
 describe('MealPlanView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -36,6 +43,20 @@ describe('MealPlanView', () => {
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Sushi Bowl'),
     ])
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: [],
+      vegan: false,
+      vegetarian: true,
+      glutenFree: true,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: 30,
+      calorieGoal: null,
+    })
   })
 
   afterEach(() => {
@@ -58,6 +79,8 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Abendessen')
     expect(wrapper.text()).toContain('Snack')
     expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
+    expect(wrapper.text()).toContain('Swipe-Planung')
+    expect(wrapper.text()).toContain('Vorschläge laden')
     expect(wrapper.text()).toContain('Pasta')
   })
 
@@ -142,6 +165,108 @@ describe('MealPlanView', () => {
     vi.useRealTimers()
   })
 
+  it('loads swipe suggestions with slot and profile filters', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Dinner Pasta', { imageUrl: 'https://example.com/pasta.jpg', calories: 520 }),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.getExternalRecipes).toHaveBeenCalledWith(undefined, {
+      vegan: undefined,
+      vegetarian: true,
+      glutenFree: true,
+      maxPrepTime: 30,
+      mealType: 'main course',
+    })
+    expect(wrapper.text()).toContain('Dinner Pasta')
+    expect(wrapper.text()).toContain('1/1')
+  })
+
+  it('skips to the next swipe suggestion', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Pizza'),
+      recipe(100, 'Burger'),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Pizza')
+
+    await wrapper.findAll('.swipe-card .secondary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Burger')
+    expect(wrapper.text()).toContain('2/2')
+  })
+
+  it('accepts swipe suggestion as customTitle', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Pizza'),
+    ])
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 4,
+      plannedDate: '2026-06-01',
+      mealSlot: 'dinner',
+      recipe: null,
+      customTitle: 'Pizza',
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'dinner', {
+      customTitle: 'Pizza',
+    })
+    expect(wrapper.text()).toContain('Pizza wurde übernommen.')
+  })
+
+  it('shows empty state when swipe suggestions are empty', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Keine Vorschläge gefunden.')
+  })
+
+  it('shows error when swipe suggestions fail', async () => {
+    vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(new Error('Spoonacular unavailable'))
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Vorschläge konnten nicht geladen werden.')
+  })
+
   it('removes a planned recipe', async () => {
     vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
     const wrapper = mount(MealPlanView, {
@@ -198,7 +323,7 @@ function entry(plannedDate: string, recipeResponse: RecipeResponse, mealSlot = '
   }
 }
 
-function recipe(id: number, title: string): RecipeResponse {
+function recipe(id: number, title: string, overrides: Partial<RecipeResponse> = {}): RecipeResponse {
   return {
     id,
     title,
@@ -213,5 +338,6 @@ function recipe(id: number, title: string): RecipeResponse {
     instructions: 'cook',
     favorite: false,
     published: true,
+    ...overrides,
   }
 }

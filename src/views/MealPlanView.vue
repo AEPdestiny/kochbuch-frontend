@@ -3,8 +3,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { profileApi } from '@/shared/api/profileApi'
 import type { MealPlanEntryResponse, MealPlanWeekResponse, MealSlot } from '@/types/mealPlan'
-import type { RecipeResponse } from '@/types/recipe'
+import type { RecipeResponse, RecipeSearchFilters } from '@/types/recipe'
+import type { UserPreferencesResponse } from '@/types/profile'
 
 type WeekDay = {
   key: string
@@ -31,6 +33,14 @@ const suggestionsBySlot = ref<Record<string, SlotSuggestion[]>>({})
 const suggestionLoadingBySlot = ref<Record<string, boolean>>({})
 const suggestionNoticeBySlot = ref<Record<string, string>>({})
 const suggestionTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+const preferences = ref<UserPreferencesResponse | null>(null)
+const swipeDate = ref('')
+const swipeSlot = ref<MealSlot>('dinner')
+const swipeSuggestions = ref<RecipeResponse[]>([])
+const swipeIndex = ref(0)
+const swipeLoading = ref(false)
+const swipeError = ref<string | null>(null)
+const swipeMessage = ref<string | null>(null)
 
 const dayKeys = [
   'monday',
@@ -63,6 +73,8 @@ const totalCalories = computed(() => {
   return entries.reduce((sum, entry) => sum + (entry.recipe?.calories ?? 0), 0)
 })
 
+const currentSwipeRecipe = computed(() => swipeSuggestions.value[swipeIndex.value] ?? null)
+
 onMounted(() => {
   loadData()
 })
@@ -79,11 +91,21 @@ async function loadData() {
     ])
     week.value = loadedWeek
     recipes.value = ownRecipes
+    swipeDate.value = loadedWeek.weekStart
     syncSelectedRecipes(loadedWeek.entries)
+    loadPreferences()
   } catch {
     error.value = t('mealPlan.errors.load')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadPreferences() {
+  try {
+    preferences.value = await profileApi.getPreferences()
+  } catch {
+    preferences.value = null
   }
 }
 
@@ -232,6 +254,84 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
   suggestionNoticeBySlot.value[key] = 'Externe Vorschläge werden aktuell als Freitext gespeichert.'
 }
 
+async function loadSwipeSuggestions() {
+  if (!swipeDate.value || !swipeSlot.value) {
+    swipeError.value = 'Bitte wähle zuerst Tag und Slot.'
+    return
+  }
+
+  swipeLoading.value = true
+  swipeError.value = null
+  swipeMessage.value = null
+  swipeIndex.value = 0
+  try {
+    swipeSuggestions.value = await recipeApi.getExternalRecipes(undefined, swipeFilters())
+    if (swipeSuggestions.value.length === 0) {
+      swipeError.value = 'Keine Vorschläge gefunden.'
+    }
+  } catch {
+    swipeSuggestions.value = []
+    swipeError.value = 'Vorschläge konnten nicht geladen werden.'
+  } finally {
+    swipeLoading.value = false
+  }
+}
+
+function skipSwipeSuggestion() {
+  swipeMessage.value = null
+  swipeError.value = null
+  if (swipeIndex.value < swipeSuggestions.value.length - 1) {
+    swipeIndex.value += 1
+    return
+  }
+  swipeError.value = 'Keine weiteren Vorschläge vorhanden.'
+}
+
+async function acceptSwipeSuggestion() {
+  const suggestion = currentSwipeRecipe.value
+  if (!suggestion) {
+    swipeError.value = 'Kein Vorschlag ausgewählt.'
+    return
+  }
+  if (!swipeDate.value || !swipeSlot.value) {
+    swipeError.value = 'Bitte wähle zuerst Tag und Slot.'
+    return
+  }
+
+  try {
+    swipeError.value = null
+    const saved = await mealPlanApi.setSlot(swipeDate.value, swipeSlot.value, {
+      customTitle: suggestion.title,
+    })
+    upsertEntry(saved)
+    customTitleBySlot.value[slotKey(swipeDate.value, swipeSlot.value)] = entryTitle(saved)
+    selectedRecipeBySlot.value[slotKey(swipeDate.value, swipeSlot.value)] = ''
+    swipeMessage.value = `${suggestion.title} wurde übernommen.`
+    if (swipeIndex.value < swipeSuggestions.value.length - 1) {
+      swipeIndex.value += 1
+    }
+  } catch {
+    swipeError.value = 'Vorschlag konnte nicht übernommen werden.'
+  }
+}
+
+function swipeFilters(): RecipeSearchFilters {
+  const profile = preferences.value
+  return {
+    vegan: profile?.vegan || undefined,
+    vegetarian: profile?.vegetarian || undefined,
+    glutenFree: profile?.glutenFree || undefined,
+    maxPrepTime: profile?.maxPrepTimeMinutes ?? null,
+    mealType: mealTypeForSlot(swipeSlot.value),
+  }
+}
+
+function mealTypeForSlot(slot: MealSlot) {
+  if (slot === 'breakfast') return 'breakfast'
+  if (slot === 'snack') return 'snack'
+  return 'main course'
+}
+
 function startOfCurrentWeek() {
   const now = new Date()
   const day = now.getDay() === 0 ? 7 : now.getDay()
@@ -273,8 +373,67 @@ function formatDate(date: Date) {
         <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
           {{ t('mealPlan.actions.clearWeek') }}
         </button>
-        <span class="swipe-placeholder">{{ t('mealPlan.swipe.placeholder') }}</span>
       </div>
+
+      <section class="swipe-planner full-width" aria-label="Swipe-Planung">
+        <div class="swipe-controls">
+          <div>
+            <h2>Swipe-Planung</h2>
+            <p>Wähle Tag und Slot, lade Vorschläge und übernimm passende Rezepte als Freitext in deinen Wochenplan.</p>
+          </div>
+          <label>
+            <span>Tag</span>
+            <select v-model="swipeDate">
+              <option v-for="day in weekDays" :key="day.date" :value="day.date">
+                {{ t(day.labelKey) }} - {{ day.date }}
+              </option>
+            </select>
+          </label>
+          <label>
+            <span>Slot</span>
+            <select v-model="swipeSlot">
+              <option v-for="slot in mealSlots" :key="slot.key" :value="slot.key">
+                {{ t(slot.labelKey) }}
+              </option>
+            </select>
+          </label>
+          <button type="button" class="primary-button" :disabled="swipeLoading" @click="loadSwipeSuggestions">
+            {{ swipeLoading ? 'Vorschläge werden geladen...' : 'Vorschläge laden' }}
+          </button>
+        </div>
+
+        <p v-if="swipeMessage" class="status-text success">{{ swipeMessage }}</p>
+        <p v-if="swipeError" class="status-text error">{{ swipeError }}</p>
+
+        <article v-if="currentSwipeRecipe" class="swipe-card">
+          <img v-if="currentSwipeRecipe.imageUrl" :src="currentSwipeRecipe.imageUrl" :alt="currentSwipeRecipe.title" />
+          <div class="swipe-card-content">
+            <span class="progress-pill">{{ swipeIndex + 1 }}/{{ swipeSuggestions.length }}</span>
+            <h3>{{ currentSwipeRecipe.title }}</h3>
+            <div class="swipe-meta">
+              <span v-if="currentSwipeRecipe.prepTimeMinutes || currentSwipeRecipe.cookTimeMinutes">
+                {{ currentSwipeRecipe.prepTimeMinutes + currentSwipeRecipe.cookTimeMinutes }} min
+              </span>
+              <span v-if="currentSwipeRecipe.calories">{{ currentSwipeRecipe.calories }} kcal</span>
+            </div>
+            <div class="tag-list">
+              <span v-if="currentSwipeRecipe.category">{{ currentSwipeRecipe.category }}</span>
+              <span v-if="currentSwipeRecipe.difficulty">{{ currentSwipeRecipe.difficulty }}</span>
+            </div>
+            <p class="suggestion-state">
+              Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
+            </p>
+            <div class="actions">
+              <button type="button" class="secondary-button" @click="skipSwipeSuggestion">
+                ← Überspringen
+              </button>
+              <button type="button" class="primary-button" @click="acceptSwipeSuggestion">
+                → Übernehmen
+              </button>
+            </div>
+          </div>
+        </article>
+      </section>
 
       <article v-for="day in weekDays" :key="day.date" class="day-card">
         <div class="day-card-header">
@@ -510,10 +669,97 @@ function formatDate(date: Date) {
   padding: 12px 16px;
 }
 
-.swipe-placeholder {
-  color: #a14c2b;
-  font-size: 0.92rem;
+.swipe-planner {
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 16px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.swipe-controls {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, auto));
+}
+
+.swipe-controls h2 {
+  color: #cc7da9;
+  margin: 0 0 4px 0;
+}
+
+.swipe-controls p {
+  color: #486b68;
+  margin: 0;
+}
+
+.swipe-controls label {
+  color: #2b1b23;
+  display: grid;
   font-weight: 700;
+  gap: 6px;
+}
+
+.swipe-controls select {
+  border: 1.5px solid #c3e7e1;
+  border-radius: 8px;
+  font: inherit;
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.swipe-card {
+  border: 1px solid #d6eee9;
+  border-radius: 14px;
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  overflow: hidden;
+}
+
+.swipe-card img {
+  height: 100%;
+  min-height: 180px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.swipe-card-content {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.swipe-card-content h3 {
+  color: #2b1b23;
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.progress-pill,
+.swipe-meta span,
+.tag-list span {
+  background: #e0f5f2;
+  border-radius: 999px;
+  color: #1d8e90;
+  display: inline-flex;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 5px 10px;
+  width: fit-content;
+}
+
+.swipe-meta,
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-list span {
+  background: #fff7fb;
+  color: #b96593;
 }
 
 .primary-button,
@@ -556,5 +802,16 @@ function formatDate(date: Date) {
 
 .full-width {
   grid-column: 1 / -1;
+}
+
+@media (max-width: 760px) {
+  .swipe-controls,
+  .swipe-card {
+    grid-template-columns: 1fr;
+  }
+
+  .swipe-card img {
+    max-height: 220px;
+  }
 }
 </style>
