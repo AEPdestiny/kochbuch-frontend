@@ -432,13 +432,13 @@
       "load": "Das Rezept konnte nicht geladen werden.",
       "shopping": "Zutaten konnten nicht zur Einkaufsliste hinzugefügt werden.",
       "loginRequiredShopping": "Bitte melde dich an, um Zutaten zur Einkaufsliste hinzuzufügen.",
-      "externalMealPlan": "Externe Rezepte können im MVP noch nicht direkt geplant werden. Speichere ein eigenes Rezept, um es zu planen.",
+      "externalMealPlan": "Externe Rezepte können aktuell nicht direkt eingeplant werden.",
       "loginRequiredMealPlan": "Bitte melde dich an, um Rezepte zum Wochenplan hinzuzufügen.",
       "mealPlan": "Das Rezept konnte nicht zum Wochenplan hinzugefügt werden."
     },
     "mealPlan": {
       "title": "Zum Wochenplan hinzufügen",
-      "subtitle": "Wähle einen Tag in der aktuellen Woche.",
+      "subtitle": "Wähle einen Tag und einen Slot in der aktuellen Woche.",
       "added": "Rezept wurde zum Wochenplan hinzugefügt.",
       "freeSlot": "Frei"
     }

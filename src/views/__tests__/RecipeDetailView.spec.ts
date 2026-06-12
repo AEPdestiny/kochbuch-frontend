@@ -198,7 +198,9 @@ describe('RecipeDetailView', () => {
     await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.getWeek).toHaveBeenCalledTimes(1)
+    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-08')
+    expect(wrapper.findAll('.day-button-group')).toHaveLength(7)
+    expect(wrapper.findAll('.day-button')).toHaveLength(28)
     expect(wrapper.text()).toContain('Abendessen')
     expect(wrapper.text()).toContain('Dishly Pasta')
 
@@ -206,6 +208,20 @@ describe('RecipeDetailView', () => {
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-08', 'breakfast', 1)
+    expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
+    expect(wrapper.find('.meal-plan-modal').exists()).toBe(false)
+  })
+
+  it('shows honest message for external recipes instead of planning them', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.getWeek).not.toHaveBeenCalled()
+    expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Externe Rezepte können aktuell nicht direkt eingeplant werden.')
   })
 
   it('uses a safe fallback for the back button when no history exists', async () => {

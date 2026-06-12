@@ -15,7 +15,7 @@
     "login": "登录",
     "register": "注册",
     "logout": "退出",
-    "mealPlan": "????",
+    "mealPlan": "周计划",
     "profile": "????"
   },
   "language": {
@@ -350,47 +350,53 @@
     "emailOutro": "我会尽快回复你。"
   },
   "mealPlan": {
-    "title": "????",
-    "subtitle": "????????????",
-    "loading": "????????...",
-    "plannedRecipe": "??????",
+    "title": "周计划",
+    "subtitle": "为本周规划你自己的食谱。",
+    "loading": "正在加载周计划...",
+    "plannedRecipe": "已计划的食谱",
     "week": {
-      "current": "???"
+      "current": "当前周"
     },
     "form": {
-      "recipe": "??",
-      "chooseRecipe": "????"
+      "recipe": "食谱",
+      "chooseRecipe": "选择食谱"
     },
     "empty": {
-      "day": "????????",
-      "noRecipes": "???????????????"
+      "day": "还没有计划食谱。",
+      "noRecipes": "还没有可计划的自有食谱。"
     },
     "actions": {
-      "add": "????",
-      "remove": "??",
-      "save": "??",
-      "clearWeek": "????"
+      "add": "计划食谱",
+      "remove": "移除",
+      "save": "保存",
+      "clearWeek": "清空本周"
     },
     "errors": {
-      "load": "?????????",
-      "save": "????????",
-      "remove": "????????",
-      "noRecipeSelected": "?????????"
+      "load": "无法加载周计划。",
+      "save": "无法保存食谱。",
+      "remove": "无法移除食谱。",
+      "noRecipeSelected": "请先选择一个食谱。"
     },
     "days": {
-      "monday": "???",
-      "tuesday": "???",
-      "wednesday": "???",
-      "thursday": "???",
-      "friday": "???",
-      "saturday": "???",
-      "sunday": "???"
+      "monday": "星期一",
+      "tuesday": "星期二",
+      "wednesday": "星期三",
+      "thursday": "星期四",
+      "friday": "星期五",
+      "saturday": "星期六",
+      "sunday": "星期日"
+    },
+    "slots": {
+      "breakfast": "早餐",
+      "lunch": "午餐",
+      "dinner": "晚餐",
+      "snack": "小吃"
     },
     "summary": {
-      "totalCalories": "????{calories} ??"
+      "totalCalories": "总热量：{calories} kcal"
     },
     "swipe": {
-      "placeholder": "?????????"
+      "placeholder": "滑动计划功能稍后推出。"
     }
   },
   "recipeDetail": {
@@ -399,8 +405,8 @@
       "back": "??",
       "addAllToShoppingList": "???????????",
       "addOne": "+ ??",
-      "addToMealPlan": "?????",
-      "cancel": "??"
+      "addToMealPlan": "添加到周计划",
+      "cancel": "取消"
     },
     "meta": {
       "calories": "{calories} ??",
@@ -426,14 +432,15 @@
       "load": "???????",
       "shopping": "????????????",
       "loginRequiredShopping": "??????????????",
-      "externalMealPlan": "MVP ??????????????????????????",
+      "externalMealPlan": "外部食谱目前不能直接加入计划。",
       "loginRequiredMealPlan": "?????????????",
-      "mealPlan": "???????????"
+      "mealPlan": "无法将食谱添加到周计划。"
     },
     "mealPlan": {
-      "title": "?????",
-      "subtitle": "????????",
-      "added": "?????????"
+      "title": "添加到周计划",
+      "subtitle": "请选择本周的一天和餐次。",
+      "added": "食谱已添加到周计划。",
+      "freeSlot": "空闲"
     }
   },
   "ai": {

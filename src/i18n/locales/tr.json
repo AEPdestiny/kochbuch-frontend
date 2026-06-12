@@ -15,7 +15,7 @@
     "login": "Giriş yap",
     "register": "Kayıt ol",
     "logout": "Çıkış yap",
-    "mealPlan": "Haftal?k plan",
+    "mealPlan": "Haftalık plan",
     "profile": "Profil"
   },
   "language": {
@@ -350,38 +350,38 @@
     "emailOutro": "ve sana en kısa sürede geri döneceğim."
   },
   "mealPlan": {
-    "title": "Haftal?k plan",
-    "subtitle": "Kendi tariflerini g?ncel hafta i?in planla.",
-    "loading": "Haftal?k plan y?kleniyor...",
+    "title": "Haftalık plan",
+    "subtitle": "Kendi tariflerini güncel hafta için planla.",
+    "loading": "Haftalık plan yükleniyor...",
     "plannedRecipe": "Planlanan tarif",
     "week": {
-      "current": "G?ncel hafta"
+      "current": "Güncel hafta"
     },
     "form": {
       "recipe": "Tarif",
-      "chooseRecipe": "Tarif se?"
+      "chooseRecipe": "Tarif seç"
     },
     "empty": {
-      "day": "Hen?z tarif planlanmad?.",
-      "noRecipes": "Planlamak i?in hen?z kendi tarifin yok."
+      "day": "Henüz tarif planlanmadı.",
+      "noRecipes": "Planlamak için henüz kendi tarifin yok."
     },
     "actions": {
       "add": "Tarif planla",
-      "remove": "Kald?r",
+      "remove": "Kaldır",
       "save": "Kaydet",
-      "clearWeek": "Haftay? temizle"
+      "clearWeek": "Haftayı temizle"
     },
     "errors": {
-      "load": "Haftal?k plan y?klenemedi.",
-      "save": "Tarif planlanamad?.",
-      "remove": "Tarif kald?r?lamad?.",
-      "noRecipeSelected": "L?tfen ?nce bir tarif se?."
+      "load": "Haftalık plan yüklenemedi.",
+      "save": "Tarif planlanamadı.",
+      "remove": "Tarif kaldırılamadı.",
+      "noRecipeSelected": "Lütfen önce bir tarif seç."
     },
     "days": {
       "monday": "Pazartesi",
-      "tuesday": "Sal?",
-      "wednesday": "?ar?amba",
-      "thursday": "Per?embe",
+      "tuesday": "Salı",
+      "wednesday": "Çarşamba",
+      "thursday": "Perşembe",
       "friday": "Cuma",
       "saturday": "Cumartesi",
       "sunday": "Pazar"
@@ -390,7 +390,7 @@
       "totalCalories": "Toplam kalori: {calories} kcal"
     },
     "swipe": {
-      "placeholder": "Kayd?rmal? planlama daha sonra gelecek."
+      "placeholder": "Kaydırmalı planlama daha sonra gelecek."
     }
   },
   "recipeDetail": {
@@ -399,8 +399,8 @@
       "back": "Geri",
       "addAllToShoppingList": "T?m malzemeleri al??veri? listesine ekle",
       "addOne": "+ Ekle",
-      "addToMealPlan": "Haftal?k plana ekle",
-      "cancel": "?ptal"
+      "addToMealPlan": "Haftalık plana ekle",
+      "cancel": "İptal"
     },
     "meta": {
       "calories": "{calories} kcal",
@@ -426,14 +426,15 @@
       "load": "Tarif y?klenemedi.",
       "shopping": "Malzemeler al??veri? listesine eklenemedi.",
       "loginRequiredShopping": "Malzemeleri al??veri? listesine eklemek i?in l?tfen giri? yap.",
-      "externalMealPlan": "Harici tarifler MVP i?inde hen?z do?rudan planlanamaz. Planlamak i?in kendi tarifini kaydet.",
+      "externalMealPlan": "Harici tarifler şu anda doğrudan plana eklenemez.",
       "loginRequiredMealPlan": "Tarifleri haftal?k plana eklemek i?in l?tfen giri? yap.",
-      "mealPlan": "Tarif haftal?k plana eklenemedi."
+      "mealPlan": "Tarif haftalık plana eklenemedi."
     },
     "mealPlan": {
-      "title": "Haftal?k plana ekle",
-      "subtitle": "Bu haftadan bir g?n se?.",
-      "added": "Tarif haftal?k plana eklendi."
+      "title": "Haftalık plana ekle",
+      "subtitle": "Bu haftadan bir gün ve öğün seç.",
+      "added": "Tarif haftalık plana eklendi.",
+      "freeSlot": "Boş"
     }
   },
   "ai": {

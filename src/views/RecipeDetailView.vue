@@ -13,6 +13,7 @@ import type {
   RecipeResponse,
 } from '@/types/recipe'
 import type { RestaurantResponse } from '@/types/restaurant'
+import type { MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 
 type DetailIngredient = {
   name: string
@@ -53,7 +54,7 @@ const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
 const mealPlanLoading = ref(false)
-const plannedEntries = ref<{ plannedDate: string; mealSlot?: string | null; recipe: { title: string } }[]>([])
+const plannedEntries = ref<MealPlanEntryResponse[]>([])
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
 const weekDays = computed(() => {
@@ -66,7 +67,7 @@ const weekDays = computed(() => {
     }))
 })
 
-const mealSlots = [
+const mealSlots: { key: MealSlot; labelKey: string }[] = [
   { key: 'breakfast', labelKey: 'mealPlan.slots.breakfast' },
   { key: 'lunch', labelKey: 'mealPlan.slots.lunch' },
   { key: 'dinner', labelKey: 'mealPlan.slots.dinner' },
@@ -269,7 +270,8 @@ async function openMealPlanModal() {
   mealPlanModalOpen.value = true
   mealPlanLoading.value = true
   try {
-    const week = await mealPlanApi.getWeek()
+    const weekStart = weekDays.value[0]?.date
+    const week = await mealPlanApi.getWeek(weekStart)
     plannedEntries.value = week.entries
   } catch {
     plannedEntries.value = []
@@ -278,12 +280,15 @@ async function openMealPlanModal() {
   }
 }
 
-async function addToMealPlan(date: string, slot: string) {
+async function addToMealPlan(date: string, slot: MealSlot) {
   if (!recipe.value) return
   mealPlanLoading.value = true
   mealPlanError.value = null
   try {
-    await mealPlanApi.setSlot(date, slot as 'breakfast' | 'lunch' | 'dinner' | 'snack', Number(recipe.value.id))
+    const savedEntry = await mealPlanApi.setSlot(date, slot, Number(recipe.value.id))
+    plannedEntries.value = plannedEntries.value
+      .filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
+      .concat(savedEntry)
     mealPlanMessage.value = t('recipeDetail.mealPlan.added')
     mealPlanModalOpen.value = false
   } catch {
@@ -293,10 +298,14 @@ async function addToMealPlan(date: string, slot: string) {
   }
 }
 
-function plannedTitle(date: string, slot: string) {
+function plannedTitle(date: string, slot: MealSlot) {
   return plannedEntries.value.find(entry =>
-    entry.plannedDate === date && (entry.mealSlot ?? 'dinner') === slot,
+    entry.plannedDate === date && normalizedSlot(entry) === slot,
   )?.recipe.title
+}
+
+function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
+  return (entry.mealSlot ?? 'dinner') as MealSlot
 }
 
 function startOfCurrentWeek() {

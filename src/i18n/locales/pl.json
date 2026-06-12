@@ -351,11 +351,11 @@
   },
   "mealPlan": {
     "title": "Plan tygodnia",
-    "subtitle": "Zaplanuj w?asne przepisy na bie??cy tydzie?.",
-    "loading": "?adowanie planu tygodnia...",
+    "subtitle": "Zaplanuj własne przepisy na bieżący tydzień.",
+    "loading": "Ładowanie planu tygodnia...",
     "plannedRecipe": "Zaplanowany przepis",
     "week": {
-      "current": "Bie??cy tydzie?"
+      "current": "Bieżący tydzień"
     },
     "form": {
       "recipe": "Przepis",
@@ -363,34 +363,34 @@
     },
     "empty": {
       "day": "Nie zaplanowano jeszcze przepisu.",
-      "noRecipes": "Nie masz jeszcze w?asnych przepis?w do zaplanowania."
+      "noRecipes": "Nie masz jeszcze własnych przepisów do zaplanowania."
     },
     "actions": {
       "add": "Zaplanuj przepis",
-      "remove": "Usu?",
+      "remove": "Usuń",
       "save": "Zapisz",
-      "clearWeek": "Wyczy?? tydzie?"
+      "clearWeek": "Wyczyść tydzień"
     },
     "errors": {
-      "load": "Nie uda?o si? za?adowa? planu tygodnia.",
-      "save": "Nie uda?o si? zaplanowa? przepisu.",
-      "remove": "Nie uda?o si? usun?? przepisu.",
+      "load": "Nie udało się załadować planu tygodnia.",
+      "save": "Nie udało się zaplanować przepisu.",
+      "remove": "Nie udało się usunąć przepisu.",
       "noRecipeSelected": "Najpierw wybierz przepis."
     },
     "days": {
-      "monday": "Poniedzia?ek",
+      "monday": "Poniedziałek",
       "tuesday": "Wtorek",
-      "wednesday": "?roda",
+      "wednesday": "Środa",
       "thursday": "Czwartek",
-      "friday": "Pi?tek",
+      "friday": "Piątek",
       "saturday": "Sobota",
       "sunday": "Niedziela"
     },
     "summary": {
-      "totalCalories": "??czne kalorie: {calories} kcal"
+      "totalCalories": "Łączne kalorie: {calories} kcal"
     },
     "swipe": {
-      "placeholder": "Planowanie gestem pojawi si? p??niej."
+      "placeholder": "Planowanie gestem pojawi się później."
     }
   },
   "recipeDetail": {
@@ -426,14 +426,15 @@
       "load": "Nie uda?o si? za?adowa? przepisu.",
       "shopping": "Nie uda?o si? doda? sk?adnik?w do listy zakup?w.",
       "loginRequiredShopping": "Zaloguj si?, aby doda? sk?adniki do listy zakup?w.",
-      "externalMealPlan": "Zewn?trznych przepis?w nie mo?na jeszcze planowa? bezpo?rednio w MVP. Zapisz w?asny przepis, aby go zaplanowa?.",
+      "externalMealPlan": "Zewnętrznych przepisów nie można obecnie planować bezpośrednio.",
       "loginRequiredMealPlan": "Zaloguj si?, aby doda? przepisy do planu tygodnia.",
-      "mealPlan": "Nie uda?o si? doda? przepisu do planu tygodnia."
+      "mealPlan": "Nie udało się dodać przepisu do planu tygodnia."
     },
     "mealPlan": {
       "title": "Dodaj do planu tygodnia",
-      "subtitle": "Wybierz dzie? w bie??cym tygodniu.",
-      "added": "Przepis dodano do planu tygodnia."
+      "subtitle": "Wybierz dzień i posiłek w bieżącym tygodniu.",
+      "added": "Przepis dodano do planu tygodnia.",
+      "freeSlot": "Wolne"
     }
   },
   "ai": {
