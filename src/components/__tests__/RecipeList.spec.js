@@ -2,8 +2,15 @@ import { mount, flushPromises, config } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import RecipeList from '@/components/RecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { favoriteApi } from '@/shared/api/favoriteApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
+
+const push = vi.fn()
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({ push }),
+}))
 
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
@@ -15,16 +22,24 @@ vi.mock('@/shared/api/recipeApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/favoriteApi', () => ({
+  favoriteApi: {
+    getExternalFavorites: vi.fn(),
+  },
+}))
+
 describe('RecipeList.vue', () => {
   // Vor jedem Test Mocks zurücksetzen, damit Tests unabhängig bleiben
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    push.mockClear()
     sessionStorage.clear()
     setLocale('de')
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
   })
 
   it('loads /recipes/mine and shows "Deine erstellten Rezepte" with items for logged-in users', async () => {
@@ -396,6 +411,28 @@ describe('RecipeList.vue', () => {
     // Erwartung: Nur das Favorite-Rezept wird angezeigt
     expect(favGrid).toContain('Fav 1')
     expect(favGrid).not.toContain('Not Fav')
+  })
+
+  it('shows external API favorites and opens external detail route', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([
+      {
+        id: 1,
+        externalRecipeId: '716429',
+        externalTitle: 'External Pasta',
+        externalImageUrl: 'https://example.com/pasta.jpg',
+        externalSource: 'SPOONACULAR',
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('External Pasta')
+    await wrapper.find('.recipe-grid .recipe-card').trigger('click')
+
+    expect(push).toHaveBeenCalledWith('/recipe/external/716429')
   })
   it('shows English recipe UI texts after locale switch while recipe data stays unchanged', async () => {
     setLocale('en')

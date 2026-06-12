@@ -7,6 +7,7 @@ import { restaurantApi } from '@/shared/api/restaurantApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { favoriteApi } from '@/shared/api/favoriteApi'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
@@ -55,6 +56,8 @@ const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
 const mealPlanLoading = ref(false)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
+const externalFavorite = ref(false)
+const favoriteError = ref<string | null>(null)
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
 const weekDays = computed(() => {
@@ -86,10 +89,28 @@ async function loadRecipe() {
     recipe.value = isExternal.value
       ? mapExternal(await recipeApi.getExternalRecipeDetail(id))
       : mapDishly(await recipeApi.getRecipe(id))
+    await loadExternalFavoriteState()
   } catch {
     error.value = t('recipeDetail.errors.load')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadExternalFavoriteState() {
+  externalFavorite.value = false
+  favoriteError.value = null
+  if (!recipe.value || recipe.value.source !== 'spoonacular' || !sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    return
+  }
+  try {
+    const favorites = await favoriteApi.getExternalFavorites()
+    externalFavorite.value = favorites.some(favorite =>
+      favorite.externalRecipeId === String(recipe.value?.id)
+      && (favorite.externalSource ?? 'SPOONACULAR').toUpperCase() === 'SPOONACULAR',
+    )
+  } catch {
+    externalFavorite.value = false
   }
 }
 
@@ -242,6 +263,36 @@ async function findNearbyRestaurants() {
       : t('restaurants.errors.searchFailed')
   } finally {
     restaurantLoading.value = false
+  }
+}
+
+async function toggleExternalFavorite() {
+  if (!recipe.value || recipe.value.source !== 'spoonacular') return
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    favoriteError.value = 'Bitte melde dich an, um API-Rezepte zu favorisieren.'
+    return
+  }
+
+  const id = String(recipe.value.id)
+  try {
+    favoriteError.value = null
+    if (externalFavorite.value) {
+      await favoriteApi.removeExternalFavorite('SPOONACULAR', id)
+      externalFavorite.value = false
+      return
+    }
+
+    await favoriteApi.addExternalFavorite({
+      externalRecipeId: id,
+      externalTitle: recipe.value.title,
+      externalImageUrl: recipe.value.imageUrl,
+      externalSource: 'SPOONACULAR',
+    })
+    externalFavorite.value = true
+  } catch (e: unknown) {
+    favoriteError.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : 'Favorit konnte nicht gespeichert werden.'
   }
 }
 
@@ -400,12 +451,22 @@ function formatDate(date: Date) {
           <button type="button" class="secondary-button" @click="openMealPlanModal">
             {{ t('recipeDetail.actions.addToMealPlan') }}
           </button>
+          <button
+            v-if="recipe.source === 'spoonacular'"
+            type="button"
+            class="secondary-button"
+            :aria-pressed="externalFavorite"
+            @click="toggleExternalFavorite"
+          >
+            {{ externalFavorite ? '♥ Favorit' : '♡ Favorit' }}
+          </button>
         </div>
 
         <p v-if="shoppingMessage" class="status-text success">{{ shoppingMessage }}</p>
         <p v-if="shoppingError" class="status-text error">{{ shoppingError }}</p>
         <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
         <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
+        <p v-if="favoriteError" class="status-text error">{{ favoriteError }}</p>
       </div>
 
       <section class="detail-section">

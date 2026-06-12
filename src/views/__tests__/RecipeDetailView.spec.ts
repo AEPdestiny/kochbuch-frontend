@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import RecipeDetailView from '@/views/RecipeDetailView.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { restaurantApi } from '@/shared/api/restaurantApi'
+import { favoriteApi } from '@/shared/api/favoriteApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
@@ -37,6 +38,14 @@ vi.mock('@/shared/api/restaurantApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/favoriteApi', () => ({
+  favoriteApi: {
+    getExternalFavorites: vi.fn(),
+    addExternalFavorite: vi.fn(),
+    removeExternalFavorite: vi.fn(),
+  },
+}))
+
 vi.mock('@/shared/api/mealPlanApi', () => ({
   mealPlanApi: {
     getWeek: vi.fn(),
@@ -60,6 +69,15 @@ describe('RecipeDetailView', () => {
     vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue(externalDetail())
     vi.mocked(recipeApi.getRecipe).mockResolvedValue(localRecipe())
     vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
+    vi.mocked(favoriteApi.addExternalFavorite).mockResolvedValue({
+      id: 1,
+      externalRecipeId: '716429',
+      externalTitle: 'Pasta with Garlic',
+      externalImageUrl: 'https://example.com/pasta.jpg',
+      externalSource: 'SPOONACULAR',
+    })
+    vi.mocked(favoriteApi.removeExternalFavorite).mockResolvedValue()
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
       weekStart: '2026-06-08',
       weekEnd: '2026-06-14',
@@ -234,6 +252,22 @@ describe('RecipeDetailView', () => {
       customTitle: 'Pasta with Garlic',
     })
     expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
+  })
+
+  it('toggles external recipe favorite', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.findAll('.secondary-button').at(2)!.trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.addExternalFavorite).toHaveBeenCalledWith({
+      externalRecipeId: '716429',
+      externalTitle: 'Pasta with Garlic',
+      externalImageUrl: 'https://example.com/pasta.jpg',
+      externalSource: 'SPOONACULAR',
+    })
   })
 
   it('uses a safe fallback for the back button when no history exists', async () => {

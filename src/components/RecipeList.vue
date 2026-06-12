@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { favoriteApi } from '@/shared/api/favoriteApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import type { Recipe } from '@/types/recipe'
 
 const props = defineProps<{ search?: string }>()
 const { t } = useI18n()
+const router = useRouter()
 
 const recipes = ref<Recipe[]>([])
+const externalFavorites = ref<Recipe[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const loginRequired = ref(false)
@@ -41,7 +45,12 @@ const loadRecipes = async () => {
   }
 
   try {
-    recipes.value = await recipeApi.getMyRecipes()
+    const [ownRecipes, externalFavoriteRecipes] = await Promise.all([
+      recipeApi.getMyRecipes(),
+      loadExternalFavoriteRecipes(),
+    ])
+    recipes.value = ownRecipes
+    externalFavorites.value = externalFavoriteRecipes
     error.value = null
     loginRequired.value = false
   } catch (err: unknown) {
@@ -49,6 +58,31 @@ const loadRecipes = async () => {
     loginRequired.value = err instanceof ApiClientError && err.status === 401
   } finally {
     loading.value = false
+  }
+}
+
+const loadExternalFavoriteRecipes = async (): Promise<Recipe[]> => {
+  try {
+    const favorites = await favoriteApi.getExternalFavorites()
+    return favorites.map(favorite => ({
+      id: favorite.externalRecipeId,
+      externalId: favorite.externalRecipeId,
+      source: 'spoonacular',
+      title: favorite.externalTitle,
+      imageUrl: favorite.externalImageUrl ?? '',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 0,
+      difficulty: '',
+      category: 'Extern',
+      rating: 0,
+      ingredients: 'Externes API-Rezept',
+      instructions: '',
+      favorite: true,
+      published: false,
+    }))
+  } catch {
+    return []
   }
 }
 
@@ -254,9 +288,16 @@ const filtered = computed(() => {
   )
 })
 
-const favorites = computed(() => recipes.value.filter(r => r.favorite))
+const favorites = computed(() => [
+  ...recipes.value.filter(r => r.favorite),
+  ...externalFavorites.value,
+])
 
 const openFavoriteDetails = (r: Recipe) => {
+  if (r.source === 'spoonacular' || r.source === 'external') {
+    router.push(`/recipe/external/${r.externalId ?? r.id}`)
+    return
+  }
   selectedFavorite.value = r
 }
 

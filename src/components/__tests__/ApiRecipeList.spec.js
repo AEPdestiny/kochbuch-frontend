@@ -5,6 +5,7 @@ import { recipeApi } from '@/shared/api/recipeApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { profileApi } from '@/shared/api/profileApi'
+import { favoriteApi } from '@/shared/api/favoriteApi'
 import { i18n, setLocale } from '@/i18n'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 
@@ -40,6 +41,14 @@ vi.mock('@/shared/api/profileApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/favoriteApi', () => ({
+  favoriteApi: {
+    getExternalFavorites: vi.fn(),
+    addExternalFavorite: vi.fn(),
+    removeExternalFavorite: vi.fn(),
+  },
+}))
+
 describe('ApiRecipeList.vue', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
@@ -65,6 +74,9 @@ describe('ApiRecipeList.vue', () => {
       maxPrepTimeMinutes: null,
       calorieGoal: null,
     })
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
+    vi.mocked(favoriteApi.addExternalFavorite).mockResolvedValue({ externalRecipeId: '716429' })
+    vi.mocked(favoriteApi.removeExternalFavorite).mockResolvedValue()
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
       weekStart: '2026-06-08',
       weekEnd: '2026-06-14',
@@ -198,6 +210,27 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith(expect.any(String), 'breakfast', 10)
+  })
+
+  it('favorites external recipes from home through backend api', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('.favorite-button').trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.addExternalFavorite).toHaveBeenCalledWith({
+      externalRecipeId: '716429',
+      externalTitle: 'External Pasta',
+      externalImageUrl: '',
+      externalSource: 'SPOONACULAR',
+    })
+    expect(wrapper.text()).toContain('♥ Favorit')
   })
 
   it('shows translated English home UI while keeping recipe data unchanged', async () => {

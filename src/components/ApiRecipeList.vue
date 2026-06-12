@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { favoriteApi } from '@/shared/api/favoriteApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { profileApi } from '@/shared/api/profileApi'
@@ -30,6 +31,7 @@ const recipes = ref<DisplayRecipe[]>([])
 const allExternal = ref<Recipe[]>([])
 const ownPublished = ref<Recipe[]>([])
 const pantryIngredients = ref<string[]>([])
+const externalFavoriteIds = ref<Set<string>>(new Set())
 const loading = ref(true)
 const error = ref<string | null>(null)
 const mealPlanModalOpen = ref(false)
@@ -288,6 +290,13 @@ async function loadPersonalization() {
       .map(item => item.name.toLowerCase())
       .filter(Boolean)
   }
+
+  try {
+    const favorites = await favoriteApi.getExternalFavorites()
+    externalFavoriteIds.value = new Set(favorites.map(favorite => favorite.externalRecipeId))
+  } catch {
+    externalFavoriteIds.value = new Set()
+  }
 }
 
 function currentFilters(): RecipeSearchFilters {
@@ -378,6 +387,47 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   const pantryHit = pantryIngredients.value.find(ingredient => text.includes(ingredient))
   if (pantryHit) reasons.push(t('home.reasons.pantry', { ingredient: pantryHit }))
   return reasons.slice(0, 3)
+}
+
+function externalFavoriteId(recipe: DisplayRecipe) {
+  return String(recipe.externalId ?? recipe.id)
+}
+
+function isExternalFavorite(recipe: DisplayRecipe) {
+  return recipe.source === 'external' && externalFavoriteIds.value.has(externalFavoriteId(recipe))
+}
+
+async function toggleExternalFavorite(recipe: DisplayRecipe) {
+  if (recipe.source !== 'external') {
+    return
+  }
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = 'Bitte melde dich an, um API-Rezepte zu favorisieren.'
+    return
+  }
+
+  const id = externalFavoriteId(recipe)
+  try {
+    if (externalFavoriteIds.value.has(id)) {
+      await favoriteApi.removeExternalFavorite('SPOONACULAR', id)
+      const next = new Set(externalFavoriteIds.value)
+      next.delete(id)
+      externalFavoriteIds.value = next
+      return
+    }
+
+    await favoriteApi.addExternalFavorite({
+      externalRecipeId: id,
+      externalTitle: recipe.title,
+      externalImageUrl: recipe.imageUrl,
+      externalSource: 'SPOONACULAR',
+    })
+    externalFavoriteIds.value = new Set([...externalFavoriteIds.value, id])
+  } catch (e: unknown) {
+    error.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : 'Favorit konnte nicht gespeichert werden.'
+  }
 }
 
 function startOfCurrentWeek() {
@@ -479,6 +529,15 @@ function formatDate(date: Date) {
 
           <div class="card-content">
             <h3 class="card-title">{{ r.title }}</h3>
+            <button
+              v-if="r.source === 'external'"
+              type="button"
+              class="favorite-button"
+              :aria-pressed="isExternalFavorite(r)"
+              @click.stop="toggleExternalFavorite(r)"
+            >
+              {{ isExternalFavorite(r) ? '♥ Favorit' : '♡ Favorit' }}
+            </button>
 
             <p class="card-meta">
               <span
@@ -730,6 +789,19 @@ function formatDate(date: Date) {
   font-weight: 800;
   color: #2b1b23;
   margin-bottom: 8px;
+}
+
+.favorite-button {
+  border: 1px solid #f6d9ea;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #b96593;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  padding: 6px 10px;
 }
 
 .card-meta {

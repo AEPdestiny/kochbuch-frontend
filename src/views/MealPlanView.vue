@@ -27,6 +27,7 @@ const error = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 const week = ref<MealPlanWeekResponse | null>(null)
 const recipes = ref<RecipeResponse[]>([])
+const planningMode = ref<'manual' | 'swipe'>('manual')
 const selectedRecipeBySlot = ref<Record<string, string>>({})
 const customTitleBySlot = ref<Record<string, string>>({})
 const suggestionsBySlot = ref<Record<string, SlotSuggestion[]>>({})
@@ -66,11 +67,6 @@ const weekDays = computed<WeekDay[]>(() => {
     labelKey: `mealPlan.days.${key}`,
     date: addDays(weekStart, index),
   }))
-})
-
-const totalCalories = computed(() => {
-  const entries = week.value?.entries ?? []
-  return entries.reduce((sum, entry) => sum + (entry.recipe?.calories ?? 0), 0)
 })
 
 const currentSwipeRecipe = computed(() => swipeSuggestions.value[swipeIndex.value] ?? null)
@@ -169,6 +165,12 @@ function entryFor(date: string, slot: MealSlot = 'dinner') {
   return week.value?.entries.find(entry => entry.plannedDate === date && normalizedSlot(entry) === slot)
 }
 
+function caloriesForDay(date: string) {
+  return (week.value?.entries ?? [])
+    .filter(entry => entry.plannedDate === date)
+    .reduce((sum, entry) => sum + (entry.recipe?.calories ?? 0), 0)
+}
+
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
   selectedRecipeBySlot.value = Object.fromEntries(
     entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), entry.recipe ? String(entry.recipe.id) : '']),
@@ -265,7 +267,7 @@ async function loadSwipeSuggestions() {
   swipeMessage.value = null
   swipeIndex.value = 0
   try {
-    swipeSuggestions.value = await recipeApi.getExternalRecipes(undefined, swipeFilters())
+    swipeSuggestions.value = (await recipeApi.getExternalRecipes(undefined, swipeFilters())).slice(0, 20)
     if (swipeSuggestions.value.length === 0) {
       swipeError.value = 'Keine Vorschläge gefunden.'
     }
@@ -368,14 +370,23 @@ function formatDate(date: Date) {
     <section v-else class="week-grid" :aria-label="t('mealPlan.title')">
       <p v-if="actionError" class="status-text error full-width">{{ actionError }}</p>
       <p v-if="recipes.length === 0" class="status-text full-width">{{ t('mealPlan.empty.noRecipes') }}</p>
-      <div class="week-summary full-width">
-        <span>{{ t('mealPlan.summary.totalCalories', { calories: totalCalories }) }}</span>
+      <div class="mode-switch full-width" aria-label="Planungsmodus">
+        <button type="button" :class="{ active: planningMode === 'manual' }" @click="planningMode = 'manual'">
+          Manuell planen
+        </button>
+        <button type="button" :class="{ active: planningMode === 'swipe' }" @click="planningMode = 'swipe'">
+          Swipe planen
+        </button>
+      </div>
+
+      <div v-if="planningMode === 'manual'" class="week-summary full-width">
+        <span>Woche manuell planen</span>
         <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
           {{ t('mealPlan.actions.clearWeek') }}
         </button>
       </div>
 
-      <section class="swipe-planner full-width" aria-label="Swipe-Planung">
+      <section v-if="planningMode === 'swipe'" class="swipe-planner full-width" aria-label="Swipe-Planung">
         <div class="swipe-controls">
           <div>
             <h2>Swipe-Planung</h2>
@@ -435,9 +446,13 @@ function formatDate(date: Date) {
         </article>
       </section>
 
+      <template v-if="planningMode === 'manual'">
       <article v-for="day in weekDays" :key="day.date" class="day-card">
         <div class="day-card-header">
-          <h2>{{ t(day.labelKey) }}</h2>
+          <div>
+            <h2>{{ t(day.labelKey) }}</h2>
+            <span>{{ caloriesForDay(day.date) }} kcal</span>
+          </div>
           <span>{{ day.date }}</span>
         </div>
 
@@ -491,6 +506,7 @@ function formatDate(date: Date) {
           </div>
         </div>
       </article>
+      </template>
     </section>
   </section>
 </template>
@@ -534,6 +550,30 @@ function formatDate(date: Date) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 16px;
+}
+
+.mode-switch {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+}
+
+.mode-switch button {
+  background: #ffffff;
+  border: 1.5px solid #c3e7e1;
+  border-radius: 16px;
+  color: #2f6f62;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  padding: 18px;
+}
+
+.mode-switch button.active {
+  background: #cc7da9;
+  border-color: #cc7da9;
+  color: #ffffff;
 }
 
 .day-card {

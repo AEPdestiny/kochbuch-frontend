@@ -54,6 +54,7 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.find('form.shopping-list-form').exists()).toBe(true)
     expect(wrapper.find('button[type="submit"]').text()).toBe('Hinzufügen')
+    expect(wrapper.find('form.shopping-list-form input[type="checkbox"]').exists()).toBe(false)
   })
 
   it('does not show create form without login', async () => {
@@ -156,7 +157,7 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('1 Dose')
   })
 
-  it('shows checked status', async () => {
+  it('shows item checkbox and no status text', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
       item('Tomatoes', 3, 'piece', 'Vegetables', false),
@@ -166,8 +167,38 @@ describe('ShoppingListView', () => {
     const wrapper = mount(ShoppingListView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Offen')
-    expect(wrapper.text()).toContain('Erledigt')
+    expect(wrapper.findAll('.item-check input[type="checkbox"]')).toHaveLength(2)
+    const itemGroups = wrapper.findAll('.shopping-group').filter((group) => !group.classes().includes('total-shopping-list'))
+    expect(itemGroups.map((group) => group.text()).join(' ')).not.toContain('Offen')
+    expect(itemGroups.map((group) => group.text()).join(' ')).not.toContain('Erledigt')
+    expect(wrapper.findAll('.shopping-item').at(1)!.classes()).toContain('checked')
+  })
+
+  it('toggles item checkbox through update api', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomatoes', 3, 'piece', 'Vegetables', false),
+    ])
+    vi.mocked(shoppingListApi.updateShoppingListItem).mockResolvedValue(
+      item('Tomatoes', 3, 'piece', 'Vegetables', true),
+    )
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('.item-check input[type="checkbox"]').setValue(true)
+    await flushPromises()
+
+    expect(shoppingListApi.updateShoppingListItem).toHaveBeenCalledWith('Tomatoes', {
+      name: 'Tomatoes',
+      quantity: 3,
+      unit: 'piece',
+      category: 'Vegetables',
+      checked: true,
+      recipeId: null,
+      recipeTitle: null,
+    })
+    expect(wrapper.find('.shopping-item').classes()).toContain('checked')
   })
 
   it('shows delete button with login', async () => {
@@ -258,7 +289,7 @@ describe('ShoppingListView', () => {
       checked: true,
     })
     expect(wrapper.text()).toContain('Cherry Tomatoes')
-    expect(wrapper.text()).toContain('Erledigt')
+    expect(wrapper.find('.shopping-item').classes()).toContain('checked')
     expect(wrapper.find('form.edit-form').exists()).toBe(false)
   })
 

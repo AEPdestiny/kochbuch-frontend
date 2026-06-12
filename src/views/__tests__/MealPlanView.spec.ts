@@ -79,9 +79,32 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Abendessen')
     expect(wrapper.text()).toContain('Snack')
     expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
-    expect(wrapper.text()).toContain('Swipe-Planung')
-    expect(wrapper.text()).toContain('Vorschläge laden')
+    expect(wrapper.text()).toContain('Manuell planen')
+    expect(wrapper.text()).toContain('Swipe planen')
+    expect(wrapper.text()).not.toContain('Gesamt-Kalorien')
     expect(wrapper.text()).toContain('Pasta')
+    expect(wrapper.text()).toContain('600 kcal')
+  })
+
+  it('switches between manual and swipe planning', async () => {
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.findAll('.day-card')).toHaveLength(7)
+    expect(wrapper.find('.swipe-planner').exists()).toBe(false)
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+
+    expect(wrapper.findAll('.day-card')).toHaveLength(0)
+    expect(wrapper.find('.swipe-planner').exists()).toBe(true)
+
+    await wrapper.findAll('.mode-switch button').at(0)!.trigger('click')
+
+    expect(wrapper.findAll('.day-card')).toHaveLength(7)
+    expect(wrapper.find('.swipe-planner').exists()).toBe(false)
   })
 
   it('shows planned recipe and empty day state', async () => {
@@ -216,6 +239,7 @@ describe('MealPlanView', () => {
     await flushPromises()
     await flushPromises()
 
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
 
@@ -241,6 +265,7 @@ describe('MealPlanView', () => {
     await flushPromises()
     await flushPromises()
 
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
     expect(wrapper.text()).toContain('Pizza')
@@ -269,6 +294,7 @@ describe('MealPlanView', () => {
     await flushPromises()
     await flushPromises()
 
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
     await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
@@ -288,6 +314,7 @@ describe('MealPlanView', () => {
     await flushPromises()
     await flushPromises()
 
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
 
@@ -302,6 +329,7 @@ describe('MealPlanView', () => {
     await flushPromises()
     await flushPromises()
 
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
 
@@ -379,6 +407,7 @@ function recipe(id: number, title: string, overrides: Partial<RecipeResponse> = 
     instructions: 'cook',
     favorite: false,
     published: true,
+    calories: 600,
     ...overrides,
   }
 }

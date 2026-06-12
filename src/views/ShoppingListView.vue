@@ -158,6 +158,30 @@ async function deleteShoppingListItem(id: number | string) {
   }
 }
 
+async function toggleChecked(item: ShoppingListItem) {
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = t('shoppingList.errors.loginRequired')
+    loginRequired.value = true
+    return
+  }
+
+  try {
+    const updated = await shoppingListApi.updateShoppingListItem(item.id, {
+      name: item.name,
+      quantity: item.quantity ?? null,
+      unit: item.unit ?? null,
+      category: item.category ?? null,
+      checked: !item.checked,
+      recipeId: item.recipeId ?? null,
+      recipeTitle: item.recipeTitle ?? null,
+    })
+    items.value = items.value.map(existing => (existing.id === item.id ? updated : existing))
+  } catch (e: unknown) {
+    error.value = toUpdateErrorMessage(e)
+    loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
 function toDeleteErrorMessage(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
@@ -371,11 +395,6 @@ function formatRawQuantity(item: ShoppingListItem) {
           <input v-model="newCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
         </div>
 
-        <label class="checkbox-field">
-          <input v-model="newChecked" type="checkbox" />
-          <span>{{ t('shoppingList.form.checked') }}</span>
-        </label>
-
         <button type="submit" class="submit-btn">{{ t('shoppingList.actions.create') }}</button>
       </form>
 
@@ -396,6 +415,14 @@ function formatRawQuantity(item: ShoppingListItem) {
               class="shopping-item"
               :class="{ checked: item.checked }"
             >
+              <label class="item-check">
+                <input
+                  type="checkbox"
+                  :checked="item.checked"
+                  aria-label="Zutat erledigt"
+                  @change="toggleChecked(item)"
+                />
+              </label>
               <div>
                 <h3>{{ item.name }}</h3>
                 <p v-if="item.category" class="item-meta">{{ item.category }}</p>
@@ -407,9 +434,6 @@ function formatRawQuantity(item: ShoppingListItem) {
                   </span>
                   <span v-if="item.unit">{{ item.unit }}</span>
                 </p>
-                <span class="checked-status">
-                  {{ item.checked ? t('shoppingList.status.done') : t('shoppingList.status.open') }}
-                </span>
                 <button type="button" class="edit-btn" @click="startEdit(item)">
                   {{ t('shoppingList.actions.edit') }}
                 </button>
@@ -528,7 +552,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
 .shopping-list-form {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto auto;
+  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto;
   gap: 12px;
   align-items: end;
   border: 1px solid #c3e7e1;
@@ -611,7 +635,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
 .shopping-item {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
   border: 1px solid #c3e7e1;
@@ -622,6 +646,20 @@ function formatRawQuantity(item: ShoppingListItem) {
 
 .shopping-item.checked {
   opacity: 0.72;
+}
+
+.shopping-item.checked h3 {
+  text-decoration: line-through;
+}
+
+.item-check {
+  align-self: start;
+  padding-top: 4px;
+}
+
+.item-check input {
+  width: 18px;
+  height: 18px;
 }
 
 .shopping-item h3 {
@@ -647,20 +685,6 @@ function formatRawQuantity(item: ShoppingListItem) {
   display: inline-flex;
   gap: 4px;
   white-space: nowrap;
-}
-
-.checked-status {
-  border-radius: 999px;
-  background: #e0f5f2;
-  color: #26b6b8;
-  font-size: 0.84rem;
-  font-weight: 800;
-  padding: 5px 10px;
-}
-
-.shopping-item.checked .checked-status {
-  background: #fbe5f0;
-  color: #cc7da9;
 }
 
 .edit-btn,
