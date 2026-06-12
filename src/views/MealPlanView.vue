@@ -12,6 +12,12 @@ type WeekDay = {
   date: string
 }
 
+type SlotSuggestion = {
+  id: number | string
+  title: string
+  source: 'dishly' | 'external'
+}
+
 const { t } = useI18n()
 
 const loading = ref(true)
@@ -20,6 +26,11 @@ const actionError = ref<string | null>(null)
 const week = ref<MealPlanWeekResponse | null>(null)
 const recipes = ref<RecipeResponse[]>([])
 const selectedRecipeBySlot = ref<Record<string, string>>({})
+const customTitleBySlot = ref<Record<string, string>>({})
+const suggestionsBySlot = ref<Record<string, SlotSuggestion[]>>({})
+const suggestionLoadingBySlot = ref<Record<string, boolean>>({})
+const suggestionNoticeBySlot = ref<Record<string, string>>({})
+const suggestionTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
 const dayKeys = [
   'monday',
@@ -49,7 +60,7 @@ const weekDays = computed<WeekDay[]>(() => {
 
 const totalCalories = computed(() => {
   const entries = week.value?.entries ?? []
-  return entries.reduce((sum, entry) => sum + (entry.recipe.calories ?? 0), 0)
+  return entries.reduce((sum, entry) => sum + (entry.recipe?.calories ?? 0), 0)
 })
 
 onMounted(() => {
@@ -79,16 +90,22 @@ async function loadData() {
 async function saveDay(date: string, slot: MealSlot = 'dinner') {
   const key = slotKey(date, slot)
   const recipeId = selectedRecipeBySlot.value[key]
-  if (!recipeId) {
-    actionError.value = t('mealPlan.errors.noRecipeSelected')
+  const customTitle = customTitleBySlot.value[key]?.trim()
+  if (!recipeId && !customTitle) {
+    actionError.value = 'Bitte wähle ein Rezept oder gib einen Freitext ein.'
     return
   }
 
   try {
     actionError.value = null
-    const saved = await mealPlanApi.setSlot(date, slot, Number(recipeId))
+    const saved = recipeId
+      ? await mealPlanApi.setSlot(date, slot, Number(recipeId))
+      : await mealPlanApi.setSlot(date, slot, { customTitle })
     upsertEntry(saved)
-    selectedRecipeBySlot.value[key] = String(saved.recipe.id)
+    selectedRecipeBySlot.value[key] = saved.recipe ? String(saved.recipe.id) : ''
+    customTitleBySlot.value[key] = entryTitle(saved)
+    suggestionsBySlot.value[key] = []
+    suggestionNoticeBySlot.value[key] = ''
   } catch {
     actionError.value = t('mealPlan.errors.save')
   }
@@ -102,6 +119,7 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
       week.value.entries = week.value.entries.filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
     }
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
+    customTitleBySlot.value[slotKey(date, slot)] = ''
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
@@ -119,6 +137,7 @@ async function clearWeek() {
       week.value.entries = []
     }
     selectedRecipeBySlot.value = {}
+    customTitleBySlot.value = {}
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
@@ -130,7 +149,10 @@ function entryFor(date: string, slot: MealSlot = 'dinner') {
 
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
   selectedRecipeBySlot.value = Object.fromEntries(
-    entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), String(entry.recipe.id)]),
+    entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), entry.recipe ? String(entry.recipe.id) : '']),
+  )
+  customTitleBySlot.value = Object.fromEntries(
+    entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), entryTitle(entry)]),
   )
 }
 
@@ -150,11 +172,64 @@ function slotKey(date: string, slot: MealSlot) {
   return `${date}-${slot}`
 }
 
+function entryTitle(entry: MealPlanEntryResponse) {
+  return entry.recipe?.title ?? entry.customTitle ?? ''
+}
+
 function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
   if (entry.mealSlot === 'breakfast' || entry.mealSlot === 'lunch' || entry.mealSlot === 'snack') {
     return entry.mealSlot
   }
   return 'dinner'
+}
+
+function onSlotSearch(date: string, slot: MealSlot) {
+  const key = slotKey(date, slot)
+  selectedRecipeBySlot.value[key] = ''
+  suggestionNoticeBySlot.value[key] = ''
+  clearTimeout(suggestionTimers[key])
+
+  const query = customTitleBySlot.value[key]?.trim() ?? ''
+  if (query.length < 2) {
+    suggestionsBySlot.value[key] = []
+    suggestionLoadingBySlot.value[key] = false
+    return
+  }
+
+  suggestionLoadingBySlot.value[key] = true
+  suggestionTimers[key] = setTimeout(async () => {
+    const localSuggestions = recipes.value
+      .filter(recipe => recipe.title.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 5)
+      .map(recipe => ({ id: recipe.id, title: recipe.title, source: 'dishly' as const }))
+    try {
+      const externalSuggestions = (await recipeApi.getExternalRecipes(query))
+        .slice(0, 5)
+        .map(recipe => ({
+          id: recipe.externalId ?? recipe.id,
+          title: recipe.title,
+          source: 'external' as const,
+        }))
+      suggestionsBySlot.value[key] = [...localSuggestions, ...externalSuggestions].slice(0, 8)
+    } catch {
+      suggestionsBySlot.value[key] = localSuggestions
+    } finally {
+      suggestionLoadingBySlot.value[key] = false
+    }
+  }, 300)
+}
+
+function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggestion) {
+  const key = slotKey(date, slot)
+  customTitleBySlot.value[key] = suggestion.title
+  suggestionsBySlot.value[key] = []
+  if (suggestion.source === 'dishly') {
+    selectedRecipeBySlot.value[key] = String(suggestion.id)
+    suggestionNoticeBySlot.value[key] = ''
+    return
+  }
+  selectedRecipeBySlot.value[key] = ''
+  suggestionNoticeBySlot.value[key] = 'Externe Vorschläge werden aktuell als Freitext gespeichert.'
 }
 
 function startOfCurrentWeek() {
@@ -211,22 +286,39 @@ function formatDate(date: Date) {
           <h3>{{ t(slot.labelKey) }}</h3>
           <div v-if="entryFor(day.date, slot.key)" class="planned-recipe">
             <span class="planned-label">{{ t('mealPlan.plannedRecipe') }}</span>
-            <strong>{{ entryFor(day.date, slot.key)?.recipe.title }}</strong>
+            <strong>{{ entryFor(day.date, slot.key) ? entryTitle(entryFor(day.date, slot.key)!) : '' }}</strong>
           </div>
           <p v-else class="empty-day">{{ t('mealPlan.empty.day') }}</p>
 
           <label class="recipe-select">
-            <span>{{ t('mealPlan.form.recipe') }}</span>
-            <select v-model="selectedRecipeBySlot[slotKey(day.date, slot.key)]" :disabled="recipes.length === 0">
-              <option value="">{{ t('mealPlan.form.chooseRecipe') }}</option>
-              <option v-for="recipe in recipes" :key="recipe.id" :value="String(recipe.id)">
-                {{ recipe.title }}
-              </option>
-            </select>
+            <span>Rezept suchen oder Freitext eingeben</span>
+            <input
+              v-model="customTitleBySlot[slotKey(day.date, slot.key)]"
+              type="text"
+              placeholder="z. B. Sushi"
+              @input="onSlotSearch(day.date, slot.key)"
+            />
           </label>
+          <p v-if="suggestionLoadingBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
+            Vorschläge werden geladen...
+          </p>
+          <ul v-if="suggestionsBySlot[slotKey(day.date, slot.key)]?.length" class="suggestion-list">
+            <li
+              v-for="suggestion in suggestionsBySlot[slotKey(day.date, slot.key)]"
+              :key="`${suggestion.source}-${suggestion.id}`"
+            >
+              <button type="button" @click="chooseSuggestion(day.date, slot.key, suggestion)">
+                <span>{{ suggestion.title }}</span>
+                <small>{{ suggestion.source === 'dishly' ? 'Dishly-Rezept' : 'Externer Vorschlag' }}</small>
+              </button>
+            </li>
+          </ul>
+          <p v-if="suggestionNoticeBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
+            {{ suggestionNoticeBySlot[slotKey(day.date, slot.key)] }}
+          </p>
 
           <div class="actions">
-            <button type="button" class="primary-button" :disabled="recipes.length === 0" @click="saveDay(day.date, slot.key)">
+            <button type="button" class="primary-button" @click="saveDay(day.date, slot.key)">
               {{ entryFor(day.date, slot.key) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
             </button>
             <button
@@ -358,13 +450,44 @@ function formatDate(date: Date) {
   font-weight: 700;
 }
 
-.recipe-select select {
+.recipe-select select,
+.recipe-select input {
   min-height: 40px;
   border: 1.5px solid #c3e7e1;
   border-radius: 8px;
   padding: 8px 10px;
   background: #ffffff;
   font: inherit;
+}
+
+.suggestion-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.suggestion-list button {
+  background: #ffffff;
+  border: 1px solid #d6eee9;
+  border-radius: 8px;
+  color: #2b1b23;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.suggestion-list small,
+.suggestion-state {
+  color: #486b68;
+  font-size: 0.82rem;
+  margin: 0;
 }
 
 .actions {

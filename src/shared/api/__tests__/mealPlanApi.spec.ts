@@ -74,6 +74,18 @@ describe('mealPlanApi', () => {
     expect(result).toEqual(entry)
   })
 
+  it('setSlot sends customTitle request body', async () => {
+    const entry = { ...entryResponse('2026-06-03'), recipe: null, customTitle: 'Sushi frei' }
+    vi.mocked(apiClient.put).mockResolvedValue({ data: entry })
+
+    const result = await mealPlanApi.setSlot('2026-06-03', 'snack', { customTitle: 'Sushi frei' })
+
+    expect(apiClient.put).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack', {
+      customTitle: 'Sushi frei',
+    })
+    expect(result).toEqual(entry)
+  })
+
   it('deleteSlot calls DELETE /meal-plan/days/{date}/slots/{slot}', async () => {
     vi.mocked(apiClient.delete).mockResolvedValue({})
 

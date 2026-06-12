@@ -301,7 +301,10 @@ async function addToMealPlan(date: string, slot: MealSlot) {
 function plannedTitle(date: string, slot: MealSlot) {
   return plannedEntries.value.find(entry =>
     entry.plannedDate === date && normalizedSlot(entry) === slot,
-  )?.recipe.title
+  )?.recipe?.title
+    ?? plannedEntries.value.find(entry =>
+      entry.plannedDate === date && normalizedSlot(entry) === slot,
+    )?.customTitle
 }
 
 function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {

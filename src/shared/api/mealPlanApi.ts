@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient'
 import type {
+  MealPlanEntryRequest,
   MealPlanEntryResponse,
   MealSlot,
   MealPlanWeekResponse,
@@ -13,10 +14,11 @@ export const mealPlanApi = {
     return response.data
   },
 
-  async setDay(date: string, recipeId: number): Promise<MealPlanEntryResponse> {
-    const response = await apiClient.put<MealPlanEntryResponse>(`/meal-plan/days/${date}`, {
-      recipeId,
-    })
+  async setDay(date: string, recipeIdOrRequest: number | MealPlanEntryRequest): Promise<MealPlanEntryResponse> {
+    const response = await apiClient.put<MealPlanEntryResponse>(
+      `/meal-plan/days/${date}`,
+      toRequest(recipeIdOrRequest),
+    )
     return response.data
   },
 
@@ -24,14 +26,22 @@ export const mealPlanApi = {
     await apiClient.delete(`/meal-plan/days/${date}`)
   },
 
-  async setSlot(date: string, slot: MealSlot, recipeId: number): Promise<MealPlanEntryResponse> {
-    const response = await apiClient.put<MealPlanEntryResponse>(`/meal-plan/days/${date}/slots/${slot}`, {
-      recipeId,
-    })
+  async setSlot(date: string, slot: MealSlot, recipeIdOrRequest: number | MealPlanEntryRequest): Promise<MealPlanEntryResponse> {
+    const response = await apiClient.put<MealPlanEntryResponse>(
+      `/meal-plan/days/${date}/slots/${slot}`,
+      toRequest(recipeIdOrRequest),
+    )
     return response.data
   },
 
   async deleteSlot(date: string, slot: MealSlot): Promise<void> {
     await apiClient.delete(`/meal-plan/days/${date}/slots/${slot}`)
   },
+}
+
+function toRequest(recipeIdOrRequest: number | MealPlanEntryRequest): MealPlanEntryRequest {
+  if (typeof recipeIdOrRequest === 'number') {
+    return { recipeId: recipeIdOrRequest }
+  }
+  return recipeIdOrRequest
 }

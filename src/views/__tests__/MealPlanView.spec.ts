@@ -1,5 +1,5 @@
 import { mount, flushPromises } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
@@ -20,6 +20,7 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getMyRecipes: vi.fn(),
+    getExternalRecipes: vi.fn(),
   },
 }))
 
@@ -32,9 +33,16 @@ describe('MealPlanView', () => {
       recipe(1, 'Pasta'),
       recipe(2, 'Soup'),
     ])
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Sushi Bowl'),
+    ])
   })
 
-  it('renders seven week cards and own recipes in selects', async () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('renders seven week cards and search fields', async () => {
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
     })
@@ -49,8 +57,8 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Mittagessen')
     expect(wrapper.text()).toContain('Abendessen')
     expect(wrapper.text()).toContain('Snack')
+    expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
     expect(wrapper.text()).toContain('Pasta')
-    expect(wrapper.text()).toContain('Soup')
   })
 
   it('shows planned recipe and empty day state', async () => {
@@ -65,7 +73,8 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Noch kein Rezept geplant.')
   })
 
-  it('sets a recipe for a day', async () => {
+  it('sets an own recipe suggestion for a day', async () => {
+    vi.useFakeTimers()
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(2, 'Soup'), 'breakfast'))
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -74,12 +83,63 @@ describe('MealPlanView', () => {
 
     const tuesdayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Dienstag'))!
-    await tuesdayCard.find('select').setValue('2')
+    await tuesdayCard.find('input').setValue('sou')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+    await tuesdayCard.find('.suggestion-list button').trigger('click')
     await tuesdayCard.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', 2)
     expect(wrapper.text()).toContain('Soup')
+    vi.useRealTimers()
+  })
+
+  it('sets custom title when no own recipe is selected', async () => {
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 3,
+      plannedDate: '2026-06-02',
+      mealSlot: 'breakfast',
+      recipe: null,
+      customTitle: 'Sushi frei',
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Dienstag'))!
+    await tuesdayCard.find('input').setValue('Sushi frei')
+    await tuesdayCard.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
+      customTitle: 'Sushi frei',
+    })
+    expect(wrapper.text()).toContain('Sushi frei')
+  })
+
+  it('uses external suggestions as custom text instead of fake recipe ids', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Dienstag'))!
+    await tuesdayCard.find('input').setValue('sushi')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    const externalButton = tuesdayCard.findAll('.suggestion-list button')
+      .find(button => button.text().includes('Externer Vorschlag'))!
+    await externalButton.trigger('click')
+
+    expect(wrapper.text()).toContain('Externe Vorschläge werden aktuell als Freitext gespeichert.')
+    expect((tuesdayCard.find('input').element as HTMLInputElement).value).toBe('Sushi Bowl')
+    vi.useRealTimers()
   })
 
   it('removes a planned recipe', async () => {
@@ -117,7 +177,7 @@ describe('MealPlanView', () => {
 
     expect(wrapper.text()).toContain('Meal Plan')
     expect(wrapper.text()).toContain('Monday')
-    expect(wrapper.text()).toContain('Choose a recipe')
+    expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
   })
 })
 
