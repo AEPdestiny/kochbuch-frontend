@@ -123,6 +123,39 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('Milk')
   })
 
+  it('keeps recipe groups and shows a combined total shopping list', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('Eier', 4, 'Stück', 'Recipe ingredient', false), recipeId: '1', recipeTitle: 'Rezept A' },
+      { ...item('eier', 6, 'Stück', 'Recipe ingredient', false), recipeId: '2', recipeTitle: 'Rezept B' },
+      { ...item('Mehl', 200, 'g', 'Recipe ingredient', false), recipeId: '1', recipeTitle: 'Rezept A' },
+      { ...item('Mehl', 300, 'g', 'Recipe ingredient', true), recipeId: '2', recipeTitle: 'Rezept B' },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Rezept A')
+    expect(wrapper.text()).toContain('Rezept B')
+    expect(wrapper.text()).toContain('Gesamte Einkaufsliste')
+    expect(wrapper.text()).toContain('10 Stück')
+    expect(wrapper.text()).toContain('500 g')
+  })
+
+  it('shows different units in total shopping list without unsafe calculation', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('Tomaten', 2, 'Stück', 'Recipe ingredient', false), recipeId: '1', recipeTitle: 'Rezept A' },
+      { ...item('Tomaten', 1, 'Dose', 'Recipe ingredient', false), recipeId: '2', recipeTitle: 'Rezept B' },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('2 Stück')
+    expect(wrapper.text()).toContain('1 Dose')
+  })
+
   it('shows checked status', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([

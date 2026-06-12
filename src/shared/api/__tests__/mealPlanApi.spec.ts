@@ -86,6 +86,26 @@ describe('mealPlanApi', () => {
     expect(result).toEqual(entry)
   })
 
+  it('setSlot trims customTitle before sending request body', async () => {
+    const entry = { ...entryResponse('2026-06-03'), recipe: null, customTitle: 'Sushi frei' }
+    vi.mocked(apiClient.put).mockResolvedValue({ data: entry })
+
+    await mealPlanApi.setSlot('2026-06-03', 'snack', { customTitle: '  Sushi frei  ' })
+
+    expect(apiClient.put).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack', {
+      customTitle: 'Sushi frei',
+    })
+  })
+
+  it('setSlot does not send invalid empty payloads', async () => {
+    await expect(mealPlanApi.setSlot('2026-06-03', 'snack', { customTitle: ' ' }))
+      .rejects.toThrow('recipeId oder customTitle fehlt.')
+    await expect(mealPlanApi.setSlot('2026-06-03', 'snack', 0))
+      .rejects.toThrow('recipeId oder customTitle fehlt.')
+
+    expect(apiClient.put).not.toHaveBeenCalled()
+  })
+
   it('deleteSlot calls DELETE /meal-plan/days/{date}/slots/{slot}', async () => {
     vi.mocked(apiClient.delete).mockResolvedValue({})
 

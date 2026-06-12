@@ -41,7 +41,23 @@ export const mealPlanApi = {
 
 function toRequest(recipeIdOrRequest: number | MealPlanEntryRequest): MealPlanEntryRequest {
   if (typeof recipeIdOrRequest === 'number') {
+    if (!Number.isFinite(recipeIdOrRequest) || recipeIdOrRequest <= 0) {
+      throw new Error('recipeId oder customTitle fehlt.')
+    }
     return { recipeId: recipeIdOrRequest }
   }
-  return recipeIdOrRequest
+
+  if (recipeIdOrRequest.recipeId !== null && recipeIdOrRequest.recipeId !== undefined) {
+    if (!Number.isFinite(recipeIdOrRequest.recipeId) || recipeIdOrRequest.recipeId <= 0) {
+      throw new Error('recipeId oder customTitle fehlt.')
+    }
+    return { recipeId: recipeIdOrRequest.recipeId }
+  }
+
+  const customTitle = recipeIdOrRequest.customTitle?.trim()
+  if (customTitle) {
+    return { customTitle }
+  }
+
+  throw new Error('recipeId oder customTitle fehlt.')
 }

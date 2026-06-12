@@ -2,7 +2,11 @@ import { mount, flushPromises, config } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { mealPlanApi } from '@/shared/api/mealPlanApi'
+import { pantryApi } from '@/shared/api/pantryApi'
+import { profileApi } from '@/shared/api/profileApi'
 import { i18n, setLocale } from '@/i18n'
+import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 
 const push = vi.fn()
 
@@ -17,15 +21,62 @@ vi.mock('@/shared/api/recipeApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/mealPlanApi', () => ({
+  mealPlanApi: {
+    getWeek: vi.fn(),
+    setSlot: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/api/pantryApi', () => ({
+  pantryApi: {
+    getPantryItems: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/api/profileApi', () => ({
+  profileApi: {
+    getPreferences: vi.fn(),
+  },
+}))
+
 describe('ApiRecipeList.vue', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    sessionStorage.clear()
     push.mockClear()
     setLocale('de')
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: [],
+      vegan: false,
+      vegetarian: false,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+    })
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-08',
+      weekEnd: '2026-06-14',
+      entries: [],
+    })
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 1,
+      plannedDate: '2026-06-08',
+      mealSlot: 'breakfast',
+      recipe: null,
+      customTitle: 'External Pasta',
+    })
   })
 
   afterEach(() => {
@@ -100,6 +151,53 @@ describe('ApiRecipeList.vue', () => {
     await wrapper.find('.recipe-card').trigger('click')
 
     expect(push).toHaveBeenCalledWith('/recipe/10')
+  })
+
+  it('opens meal plan modal from home and plans external recipe as customTitle', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('.meal-plan-card-button').trigger('click')
+    await flushPromises()
+    expect(mealPlanApi.getWeek).toHaveBeenCalled()
+    expect(wrapper.find('.meal-plan-modal').exists()).toBe(true)
+    expect(wrapper.findAll('.day-button')).toHaveLength(28)
+
+    await wrapper.find('.day-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith(expect.any(String), 'breakfast', {
+      customTitle: 'External Pasta',
+    })
+    expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
+  })
+
+  it('plans Dishly recipe from home with recipeId', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Published Pasta', 'noodles', 'Italian'),
+    ])
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 2,
+      plannedDate: '2026-06-08',
+      mealSlot: 'breakfast',
+      recipe: recipe(10, 'Published Pasta', 'noodles', 'Italian'),
+    })
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('.meal-plan-card-button').trigger('click')
+    await flushPromises()
+    await wrapper.find('.day-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith(expect.any(String), 'breakfast', 10)
   })
 
   it('shows translated English home UI while keeping recipe data unchanged', async () => {

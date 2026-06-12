@@ -34,6 +34,21 @@ const groupedItems = computed(() => {
   return Array.from(groups.entries()).map(([title, groupItems]) => ({ title, items: groupItems }))
 })
 
+const totalShoppingItems = computed(() => {
+  const groups = new Map<string, ShoppingListItem[]>()
+  for (const item of items.value) {
+    const key = normalizeIngredientName(item.name)
+    groups.set(key, [...(groups.get(key) ?? []), item])
+  }
+
+  return Array.from(groups.values()).map(groupItems => ({
+    name: displayIngredientName(groupItems[0]?.name ?? ''),
+    quantity: summarizeQuantity(groupItems),
+    openCount: groupItems.filter(item => !item.checked).length,
+    doneCount: groupItems.filter(item => item.checked).length,
+  }))
+})
+
 onMounted(() => {
   loadShoppingListItems()
 })
@@ -244,6 +259,80 @@ function toUpdateErrorMessage(e: unknown) {
 
   return t('shoppingList.errors.update')
 }
+
+function normalizeIngredientName(name: string) {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
+function displayIngredientName(name: string) {
+  return name.trim().replace(/\s+/g, ' ')
+}
+
+function summarizeQuantity(groupItems: ShoppingListItem[]) {
+  const quantityGroups = new Map<string, { amount: number; unit: string; displayUnit: string }>()
+  const fallbackParts: string[] = []
+
+  for (const item of groupItems) {
+    const quantity = item.quantity
+    const unit = normalizeUnit(item.unit ?? '')
+    if (typeof quantity === 'number' && Number.isFinite(quantity) && unit.canAdd) {
+      const existing = quantityGroups.get(unit.key) ?? {
+        amount: 0,
+        unit: unit.outputUnit,
+        displayUnit: unit.displayUnit,
+      }
+      existing.amount += quantity * unit.factor
+      quantityGroups.set(unit.key, existing)
+      continue
+    }
+
+    fallbackParts.push(formatRawQuantity(item))
+  }
+
+  const summedParts = Array.from(quantityGroups.values()).map(group => (
+    `${formatAmount(group.amount, group.unit)} ${group.displayUnit}`.trim()
+  ))
+
+  return [...summedParts, ...fallbackParts].filter(Boolean).join(' + ') || 'ohne Mengenangabe'
+}
+
+function normalizeUnit(unit: string) {
+  const normalized = unit.trim().toLowerCase()
+  if (!normalized) {
+    return { canAdd: true, key: 'count', factor: 1, outputUnit: '', displayUnit: '' }
+  }
+  if (['g', 'gramm', 'gram'].includes(normalized)) {
+    return { canAdd: true, key: 'weight-g', factor: 1, outputUnit: 'g', displayUnit: 'g' }
+  }
+  if (['kg', 'kilogramm', 'kilogram'].includes(normalized)) {
+    return { canAdd: true, key: 'weight-g', factor: 1000, outputUnit: 'g', displayUnit: 'g' }
+  }
+  if (['ml', 'milliliter'].includes(normalized)) {
+    return { canAdd: true, key: 'volume-ml', factor: 1, outputUnit: 'ml', displayUnit: 'ml' }
+  }
+  if (['l', 'liter'].includes(normalized)) {
+    return { canAdd: true, key: 'volume-ml', factor: 1000, outputUnit: 'ml', displayUnit: 'ml' }
+  }
+  return { canAdd: true, key: normalized, factor: 1, outputUnit: normalized, displayUnit: unit.trim() }
+}
+
+function formatAmount(amount: number, unit: string) {
+  return Number.isInteger(amount)
+    ? String(amount)
+    : amount.toLocaleString('de-DE', { maximumFractionDigits: 2 })
+}
+
+function formatRawQuantity(item: ShoppingListItem) {
+  const quantity = item.quantity
+  const unit = item.unit?.trim()
+  if (typeof quantity === 'number' && Number.isFinite(quantity) && unit) {
+    return `${quantity} ${unit}`
+  }
+  if (typeof quantity === 'number' && Number.isFinite(quantity)) {
+    return String(quantity)
+  }
+  return unit || 'ohne Mengenangabe'
+}
 </script>
 
 <template>
@@ -366,6 +455,23 @@ function toUpdateErrorMessage(e: unknown) {
 
                 <p v-if="editError" class="edit-error">{{ editError }}</p>
               </form>
+            </li>
+          </ul>
+        </section>
+
+        <section class="shopping-group total-shopping-list">
+          <h2 class="group-title">Gesamte Einkaufsliste</h2>
+          <ul class="shopping-list">
+            <li v-for="item in totalShoppingItems" :key="item.name" class="shopping-item">
+              <div>
+                <h3>{{ item.name }}</h3>
+                <p class="item-meta">
+                  Offen: {{ item.openCount }} · Erledigt: {{ item.doneCount }}
+                </p>
+              </div>
+              <div class="item-side">
+                <p class="item-quantity">{{ item.quantity }}</p>
+              </div>
             </li>
           </ul>
         </section>

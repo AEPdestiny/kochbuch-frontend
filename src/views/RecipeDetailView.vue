@@ -6,14 +6,14 @@ import { recipeApi } from '@/shared/api/recipeApi'
 import { restaurantApi } from '@/shared/api/restaurantApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
-import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
   RecipeResponse,
 } from '@/types/recipe'
 import type { RestaurantResponse } from '@/types/restaurant'
-import type { MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
+import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 
 type DetailIngredient = {
   name: string
@@ -259,10 +259,6 @@ async function openMealPlanModal() {
   mealPlanMessage.value = null
   mealPlanError.value = null
   if (!recipe.value) return
-  if (recipe.value.source !== 'dishly') {
-    mealPlanError.value = t('recipeDetail.errors.externalMealPlan')
-    return
-  }
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     mealPlanError.value = t('recipeDetail.errors.loginRequiredMealPlan')
     return
@@ -284,18 +280,49 @@ async function addToMealPlan(date: string, slot: MealSlot) {
   if (!recipe.value) return
   mealPlanLoading.value = true
   mealPlanError.value = null
+  const payload = mealPlanPayload(recipe.value)
   try {
-    const savedEntry = await mealPlanApi.setSlot(date, slot, Number(recipe.value.id))
+    const savedEntry = await mealPlanApi.setSlot(date, slot, payload)
     plannedEntries.value = plannedEntries.value
       .filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
       .concat(savedEntry)
     mealPlanMessage.value = t('recipeDetail.mealPlan.added')
     mealPlanModalOpen.value = false
-  } catch {
-    mealPlanError.value = t('recipeDetail.errors.mealPlan')
+  } catch (e: unknown) {
+    logMealPlanError(e, date, slot, payload)
+    mealPlanError.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : t('recipeDetail.errors.mealPlan')
   } finally {
     mealPlanLoading.value = false
   }
+}
+
+function mealPlanPayload(detailRecipe: DetailRecipe): number | MealPlanEntryRequest {
+  const id = Number(detailRecipe.id)
+  if (detailRecipe.source === 'dishly' && Number.isFinite(id) && id > 0) {
+    return id
+  }
+  return { customTitle: detailRecipe.title }
+}
+
+function logMealPlanError(
+  errorValue: unknown,
+  date: string,
+  slot: MealSlot,
+  payload: number | MealPlanEntryRequest,
+) {
+  if (errorValue instanceof ApiClientError) {
+    console.error('Meal plan request failed', {
+      status: errorValue.status,
+      body: errorValue.data,
+      payload,
+      date,
+      slot,
+    })
+    return
+  }
+  console.error('Meal plan request failed', { error: errorValue, payload, date, slot })
 }
 
 function plannedTitle(date: string, slot: MealSlot) {

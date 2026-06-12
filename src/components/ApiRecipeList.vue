@@ -2,10 +2,12 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
+import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 import type { Recipe, RecipeSearchFilters } from '@/types/recipe'
 
 type RecipeSource = 'external' | 'dishly'
@@ -30,6 +32,12 @@ const ownPublished = ref<Recipe[]>([])
 const pantryIngredients = ref<string[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const mealPlanModalOpen = ref(false)
+const mealPlanTarget = ref<DisplayRecipe | null>(null)
+const mealPlanLoading = ref(false)
+const mealPlanError = ref<string | null>(null)
+const mealPlanMessage = ref<string | null>(null)
+const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const { t } = useI18n()
 const router = useRouter()
 
@@ -39,6 +47,22 @@ let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 
 const filtered = computed(() => recipes.value)
+const weekDays = computed(() => {
+  const monday = startOfCurrentWeek()
+  return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    .map((key, index) => ({
+      key,
+      label: t(`mealPlan.days.${key}`),
+      date: formatDate(addDays(monday, index)),
+    }))
+})
+
+const mealSlots: { key: MealSlot; labelKey: string }[] = [
+  { key: 'breakfast', labelKey: 'mealPlan.slots.breakfast' },
+  { key: 'lunch', labelKey: 'mealPlan.slots.lunch' },
+  { key: 'dinner', labelKey: 'mealPlan.slots.dinner' },
+  { key: 'snack', labelKey: 'mealPlan.slots.snack' },
+]
 
 const toDisplayRecipe = (recipe: Recipe, source: RecipeSource): DisplayRecipe => ({
   ...recipe,
@@ -120,6 +144,97 @@ const openDetails = (recipe: DisplayRecipe) => {
     return
   }
   router.push(`/recipe/${recipe.id}`)
+}
+
+async function openMealPlanModal(recipe: DisplayRecipe) {
+  mealPlanMessage.value = null
+  mealPlanError.value = null
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    mealPlanError.value = 'Bitte melde dich an, um Rezepte zum Wochenplan hinzuzufügen.'
+    return
+  }
+
+  mealPlanTarget.value = recipe
+  mealPlanModalOpen.value = true
+  mealPlanLoading.value = true
+  try {
+    const weekStart = weekDays.value[0]?.date
+    const week = await mealPlanApi.getWeek(weekStart)
+    plannedEntries.value = week.entries
+  } catch (e: unknown) {
+    plannedEntries.value = []
+    mealPlanError.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : 'Der Wochenplan konnte nicht geladen werden.'
+  } finally {
+    mealPlanLoading.value = false
+  }
+}
+
+async function addToMealPlan(date: string, slot: MealSlot) {
+  if (!mealPlanTarget.value) return
+  mealPlanLoading.value = true
+  mealPlanError.value = null
+  const payload = mealPlanPayload(mealPlanTarget.value)
+
+  try {
+    const savedEntry = await mealPlanApi.setSlot(date, slot, payload)
+    plannedEntries.value = plannedEntries.value
+      .filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
+      .concat(savedEntry)
+    mealPlanMessage.value = 'Rezept wurde zum Wochenplan hinzugefügt.'
+    mealPlanModalOpen.value = false
+  } catch (e: unknown) {
+    logMealPlanError(e, date, slot, payload)
+    mealPlanError.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : 'Das Rezept konnte nicht zum Wochenplan hinzugefügt werden.'
+  } finally {
+    mealPlanLoading.value = false
+  }
+}
+
+function mealPlanPayload(recipe: DisplayRecipe): number | MealPlanEntryRequest {
+  const id = Number(recipe.id)
+  if (recipe.source === 'dishly' && Number.isFinite(id) && id > 0) {
+    return id
+  }
+  return { customTitle: recipe.title }
+}
+
+function plannedTitle(date: string, slot: MealSlot) {
+  return plannedEntries.value.find(entry =>
+    entry.plannedDate === date && normalizedSlot(entry) === slot,
+  )?.recipe?.title
+    ?? plannedEntries.value.find(entry =>
+      entry.plannedDate === date && normalizedSlot(entry) === slot,
+    )?.customTitle
+}
+
+function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
+  if (entry.mealSlot === 'breakfast' || entry.mealSlot === 'lunch' || entry.mealSlot === 'snack') {
+    return entry.mealSlot
+  }
+  return 'dinner'
+}
+
+function logMealPlanError(
+  errorValue: unknown,
+  date: string,
+  slot: MealSlot,
+  payload: number | MealPlanEntryRequest,
+) {
+  if (errorValue instanceof ApiClientError) {
+    console.error('Meal plan request failed', {
+      status: errorValue.status,
+      body: errorValue.data,
+      payload,
+      date,
+      slot,
+    })
+    return
+  }
+  console.error('Meal plan request failed', { error: errorValue, payload, date, slot })
 }
 
 const shuffleRecipes = () => {
@@ -264,6 +379,27 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   if (pantryHit) reasons.push(t('home.reasons.pantry', { ingredient: pantryHit }))
   return reasons.slice(0, 3)
 }
+
+function startOfCurrentWeek() {
+  const now = new Date()
+  const day = now.getDay() === 0 ? 7 : now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - day + 1)
+  return monday
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setDate(date.getDate() + days)
+  return next
+}
+
+function formatDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 </script>
 
 <template>
@@ -324,6 +460,12 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
         <p v-if="error" class="status-text error">
           {{ t('home.errors.prefix') }} {{ error }}
         </p>
+        <p v-if="mealPlanMessage" class="status-text success">
+          {{ mealPlanMessage }}
+        </p>
+        <p v-if="mealPlanError && !mealPlanModalOpen" class="status-text error">
+          {{ mealPlanError }}
+        </p>
 
         <article
           v-for="r in filtered"
@@ -363,6 +505,10 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
               {{ r.ingredients }}
             </p>
 
+            <button type="button" class="meal-plan-card-button" @click.stop="openMealPlanModal(r)">
+              Zum Wochenplan hinzufügen
+            </button>
+
             <ul v-if="r.recommendationReasons.length" class="reason-list">
               <li v-for="reason in r.recommendationReasons" :key="reason">{{ reason }}</li>
             </ul>
@@ -374,6 +520,40 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
         </p>
       </div>
     </section>
+
+    <div v-if="mealPlanModalOpen" class="modal-backdrop" @click.self="mealPlanModalOpen = false">
+      <section class="meal-plan-modal" aria-label="Zum Wochenplan hinzufügen">
+        <h2>Zum Wochenplan hinzufügen</h2>
+        <p v-if="mealPlanTarget">
+          Wähle Tag und Slot für: <strong>{{ mealPlanTarget.title }}</strong>
+        </p>
+        <p v-if="mealPlanLoading" class="status-text">Wochenplan wird geladen...</p>
+        <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
+
+        <div class="day-buttons">
+          <div v-for="day in weekDays" :key="day.date" class="day-button-group">
+            <strong>{{ day.label }}</strong>
+            <span>{{ day.date }}</span>
+            <button
+              v-for="slot in mealSlots"
+              :key="slot.key"
+              type="button"
+              class="day-button"
+              :disabled="mealPlanLoading"
+              @click="addToMealPlan(day.date, slot.key)"
+            >
+              <span>{{ t(slot.labelKey) }}</span>
+              <small v-if="plannedTitle(day.date, slot.key)">{{ plannedTitle(day.date, slot.key) }}</small>
+              <small v-else>Frei</small>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="cancel-modal" @click="mealPlanModalOpen = false">
+          Abbrechen
+        </button>
+      </section>
+    </div>
   </section>
 </template>
 
@@ -496,6 +676,11 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   font-weight: 600;
 }
 
+.status-text.success {
+  color: #1d8e90;
+  font-weight: 700;
+}
+
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -603,10 +788,120 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   margin-top: 4px;
 }
 
+.meal-plan-card-button {
+  border: 1px solid #8fd5cc;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d8e90;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-top: 12px;
+  padding: 8px 12px;
+  width: fit-content;
+}
+
+.meal-plan-card-button:hover {
+  background: #e0f5f2;
+}
+
 .reason-list {
   margin: 10px 0 0;
   padding-left: 18px;
   color: #2f6f62;
   font-size: 0.9rem;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(10, 20, 25, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.meal-plan-modal {
+  width: min(720px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.24);
+}
+
+.meal-plan-modal h2 {
+  color: #cc7da9;
+  margin-bottom: 8px;
+}
+
+.meal-plan-modal p {
+  color: #486b68;
+  margin-bottom: 16px;
+}
+
+.day-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.day-button-group {
+  border: 1px solid #d6eee9;
+  border-radius: 14px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.day-button-group > strong {
+  color: #2b1b23;
+}
+
+.day-button-group > span {
+  color: #486b68;
+  font-size: 0.85rem;
+}
+
+.day-button {
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  background: #f4fbfa;
+  color: #2b1b23;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.day-button:hover {
+  border-color: #26b6b8;
+}
+
+.day-button span {
+  color: #2f6f62;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.day-button small {
+  color: #486b68;
+}
+
+.cancel-modal {
+  margin-top: 16px;
+  border: none;
+  border-radius: 999px;
+  background: #fff0eb;
+  color: #a14c2b;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 9px 16px;
 }
 </style>

@@ -143,6 +143,47 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Sushi frei')
   })
 
+  it('sets custom titles for breakfast, lunch, dinner and snack', async () => {
+    vi.mocked(mealPlanApi.setSlot).mockImplementation(async (date, slot, payload) => ({
+      id: `${date}-${slot}`,
+      plannedDate: date,
+      mealSlot: slot,
+      recipe: null,
+      customTitle: typeof payload === 'number' ? null : payload.customTitle,
+    }))
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const mondayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Montag'))!
+    const inputs = mondayCard.findAll('input')
+    const buttons = mondayCard.findAll('.slot-block .primary-button')
+    await inputs[0]!.setValue('Frühstück frei')
+    await buttons[0]!.trigger('click')
+    await inputs[1]!.setValue('Lunch frei')
+    await buttons[1]!.trigger('click')
+    await inputs[2]!.setValue('Dinner frei')
+    await buttons[2]!.trigger('click')
+    await inputs[3]!.setValue('Snack frei')
+    await buttons[3]!.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'breakfast', {
+      customTitle: 'Frühstück frei',
+    })
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'lunch', {
+      customTitle: 'Lunch frei',
+    })
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'dinner', {
+      customTitle: 'Dinner frei',
+    })
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'snack', {
+      customTitle: 'Snack frei',
+    })
+  })
+
   it('uses external suggestions as custom text instead of fake recipe ids', async () => {
     vi.useFakeTimers()
     const wrapper = mount(MealPlanView, {

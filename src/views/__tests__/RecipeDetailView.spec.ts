@@ -212,16 +212,28 @@ describe('RecipeDetailView', () => {
     expect(wrapper.find('.meal-plan-modal').exists()).toBe(false)
   })
 
-  it('shows honest message for external recipes instead of planning them', async () => {
+  it('adds external recipes to meal plan as customTitle', async () => {
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 3,
+      plannedDate: '2026-06-08',
+      mealSlot: 'breakfast',
+      recipe: null,
+      customTitle: 'Pasta with Garlic',
+    })
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
     await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
     await flushPromises()
+    await wrapper.find('.day-button').trigger('click')
+    await flushPromises()
 
-    expect(mealPlanApi.getWeek).not.toHaveBeenCalled()
-    expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Externe Rezepte können aktuell nicht direkt eingeplant werden.')
+    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-08')
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-08', 'breakfast', {
+      customTitle: 'Pasta with Garlic',
+    })
+    expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
   })
 
   it('uses a safe fallback for the back button when no history exists', async () => {
