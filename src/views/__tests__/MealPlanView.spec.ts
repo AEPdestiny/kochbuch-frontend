@@ -1,4 +1,4 @@
-import { mount, flushPromises } from '@vue/test-utils'
+﻿import { mount, flushPromises } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
@@ -21,6 +21,7 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
 vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getMyRecipes: vi.fn(),
+    getPublishedRecipes: vi.fn(),
     getExternalRecipes: vi.fn(),
   },
 }))
@@ -40,6 +41,7 @@ describe('MealPlanView', () => {
       recipe(1, 'Pasta'),
       recipe(2, 'Soup'),
     ])
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Sushi Bowl'),
     ])
@@ -183,7 +185,7 @@ describe('MealPlanView', () => {
       .find(card => card.text().includes('Montag'))!
     const inputs = mondayCard.findAll('input')
     const buttons = mondayCard.findAll('.slot-block .primary-button')
-    await inputs[0]!.setValue('Frühstück frei')
+    await inputs[0]!.setValue('Fruehstueck frei')
     await buttons[0]!.trigger('click')
     await inputs[1]!.setValue('Lunch frei')
     await buttons[1]!.trigger('click')
@@ -194,7 +196,7 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'breakfast', {
-      customTitle: 'Frühstück frei',
+      customTitle: 'Fruehstueck frei',
     })
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'lunch', {
       customTitle: 'Lunch frei',
@@ -229,7 +231,7 @@ describe('MealPlanView', () => {
     vi.useRealTimers()
   })
 
-  it('loads swipe suggestions with slot and profile filters', async () => {
+  it('loads swipe suggestions with profile filters and bucket counters', async () => {
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Dinner Pasta', { imageUrl: 'https://example.com/pasta.jpg', calories: 520 }),
     ])
@@ -248,7 +250,6 @@ describe('MealPlanView', () => {
       vegetarian: true,
       glutenFree: true,
       maxPrepTime: 30,
-      mealType: 'main course',
     })
     expect(wrapper.text()).toContain('Dinner Pasta')
     expect(wrapper.text()).toContain('1/1')
@@ -300,10 +301,10 @@ describe('MealPlanView', () => {
     await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'dinner', {
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'dinner', {
       customTitle: 'Pizza',
     })
-    expect(wrapper.text()).toContain('Pizza wurde übernommen.')
+    expect(wrapper.text()).toContain('Pizza wurde für Abendessen am 2026-06-02 übernommen.')
   })
 
   it('shows empty state when swipe suggestions are empty', async () => {

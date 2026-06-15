@@ -216,7 +216,7 @@ describe('RecipeDetailView', () => {
     await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-08')
+    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-15')
     expect(wrapper.findAll('.day-button-group')).toHaveLength(7)
     expect(wrapper.findAll('.day-button')).toHaveLength(28)
     expect(wrapper.text()).toContain('Abendessen')
@@ -225,7 +225,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.day-button').trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-08', 'breakfast', 1)
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-15', 'breakfast', 1)
     expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
     expect(wrapper.find('.meal-plan-modal').exists()).toBe(false)
   })
@@ -233,7 +233,7 @@ describe('RecipeDetailView', () => {
   it('adds external recipes to meal plan as customTitle', async () => {
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 3,
-      plannedDate: '2026-06-08',
+      plannedDate: '2026-06-15',
       mealSlot: 'breakfast',
       recipe: null,
       customTitle: 'Pasta with Garlic',
@@ -247,8 +247,8 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.day-button').trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-08')
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-08', 'breakfast', {
+    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-15')
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-15', 'breakfast', {
       customTitle: 'Pasta with Garlic',
     })
     expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
@@ -35,8 +35,6 @@ const suggestionLoadingBySlot = ref<Record<string, boolean>>({})
 const suggestionNoticeBySlot = ref<Record<string, string>>({})
 const suggestionTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 const preferences = ref<UserPreferencesResponse | null>(null)
-const swipeDate = ref('')
-const swipeSlot = ref<MealSlot>('dinner')
 const swipeSuggestions = ref<RecipeResponse[]>([])
 const swipeIndex = ref(0)
 const swipeLoading = ref(false)
@@ -70,6 +68,14 @@ const weekDays = computed<WeekDay[]>(() => {
 })
 
 const currentSwipeRecipe = computed(() => swipeSuggestions.value[swipeIndex.value] ?? null)
+const currentSwipeSlot = computed<MealSlot>(() => slotForRecipe(currentSwipeRecipe.value))
+const currentSwipeTargetDate = computed(() => firstFreeDateForSlot(currentSwipeSlot.value))
+const bucketCounts = computed<Record<MealSlot, number>>(() => ({
+  breakfast: countEntriesForSlot('breakfast'),
+  lunch: countEntriesForSlot('lunch'),
+  dinner: countEntriesForSlot('dinner'),
+  snack: countEntriesForSlot('snack'),
+}))
 
 onMounted(() => {
   loadData()
@@ -87,7 +93,6 @@ async function loadData() {
     ])
     week.value = loadedWeek
     recipes.value = ownRecipes
-    swipeDate.value = loadedWeek.weekStart
     syncSelectedRecipes(loadedWeek.entries)
     loadPreferences()
   } catch {
@@ -257,17 +262,16 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
 }
 
 async function loadSwipeSuggestions() {
-  if (!swipeDate.value || !swipeSlot.value) {
-    swipeError.value = 'Bitte wähle zuerst Tag und Slot.'
-    return
-  }
-
   swipeLoading.value = true
   swipeError.value = null
   swipeMessage.value = null
   swipeIndex.value = 0
   try {
-    swipeSuggestions.value = (await recipeApi.getExternalRecipes(undefined, swipeFilters())).slice(0, 20)
+    const [publishedRecipes, externalRecipes] = await Promise.all([
+      recipeApi.getPublishedRecipes(),
+      recipeApi.getExternalRecipes(undefined, swipeFilters()),
+    ])
+    swipeSuggestions.value = [...publishedRecipes, ...externalRecipes].slice(0, 20)
     if (swipeSuggestions.value.length === 0) {
       swipeError.value = 'Keine Vorschläge gefunden.'
     }
@@ -295,20 +299,22 @@ async function acceptSwipeSuggestion() {
     swipeError.value = 'Kein Vorschlag ausgewählt.'
     return
   }
-  if (!swipeDate.value || !swipeSlot.value) {
-    swipeError.value = 'Bitte wähle zuerst Tag und Slot.'
+  const slot = slotForRecipe(suggestion)
+  const date = firstFreeDateForSlot(slot)
+  if (!date) {
+    swipeError.value = `Dein ${slotLabel(slot)} ist voll. Entferne erst ein Rezept aus diesem Bucket.`
     return
   }
 
   try {
     swipeError.value = null
-    const saved = await mealPlanApi.setSlot(swipeDate.value, swipeSlot.value, {
+    const saved = await mealPlanApi.setSlot(date, slot, {
       customTitle: suggestion.title,
     })
     upsertEntry(saved)
-    customTitleBySlot.value[slotKey(swipeDate.value, swipeSlot.value)] = entryTitle(saved)
-    selectedRecipeBySlot.value[slotKey(swipeDate.value, swipeSlot.value)] = ''
-    swipeMessage.value = `${suggestion.title} wurde übernommen.`
+    customTitleBySlot.value[slotKey(date, slot)] = entryTitle(saved)
+    selectedRecipeBySlot.value[slotKey(date, slot)] = ''
+    swipeMessage.value = `${suggestion.title} wurde für ${slotLabel(slot)} am ${date} übernommen.`
     if (swipeIndex.value < swipeSuggestions.value.length - 1) {
       swipeIndex.value += 1
     }
@@ -324,14 +330,36 @@ function swipeFilters(): RecipeSearchFilters {
     vegetarian: profile?.vegetarian || undefined,
     glutenFree: profile?.glutenFree || undefined,
     maxPrepTime: profile?.maxPrepTimeMinutes ?? null,
-    mealType: mealTypeForSlot(swipeSlot.value),
   }
 }
 
-function mealTypeForSlot(slot: MealSlot) {
-  if (slot === 'breakfast') return 'breakfast'
-  if (slot === 'snack') return 'snack'
-  return 'main course'
+function countEntriesForSlot(slot: MealSlot) {
+  return (week.value?.entries ?? []).filter(entry => normalizedSlot(entry) === slot).length
+}
+
+function firstFreeDateForSlot(slot: MealSlot) {
+  return weekDays.value.find(day => !entryFor(day.date, slot))?.date ?? null
+}
+
+function slotForRecipe(recipe: RecipeResponse | null | undefined): MealSlot {
+  const text = `${recipe?.category ?? ''} ${recipe?.title ?? ''}`.toLowerCase()
+  if (text.includes('breakfast') || text.includes('frühstück') || text.includes('pancake') || text.includes('oat')) {
+    return 'breakfast'
+  }
+  if (text.includes('snack') || text.includes('cookie') || text.includes('smoothie') || text.includes('bar')) {
+    return 'snack'
+  }
+  if (text.includes('lunch') || text.includes('mittag') || text.includes('salad') || text.includes('sandwich') || text.includes('bowl')) {
+    return 'lunch'
+  }
+  return 'dinner'
+}
+
+function slotLabel(slot: MealSlot) {
+  if (slot === 'breakfast') return 'Frühstück'
+  if (slot === 'lunch') return 'Mittagessen'
+  if (slot === 'snack') return 'Snack'
+  return 'Abendessen'
 }
 
 function startOfCurrentWeek() {
@@ -390,27 +418,18 @@ function formatDate(date: Date) {
         <div class="swipe-controls">
           <div>
             <h2>Swipe-Planung</h2>
-            <p>Wähle Tag und Slot, lade Vorschläge und übernimm passende Rezepte als Freitext in deinen Wochenplan.</p>
+            <p>Swipe durch Vorschläge. Dishly legt jedes Rezept automatisch in den passenden Wochenplan-Bucket.</p>
           </div>
-          <label>
-            <span>Tag</span>
-            <select v-model="swipeDate">
-              <option v-for="day in weekDays" :key="day.date" :value="day.date">
-                {{ t(day.labelKey) }} - {{ day.date }}
-              </option>
-            </select>
-          </label>
-          <label>
-            <span>Slot</span>
-            <select v-model="swipeSlot">
-              <option v-for="slot in mealSlots" :key="slot.key" :value="slot.key">
-                {{ t(slot.labelKey) }}
-              </option>
-            </select>
-          </label>
           <button type="button" class="primary-button" :disabled="swipeLoading" @click="loadSwipeSuggestions">
             {{ swipeLoading ? 'Vorschläge werden geladen...' : 'Vorschläge laden' }}
           </button>
+        </div>
+
+        <div class="bucket-grid">
+          <article v-for="slot in mealSlots" :key="slot.key" class="bucket-card" :class="{ full: bucketCounts[slot.key] >= 7 }">
+            <span>{{ slotLabel(slot.key) }}</span>
+            <strong>{{ bucketCounts[slot.key] }}/7</strong>
+          </article>
         </div>
 
         <p v-if="swipeMessage" class="status-text success">{{ swipeMessage }}</p>
@@ -433,6 +452,11 @@ function formatDate(date: Date) {
             </div>
             <p class="suggestion-state">
               Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
+            </p>
+            <p class="suggestion-state">
+              Dieses Rezept kommt zu: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>
+              <span v-if="currentSwipeTargetDate"> am {{ currentSwipeTargetDate }}</span>
+              <span v-else> - dieser Bucket ist voll</span>
             </p>
             <div class="actions">
               <button type="button" class="secondary-button" @click="skipSwipeSuggestion">
@@ -722,7 +746,7 @@ function formatDate(date: Date) {
   align-items: end;
   display: grid;
   gap: 12px;
-  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, auto));
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, auto);
 }
 
 .swipe-controls h2 {
@@ -735,19 +759,26 @@ function formatDate(date: Date) {
   margin: 0;
 }
 
-.swipe-controls label {
-  color: #2b1b23;
+.bucket-grid {
   display: grid;
-  font-weight: 700;
-  gap: 6px;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
 }
 
-.swipe-controls select {
-  border: 1.5px solid #c3e7e1;
-  border-radius: 8px;
-  font: inherit;
-  min-height: 40px;
-  padding: 8px 10px;
+.bucket-card {
+  background: #f4fbfa;
+  border: 1px solid #c3e7e1;
+  border-radius: 14px;
+  color: #2f6f62;
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.bucket-card.full {
+  background: #fff7fb;
+  border-color: #e7b6d0;
+  color: #b94d83;
 }
 
 .swipe-card {
