@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ApiClientError } from '@/shared/api/apiClient'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
@@ -166,7 +167,9 @@ async function clearWeek() {
     const results = await Promise.allSettled(
       allSlotTargets.map(target => mealPlanApi.deleteSlot(target.date, target.slot)),
     )
-    const failedDeletes = results.filter(result => result.status === 'rejected')
+    const failedDeletes = results.filter(result => (
+      result.status === 'rejected' && !isNotFoundError(result.reason)
+    ))
     if (failedDeletes.length) {
       actionError.value = 'Einige Slots konnten nicht gelöscht werden. Bitte versuche es erneut.'
       await reloadWeek()
@@ -187,6 +190,10 @@ async function reloadWeek() {
   const loadedWeek = await mealPlanApi.getWeek(week.value?.weekStart)
   week.value = loadedWeek
   syncSelectedRecipes(loadedWeek.entries)
+}
+
+function isNotFoundError(error: unknown) {
+  return error instanceof ApiClientError && error.status === 404
 }
 
 function entryFor(date: string, slot: MealSlot = 'dinner') {

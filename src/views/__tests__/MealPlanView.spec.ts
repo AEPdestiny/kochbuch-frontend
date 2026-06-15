@@ -4,6 +4,7 @@ import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
+import { ApiClientError } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
 import type { MealPlanWeekResponse } from '@/types/mealPlan'
 import type { RecipeResponse } from '@/types/recipe'
@@ -450,6 +451,29 @@ describe('MealPlanView', () => {
     expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-07', 'snack')
     expect(mealPlanApi.getWeek).toHaveBeenLastCalledWith('2026-06-01')
     expect(wrapper.text()).toContain('Die Woche wurde geleert.')
+    expect(wrapper.text()).not.toContain('Pasta')
+  })
+
+  it('treats 404 while clearing already empty slots as success when the reloaded week is empty', async () => {
+    vi.mocked(mealPlanApi.getWeek)
+      .mockResolvedValueOnce(weekResponse())
+      .mockResolvedValueOnce(emptyWeekResponse())
+    vi.mocked(mealPlanApi.deleteSlot).mockImplementation(async (_date, slot) => {
+      if (slot === 'breakfast' || slot === 'lunch' || slot === 'snack') {
+        throw new ApiClientError('Not Found', 404)
+      }
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    await wrapper.find('.clear-week-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledTimes(28)
+    expect(wrapper.text()).toContain('Die Woche wurde geleert.')
+    expect(wrapper.text()).not.toContain('Einige Slots konnten nicht gelöscht werden.')
     expect(wrapper.text()).not.toContain('Pasta')
   })
 
