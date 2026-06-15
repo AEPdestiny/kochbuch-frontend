@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
+import { BarcodeFormat, DecodeHintType, type Result } from '@zxing/library'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import type { PantryItem, PantryItemRequest } from '@/types/pantry'
 import type { ExternalRecipeMatchResponse } from '@/types/recipe'
+
+type ScannedProduct = {
+  barcode: string
+  name: string
+  brand: string
+  imageUrl: string
+  category: string
+}
 
 const { t } = useI18n()
 const router = useRouter()
@@ -30,12 +40,21 @@ const barcode = ref('')
 const barcodeLoading = ref(false)
 const barcodeMessage = ref<string | null>(null)
 const barcodeError = ref<string | null>(null)
+const scannerVideo = ref<HTMLVideoElement | null>(null)
+const scannerControls = ref<IScannerControls | null>(null)
+const scannerActive = ref(false)
+const scannerStarting = ref(false)
+const scannedProduct = ref<ScannedProduct | null>(null)
 const recipeMatches = ref<ExternalRecipeMatchResponse[]>([])
 const recipeMatchLoading = ref(false)
 const recipeMatchError = ref<string | null>(null)
 
 onMounted(() => {
   loadPantryItems()
+})
+
+onBeforeUnmount(() => {
+  stopBarcodeScanner()
 })
 
 async function loadPantryItems() {
@@ -239,14 +258,93 @@ function toUpdateErrorMessage(e: unknown) {
 async function lookupBarcode() {
   const value = barcode.value.trim()
   if (!value) {
-    barcodeError.value = t('pantry.barcode.errors.required')
+    barcodeError.value = 'Bitte gib einen Barcode ein oder starte den Scanner.'
     barcodeMessage.value = null
     return
   }
 
+  await lookupProductByBarcode(value)
+}
+
+async function startBarcodeScanner() {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    barcodeError.value = 'Kamera ist in diesem Browser nicht verfügbar.'
+    barcodeMessage.value = null
+    return
+  }
+
+  stopBarcodeScanner()
+  scannerActive.value = true
+  scannerStarting.value = true
+  barcodeError.value = null
+  barcodeMessage.value = null
+  scannedProduct.value = null
+  await nextTick()
+
+  if (!scannerVideo.value) {
+    scannerActive.value = false
+    scannerStarting.value = false
+    barcodeError.value = 'Scanner konnte nicht gestartet werden.'
+    return
+  }
+
+  try {
+    const hints = new Map()
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+    ])
+    const reader = new BrowserMultiFormatReader(hints)
+    scannerControls.value = await reader.decodeFromVideoDevice(
+      undefined,
+      scannerVideo.value,
+      async (result: Result | undefined, _error, controls) => {
+        if (!result) {
+          return
+        }
+        const detectedBarcode = result.getText()
+        controls.stop()
+        scannerControls.value = null
+        scannerActive.value = false
+        await lookupProductByBarcode(detectedBarcode)
+      },
+    )
+  } catch (e: unknown) {
+    scannerActive.value = false
+    barcodeError.value = toCameraErrorMessage(e)
+  } finally {
+    scannerStarting.value = false
+  }
+}
+
+function stopBarcodeScanner() {
+  scannerControls.value?.stop()
+  scannerControls.value = null
+  scannerActive.value = false
+  scannerStarting.value = false
+}
+
+function toCameraErrorMessage(e: unknown) {
+  const name = e instanceof DOMException || (typeof e === 'object' && e && 'name' in e)
+    ? String((e as { name?: string }).name)
+    : ''
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return 'Kamerazugriff wurde verweigert.'
+  }
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+    return 'Keine Kamera gefunden.'
+  }
+  return 'Barcode-Scanner konnte nicht gestartet werden.'
+}
+
+async function lookupProductByBarcode(value: string) {
   barcodeLoading.value = true
   barcodeError.value = null
   barcodeMessage.value = null
+  scannedProduct.value = null
+  barcode.value = value
   try {
     const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(value)}.json`)
     if (!response.ok) {
@@ -255,16 +353,49 @@ async function lookupBarcode() {
     const data = await response.json()
     const productName = data?.product?.product_name || data?.product?.generic_name
     if (!productName) {
-      barcodeError.value = t('pantry.barcode.errors.notFound')
+      barcodeError.value = 'Produkt wurde nicht gefunden.'
       return
     }
-    newName.value = productName
-    newCategory.value = data?.product?.categories_tags?.[0]?.replace(/^en:/, '') ?? newCategory.value
-    barcodeMessage.value = t('pantry.barcode.found', { name: productName })
+    const category = data?.product?.categories_tags?.[0]?.replace(/^en:/, '') ?? ''
+    scannedProduct.value = {
+      barcode: value,
+      name: productName,
+      brand: data?.product?.brands ?? '',
+      imageUrl: data?.product?.image_front_url ?? data?.product?.image_url ?? '',
+      category,
+    }
+    barcodeMessage.value = `Produkt gefunden: ${productName}`
   } catch {
-    barcodeError.value = t('pantry.barcode.errors.lookup')
+    barcodeError.value = 'Open Food Facts ist gerade nicht erreichbar.'
   } finally {
     barcodeLoading.value = false
+  }
+}
+
+async function addScannedProductToPantry() {
+  if (!scannedProduct.value) {
+    return
+  }
+
+  try {
+    barcodeError.value = null
+    barcodeMessage.value = null
+    const created = await pantryApi.createPantryItem({
+      name: scannedProduct.value.name,
+      quantity: 1,
+      unit: 'Stück',
+      category: scannedProduct.value.category || 'Barcode',
+    })
+    items.value.push(created)
+    barcodeMessage.value = `${scannedProduct.value.name} wurde zum Vorrat hinzugefügt.`
+    scannedProduct.value = null
+    barcode.value = ''
+  } catch (e: unknown) {
+    barcodeError.value = toCreateErrorMessage(e)
+    if (e instanceof ApiClientError && e.status === 401) {
+      error.value = barcodeError.value
+      loginRequired.value = true
+    }
   }
 }
 
@@ -312,12 +443,45 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
         <div class="tool-card">
           <h2>{{ t('pantry.barcode.title') }}</h2>
           <p>{{ t('pantry.barcode.subtitle') }}</p>
+          <div class="scanner-actions">
+            <button
+              v-if="!scannerActive"
+              type="button"
+              class="submit-btn"
+              :disabled="barcodeLoading || scannerStarting"
+              @click="startBarcodeScanner"
+            >
+              {{ scannerStarting ? 'Scanner startet...' : 'Barcode scannen' }}
+            </button>
+            <button v-else type="button" class="cancel-btn" @click="stopBarcodeScanner">
+              Scanner stoppen
+            </button>
+          </div>
+          <video
+            v-show="scannerActive"
+            ref="scannerVideo"
+            class="barcode-video"
+            autoplay
+            muted
+            playsinline
+          ></video>
           <div class="barcode-row">
             <input v-model="barcode" type="text" :placeholder="t('pantry.barcode.placeholder')" />
             <button type="button" class="submit-btn" :disabled="barcodeLoading" @click="lookupBarcode">
               {{ barcodeLoading ? t('pantry.barcode.loading') : t('pantry.barcode.action') }}
             </button>
           </div>
+          <article v-if="scannedProduct" class="scanned-product">
+            <img v-if="scannedProduct.imageUrl" :src="scannedProduct.imageUrl" :alt="scannedProduct.name" />
+            <div>
+              <h3>{{ scannedProduct.name }}</h3>
+              <p v-if="scannedProduct.brand">Marke: {{ scannedProduct.brand }}</p>
+              <p>Barcode: {{ scannedProduct.barcode }}</p>
+              <button type="button" class="submit-btn" @click="addScannedProductToPantry">
+                Zum Vorrat hinzufügen
+              </button>
+            </div>
+          </article>
           <p v-if="barcodeMessage" class="form-success">{{ barcodeMessage }}</p>
           <p v-if="barcodeError" class="form-error">{{ barcodeError }}</p>
         </div>
@@ -579,6 +743,45 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   flex: 1;
   font: inherit;
   padding: 8px 10px;
+}
+
+.scanner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.barcode-video {
+  background: #16302f;
+  border-radius: 12px;
+  margin-top: 12px;
+  min-height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.scanned-product {
+  align-items: center;
+  border: 1px solid #d6eee9;
+  border-radius: 12px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 86px 1fr;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.scanned-product img {
+  border-radius: 10px;
+  height: 86px;
+  object-fit: cover;
+  width: 86px;
+}
+
+.scanned-product h3 {
+  color: #2b1b23;
+  margin: 0 0 4px 0;
 }
 
 .recipe-matches {

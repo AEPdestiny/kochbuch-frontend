@@ -76,6 +76,7 @@ const bucketCounts = computed<Record<MealSlot, number>>(() => ({
   dinner: countEntriesForSlot('dinner'),
   snack: countEntriesForSlot('snack'),
 }))
+const allBucketsFull = computed(() => mealSlots.every(slot => bucketCounts.value[slot.key] >= 7))
 
 onMounted(() => {
   loadData()
@@ -302,7 +303,9 @@ async function acceptSwipeSuggestion() {
   const slot = slotForRecipe(suggestion)
   const date = firstFreeDateForSlot(slot)
   if (!date) {
-    swipeError.value = `Dein ${slotLabel(slot)} ist voll. Entferne erst ein Rezept aus diesem Bucket.`
+    swipeError.value = allBucketsFull.value
+      ? 'Deine Woche ist vollständig geplant 🎉'
+      : 'Dieser Bucket ist voll. Entferne erst ein Rezept aus diesem Bucket.'
     return
   }
 
@@ -434,6 +437,9 @@ function formatDate(date: Date) {
 
         <p v-if="swipeMessage" class="status-text success">{{ swipeMessage }}</p>
         <p v-if="swipeError" class="status-text error">{{ swipeError }}</p>
+        <p v-if="allBucketsFull" class="status-text success">
+          Deine Woche ist vollständig geplant 🎉
+        </p>
 
         <article v-if="currentSwipeRecipe" class="swipe-card">
           <img v-if="currentSwipeRecipe.imageUrl" :src="currentSwipeRecipe.imageUrl" :alt="currentSwipeRecipe.title" />

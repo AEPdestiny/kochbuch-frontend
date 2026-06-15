@@ -24,6 +24,7 @@ const editUnit = ref('')
 const editCategory = ref('')
 const editChecked = ref(false)
 const editError = ref<string | null>(null)
+const actionMessage = ref<string | null>(null)
 
 const groupedItems = computed(() => {
   const groups = new Map<string, ShoppingListItem[]>()
@@ -116,6 +117,7 @@ async function createShoppingListItem() {
     newChecked.value = false
     formError.value = null
     error.value = null
+    actionMessage.value = null
   } catch (e: unknown) {
     formError.value = toCreateErrorMessage(e)
     if (e instanceof ApiClientError && e.status === 401) {
@@ -152,6 +154,7 @@ async function deleteShoppingListItem(id: number | string) {
     await shoppingListApi.deleteShoppingListItem(id)
     items.value = items.value.filter(item => item.id !== id)
     error.value = null
+    actionMessage.value = null
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -166,19 +169,86 @@ async function toggleChecked(item: ShoppingListItem) {
   }
 
   try {
-    const updated = await shoppingListApi.updateShoppingListItem(item.id, {
-      name: item.name,
-      quantity: item.quantity ?? null,
-      unit: item.unit ?? null,
-      category: item.category ?? null,
-      checked: !item.checked,
-      recipeId: item.recipeId ?? null,
-      recipeTitle: item.recipeTitle ?? null,
-    })
+    const updated = await shoppingListApi.updateShoppingListItem(item.id, requestFromItem(item, !item.checked))
     items.value = items.value.map(existing => (existing.id === item.id ? updated : existing))
+    actionMessage.value = null
   } catch (e: unknown) {
     error.value = toUpdateErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
+async function markAllDone() {
+  const openItems = items.value.filter(item => !item.checked)
+  if (!openItems.length) {
+    actionMessage.value = 'Alle Einträge sind bereits markiert.'
+    return
+  }
+
+  try {
+    actionMessage.value = null
+    const updatedItems = await Promise.all(
+      openItems.map(item => shoppingListApi.updateShoppingListItem(item.id, requestFromItem(item, true))),
+    )
+    items.value = items.value.map(item => updatedItems.find(updated => updated.id === item.id) ?? item)
+    actionMessage.value = 'Alle offenen Einträge wurden markiert.'
+  } catch (e: unknown) {
+    error.value = toUpdateErrorMessage(e)
+    loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
+async function deleteDoneItems() {
+  const doneItems = items.value.filter(item => item.checked)
+  if (!doneItems.length) {
+    actionMessage.value = 'Es gibt keine erledigten Einträge zum Löschen.'
+    return
+  }
+  if (!window.confirm('Erledigte Einträge wirklich löschen?')) {
+    return
+  }
+
+  try {
+    actionMessage.value = null
+    await Promise.all(doneItems.map(item => shoppingListApi.deleteShoppingListItem(item.id)))
+    const doneIds = new Set(doneItems.map(item => item.id))
+    items.value = items.value.filter(item => !doneIds.has(item.id))
+    actionMessage.value = 'Erledigte Einträge wurden gelöscht.'
+  } catch (e: unknown) {
+    error.value = toDeleteErrorMessage(e)
+    loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
+async function clearShoppingList() {
+  if (!items.value.length) {
+    actionMessage.value = 'Die Einkaufsliste ist bereits leer.'
+    return
+  }
+  if (!window.confirm('Wirklich die gesamte Einkaufsliste löschen?')) {
+    return
+  }
+
+  try {
+    actionMessage.value = null
+    await Promise.all(items.value.map(item => shoppingListApi.deleteShoppingListItem(item.id)))
+    items.value = []
+    actionMessage.value = 'Die Einkaufsliste wurde geleert.'
+  } catch (e: unknown) {
+    error.value = toDeleteErrorMessage(e)
+    loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
+function requestFromItem(item: ShoppingListItem, checked: boolean): ShoppingListItemRequest {
+  return {
+    name: item.name,
+    quantity: item.quantity ?? null,
+    unit: item.unit ?? null,
+    category: item.category ?? null,
+    checked,
+    recipeId: item.recipeId ?? null,
+    recipeTitle: item.recipeTitle ?? null,
   }
 }
 
@@ -399,12 +469,19 @@ function formatRawQuantity(item: ShoppingListItem) {
       </form>
 
       <p v-if="formError" class="form-error">{{ formError }}</p>
+      <p v-if="actionMessage" class="form-success">{{ actionMessage }}</p>
 
       <p v-if="items.length === 0" class="status-text">
         {{ t('shoppingList.empty') }}
       </p>
 
       <div v-else class="shopping-groups">
+        <div class="shopping-actions">
+          <button type="button" class="bulk-btn" @click="markAllDone">Alle markieren</button>
+          <button type="button" class="bulk-btn danger" @click="deleteDoneItems">Erledigte löschen</button>
+          <button type="button" class="bulk-btn danger" @click="clearShoppingList">Liste leeren</button>
+        </div>
+
         <section v-for="group in groupedItems" :key="group.title" class="shopping-group">
           <h2 class="group-title">{{ group.title }}</h2>
 
@@ -607,6 +684,13 @@ function formatRawQuantity(item: ShoppingListItem) {
   margin-bottom: 14px;
 }
 
+.form-success {
+  color: #1d8e90;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
 .shopping-list {
   list-style: none;
   padding: 0;
@@ -619,6 +703,28 @@ function formatRawQuantity(item: ShoppingListItem) {
 .shopping-groups {
   display: grid;
   gap: 18px;
+}
+
+.shopping-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bulk-btn {
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #2f6f62;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 14px;
+}
+
+.bulk-btn.danger {
+  border-color: #f0c5c5;
+  color: #a14c2b;
 }
 
 .shopping-group {

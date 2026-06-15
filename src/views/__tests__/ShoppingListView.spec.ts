@@ -201,6 +201,82 @@ describe('ShoppingListView', () => {
     expect(wrapper.find('.shopping-item').classes()).toContain('checked')
   })
 
+  it('marks all open shopping list items as done', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomatoes', 3, 'piece', 'Vegetables', false),
+      item('Milk', 1, 'l', 'Dairy', true),
+    ])
+    vi.mocked(shoppingListApi.updateShoppingListItem).mockImplementation(async (id, request) => ({
+      ...item(String(id), request.quantity ?? 0, request.unit ?? '', request.category ?? '', request.checked ?? false),
+      recipeId: request.recipeId ?? undefined,
+      recipeTitle: request.recipeTitle ?? undefined,
+    }))
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.findAll('.bulk-btn').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.updateShoppingListItem).toHaveBeenCalledTimes(1)
+    expect(shoppingListApi.updateShoppingListItem).toHaveBeenCalledWith('Tomatoes', {
+      name: 'Tomatoes',
+      quantity: 3,
+      unit: 'piece',
+      category: 'Vegetables',
+      checked: true,
+      recipeId: null,
+      recipeTitle: null,
+    })
+    expect(wrapper.findAll('.shopping-item.checked').length).toBeGreaterThanOrEqual(2)
+    expect(wrapper.text()).toContain('Alle offenen')
+  })
+
+  it('deletes all done shopping list items after confirmation', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomatoes', 3, 'piece', 'Vegetables', false),
+      item('Milk', 1, 'l', 'Dairy', true),
+      item('Bread', 1, 'piece', 'Bakery', true),
+    ])
+    vi.mocked(shoppingListApi.deleteShoppingListItem).mockResolvedValue()
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.findAll('.bulk-btn').at(1)!.trigger('click')
+    await flushPromises()
+
+    expect(window.confirm).toHaveBeenCalled()
+    expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Milk')
+    expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Bread')
+    expect(wrapper.text()).toContain('Tomatoes')
+    expect(wrapper.text()).not.toContain('Milk')
+    expect(wrapper.text()).not.toContain('Bread')
+  })
+
+  it('clears the complete shopping list after confirmation', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomatoes', 3, 'piece', 'Vegetables', false),
+      item('Milk', 1, 'l', 'Dairy', true),
+    ])
+    vi.mocked(shoppingListApi.deleteShoppingListItem).mockResolvedValue()
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.findAll('.bulk-btn').at(2)!.trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Tomatoes')
+    expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Milk')
+    expect(wrapper.text()).toContain('Deine Einkaufsliste ist noch leer.')
+  })
+
   it('shows delete button with login', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([

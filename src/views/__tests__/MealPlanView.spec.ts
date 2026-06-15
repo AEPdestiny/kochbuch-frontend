@@ -337,6 +337,48 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Vorschläge konnten nicht geladen werden.')
   })
 
+  it('shows bucket full message when one swipe bucket has no free date', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue(fullSlotWeekResponse('dinner'))
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Dinner Pasta'),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Dieser Bucket ist voll')
+  })
+
+  it('shows completion message when all swipe buckets are full', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue(fullWeekResponse())
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Dinner Pasta'),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Deine Woche ist vollständig geplant')
+  })
+
   it('removes a planned recipe', async () => {
     vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
     const wrapper = mount(MealPlanView, {
@@ -381,6 +423,43 @@ function weekResponse(): MealPlanWeekResponse {
     weekStart: '2026-06-01',
     weekEnd: '2026-06-07',
     entries: [entry('2026-06-01', recipe(1, 'Pasta'), 'dinner')],
+  }
+}
+
+function fullSlotWeekResponse(mealSlot = 'dinner'): MealPlanWeekResponse {
+  const dates = [
+    '2026-06-01',
+    '2026-06-02',
+    '2026-06-03',
+    '2026-06-04',
+    '2026-06-05',
+    '2026-06-06',
+    '2026-06-07',
+  ]
+  return {
+    weekStart: '2026-06-01',
+    weekEnd: '2026-06-07',
+    entries: dates.map((date, index) => entry(date, recipe(200 + index, `Dinner ${index}`), mealSlot)),
+  }
+}
+
+function fullWeekResponse(): MealPlanWeekResponse {
+  const dates = [
+    '2026-06-01',
+    '2026-06-02',
+    '2026-06-03',
+    '2026-06-04',
+    '2026-06-05',
+    '2026-06-06',
+    '2026-06-07',
+  ]
+  const slots = ['breakfast', 'lunch', 'dinner', 'snack']
+  return {
+    weekStart: '2026-06-01',
+    weekEnd: '2026-06-07',
+    entries: slots.flatMap((slot, slotIndex) => (
+      dates.map((date, index) => entry(date, recipe(300 + slotIndex * 10 + index, `${slot} ${index}`), slot))
+    )),
   }
 }
 

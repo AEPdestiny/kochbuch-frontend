@@ -6,12 +6,35 @@ import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
 import type { PantryItemResponse } from '@/types/pantry'
 
+const zxingMocks = vi.hoisted(() => ({
+  decodeFromVideoDevice: vi.fn(),
+  stop: vi.fn(),
+}))
+
 vi.mock('@/shared/api/pantryApi', () => ({
   pantryApi: {
     getPantryItems: vi.fn(),
     createPantryItem: vi.fn(),
     updatePantryItem: vi.fn(),
     deletePantryItem: vi.fn(),
+  },
+}))
+
+vi.mock('@zxing/browser', () => ({
+  BrowserMultiFormatReader: vi.fn().mockImplementation(() => ({
+    decodeFromVideoDevice: zxingMocks.decodeFromVideoDevice,
+  })),
+}))
+
+vi.mock('@zxing/library', () => ({
+  BarcodeFormat: {
+    EAN_13: 'EAN_13',
+    EAN_8: 'EAN_8',
+    UPC_A: 'UPC_A',
+    UPC_E: 'UPC_E',
+  },
+  DecodeHintType: {
+    POSSIBLE_FORMATS: 'POSSIBLE_FORMATS',
   },
 }))
 
@@ -28,6 +51,12 @@ describe('PantryView', () => {
     setLocale('de')
     config.global.plugins = [i18n]
     vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
+    vi.stubGlobal('fetch', vi.fn())
+    Object.defineProperty(navigator, 'mediaDevices', {
+      configurable: true,
+      value: { getUserMedia: vi.fn() },
+    })
+    zxingMocks.decodeFromVideoDevice.mockResolvedValue({ stop: zxingMocks.stop })
   })
 
   it('shows login hint and link without login', async () => {
@@ -344,6 +373,110 @@ describe('PantryView', () => {
 
     expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben für das Pantry Item.')
   })
+
+  it('opens the real barcode scanner through ZXing', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await findButton(wrapper, 'Barcode scannen').trigger('click')
+    await flushPromises()
+
+    expect(zxingMocks.decodeFromVideoDevice).toHaveBeenCalled()
+    expect(wrapper.find('video.barcode-video').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Scanner stoppen')
+  })
+
+  it('detects a barcode, loads OpenFoodFacts product data and adds it to pantry', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const controls = { stop: vi.fn() }
+    zxingMocks.decodeFromVideoDevice.mockImplementation(async (_deviceId, _video, callback) => {
+      await callback({ getText: () => '4006381333931' }, undefined, controls)
+      return controls
+    })
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        product: {
+          product_name: 'Nutella',
+          brands: 'Ferrero',
+          image_front_url: 'https://example.com/nutella.jpg',
+          categories_tags: ['en:spread'],
+        },
+      }),
+    } as Response)
+    vi.mocked(pantryApi.createPantryItem).mockResolvedValue(item('Nutella', 1, 'Stück', 'spread'))
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await findButton(wrapper, 'Barcode scannen').trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    expect(fetch).toHaveBeenCalledWith('https://world.openfoodfacts.org/api/v0/product/4006381333931.json')
+    expect(wrapper.text()).toContain('Nutella')
+    expect(wrapper.text()).toContain('Ferrero')
+    expect(wrapper.text()).toContain('4006381333931')
+
+    await findButton(wrapper, 'Zum Vorrat hinzufügen').trigger('click')
+    await flushPromises()
+
+    expect(pantryApi.createPantryItem).toHaveBeenCalledWith({
+      name: 'Nutella',
+      quantity: 1,
+      unit: 'Stück',
+      category: 'spread',
+    })
+    expect(wrapper.text()).toContain('Nutella wurde zum Vorrat')
+    expect(wrapper.text()).toContain('spread')
+  })
+
+  it('shows a camera permission error when scanner startup is denied', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    zxingMocks.decodeFromVideoDevice.mockRejectedValue({ name: 'NotAllowedError' })
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await findButton(wrapper, 'Barcode scannen').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Kamerazugriff wurde verweigert.')
+  })
+
+  it('shows product not found when OpenFoodFacts has no matching product', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: 0 }),
+    } as Response)
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="Barcode eingeben"]').setValue('123456')
+    await findButton(wrapper, 'Barcode suchen').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Produkt wurde nicht gefunden.')
+  })
+
+  it('shows OpenFoodFacts error when lookup fails', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(fetch).mockRejectedValue(new Error('offline'))
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="Barcode eingeben"]').setValue('123456')
+    await findButton(wrapper, 'Barcode suchen').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Open Food Facts ist gerade nicht erreichbar.')
+  })
+
   it('shows English pantry texts after locale switch', async () => {
     setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
@@ -386,4 +519,12 @@ function item(
 
 function inputValue(wrapper: ReturnType<typeof mount>, selector: string) {
   return (wrapper.find(selector).element as HTMLInputElement).value
+}
+
+function findButton(wrapper: ReturnType<typeof mount>, text: string) {
+  const button = wrapper.findAll('button').find(item => item.text().includes(text))
+  if (!button) {
+    throw new Error(`Button not found: ${text}`)
+  }
+  return button
 }
