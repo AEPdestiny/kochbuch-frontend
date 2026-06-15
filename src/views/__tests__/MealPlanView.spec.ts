@@ -255,6 +255,59 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('1/1')
   })
 
+  it('opens and closes bucket panels from real week state', async () => {
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    const dinnerBucket = wrapper.findAll('.bucket-card')
+      .find(button => button.text().includes('Abendessen'))!
+    await dinnerBucket.trigger('click')
+
+    expect(wrapper.find('.bucket-panel').text()).toContain('Pasta')
+    expect(wrapper.find('.bucket-panel').text()).toContain('Montag')
+    expect(wrapper.find('.bucket-panel').text()).toContain('2026-06-01')
+    expect(wrapper.find('.bucket-panel').text()).toContain('600 kcal')
+
+    await dinnerBucket.trigger('click')
+    expect(wrapper.find('.bucket-panel').exists()).toBe(false)
+
+    const breakfastBucket = wrapper.findAll('.bucket-card')
+      .find(button => button.text().includes('Frühstück'))!
+    await breakfastBucket.trigger('click')
+    expect(wrapper.find('.bucket-panel').text()).toContain('Noch keine Rezepte in diesem Bucket.')
+  })
+
+  it('removes an entry from an opened bucket panel and updates the counter', async () => {
+    vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    const dinnerBucket = wrapper.findAll('.bucket-card')
+      .find(button => button.text().includes('Abendessen'))!
+    expect(dinnerBucket.text()).toContain('1/7')
+    await dinnerBucket.trigger('click')
+
+    const removeButton = wrapper.findAll('.bucket-panel .secondary-button')
+      .find(button => button.text().includes('Entfernen'))!
+    await removeButton.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
+    expect(wrapper.text()).toContain('Rezept wurde aus dem Wochenplan entfernt.')
+    expect(wrapper.find('.bucket-panel').text()).toContain('Noch keine Rezepte in diesem Bucket.')
+    const updatedDinnerBucket = wrapper.findAll('.bucket-card')
+      .find(button => button.text().includes('Abendessen'))!
+    expect(updatedDinnerBucket.text()).toContain('0/7')
+  })
+
   it('skips to the next swipe suggestion', async () => {
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Pizza'),
@@ -355,7 +408,7 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Dieser Bucket ist voll')
+    expect(wrapper.text()).toContain('Dein Abendessen-Bucket ist voll')
   })
 
   it('shows completion message when all swipe buckets are full', async () => {
@@ -370,13 +423,48 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
-    await wrapper.find('.swipe-planner .primary-button').trigger('click')
-    await flushPromises()
-    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
-    await flushPromises()
 
     expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Deine Woche ist vollständig geplant')
+    expect(wrapper.text()).toContain('Glückwunsch! Deine Woche ist vollständig geplant.')
+    expect(wrapper.find('.swipe-card').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Rezepte verwalten')
+  })
+
+  it('clears all 28 week slots and reloads the week', async () => {
+    vi.mocked(mealPlanApi.getWeek)
+      .mockResolvedValueOnce(weekResponse())
+      .mockResolvedValueOnce(emptyWeekResponse())
+    vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    await wrapper.find('.clear-week-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledTimes(28)
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'breakfast')
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'lunch')
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-07', 'snack')
+    expect(mealPlanApi.getWeek).toHaveBeenLastCalledWith('2026-06-01')
+    expect(wrapper.text()).toContain('Die Woche wurde geleert.')
+    expect(wrapper.text()).not.toContain('Pasta')
+  })
+
+  it('shows a visible error when clearing the week fails', async () => {
+    vi.mocked(mealPlanApi.deleteSlot).mockRejectedValue(new Error('delete failed'))
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue(weekResponse())
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    await wrapper.find('.clear-week-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Einige Slots konnten nicht gelöscht werden.')
   })
 
   it('removes a planned recipe', async () => {
@@ -423,6 +511,14 @@ function weekResponse(): MealPlanWeekResponse {
     weekStart: '2026-06-01',
     weekEnd: '2026-06-07',
     entries: [entry('2026-06-01', recipe(1, 'Pasta'), 'dinner')],
+  }
+}
+
+function emptyWeekResponse(): MealPlanWeekResponse {
+  return {
+    weekStart: '2026-06-01',
+    weekEnd: '2026-06-07',
+    entries: [],
   }
 }
 

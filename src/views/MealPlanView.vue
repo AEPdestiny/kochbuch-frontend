@@ -40,6 +40,8 @@ const swipeIndex = ref(0)
 const swipeLoading = ref(false)
 const swipeError = ref<string | null>(null)
 const swipeMessage = ref<string | null>(null)
+const actionMessage = ref<string | null>(null)
+const activeBucket = ref<MealSlot | null>(null)
 
 const dayKeys = [
   'monday',
@@ -122,6 +124,7 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
 
   try {
     actionError.value = null
+    actionMessage.value = null
     const saved = recipeId
       ? await mealPlanApi.setSlot(date, slot, Number(recipeId))
       : await mealPlanApi.setSlot(date, slot, { customTitle })
@@ -138,37 +141,69 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
 async function removeDay(date: string, slot: MealSlot = 'dinner') {
   try {
     actionError.value = null
+    actionMessage.value = null
     await mealPlanApi.deleteSlot(date, slot)
     if (week.value) {
       week.value.entries = week.value.entries.filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
     }
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     customTitleBySlot.value[slotKey(date, slot)] = ''
+    actionMessage.value = 'Rezept wurde aus dem Wochenplan entfernt.'
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
 }
 
 async function clearWeek() {
-  const plannedEntries = [...(week.value?.entries ?? [])]
-  if (!plannedEntries.length) {
+  const allSlotTargets = weekDays.value.flatMap(day => mealSlots.map(slot => ({ date: day.date, slot: slot.key })))
+  if (!week.value?.entries.length) {
+    actionMessage.value = 'Die Woche ist bereits leer.'
     return
   }
   try {
     actionError.value = null
-    await Promise.all(plannedEntries.map(entry => mealPlanApi.deleteSlot(entry.plannedDate, normalizedSlot(entry))))
-    if (week.value) {
-      week.value.entries = []
+    actionMessage.value = null
+    const results = await Promise.allSettled(
+      allSlotTargets.map(target => mealPlanApi.deleteSlot(target.date, target.slot)),
+    )
+    const failedDeletes = results.filter(result => result.status === 'rejected')
+    if (failedDeletes.length) {
+      actionError.value = 'Einige Slots konnten nicht gelöscht werden. Bitte versuche es erneut.'
+      await reloadWeek()
+      return
     }
     selectedRecipeBySlot.value = {}
     customTitleBySlot.value = {}
+    suggestionsBySlot.value = {}
+    suggestionNoticeBySlot.value = {}
+    await reloadWeek()
+    actionMessage.value = 'Die Woche wurde geleert.'
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
 }
 
+async function reloadWeek() {
+  const loadedWeek = await mealPlanApi.getWeek(week.value?.weekStart)
+  week.value = loadedWeek
+  syncSelectedRecipes(loadedWeek.entries)
+}
+
 function entryFor(date: string, slot: MealSlot = 'dinner') {
   return week.value?.entries.find(entry => entry.plannedDate === date && normalizedSlot(entry) === slot)
+}
+
+function entriesForBucket(slot: MealSlot) {
+  return weekDays.value
+    .map(day => {
+      const entry = entryFor(day.date, slot)
+      return entry ? { day, entry } : null
+    })
+    .filter((item): item is { day: WeekDay; entry: MealPlanEntryResponse } => item !== null)
+}
+
+function toggleBucket(slot: MealSlot) {
+  activeBucket.value = activeBucket.value === slot ? null : slot
 }
 
 function caloriesForDay(date: string) {
@@ -304,8 +339,8 @@ async function acceptSwipeSuggestion() {
   const date = firstFreeDateForSlot(slot)
   if (!date) {
     swipeError.value = allBucketsFull.value
-      ? 'Deine Woche ist vollständig geplant 🎉'
-      : 'Dieser Bucket ist voll. Entferne erst ein Rezept aus diesem Bucket.'
+      ? 'Glückwunsch! Deine Woche ist vollständig geplant.'
+      : `Dein ${slotLabel(slot)}-Bucket ist voll. Entferne ein Rezept oder tausche eines aus.`
     return
   }
 
@@ -318,6 +353,9 @@ async function acceptSwipeSuggestion() {
     customTitleBySlot.value[slotKey(date, slot)] = entryTitle(saved)
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     swipeMessage.value = `${suggestion.title} wurde für ${slotLabel(slot)} am ${date} übernommen.`
+    if (bucketCounts.value[slot] >= 7) {
+      activeBucket.value = slot
+    }
     if (swipeIndex.value < swipeSuggestions.value.length - 1) {
       swipeIndex.value += 1
     }
@@ -338,6 +376,10 @@ function swipeFilters(): RecipeSearchFilters {
 
 function countEntriesForSlot(slot: MealSlot) {
   return (week.value?.entries ?? []).filter(entry => normalizedSlot(entry) === slot).length
+}
+
+function totalCaloriesForBucket(slot: MealSlot) {
+  return entriesForBucket(slot).reduce((sum, item) => sum + (item.entry.recipe?.calories ?? 0), 0)
 }
 
 function firstFreeDateForSlot(slot: MealSlot) {
@@ -400,6 +442,7 @@ function formatDate(date: Date) {
 
     <section v-else class="week-grid" :aria-label="t('mealPlan.title')">
       <p v-if="actionError" class="status-text error full-width">{{ actionError }}</p>
+      <p v-if="actionMessage" class="status-text success full-width">{{ actionMessage }}</p>
       <p v-if="recipes.length === 0" class="status-text full-width">{{ t('mealPlan.empty.noRecipes') }}</p>
       <div class="mode-switch full-width" aria-label="Planungsmodus">
         <button type="button" :class="{ active: planningMode === 'manual' }" @click="planningMode = 'manual'">
@@ -423,25 +466,70 @@ function formatDate(date: Date) {
             <h2>Swipe-Planung</h2>
             <p>Swipe durch Vorschläge. Dishly legt jedes Rezept automatisch in den passenden Wochenplan-Bucket.</p>
           </div>
-          <button type="button" class="primary-button" :disabled="swipeLoading" @click="loadSwipeSuggestions">
+          <button
+            v-if="!allBucketsFull"
+            type="button"
+            class="primary-button"
+            :disabled="swipeLoading"
+            @click="loadSwipeSuggestions"
+          >
             {{ swipeLoading ? 'Vorschläge werden geladen...' : 'Vorschläge laden' }}
           </button>
         </div>
 
         <div class="bucket-grid">
-          <article v-for="slot in mealSlots" :key="slot.key" class="bucket-card" :class="{ full: bucketCounts[slot.key] >= 7 }">
+          <button
+            v-for="slot in mealSlots"
+            :key="slot.key"
+            type="button"
+            class="bucket-card"
+            :class="{ full: bucketCounts[slot.key] >= 7, active: activeBucket === slot.key }"
+            @click="toggleBucket(slot.key)"
+          >
             <span>{{ slotLabel(slot.key) }}</span>
             <strong>{{ bucketCounts[slot.key] }}/7</strong>
-          </article>
+          </button>
         </div>
+
+        <section v-if="activeBucket" class="bucket-panel" aria-live="polite">
+          <div class="bucket-panel-header">
+            <div>
+              <h3>{{ slotLabel(activeBucket) }}</h3>
+              <p>{{ bucketCounts[activeBucket] }}/7 geplant · {{ totalCaloriesForBucket(activeBucket) }} kcal</p>
+            </div>
+            <button type="button" class="secondary-button" @click="activeBucket = null">Schließen</button>
+          </div>
+
+          <p v-if="entriesForBucket(activeBucket).length === 0" class="empty-day">
+            Noch keine Rezepte in diesem Bucket.
+          </p>
+          <ul v-else class="bucket-entry-list">
+            <li v-for="item in entriesForBucket(activeBucket)" :key="`${item.day.date}-${activeBucket}`">
+              <div>
+                <strong>{{ entryTitle(item.entry) }}</strong>
+                <p>
+                  {{ t(item.day.labelKey) }} · {{ item.day.date }}
+                  <span v-if="item.entry.recipe?.calories"> · {{ item.entry.recipe.calories }} kcal</span>
+                </p>
+              </div>
+              <button type="button" class="secondary-button" @click="removeDay(item.day.date, activeBucket)">
+                Entfernen
+              </button>
+            </li>
+          </ul>
+        </section>
 
         <p v-if="swipeMessage" class="status-text success">{{ swipeMessage }}</p>
         <p v-if="swipeError" class="status-text error">{{ swipeError }}</p>
-        <p v-if="allBucketsFull" class="status-text success">
-          Deine Woche ist vollständig geplant 🎉
-        </p>
+        <div v-if="allBucketsFull" class="completion-card">
+          <h3>Glückwunsch! Deine Woche ist vollständig geplant.</h3>
+          <p>Alle Buckets sind voll. Du kannst jetzt Rezepte entfernen oder verwalten.</p>
+          <button type="button" class="secondary-button" @click="planningMode = 'manual'">
+            Rezepte verwalten
+          </button>
+        </div>
 
-        <article v-if="currentSwipeRecipe" class="swipe-card">
+        <article v-if="currentSwipeRecipe && !allBucketsFull" class="swipe-card">
           <img v-if="currentSwipeRecipe.imageUrl" :src="currentSwipeRecipe.imageUrl" :alt="currentSwipeRecipe.title" />
           <div class="swipe-card-content">
             <span class="progress-pill">{{ swipeIndex + 1 }}/{{ swipeSuggestions.length }}</span>
@@ -776,15 +864,68 @@ function formatDate(date: Date) {
   border: 1px solid #c3e7e1;
   border-radius: 14px;
   color: #2f6f62;
+  cursor: pointer;
   display: flex;
+  font: inherit;
   justify-content: space-between;
   padding: 12px;
+  text-align: left;
 }
 
 .bucket-card.full {
   background: #fff7fb;
   border-color: #e7b6d0;
   color: #b94d83;
+}
+
+.bucket-card.active {
+  border-color: #cc7da9;
+  box-shadow: 0 0 0 3px rgba(204, 125, 169, 0.16);
+}
+
+.bucket-panel,
+.completion-card {
+  background: #fff7fb;
+  border: 1px solid #f6d9ea;
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.bucket-panel-header,
+.bucket-entry-list li {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.bucket-panel h3,
+.completion-card h3 {
+  color: #cc7da9;
+  margin: 0 0 4px 0;
+}
+
+.bucket-panel p,
+.completion-card p {
+  color: #486b68;
+  margin: 0;
+}
+
+.bucket-entry-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bucket-entry-list li {
+  background: #ffffff;
+  border: 1px solid #d6eee9;
+  border-radius: 12px;
+  padding: 10px 12px;
 }
 
 .swipe-card {
@@ -874,6 +1015,11 @@ function formatDate(date: Date) {
 
 .status-text.error {
   color: #a14c2b;
+  font-weight: 700;
+}
+
+.status-text.success {
+  color: #1d8e90;
   font-weight: 700;
 }
 
