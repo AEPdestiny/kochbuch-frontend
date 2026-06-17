@@ -69,7 +69,9 @@ async function savePreferences() {
     return
   }
 
-  if ((maxPrepTimeMinutes.value !== null && maxPrepTimeMinutes.value < 1) || (dailyCalorieTarget.value !== null && dailyCalorieTarget.value < 1)) {
+  const normalizedMaxPrepTime = normalizeOptionalPositiveNumber(maxPrepTimeMinutes.value)
+  const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
+  if ((normalizedMaxPrepTime !== null && normalizedMaxPrepTime < 1) || (normalizedDailyTarget !== null && normalizedDailyTarget < 1)) {
     error.value = t('profile.errors.validation')
     return
   }
@@ -95,6 +97,7 @@ async function savePreferences() {
 }
 
 function toRequest(): UserPreferencesRequest {
+  const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
   return {
     likes: parseList(likesText.value),
     dislikes: parseList(dislikesText.value),
@@ -106,10 +109,10 @@ function toRequest(): UserPreferencesRequest {
     highProtein: highProtein.value,
     calorieConscious: calorieConscious.value,
     budgetFriendly: budgetFriendly.value,
-    maxPrepTimeMinutes: maxPrepTimeMinutes.value,
-    calorieGoal: dailyCalorieTarget.value,
+    maxPrepTimeMinutes: normalizeOptionalPositiveNumber(maxPrepTimeMinutes.value),
+    calorieGoal: normalizedDailyTarget,
     goal: goal.value,
-    dailyCalorieTarget: dailyCalorieTarget.value,
+    dailyCalorieTarget: normalizedDailyTarget,
   }
 }
 
@@ -135,6 +138,10 @@ function formatList(values: string[] | null | undefined) {
   return values?.join(', ') ?? ''
 }
 
+function normalizeOptionalPositiveNumber(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
 function toLoadError(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 401) {
@@ -150,7 +157,7 @@ function toLoadError(e: unknown) {
 function toSaveError(e: unknown) {
   if (e instanceof ApiClientError) {
     if (e.status === 400) {
-      return t('profile.errors.validation')
+      return e.message || t('profile.errors.validation')
     }
     if (e.status === 401) {
       return t('profile.errors.sessionExpired')

@@ -5,6 +5,11 @@ export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 export type MealPlanEntryRequest = {
   recipeId?: number | null
   customTitle?: string | null
+  caloriesSnapshot?: number | null
+  proteinSnapshot?: number | null
+  imageUrlSnapshot?: string | null
+  externalRecipeId?: string | null
+  externalSource?: string | null
 }
 
 export type MealPlanEntryResponse = {
@@ -13,6 +18,12 @@ export type MealPlanEntryResponse = {
   mealSlot?: MealSlot | string | null
   recipe?: RecipeResponse | null
   customTitle?: string | null
+  calories?: number | null
+  caloriesSnapshot?: number | null
+  proteinSnapshot?: number | null
+  imageUrlSnapshot?: string | null
+  externalRecipeId?: string | null
+  externalSource?: string | null
 }
 
 export type MealPlanWeekResponse = {

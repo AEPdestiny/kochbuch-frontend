@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
 import { useAuthStore } from '@/stores/authStore'
 import router from '@/router'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+import AiChatPanel from '@/components/AiChatPanel.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
+const aiDrawerOpen = ref(false)
 
 onMounted(async () => {
   authStore.initFromStorage()
@@ -19,6 +21,7 @@ onMounted(async () => {
 
 async function logout() {
   authStore.logout()
+  aiDrawerOpen.value = false
   await router.push('/')
 }
 </script>
@@ -80,9 +83,27 @@ async function logout() {
       {{ t('app.footer', { year: 2026 }) }}
     </footer>
 
-    <RouterLink v-if="authStore.isAuthenticated" to="/ai" class="chat-fab">
+    <button
+      v-if="authStore.isAuthenticated"
+      type="button"
+      class="chat-fab"
+      @click="aiDrawerOpen = true"
+    >
       Dishly AI
-    </RouterLink>
+    </button>
+
+    <div v-if="authStore.isAuthenticated && aiDrawerOpen" class="ai-drawer-backdrop" @click.self="aiDrawerOpen = false">
+      <aside class="ai-drawer" aria-label="Dishly AI Chat">
+        <div class="ai-drawer-header">
+          <div>
+            <p>Dishly AI</p>
+            <h2>Küchenassistent</h2>
+          </div>
+          <button type="button" class="drawer-close" @click="aiDrawerOpen = false">Schließen</button>
+        </div>
+        <AiChatPanel />
+      </aside>
+    </div>
   </div>
 </template>
 
@@ -243,6 +264,57 @@ async function logout() {
   font-weight: 800;
   padding: 12px 18px;
   box-shadow: 0 8px 24px rgba(65, 30, 50, 0.22);
+}
+
+.ai-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(25, 44, 42, 0.24);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ai-drawer {
+  background: #ffffff;
+  box-shadow: -10px 0 28px rgba(65, 30, 50, 0.18);
+  color: #243b38;
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  overflow-y: auto;
+  padding: 20px;
+  width: min(100%, 480px);
+}
+
+.ai-drawer-header {
+  align-items: start;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+
+.ai-drawer-header p {
+  color: #2f8f7b;
+  font-weight: 800;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.ai-drawer-header h2 {
+  color: #cc7da9;
+  margin: 0;
+}
+
+.drawer-close {
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  color: #486b68;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 8px 12px;
 }
 
 </style>

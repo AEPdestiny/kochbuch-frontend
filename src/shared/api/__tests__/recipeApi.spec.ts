@@ -51,13 +51,23 @@ describe('recipeApi', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', undefined)
   })
 
+  it('getPublishedRecipes sends language param when provided', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
+
+    await recipeApi.getPublishedRecipes('de')
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/published', {
+      params: { language: 'de' },
+    })
+  })
+
   it('getExternalRecipes calls /recipes/external with search param', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
 
-    await recipeApi.getExternalRecipes(' chicken ')
+    await recipeApi.getExternalRecipes(' chicken ', undefined, 'en')
 
     expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', {
-      params: { search: 'chicken' },
+      params: { language: 'en', search: 'chicken' },
     })
   })
 
@@ -70,10 +80,11 @@ describe('recipeApi', () => {
       maxPrepTime: 25,
       mealType: 'lunch',
       highProtein: true,
-    })
+    }, 'en')
 
     expect(apiClient.get).toHaveBeenCalledWith('/recipes/external', {
       params: {
+        language: 'en',
         search: 'bowl',
         diet: 'vegan',
         intolerances: 'gluten',

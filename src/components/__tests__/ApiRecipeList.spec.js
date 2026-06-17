@@ -1,4 +1,4 @@
-import { mount, flushPromises, config } from '@vue/test-utils'
+import { mount, flushPromises, config, enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
@@ -48,6 +48,8 @@ vi.mock('@/shared/api/favoriteApi', () => ({
     removeExternalFavorite: vi.fn(),
   },
 }))
+
+enableAutoUnmount(afterEach)
 
 describe('ApiRecipeList.vue', () => {
   beforeEach(() => {
@@ -103,6 +105,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('loads external and published recipes on initial render', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'Test Pasta', 'noodles', 'Italian'),
     ])
@@ -110,12 +113,13 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipes).toHaveBeenCalledWith()
+    expect(recipeApi.getExternalRecipes).toHaveBeenCalledWith(undefined, undefined, 'en')
     expect(recipeApi.getPublishedRecipes).toHaveBeenCalledTimes(1)
     expect(wrapper.text()).toContain('Test Pasta')
   })
 
   it('shows an "Extern" badge for external recipes', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
@@ -142,6 +146,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('navigates external recipe cards to the external detail route', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
@@ -166,6 +171,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('opens meal plan modal from home and plans external recipe as customTitle', async () => {
+    setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
@@ -213,6 +219,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('favorites external recipes from home through backend api', async () => {
+    setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
@@ -259,6 +266,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows an error when initial loading fails', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(
       new Error('Error while loading recipes'),
     )
@@ -266,10 +274,11 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Fehler:')
+    expect(wrapper.text()).toContain('Error:')
   })
 
   it('searches external recipes after debounce', async () => {
+    setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
       .mockResolvedValueOnce([])
@@ -284,11 +293,12 @@ describe('ApiRecipeList.vue', () => {
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipes).toHaveBeenLastCalledWith('chicken')
+    expect(recipeApi.getExternalRecipes).toHaveBeenLastCalledWith('chicken', undefined, 'en')
     expect(wrapper.text()).toContain('Chicken Curry')
   })
 
   it('does not search externally for a single character', async () => {
+    setLocale('en')
     vi.useFakeTimers()
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -301,6 +311,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('loads default external recipes when search is cleared', async () => {
+    setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
       .mockResolvedValueOnce([])
@@ -319,11 +330,12 @@ describe('ApiRecipeList.vue', () => {
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipes).toHaveBeenLastCalledWith()
+    expect(recipeApi.getExternalRecipes).toHaveBeenLastCalledWith(undefined, undefined, 'en')
     expect(wrapper.text()).toContain('Default Pasta')
   })
 
   it('keeps matching published recipes during external search', async () => {
+    setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
       .mockResolvedValueOnce([])
@@ -346,6 +358,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('keeps matching published recipes when external search fails', async () => {
+    setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
       .mockResolvedValueOnce([])
@@ -362,8 +375,8 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Published Chicken Soup')
-    expect(wrapper.text()).toContain('Fehler:')
-    expect(wrapper.text()).toContain('Externe Rezepte konnten nicht geladen werden.')
+    expect(wrapper.text()).toContain('Error:')
+    expect(wrapper.text()).toContain('External recipes could not be loaded.')
   })
 
   it('renders Arabic home UI without errors', async () => {
@@ -374,6 +387,17 @@ describe('ApiRecipeList.vue', () => {
 
     expect(wrapper.find('.hero-desc').exists()).toBe(true)
     expect(document.documentElement.dir).toBe('rtl')
+  })
+
+  it('does not load external English recipes for German locale and shows local-language empty state', async () => {
+    setLocale('de')
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('de')
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Für diese Sprache sind noch keine lokalen Rezepte verfügbar.')
   })
 })
 

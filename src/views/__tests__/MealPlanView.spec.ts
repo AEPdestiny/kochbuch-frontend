@@ -1,4 +1,4 @@
-﻿import { mount, flushPromises } from '@vue/test-utils'
+﻿import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
@@ -33,6 +33,8 @@ vi.mock('@/shared/api/profileApi', () => ({
   },
 }))
 
+enableAutoUnmount(afterEach)
+
 describe('MealPlanView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -44,7 +46,7 @@ describe('MealPlanView', () => {
     ])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(99, 'Sushi Bowl'),
+      recipe(99, 'Sushi Bowl', { calories: 450, imageUrl: 'https://example.com/sushi.jpg', externalId: 'ext-99', source: 'spoonacular' }),
     ])
     vi.mocked(profileApi.getPreferences).mockResolvedValue({
       likes: [],
@@ -167,6 +169,11 @@ describe('MealPlanView', () => {
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
       customTitle: 'Sushi frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
     })
     expect(wrapper.text()).toContain('Sushi frei')
   })
@@ -200,19 +207,40 @@ describe('MealPlanView', () => {
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'breakfast', {
       customTitle: 'Fruehstueck frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
     })
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'lunch', {
       customTitle: 'Lunch frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
     })
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'dinner', {
       customTitle: 'Dinner frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
     })
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'snack', {
       customTitle: 'Snack frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
     })
   })
 
   it('uses external suggestions as custom text instead of fake recipe ids', async () => {
+    setLocale('en')
     vi.useFakeTimers()
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -220,7 +248,7 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     const tuesdayCard = wrapper.findAll('.day-card')
-      .find(card => card.text().includes('Dienstag'))!
+      .find(card => card.text().includes('Tuesday'))!
     await tuesdayCard.find('input').setValue('sushi')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
@@ -231,10 +259,30 @@ describe('MealPlanView', () => {
 
     expect(wrapper.text()).toContain('Externe Vorschläge werden aktuell als Freitext gespeichert.')
     expect((tuesdayCard.find('input').element as HTMLInputElement).value).toBe('Sushi Bowl')
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 9,
+      plannedDate: '2026-06-02',
+      mealSlot: 'breakfast',
+      recipe: null,
+      customTitle: 'Sushi Bowl',
+      calories: 450,
+      caloriesSnapshot: 450,
+    })
+    await tuesdayCard.find('.primary-button').trigger('click')
+    await flushPromises()
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
+      customTitle: 'Sushi Bowl',
+      caloriesSnapshot: 450,
+      proteinSnapshot: null,
+      imageUrlSnapshot: 'https://example.com/sushi.jpg',
+      externalRecipeId: 'ext-99',
+      externalSource: 'spoonacular',
+    })
     vi.useRealTimers()
   })
 
   it('loads swipe suggestions with profile filters and bucket counters', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Dinner Pasta', { imageUrl: 'https://example.com/pasta.jpg', calories: 520 }),
     ])
@@ -253,7 +301,7 @@ describe('MealPlanView', () => {
       vegetarian: true,
       glutenFree: true,
       maxPrepTime: 30,
-    })
+    }, 'en')
     expect(wrapper.text()).toContain('Dinner Pasta')
     expect(wrapper.text()).toContain('1/1')
   })
@@ -312,6 +360,7 @@ describe('MealPlanView', () => {
   })
 
   it('skips to the next swipe suggestion', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Pizza'),
       recipe(100, 'Burger'),
@@ -335,8 +384,9 @@ describe('MealPlanView', () => {
   })
 
   it('accepts swipe suggestion as customTitle', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(99, 'Pizza'),
+      recipe(99, 'Pizza', { calories: 700, imageUrl: 'https://example.com/pizza.jpg', externalId: 'ext-pizza', source: 'spoonacular' }),
     ])
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 4,
@@ -344,6 +394,8 @@ describe('MealPlanView', () => {
       mealSlot: 'dinner',
       recipe: null,
       customTitle: 'Pizza',
+      calories: 700,
+      caloriesSnapshot: 700,
     })
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -359,11 +411,78 @@ describe('MealPlanView', () => {
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'dinner', {
       customTitle: 'Pizza',
+      caloriesSnapshot: 700,
+      imageUrlSnapshot: 'https://example.com/pizza.jpg',
+      externalRecipeId: 'ext-pizza',
+      externalSource: 'spoonacular',
     })
     expect(wrapper.text()).toContain('Pizza wurde für Abendessen am 2026-06-02 übernommen.')
   })
 
+  it('keeps bucket panel closed after accepting a suggestion into a full bucket', async () => {
+    setLocale('en')
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        entry('2026-06-01', recipe(1, 'Dinner 1'), 'dinner'),
+        entry('2026-06-02', recipe(2, 'Dinner 2'), 'dinner'),
+        entry('2026-06-03', recipe(3, 'Dinner 3'), 'dinner'),
+        entry('2026-06-04', recipe(4, 'Dinner 4'), 'dinner'),
+      ],
+    })
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Pizza', { calories: 700 }),
+    ])
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 4,
+      plannedDate: '2026-06-05',
+      mealSlot: 'dinner',
+      recipe: null,
+      customTitle: 'Pizza',
+      calories: 700,
+      caloriesSnapshot: 700,
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.bucket-panel').exists()).toBe(false)
+  })
+
+  it('uses published database recipes before calling external swipe suggestions', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(88, 'DB Lunch Bowl', { category: 'lunch', calories: 530 }),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('DB Lunch Bowl')
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalledWith(undefined, {
+      vegan: undefined,
+      vegetarian: true,
+      glutenFree: true,
+      maxPrepTime: 30,
+    })
+  })
+
   it('shows empty state when swipe suggestions are empty', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -379,6 +498,7 @@ describe('MealPlanView', () => {
   })
 
   it('shows error when swipe suggestions fail', async () => {
+    setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(new Error('Spoonacular unavailable'))
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -393,7 +513,30 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Vorschläge konnten nicht geladen werden.')
   })
 
+  it('does not load external swipe suggestions for German locale', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('de')
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalledWith(undefined, {
+      vegan: undefined,
+      vegetarian: true,
+      glutenFree: true,
+      maxPrepTime: 30,
+    }, 'en')
+    expect(wrapper.text()).toContain('Für diese Sprache sind noch keine lokalen Rezepte verfügbar.')
+  })
+
   it('hides full bucket suggestions when one swipe bucket has no free date', async () => {
+    setLocale('en')
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue(fullSlotWeekResponse('dinner'))
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Dinner Pasta'),
@@ -584,6 +727,7 @@ function entry(plannedDate: string, recipeResponse: RecipeResponse, mealSlot = '
     plannedDate,
     mealSlot,
     recipe: recipeResponse,
+    calories: recipeResponse.calories,
   }
 }
 

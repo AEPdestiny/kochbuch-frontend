@@ -27,6 +27,12 @@ vi.mock('@/shared/api/authApi', () => ({
   },
 }))
 
+vi.mock('@/shared/api/aiApi', () => ({
+  aiApi: {
+    chat: vi.fn(),
+  },
+}))
+
 describe('App navigation', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -77,6 +83,33 @@ describe('App navigation', () => {
     expect(wrapper.text()).toContain('Dashboard')
     expect(wrapper.text()).toContain('Profil')
     expect(wrapper.text()).toContain('Wochenplan')
+  })
+
+  it('opens Dishly AI as a same-page drawer for authenticated users', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
+    const authStore = useAuthStore()
+    authStore.initFromStorage()
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            props: ['to'],
+            template: '<a :href="to"><slot /></a>',
+          },
+          RouterView: true,
+        },
+      },
+    })
+
+    const aiButton = wrapper.find('.chat-fab')
+    expect(aiButton.element.tagName).toBe('BUTTON')
+    await aiButton.trigger('click')
+
+    expect(wrapper.find('.ai-drawer').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Küchenassistent')
   })
 
   it('switches navigation to English and stores the locale', async () => {

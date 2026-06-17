@@ -8,18 +8,21 @@ import type {
 } from '@/types/recipe'
 
 export const recipeApi = {
-  async getRecipes(): Promise<RecipeResponse[]> {
-    const response = await apiClient.get<RecipeResponse[]>('/recipes')
+  async getRecipes(language?: string): Promise<RecipeResponse[]> {
+    const response = await apiClient.get<RecipeResponse[]>('/recipes', languageConfig(language))
     return response.data
   },
 
-  async getPublishedRecipes(): Promise<RecipeResponse[]> {
-    const response = await apiClient.get<RecipeResponse[]>('/recipes/published')
+  async getPublishedRecipes(language?: string): Promise<RecipeResponse[]> {
+    const response = await apiClient.get<RecipeResponse[]>('/recipes/published', languageConfig(language))
     return response.data
   },
 
-  async getExternalRecipes(search?: string, filters?: RecipeSearchFilters): Promise<RecipeResponse[]> {
+  async getExternalRecipes(search?: string, filters?: RecipeSearchFilters, language?: string): Promise<RecipeResponse[]> {
     const params: Record<string, string | number> = {}
+    if (language?.trim()) {
+      params.language = language.trim().toLowerCase()
+    }
     if (search?.trim()) {
       params.search = search.trim()
     }
@@ -80,6 +83,11 @@ export const recipeApi = {
   async deleteRecipe(id: number | string): Promise<void> {
     await apiClient.delete(`/recipes/${id}`)
   },
+}
+
+function languageConfig(language?: string) {
+  const normalized = language?.trim().toLowerCase()
+  return normalized ? { params: { language: normalized } } : undefined
 }
 
 function toDiet(filters?: RecipeSearchFilters) {

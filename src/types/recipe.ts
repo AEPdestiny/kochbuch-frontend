@@ -18,6 +18,7 @@ export type RecipeResponse = RecipeRequest & {
   externalId?: string | null
   source?: 'dishly' | 'spoonacular' | string | null
   calories?: number | null
+  language?: string | null
   sourceUrl?: string | null
 }
 

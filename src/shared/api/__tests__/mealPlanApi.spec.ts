@@ -82,6 +82,11 @@ describe('mealPlanApi', () => {
 
     expect(apiClient.put).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack', {
       customTitle: 'Sushi frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
     })
     expect(result).toEqual(entry)
   })
@@ -94,6 +99,33 @@ describe('mealPlanApi', () => {
 
     expect(apiClient.put).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack', {
       customTitle: 'Sushi frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
+    })
+  })
+
+  it('setSlot sends external snapshot data with customTitle request body', async () => {
+    const entry = { ...entryResponse('2026-06-03'), recipe: null, customTitle: 'Sushi frei', calories: 450 }
+    vi.mocked(apiClient.put).mockResolvedValue({ data: entry })
+
+    await mealPlanApi.setSlot('2026-06-03', 'snack', {
+      customTitle: 'Sushi frei',
+      caloriesSnapshot: 450,
+      imageUrlSnapshot: 'https://example.com/sushi.jpg',
+      externalRecipeId: 'ext-99',
+      externalSource: 'spoonacular',
+    })
+
+    expect(apiClient.put).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack', {
+      customTitle: 'Sushi frei',
+      caloriesSnapshot: 450,
+      proteinSnapshot: null,
+      imageUrlSnapshot: 'https://example.com/sushi.jpg',
+      externalRecipeId: 'ext-99',
+      externalSource: 'spoonacular',
     })
   })
 

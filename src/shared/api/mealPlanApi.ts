@@ -56,8 +56,24 @@ function toRequest(recipeIdOrRequest: number | MealPlanEntryRequest): MealPlanEn
 
   const customTitle = recipeIdOrRequest.customTitle?.trim()
   if (customTitle) {
-    return { customTitle }
+    return {
+      customTitle,
+      caloriesSnapshot: normalizeOptionalNumber(recipeIdOrRequest.caloriesSnapshot),
+      proteinSnapshot: normalizeOptionalNumber(recipeIdOrRequest.proteinSnapshot),
+      imageUrlSnapshot: normalizeOptionalString(recipeIdOrRequest.imageUrlSnapshot),
+      externalRecipeId: normalizeOptionalString(recipeIdOrRequest.externalRecipeId),
+      externalSource: normalizeOptionalString(recipeIdOrRequest.externalSource),
+    }
   }
 
   throw new Error('recipeId oder customTitle fehlt.')
+}
+
+function normalizeOptionalNumber(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function normalizeOptionalString(value: string | null | undefined): string | null {
+  const trimmed = value?.trim()
+  return trimmed || null
 }

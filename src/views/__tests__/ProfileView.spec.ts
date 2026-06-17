@@ -80,7 +80,33 @@ describe('ProfileView', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben.')
+    expect(wrapper.text()).toContain('Validation failed')
+  })
+  it('normalizes cleared optional number fields to null before saving', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(profileApi.updatePreferences).mockResolvedValue({
+      ...preferences(),
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+      dailyCalorieTarget: null,
+    })
+
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const inputs = wrapper.findAll('input[type="number"]')
+    await inputs[0]!.setValue('')
+    await inputs[1]!.setValue('')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(profileApi.updatePreferences).toHaveBeenCalledWith(
+      expect.objectContaining({
+        maxPrepTimeMinutes: null,
+        calorieGoal: null,
+        dailyCalorieTarget: null,
+      }),
+    )
   })
 })
 

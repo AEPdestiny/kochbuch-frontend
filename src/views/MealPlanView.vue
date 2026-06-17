@@ -19,9 +19,13 @@ type SlotSuggestion = {
   id: number | string
   title: string
   source: 'dishly' | 'external'
+  calories?: number | null
+  imageUrl?: string | null
+  externalRecipeId?: string | null
+  externalSource?: string | null
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const BUCKET_LIMIT = 5
 
 const loading = ref(true)
@@ -32,6 +36,7 @@ const recipes = ref<RecipeResponse[]>([])
 const planningMode = ref<'manual' | 'swipe'>('manual')
 const selectedRecipeBySlot = ref<Record<string, string>>({})
 const customTitleBySlot = ref<Record<string, string>>({})
+const customSnapshotBySlot = ref<Record<string, Partial<MealPlanEntryResponse>>>({})
 const suggestionsBySlot = ref<Record<string, SlotSuggestion[]>>({})
 const suggestionLoadingBySlot = ref<Record<string, boolean>>({})
 const suggestionNoticeBySlot = ref<Record<string, string>>({})
@@ -72,6 +77,11 @@ const weekDays = computed<WeekDay[]>(() => {
 })
 
 const currentSwipeRecipe = computed(() => swipeSuggestions.value[swipeIndex.value] ?? null)
+const currentLanguage = computed(() => {
+  const [language] = String(locale.value).split('-')
+  return (language || 'de').toLowerCase()
+})
+const englishRecipesAllowed = computed(() => currentLanguage.value === 'en')
 const currentSwipeSlot = computed<MealSlot>(() => slotForRecipe(currentSwipeRecipe.value))
 const currentSwipeTargetDate = computed(() => firstFreeDateForSlot(currentSwipeSlot.value))
 const bucketCounts = computed<Record<MealSlot, number>>(() => ({
@@ -145,10 +155,18 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
     actionMessage.value = null
     const saved = recipeId
       ? await mealPlanApi.setSlot(date, slot, Number(recipeId))
-      : await mealPlanApi.setSlot(date, slot, { customTitle })
+      : await mealPlanApi.setSlot(date, slot, {
+        customTitle,
+        caloriesSnapshot: customSnapshotBySlot.value[key]?.caloriesSnapshot ?? null,
+        proteinSnapshot: customSnapshotBySlot.value[key]?.proteinSnapshot ?? null,
+        imageUrlSnapshot: customSnapshotBySlot.value[key]?.imageUrlSnapshot ?? null,
+        externalRecipeId: customSnapshotBySlot.value[key]?.externalRecipeId ?? null,
+        externalSource: customSnapshotBySlot.value[key]?.externalSource ?? null,
+      })
     upsertEntry(saved)
     selectedRecipeBySlot.value[key] = saved.recipe ? String(saved.recipe.id) : ''
     customTitleBySlot.value[key] = entryTitle(saved)
+    customSnapshotBySlot.value[key] = {}
     suggestionsBySlot.value[key] = []
     suggestionNoticeBySlot.value[key] = ''
   } catch {
@@ -166,6 +184,7 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
     }
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     customTitleBySlot.value[slotKey(date, slot)] = ''
+    customSnapshotBySlot.value[slotKey(date, slot)] = {}
     actionMessage.value = 'Rezept wurde aus dem Wochenplan entfernt.'
   } catch {
     actionError.value = t('mealPlan.errors.remove')
@@ -194,6 +213,7 @@ async function clearWeek() {
     }
     selectedRecipeBySlot.value = {}
     customTitleBySlot.value = {}
+    customSnapshotBySlot.value = {}
     suggestionsBySlot.value = {}
     suggestionNoticeBySlot.value = {}
     await reloadWeek()
@@ -233,7 +253,7 @@ function toggleBucket(slot: MealSlot) {
 function caloriesForDay(date: string) {
   return (week.value?.entries ?? [])
     .filter(entry => entry.plannedDate === date)
-    .reduce((sum, entry) => sum + (entry.recipe?.calories ?? 0), 0)
+    .reduce((sum, entry) => sum + entryCalories(entry), 0)
 }
 
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
@@ -292,12 +312,19 @@ function onSlotSearch(date: string, slot: MealSlot) {
       .slice(0, 5)
       .map(recipe => ({ id: recipe.id, title: recipe.title, source: 'dishly' as const }))
     try {
-      const externalSuggestions = (await recipeApi.getExternalRecipes(query))
+      const externalRecipes = englishRecipesAllowed.value
+        ? await recipeApi.getExternalRecipes(query, undefined, currentLanguage.value)
+        : []
+      const externalSuggestions = externalRecipes
         .slice(0, 5)
         .map(recipe => ({
           id: recipe.externalId ?? recipe.id,
           title: recipe.title,
           source: 'external' as const,
+          calories: recipe.calories,
+          imageUrl: recipe.imageUrl,
+          externalRecipeId: recipe.externalId ? String(recipe.externalId) : recipe.id ? String(recipe.id) : null,
+          externalSource: recipe.source ?? 'external',
         }))
       suggestionsBySlot.value[key] = [...localSuggestions, ...externalSuggestions].slice(0, 8)
     } catch {
@@ -314,10 +341,17 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
   suggestionsBySlot.value[key] = []
   if (suggestion.source === 'dishly') {
     selectedRecipeBySlot.value[key] = String(suggestion.id)
+    customSnapshotBySlot.value[key] = {}
     suggestionNoticeBySlot.value[key] = ''
     return
   }
   selectedRecipeBySlot.value[key] = ''
+  customSnapshotBySlot.value[key] = {
+    caloriesSnapshot: suggestion.calories ?? null,
+    imageUrlSnapshot: suggestion.imageUrl ?? null,
+    externalRecipeId: suggestion.externalRecipeId ?? String(suggestion.id),
+    externalSource: suggestion.externalSource ?? 'external',
+  }
   suggestionNoticeBySlot.value[key] = 'Externe Vorschläge werden aktuell als Freitext gespeichert.'
 }
 
@@ -327,12 +361,9 @@ async function loadSwipeSuggestions() {
   swipeMessage.value = null
   swipeIndex.value = 0
   try {
-    const [publishedRecipes, externalRecipes] = await Promise.all([
-      recipeApi.getPublishedRecipes(),
-      recipeApi.getExternalRecipes(undefined, swipeFilters()),
-    ])
+    const publishedRecipes = await recipeApi.getPublishedRecipes(currentLanguage.value)
     const seen = new Set<string>()
-    swipeSuggestions.value = [...publishedRecipes, ...externalRecipes]
+    let candidates = publishedRecipes
       .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
       .filter(recipe => {
         const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -340,9 +371,25 @@ async function loadSwipeSuggestions() {
         seen.add(key)
         return true
       })
+
+    if (candidates.length === 0 && englishRecipesAllowed.value) {
+      const externalRecipes = await recipeApi.getExternalRecipes(undefined, swipeFilters(), currentLanguage.value)
+      candidates = externalRecipes
+        .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
+        .filter(recipe => {
+          const key = `${recipe.source ?? 'external'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+    }
+
+    swipeSuggestions.value = candidates
       .slice(0, 20)
     if (swipeSuggestions.value.length === 0) {
-      swipeError.value = 'Keine Vorschläge gefunden.'
+      swipeError.value = englishRecipesAllowed.value
+        ? 'Keine Vorschläge gefunden.'
+        : 'Für diese Sprache sind noch keine lokalen Rezepte verfügbar.'
     }
   } catch {
     swipeSuggestions.value = []
@@ -381,14 +428,16 @@ async function acceptSwipeSuggestion() {
     swipeError.value = null
     const saved = await mealPlanApi.setSlot(date, slot, {
       customTitle: suggestion.title,
+      caloriesSnapshot: suggestion.calories ?? null,
+      imageUrlSnapshot: suggestion.imageUrl ?? null,
+      externalRecipeId: suggestion.externalId ? String(suggestion.externalId) : suggestion.id ? String(suggestion.id) : null,
+      externalSource: suggestion.source ?? 'dishly-public',
     })
     upsertEntry(saved)
     customTitleBySlot.value[slotKey(date, slot)] = entryTitle(saved)
+    customSnapshotBySlot.value[slotKey(date, slot)] = {}
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     swipeMessage.value = `${suggestion.title} wurde für ${slotLabel(slot)} am ${date} übernommen.`
-    if (bucketCounts.value[slot] >= BUCKET_LIMIT) {
-      activeBucket.value = slot
-    }
     if (swipeIndex.value < swipeSuggestions.value.length - 1) {
       swipeIndex.value += 1
     }
@@ -412,7 +461,11 @@ function countEntriesForSlot(slot: MealSlot) {
 }
 
 function totalCaloriesForBucket(slot: MealSlot) {
-  return entriesForBucket(slot).reduce((sum, item) => sum + (item.entry.recipe?.calories ?? 0), 0)
+  return entriesForBucket(slot).reduce((sum, item) => sum + entryCalories(item.entry), 0)
+}
+
+function entryCalories(entry: MealPlanEntryResponse | null | undefined) {
+  return entry?.calories ?? entry?.recipe?.calories ?? entry?.caloriesSnapshot ?? 0
 }
 
 function firstFreeDateForSlot(slot: MealSlot) {
@@ -564,7 +617,7 @@ function formatDate(date: Date) {
                 <strong>{{ entryTitle(item.entry) }}</strong>
                 <p>
                   {{ t(item.day.labelKey) }} · {{ item.day.date }}
-                  <span v-if="item.entry.recipe?.calories"> · {{ item.entry.recipe.calories }} kcal</span>
+                  <span v-if="entryCalories(item.entry)"> · {{ entryCalories(item.entry) }} kcal</span>
                 </p>
               </div>
               <button type="button" class="secondary-button" @click="removeDay(item.day.date, activeBucket)">

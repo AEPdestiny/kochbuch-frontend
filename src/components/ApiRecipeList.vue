@@ -40,7 +40,7 @@ const mealPlanLoading = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
 const EXTERNAL_CHUNK = 20
@@ -49,6 +49,11 @@ let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 
 const filtered = computed(() => recipes.value)
+const currentLanguage = computed(() => {
+  const [language] = String(locale.value).split('-')
+  return (language || 'de').toLowerCase()
+})
+const englishRecipesAllowed = computed(() => currentLanguage.value === 'en')
 const weekDays = computed(() => {
   const monday = startOfCurrentWeek()
   return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -103,8 +108,8 @@ const loadRecipes = async () => {
   try {
     await loadPersonalization()
     const [external, own] = await Promise.all([
-      fetchExternalRecipes(),
-      recipeApi.getPublishedRecipes(),
+      englishRecipesAllowed.value ? fetchExternalRecipes() : Promise.resolve([]),
+      recipeApi.getPublishedRecipes(currentLanguage.value),
     ])
 
     allExternal.value = external
@@ -119,6 +124,13 @@ const loadRecipes = async () => {
 }
 
 const loadExternalRecipes = async (query: string) => {
+  if (!englishRecipesAllowed.value) {
+    allExternal.value = []
+    buildView()
+    error.value = null
+    return
+  }
+
   const requestId = ++externalRequestCounter
   try {
     const external = await fetchExternalRecipes(query)
@@ -264,6 +276,13 @@ watch([search, vegan, vegetarian, glutenFree, calorieConscious, highProtein, bud
   }, SEARCH_DEBOUNCE_MS)
 })
 
+watch(locale, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  loadRecipes()
+})
+
 async function loadPersonalization() {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     return
@@ -324,18 +343,21 @@ function activeFilters(): RecipeSearchFilters | undefined {
 }
 
 function fetchExternalRecipes(query = search.value) {
+  if (!englishRecipesAllowed.value) {
+    return Promise.resolve([])
+  }
   const externalQuery = buildExternalQuery(query)
   const filters = activeFilters()
   if (!externalQuery && !filters) {
-    return recipeApi.getExternalRecipes()
+    return recipeApi.getExternalRecipes(undefined, undefined, currentLanguage.value)
   }
   if (externalQuery && !filters) {
-    return recipeApi.getExternalRecipes(externalQuery)
+    return recipeApi.getExternalRecipes(externalQuery, undefined, currentLanguage.value)
   }
   if (!externalQuery && filters) {
-    return recipeApi.getExternalRecipes(undefined, filters)
+    return recipeApi.getExternalRecipes(undefined, filters, currentLanguage.value)
   }
-  return recipeApi.getExternalRecipes(externalQuery, filters)
+  return recipeApi.getExternalRecipes(externalQuery, filters, currentLanguage.value)
 }
 
 function buildExternalQuery(query = search.value) {
@@ -575,7 +597,7 @@ function formatDate(date: Date) {
         </article>
 
         <p v-if="!loading && filtered.length === 0" class="status-text">
-          {{ t('home.empty') }}
+          {{ englishRecipesAllowed ? t('home.empty') : 'Für diese Sprache sind noch keine lokalen Rezepte verfügbar.' }}
         </p>
       </div>
     </section>
