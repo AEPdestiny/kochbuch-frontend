@@ -140,7 +140,8 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('Rezept B')
     expect(wrapper.text()).toContain('Gesamte Einkaufsliste')
     expect(wrapper.text()).toContain('10 Stück')
-    expect(wrapper.text()).toContain('500 g')
+    expect(wrapper.text()).toContain('200 g')
+    expect(wrapper.text()).not.toContain('500 g')
   })
 
   it('shows different units in total shopping list without unsafe calculation', async () => {

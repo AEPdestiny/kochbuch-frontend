@@ -98,7 +98,10 @@ const filterRecipes = (items: Recipe[], q: string) => {
 
 const buildView = () => {
   const q = search.value.toLowerCase().trim()
-  const matchingPublished = filterRecipes(ownPublished.value, q)
+  const localSource = q
+    ? ownPublished.value
+    : ownPublished.value.filter(recipe => !recipe.userCreated)
+  const matchingPublished = filterRecipes(localSource, q)
   const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
   const externalSlice = filterRecipes(shuffled, q).slice(0, EXTERNAL_CHUNK)
   recipes.value = sortRecipes(applyPreferenceBoost([
@@ -111,15 +114,17 @@ const loadRecipes = async () => {
   loading.value = true
   try {
     await loadPersonalization()
-    const [external, own] = await Promise.all([
+    const [externalResult, ownResult] = await Promise.allSettled([
       englishRecipesAllowed.value ? fetchExternalRecipes() : Promise.resolve([]),
       recipeApi.getPublishedRecipes(currentLanguage.value),
     ])
 
-    allExternal.value = external
-    ownPublished.value = own
+    allExternal.value = externalResult.status === 'fulfilled' ? externalResult.value : []
+    ownPublished.value = ownResult.status === 'fulfilled' ? ownResult.value : []
     buildView()
-    error.value = null
+    error.value = externalResult.status === 'rejected' && ownPublished.value.length === 0
+      ? t('home.errors.externalSearch')
+      : null
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
   } finally {

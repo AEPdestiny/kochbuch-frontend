@@ -5,8 +5,6 @@ import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { profileApi } from '@/shared/api/profileApi'
 import type { UserPreferencesRequest } from '@/types/profile'
 
-type UserGoal = NonNullable<UserPreferencesRequest['goal']>
-
 const { t } = useI18n()
 
 const loading = ref(true)
@@ -22,7 +20,6 @@ const glutenFree = ref(false)
 const lactoseFree = ref(false)
 const highProtein = ref(false)
 const calorieConscious = ref(false)
-const goal = ref<UserGoal>('MAINTAIN')
 const dailyCalorieTarget = ref<number | null>(2200)
 
 onMounted(() => {
@@ -47,8 +44,7 @@ async function loadPreferences() {
     lactoseFree.value = preferences.lactoseFree
     highProtein.value = preferences.highProtein
     calorieConscious.value = preferences.calorieConscious
-    goal.value = preferences.goal ?? 'MAINTAIN'
-    dailyCalorieTarget.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? defaultCaloriesForGoal(goal.value)
+    dailyCalorieTarget.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? 2200
     error.value = null
   } catch (e: unknown) {
     error.value = toLoadError(e)
@@ -78,7 +74,6 @@ async function savePreferences() {
     likesText.value = formatList(saved.likes)
     dislikesText.value = formatList(saved.dislikes)
     allergiesText.value = formatList(saved.allergies)
-    goal.value = saved.goal ?? goal.value
     dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
     success.value = t('profile.success.saved')
   } catch (e: unknown) {
@@ -103,7 +98,6 @@ function toRequest(): UserPreferencesRequest {
     budgetFriendly: false,
     maxPrepTimeMinutes: null,
     calorieGoal: normalizedDailyTarget,
-    goal: goal.value,
     dailyCalorieTarget: normalizedDailyTarget,
   }
 }
@@ -118,12 +112,6 @@ function onVegetarianChanged() {
   if (vegetarian.value) {
     vegan.value = false
   }
-}
-
-function defaultCaloriesForGoal(value: UserGoal) {
-  if (value === 'WEIGHT_LOSS') return 1800
-  if (value === 'MUSCLE_GAIN') return 2600
-  return 2200
 }
 
 function parseList(value: string) {
@@ -211,12 +199,18 @@ function toSaveError(e: unknown) {
         <label><input v-model="lactoseFree" type="checkbox" /> {{ t('profile.options.lactoseFree') }}</label>
       </fieldset>
 
-            <fieldset>
+      <fieldset>
         <legend>{{ t('profile.form.goals') }}</legend>
         <label><input v-model="highProtein" type="checkbox" /> {{ t('profile.options.highProtein') }}</label>
         <label><input v-model="calorieConscious" type="checkbox" /> kalorienarm</label>
       </fieldset>
-<button class="save-button" type="submit" :disabled="saving">
+
+      <label>
+        Tagesziel Kalorien
+        <input v-model.number="dailyCalorieTarget" type="number" min="1" step="1" placeholder="z. B. 2200" />
+      </label>
+
+      <button class="save-button" type="submit" :disabled="saving">
         {{ saving ? t('profile.actions.saving') : t('profile.actions.save') }}
       </button>
     </form>

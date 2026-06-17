@@ -61,7 +61,6 @@ describe('MealPlanView', () => {
       budgetFriendly: false,
       maxPrepTimeMinutes: 30,
       calorieGoal: null,
-      goal: 'MAINTAIN',
       dailyCalorieTarget: 2000,
     })
   })

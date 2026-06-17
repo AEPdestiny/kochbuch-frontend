@@ -62,9 +62,9 @@ describe('ProfileView', () => {
         vegan: true,
         vegetarian: false,
         highProtein: true,
-        goal: 'MAINTAIN',
         budgetFriendly: false,
         maxPrepTimeMinutes: null,
+        dailyCalorieTarget: 2200,
       }),
     )
     expect(wrapper.text()).toContain('Präferenzen wurden gespeichert.')
@@ -84,7 +84,7 @@ describe('ProfileView', () => {
 
     expect(wrapper.text()).toContain('Validation failed')
   })
-  it('keeps removed optional number fields hidden and stores neutral backend values', async () => {
+  it('keeps removed prep time field hidden and stores manual daily target', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(profileApi.updatePreferences).mockResolvedValue({
       ...preferences(),
@@ -96,7 +96,9 @@ describe('ProfileView', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    expect(wrapper.findAll('input[type="number"]')).toHaveLength(0)
+    const numberInputs = wrapper.findAll('input[type="number"]')
+    expect(numberInputs).toHaveLength(1)
+    await numberInputs.at(0)!.setValue(2100)
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
@@ -104,6 +106,8 @@ describe('ProfileView', () => {
       expect.objectContaining({
         maxPrepTimeMinutes: null,
         budgetFriendly: false,
+        calorieGoal: 2100,
+        dailyCalorieTarget: 2100,
       }),
     )
   })
@@ -123,7 +127,6 @@ function preferences(): UserPreferencesResponse {
     budgetFriendly: true,
     maxPrepTimeMinutes: 30,
     calorieGoal: 2200,
-    goal: 'MAINTAIN',
     dailyCalorieTarget: 2200,
   }
 }

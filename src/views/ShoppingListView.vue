@@ -37,7 +37,7 @@ const groupedItems = computed(() => {
 
 const totalShoppingItems = computed(() => {
   const groups = new Map<string, ShoppingListItem[]>()
-  for (const item of items.value) {
+  for (const item of items.value.filter(item => !item.checked)) {
     const key = normalizeIngredientName(item.name)
     groups.set(key, [...(groups.get(key) ?? []), item])
   }

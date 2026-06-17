@@ -46,7 +46,6 @@ function response(): UserPreferencesResponse & UserPreferencesRequest {
     budgetFriendly: true,
     maxPrepTimeMinutes: 30,
     calorieGoal: 2200,
-    goal: 'MAINTAIN',
     dailyCalorieTarget: 2200,
   }
 }
