@@ -371,7 +371,20 @@ describe('PantryView', () => {
     await wrapper.find('form.pantry-form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben für das Pantry Item.')
+    expect(wrapper.text()).toContain('Bitte gib eine Menge an')
+  })
+
+  it('shows concrete suggestions for general pantry names', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Nüsse')
+
+    expect(wrapper.text()).toContain('Genauer auswählen')
+    expect(wrapper.text()).toContain('Walnüsse')
+    await wrapper.findAll('.suggestion-chips button').at(1)!.trigger('click')
+    expect(inputValue(wrapper, 'input[placeholder="z.B. Reis"]')).toBe('Mandeln')
   })
 
   it('opens the real barcode scanner through ZXing', async () => {

@@ -22,6 +22,7 @@ type SlotSuggestion = {
 }
 
 const { t } = useI18n()
+const BUCKET_LIMIT = 5
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -79,7 +80,23 @@ const bucketCounts = computed<Record<MealSlot, number>>(() => ({
   dinner: countEntriesForSlot('dinner'),
   snack: countEntriesForSlot('snack'),
 }))
-const allBucketsFull = computed(() => mealSlots.every(slot => bucketCounts.value[slot.key] >= 7))
+const allBucketsFull = computed(() => mealSlots.every(slot => bucketCounts.value[slot.key] >= BUCKET_LIMIT))
+const dailyCalorieTarget = computed(() => preferences.value?.dailyCalorieTarget ?? preferences.value?.calorieGoal ?? 2200)
+const averageCaloriesPerDay = computed(() => Math.round(weekDays.value.reduce((sum, day) => sum + caloriesForDay(day.date), 0) / 7))
+const calorieDelta = computed(() => averageCaloriesPerDay.value - dailyCalorieTarget.value)
+const weeklyRecommendation = computed(() => {
+  const freeSlots = 28 - (week.value?.entries.length ?? 0)
+  if (calorieDelta.value > 200) {
+    return 'Du liegst im Wochenschnitt über deinem Kalorienziel. Plane eher leichtere Gerichte oder kleinere Snacks.'
+  }
+  if (calorieDelta.value < -300) {
+    return 'Du liegst deutlich unter deinem Kalorienziel. Ein zusätzlicher Snack oder sättigende Beilage könnte helfen.'
+  }
+  if (freeSlots > 0) {
+    return `Deine Woche hat noch ${freeSlots} freie Slots. Fülle zuerst die Tage mit wenig geplanten Mahlzeiten.`
+  }
+  return 'Deine Woche passt gut zu deinem Kalorienziel.'
+})
 
 onMounted(() => {
   loadData()
@@ -314,7 +331,16 @@ async function loadSwipeSuggestions() {
       recipeApi.getPublishedRecipes(),
       recipeApi.getExternalRecipes(undefined, swipeFilters()),
     ])
-    swipeSuggestions.value = [...publishedRecipes, ...externalRecipes].slice(0, 20)
+    const seen = new Set<string>()
+    swipeSuggestions.value = [...publishedRecipes, ...externalRecipes]
+      .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
+      .filter(recipe => {
+        const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      .slice(0, 20)
     if (swipeSuggestions.value.length === 0) {
       swipeError.value = 'Keine Vorschläge gefunden.'
     }
@@ -360,7 +386,7 @@ async function acceptSwipeSuggestion() {
     customTitleBySlot.value[slotKey(date, slot)] = entryTitle(saved)
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     swipeMessage.value = `${suggestion.title} wurde für ${slotLabel(slot)} am ${date} übernommen.`
-    if (bucketCounts.value[slot] >= 7) {
+    if (bucketCounts.value[slot] >= BUCKET_LIMIT) {
       activeBucket.value = slot
     }
     if (swipeIndex.value < swipeSuggestions.value.length - 1) {
@@ -390,7 +416,21 @@ function totalCaloriesForBucket(slot: MealSlot) {
 }
 
 function firstFreeDateForSlot(slot: MealSlot) {
+  if (bucketCounts.value[slot] >= BUCKET_LIMIT) {
+    return null
+  }
   return weekDays.value.find(day => !entryFor(day.date, slot))?.date ?? null
+}
+
+function caloriesStatusClass(date: string) {
+  const calories = caloriesForDay(date)
+  if (calories <= dailyCalorieTarget.value) return 'good'
+  if (calories <= dailyCalorieTarget.value + 200) return 'warning'
+  return 'over'
+}
+
+function calorieProgress(date: string) {
+  return Math.min(100, Math.round((caloriesForDay(date) / dailyCalorieTarget.value) * 100))
 }
 
 function slotForRecipe(recipe: RecipeResponse | null | undefined): MealSlot {
@@ -461,7 +501,15 @@ function formatDate(date: Date) {
       </div>
 
       <div v-if="planningMode === 'manual'" class="week-summary full-width">
-        <span>Woche manuell planen</span>
+        <div>
+          <strong>Woche manuell planen</strong>
+          <p>
+            Schnitt: {{ averageCaloriesPerDay }} / {{ dailyCalorieTarget }} kcal pro Tag
+            <span v-if="calorieDelta > 0">(+{{ calorieDelta }} kcal)</span>
+            <span v-else-if="calorieDelta < 0">({{ calorieDelta }} kcal)</span>
+          </p>
+          <p>{{ weeklyRecommendation }}</p>
+        </div>
         <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
           {{ t('mealPlan.actions.clearWeek') }}
         </button>
@@ -490,11 +538,11 @@ function formatDate(date: Date) {
             :key="slot.key"
             type="button"
             class="bucket-card"
-            :class="{ full: bucketCounts[slot.key] >= 7, active: activeBucket === slot.key }"
+            :class="{ full: bucketCounts[slot.key] >= BUCKET_LIMIT, active: activeBucket === slot.key }"
             @click="toggleBucket(slot.key)"
           >
             <span>{{ slotLabel(slot.key) }}</span>
-            <strong>{{ bucketCounts[slot.key] }}/7</strong>
+            <strong>{{ bucketCounts[slot.key] }}/{{ BUCKET_LIMIT }}</strong>
           </button>
         </div>
 
@@ -502,7 +550,7 @@ function formatDate(date: Date) {
           <div class="bucket-panel-header">
             <div>
               <h3>{{ slotLabel(activeBucket) }}</h3>
-              <p>{{ bucketCounts[activeBucket] }}/7 geplant · {{ totalCaloriesForBucket(activeBucket) }} kcal</p>
+              <p>{{ bucketCounts[activeBucket] }}/{{ BUCKET_LIMIT }} geplant · {{ totalCaloriesForBucket(activeBucket) }} kcal</p>
             </div>
             <button type="button" class="secondary-button" @click="activeBucket = null">Schließen</button>
           </div>
@@ -576,9 +624,12 @@ function formatDate(date: Date) {
         <div class="day-card-header">
           <div>
             <h2>{{ t(day.labelKey) }}</h2>
-            <span>{{ caloriesForDay(day.date) }} kcal</span>
+            <span>{{ caloriesForDay(day.date) }} / {{ dailyCalorieTarget }} kcal</span>
           </div>
           <span>{{ day.date }}</span>
+        </div>
+        <div class="calorie-meter" :class="caloriesStatusClass(day.date)">
+          <span :style="{ width: `${calorieProgress(day.date)}%` }"></span>
         </div>
 
         <div v-for="slot in mealSlots" :key="slot.key" class="slot-block">
@@ -730,6 +781,30 @@ function formatDate(date: Date) {
   font-size: 0.88rem;
 }
 
+.calorie-meter {
+  background: #e8f4f1;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.calorie-meter span {
+  display: block;
+  height: 100%;
+}
+
+.calorie-meter.good span {
+  background: #2f8f7b;
+}
+
+.calorie-meter.warning span {
+  background: #d89a2b;
+}
+
+.calorie-meter.over span {
+  background: #b94d4d;
+}
+
 .slot-block {
   border-top: 1px solid #d6eee9;
   display: flex;
@@ -832,6 +907,11 @@ function formatDate(date: Date) {
   gap: 12px;
   justify-content: space-between;
   padding: 12px 16px;
+}
+
+.week-summary p {
+  color: #486b68;
+  margin: 4px 0 0;
 }
 
 .swipe-planner {

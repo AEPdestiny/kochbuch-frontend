@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
@@ -9,7 +9,6 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
-const chatOpen = ref(false)
 
 onMounted(async () => {
   authStore.initFromStorage()
@@ -81,14 +80,9 @@ async function logout() {
       {{ t('app.footer', { year: 2026 }) }}
     </footer>
 
-    <section v-if="chatOpen" class="chat-panel" :aria-label="t('ai.title')">
-      <button type="button" class="chat-close" :aria-label="t('ai.close')" @click="chatOpen = false">x</button>
-      <h2>{{ t('ai.title') }}</h2>
-      <p>{{ t('ai.placeholder') }}</p>
-    </section>
-    <button type="button" class="chat-fab" @click="chatOpen = !chatOpen">
-      {{ t('ai.button') }}
-    </button>
+    <RouterLink v-if="authStore.isAuthenticated" to="/ai" class="chat-fab">
+      Dishly AI
+    </RouterLink>
   </div>
 </template>
 
@@ -251,37 +245,4 @@ async function logout() {
   box-shadow: 0 8px 24px rgba(65, 30, 50, 0.22);
 }
 
-.chat-panel {
-  position: fixed;
-  right: 22px;
-  bottom: 78px;
-  z-index: 45;
-  width: min(320px, calc(100vw - 32px));
-  border: 1px solid #c3e7e1;
-  border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 10px 30px rgba(65, 30, 50, 0.18);
-  padding: 18px;
-}
-
-.chat-panel h2 {
-  color: #cc7da9;
-  font-size: 1.1rem;
-  margin-bottom: 8px;
-}
-
-.chat-panel p {
-  color: #486b68;
-  line-height: 1.45;
-}
-
-.chat-close {
-  border: none;
-  background: transparent;
-  color: #486b68;
-  cursor: pointer;
-  float: right;
-  font: inherit;
-  font-weight: 800;
-}
 </style>

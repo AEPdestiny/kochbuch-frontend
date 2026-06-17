@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
@@ -49,6 +49,18 @@ const recipeMatches = ref<ExternalRecipeMatchResponse[]>([])
 const recipeMatchLoading = ref(false)
 const recipeMatchError = ref<string | null>(null)
 
+const pantrySuggestions: Record<string, string[]> = {
+  nüsse: ['Walnüsse', 'Mandeln', 'Cashews', 'Haselnüsse'],
+  nuesse: ['Walnüsse', 'Mandeln', 'Cashews', 'Haselnüsse'],
+  reis: ['Basmatireis', 'Jasminreis', 'Vollkornreis', 'Risottoreis'],
+  bohnen: ['Kidneybohnen', 'Schwarze Bohnen', 'Weiße Bohnen', 'Kichererbsen'],
+  milch: ['Vollmilch', 'Hafermilch', 'Mandelmilch', 'Laktosefreie Milch'],
+  käse: ['Gouda', 'Feta', 'Mozzarella', 'Parmesan'],
+  kaese: ['Gouda', 'Feta', 'Mozzarella', 'Parmesan'],
+}
+
+const nameSuggestions = computed(() => pantrySuggestions[newName.value.trim().toLowerCase()] ?? [])
+
 onMounted(() => {
   loadPantryItems()
 })
@@ -94,6 +106,10 @@ function toLoadErrorMessage(e: unknown) {
 async function createPantryItem() {
   if (!newName.value.trim()) {
     formError.value = t('pantry.errors.nameRequired')
+    return
+  }
+  if (newQuantity.value === null || newQuantity.value === undefined) {
+    formError.value = 'Bitte gib eine Menge an, z. B. 500 g, 2 Stück oder 1 Packung.'
     return
   }
   formError.value = null
@@ -200,6 +216,10 @@ function cancelEdit() {
 async function updatePantryItem(id: number | string) {
   if (!editName.value.trim()) {
     editError.value = t('pantry.errors.nameRequired')
+    return
+  }
+  if (editQuantity.value === null || editQuantity.value === undefined) {
+    editError.value = 'Bitte gib eine Menge an.'
     return
   }
   editError.value = null
@@ -522,6 +542,17 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
         <div class="form-field">
           <label>{{ t('pantry.form.name') }}</label>
           <input v-model="newName" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
+          <div v-if="nameSuggestions.length" class="suggestion-chips">
+            <span>Genauer auswählen:</span>
+            <button
+              v-for="suggestion in nameSuggestions"
+              :key="suggestion"
+              type="button"
+              @click="newName = suggestion"
+            >
+              {{ suggestion }}
+            </button>
+          </div>
         </div>
 
         <div class="form-field small">
@@ -676,6 +707,31 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   border-radius: 10px;
   font: inherit;
   padding: 8px 10px;
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.suggestion-chips span {
+  color: #486b68;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.suggestion-chips button {
+  background: #e0f5f2;
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  color: #2f6f62;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 5px 9px;
 }
 
 .submit-btn {

@@ -11,6 +11,8 @@ export type UserPreferencesRequest = {
   budgetFriendly: boolean
   maxPrepTimeMinutes?: number | null
   calorieGoal?: number | null
+  goal?: 'WEIGHT_LOSS' | 'MAINTAIN' | 'MUSCLE_GAIN'
+  dailyCalorieTarget?: number | null
 }
 
 export type UserPreferencesResponse = UserPreferencesRequest

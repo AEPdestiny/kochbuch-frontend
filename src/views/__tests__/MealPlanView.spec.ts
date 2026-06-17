@@ -59,6 +59,8 @@ describe('MealPlanView', () => {
       budgetFriendly: false,
       maxPrepTimeMinutes: 30,
       calorieGoal: null,
+      goal: 'MAINTAIN',
+      dailyCalorieTarget: 2000,
     })
   })
 
@@ -86,7 +88,7 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Swipe planen')
     expect(wrapper.text()).not.toContain('Gesamt-Kalorien')
     expect(wrapper.text()).toContain('Pasta')
-    expect(wrapper.text()).toContain('600 kcal')
+    expect(wrapper.text()).toContain('600 / 2000 kcal')
   })
 
   it('switches between manual and swipe planning', async () => {
@@ -293,7 +295,7 @@ describe('MealPlanView', () => {
     await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     const dinnerBucket = wrapper.findAll('.bucket-card')
       .find(button => button.text().includes('Abendessen'))!
-    expect(dinnerBucket.text()).toContain('1/7')
+    expect(dinnerBucket.text()).toContain('1/5')
     await dinnerBucket.trigger('click')
 
     const removeButton = wrapper.findAll('.bucket-panel .secondary-button')
@@ -306,7 +308,7 @@ describe('MealPlanView', () => {
     expect(wrapper.find('.bucket-panel').text()).toContain('Noch keine Rezepte in diesem Bucket.')
     const updatedDinnerBucket = wrapper.findAll('.bucket-card')
       .find(button => button.text().includes('Abendessen'))!
-    expect(updatedDinnerBucket.text()).toContain('0/7')
+    expect(updatedDinnerBucket.text()).toContain('0/5')
   })
 
   it('skips to the next swipe suggestion', async () => {
@@ -391,7 +393,7 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Vorschläge konnten nicht geladen werden.')
   })
 
-  it('shows bucket full message when one swipe bucket has no free date', async () => {
+  it('hides full bucket suggestions when one swipe bucket has no free date', async () => {
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue(fullSlotWeekResponse('dinner'))
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Dinner Pasta'),
@@ -405,11 +407,8 @@ describe('MealPlanView', () => {
     await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
-    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
-    await flushPromises()
-
     expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Dein Abendessen-Bucket ist voll')
+    expect(wrapper.text()).toContain('Keine Vorschläge gefunden.')
   })
 
   it('shows completion message when all swipe buckets are full', async () => {
@@ -553,8 +552,6 @@ function fullSlotWeekResponse(mealSlot = 'dinner'): MealPlanWeekResponse {
     '2026-06-03',
     '2026-06-04',
     '2026-06-05',
-    '2026-06-06',
-    '2026-06-07',
   ]
   return {
     weekStart: '2026-06-01',
@@ -570,8 +567,6 @@ function fullWeekResponse(): MealPlanWeekResponse {
     '2026-06-03',
     '2026-06-04',
     '2026-06-05',
-    '2026-06-06',
-    '2026-06-07',
   ]
   const slots = ['breakfast', 'lunch', 'dinner', 'snack']
   return {

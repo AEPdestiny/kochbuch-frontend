@@ -5,6 +5,8 @@ import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { profileApi } from '@/shared/api/profileApi'
 import type { UserPreferencesRequest } from '@/types/profile'
 
+type UserGoal = NonNullable<UserPreferencesRequest['goal']>
+
 const { t } = useI18n()
 
 const loading = ref(true)
@@ -23,6 +25,8 @@ const calorieConscious = ref(false)
 const budgetFriendly = ref(false)
 const maxPrepTimeMinutes = ref<number | null>(null)
 const calorieGoal = ref<number | null>(null)
+const goal = ref<UserGoal>('MAINTAIN')
+const dailyCalorieTarget = ref<number | null>(2200)
 
 onMounted(() => {
   loadPreferences()
@@ -48,7 +52,9 @@ async function loadPreferences() {
     calorieConscious.value = preferences.calorieConscious
     budgetFriendly.value = preferences.budgetFriendly
     maxPrepTimeMinutes.value = preferences.maxPrepTimeMinutes ?? null
-    calorieGoal.value = preferences.calorieGoal ?? null
+    goal.value = preferences.goal ?? 'MAINTAIN'
+    dailyCalorieTarget.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? defaultCaloriesForGoal(goal.value)
+    calorieGoal.value = dailyCalorieTarget.value
     error.value = null
   } catch (e: unknown) {
     error.value = toLoadError(e)
@@ -63,7 +69,7 @@ async function savePreferences() {
     return
   }
 
-  if ((maxPrepTimeMinutes.value !== null && maxPrepTimeMinutes.value < 1) || (calorieGoal.value !== null && calorieGoal.value < 1)) {
+  if ((maxPrepTimeMinutes.value !== null && maxPrepTimeMinutes.value < 1) || (dailyCalorieTarget.value !== null && dailyCalorieTarget.value < 1)) {
     error.value = t('profile.errors.validation')
     return
   }
@@ -77,6 +83,9 @@ async function savePreferences() {
     likesText.value = formatList(saved.likes)
     dislikesText.value = formatList(saved.dislikes)
     allergiesText.value = formatList(saved.allergies)
+    goal.value = saved.goal ?? goal.value
+    dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
+    calorieGoal.value = dailyCalorieTarget.value
     success.value = t('profile.success.saved')
   } catch (e: unknown) {
     error.value = toSaveError(e)
@@ -98,8 +107,21 @@ function toRequest(): UserPreferencesRequest {
     calorieConscious: calorieConscious.value,
     budgetFriendly: budgetFriendly.value,
     maxPrepTimeMinutes: maxPrepTimeMinutes.value,
-    calorieGoal: calorieGoal.value,
+    calorieGoal: dailyCalorieTarget.value,
+    goal: goal.value,
+    dailyCalorieTarget: dailyCalorieTarget.value,
   }
+}
+
+function applyGoalSuggestion() {
+  dailyCalorieTarget.value = defaultCaloriesForGoal(goal.value)
+  calorieGoal.value = dailyCalorieTarget.value
+}
+
+function defaultCaloriesForGoal(value: UserGoal) {
+  if (value === 'WEIGHT_LOSS') return 1800
+  if (value === 'MUSCLE_GAIN') return 2600
+  return 2200
 }
 
 function parseList(value: string) {
@@ -184,6 +206,19 @@ function toSaveError(e: unknown) {
         <label><input v-model="budgetFriendly" type="checkbox" /> {{ t('profile.options.budgetFriendly') }}</label>
       </fieldset>
 
+      <fieldset>
+        <legend>Kalorienziel</legend>
+        <label>
+          Ziel auswählen
+          <select v-model="goal" @change="applyGoalSuggestion">
+            <option value="WEIGHT_LOSS">Abnehmen - Vorschlag 1800 kcal</option>
+            <option value="MAINTAIN">Gewicht halten - Vorschlag 2200 kcal</option>
+            <option value="MUSCLE_GAIN">Muskelaufbau - Vorschlag 2600 kcal</option>
+          </select>
+        </label>
+        <p class="helper-text">Der Vorschlag wird automatisch gesetzt, du kannst ihn aber manuell anpassen.</p>
+      </fieldset>
+
       <div class="number-grid">
         <label>
           {{ t('profile.form.maxPrepTimeMinutes') }}
@@ -191,8 +226,8 @@ function toSaveError(e: unknown) {
         </label>
 
         <label>
-          {{ t('profile.form.calorieGoal') }}
-          <input v-model.number="calorieGoal" min="1" type="number" />
+          Tagesziel Kalorien
+          <input v-model.number="dailyCalorieTarget" min="1" type="number" />
         </label>
       </div>
 
@@ -240,12 +275,20 @@ function toSaveError(e: unknown) {
 }
 
 .preferences-form textarea,
-.preferences-form input[type='number'] {
+.preferences-form input[type='number'],
+.preferences-form select {
   width: 100%;
   border: 1px solid #c7ded8;
   border-radius: 8px;
   padding: 0.75rem;
   font: inherit;
+}
+
+.helper-text {
+  color: #486b68;
+  font-size: 0.92rem;
+  font-weight: 500;
+  margin: 0;
 }
 
 .preferences-form textarea {

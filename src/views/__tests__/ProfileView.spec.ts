@@ -61,6 +61,8 @@ describe('ProfileView', () => {
         likes: ['sushi'],
         vegan: true,
         highProtein: true,
+        goal: 'MAINTAIN',
+        dailyCalorieTarget: 2200,
       }),
     )
     expect(wrapper.text()).toContain('Präferenzen wurden gespeichert.')
@@ -96,5 +98,7 @@ function preferences(): UserPreferencesResponse {
     budgetFriendly: true,
     maxPrepTimeMinutes: 30,
     calorieGoal: 2200,
+    goal: 'MAINTAIN',
+    dailyCalorieTarget: 2200,
   }
 }
