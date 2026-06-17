@@ -1,4 +1,4 @@
- <script setup lang="ts">
+﻿ <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -23,13 +23,17 @@ const vegetarian = ref(false)
 const glutenFree = ref(false)
 const calorieConscious = ref(false)
 const highProtein = ref(false)
-const budgetFriendly = ref(false)
 const maxPrepTime = ref<number | null>(null)
+const maxCalories = ref<number | null>(null)
 const mealType = ref('')
-const contextSearch = ref('')
+const sortOrder = ref('')
+const ignoreLikes = ref(false)
 const recipes = ref<DisplayRecipe[]>([])
 const allExternal = ref<Recipe[]>([])
 const ownPublished = ref<Recipe[]>([])
+const likes = ref<string[]>([])
+const dislikes = ref<string[]>([])
+const allergies = ref<string[]>([])
 const pantryIngredients = ref<string[]>([])
 const externalFavoriteIds = ref<Set<string>>(new Set())
 const loading = ref(true)
@@ -89,18 +93,18 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
 }
 
 const filterRecipes = (items: Recipe[], q: string) => {
-  return items.filter(r => matchesText(r, q) && matchesLocalFilters(r))
+  return items.filter(r => hasIngredients(r) && matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
 }
 
 const buildView = () => {
   const q = search.value.toLowerCase().trim()
   const matchingPublished = filterRecipes(ownPublished.value, q)
   const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
-  const externalSlice = shuffled.slice(0, EXTERNAL_CHUNK)
-  recipes.value = [
+  const externalSlice = filterRecipes(shuffled, q).slice(0, EXTERNAL_CHUNK)
+  recipes.value = sortRecipes(applyPreferenceBoost([
     ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
     ...matchingPublished.map(recipe => toDisplayRecipe(recipe, 'dishly')),
-  ]
+  ]))
 }
 
 const loadRecipes = async () => {
@@ -260,7 +264,7 @@ onMounted(() => {
   loadRecipes()
 })
 
-watch([search, vegan, vegetarian, glutenFree, calorieConscious, highProtein, budgetFriendly, maxPrepTime, mealType, contextSearch], () => {
+watch([search, vegan, vegetarian, glutenFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, ignoreLikes], () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -300,8 +304,10 @@ async function loadPersonalization() {
     glutenFree.value = preferences.glutenFree
     calorieConscious.value = preferences.calorieConscious
     highProtein.value = preferences.highProtein
-    budgetFriendly.value = preferences.budgetFriendly
     maxPrepTime.value = preferences.maxPrepTimeMinutes ?? null
+    likes.value = preferences.likes?.map(value => value.toLowerCase()) ?? []
+    dislikes.value = preferences.dislikes?.map(value => value.toLowerCase()) ?? []
+    allergies.value = preferences.allergies?.map(value => value.toLowerCase()) ?? []
   }
 
   if (pantryResult.status === 'fulfilled') {
@@ -325,10 +331,21 @@ function currentFilters(): RecipeSearchFilters {
     glutenFree: glutenFree.value,
     calorieConscious: calorieConscious.value,
     highProtein: highProtein.value,
-    budgetFriendly: budgetFriendly.value,
     maxPrepTime: maxPrepTime.value,
+    maxCalories: maxCalories.value,
     mealType: mealType.value,
-    context: contextSearch.value,
+  }
+}
+
+function onVeganChanged() {
+  if (vegan.value) {
+    vegetarian.value = false
+  }
+}
+
+function onVegetarianChanged() {
+  if (vegetarian.value) {
+    vegan.value = false
   }
 }
 
@@ -361,20 +378,10 @@ function fetchExternalRecipes(query = search.value) {
 }
 
 function buildExternalQuery(query = search.value) {
-  const parts = [query.trim(), contextToQuery(contextSearch.value)].filter(Boolean)
+  const parts = [query.trim()].filter(Boolean)
   if (highProtein.value) parts.push('high protein')
   if (calorieConscious.value) parts.push('low calorie')
-  if (budgetFriendly.value) parts.push('cheap')
   return parts.join(' ').trim() || undefined
-}
-
-function contextToQuery(value: string) {
-  const normalized = value.trim().toLowerCase()
-  if (!normalized) return ''
-  if (normalized.includes('gestresst')) return 'quick easy'
-  if (normalized.includes('günstig') || normalized.includes('guenstig')) return 'cheap budget'
-  if (normalized.includes('date')) return 'date night'
-  return normalized
 }
 
 function matchesText(recipe: Recipe, query: string) {
@@ -383,18 +390,72 @@ function matchesText(recipe: Recipe, query: string) {
   return haystack.includes(query)
 }
 
+function hasIngredients(recipe: Recipe) {
+  return Boolean(recipe.ingredients?.trim())
+}
+
 function matchesLocalFilters(recipe: Recipe) {
   const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
   const totalTime = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
   if (maxPrepTime.value && totalTime > maxPrepTime.value) return false
+  if (maxCalories.value && recipe.calories && recipe.calories > maxCalories.value) return false
   if (calorieConscious.value && recipe.calories && recipe.calories > 650) return false
   if (mealType.value && !text.includes(mealType.value.toLowerCase())) return false
   if (vegan.value && !text.includes('vegan')) return false
   if (vegetarian.value && !text.includes('vegetarian') && !text.includes('vegetarisch')) return false
   if (glutenFree.value && !text.includes('gluten')) return false
   if (highProtein.value && !/(protein|chicken|egg|fish|tofu|beans)/.test(text)) return false
-  if (budgetFriendly.value && !/(cheap|budget|günstig|guenstig|preiswert)/.test(text)) return false
   return true
+}
+
+function matchesHardPreferences(recipe: Recipe) {
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  return ![...dislikes.value, ...allergies.value]
+    .filter(Boolean)
+    .some(term => text.includes(term))
+}
+
+function matchesLikes(recipe: DisplayRecipe) {
+  if (ignoreLikes.value || likes.value.length === 0) {
+    return false
+  }
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  return likes.value.some(term => term && text.includes(term))
+}
+
+function applyPreferenceBoost(items: DisplayRecipe[]) {
+  if (ignoreLikes.value || likes.value.length === 0 || items.length < 4) {
+    return items
+  }
+  const preferred = items.filter(matchesLikes)
+  const mixed = items.filter(recipe => !matchesLikes(recipe))
+  const preferredLimit = Math.max(1, Math.floor(items.length * 0.25))
+  return [
+    ...preferred.slice(0, preferredLimit),
+    ...mixed,
+    ...preferred.slice(preferredLimit),
+  ]
+}
+
+function sortRecipes(items: DisplayRecipe[]) {
+  const sorted = [...items]
+  if (sortOrder.value === 'caloriesAsc') {
+    return sorted.sort((a, b) => optionalNumber(a.calories) - optionalNumber(b.calories))
+  }
+  if (sortOrder.value === 'caloriesDesc') {
+    return sorted.sort((a, b) => optionalNumber(b.calories) - optionalNumber(a.calories))
+  }
+  if (sortOrder.value === 'proteinAsc') {
+    return sorted.sort((a, b) => optionalNumber(a.protein) - optionalNumber(b.protein))
+  }
+  if (sortOrder.value === 'proteinDesc') {
+    return sorted.sort((a, b) => optionalNumber(b.protein) - optionalNumber(a.protein))
+  }
+  return sorted
+}
+
+function optionalNumber(value: number | null | undefined) {
+  return typeof value === 'number' ? value : Number.MAX_SAFE_INTEGER
 }
 
 function recommendationReasons(recipe: Recipe, source: RecipeSource) {
@@ -417,6 +478,19 @@ function externalFavoriteId(recipe: DisplayRecipe) {
 
 function isExternalFavorite(recipe: DisplayRecipe) {
   return recipe.source === 'external' && externalFavoriteIds.value.has(externalFavoriteId(recipe))
+}
+
+function hasAlcohol(recipe: Recipe) {
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  return /(alcohol|wine|beer|vodka|rum|whiskey|whisky|champagne|liqueur|bier|wein|sekt|alkohol)/.test(text)
+}
+
+function visibleCategory(recipe: Recipe) {
+  const category = recipe.category?.trim()
+  if (!category || category.toLowerCase() === 'side dish') {
+    return ''
+  }
+  return category
 }
 
 async function toggleExternalFavorite(recipe: DisplayRecipe) {
@@ -488,15 +562,21 @@ function formatDate(date: Date) {
         :aria-label="t('home.searchAria')"
       />
       <div class="filter-panel" aria-label="Recipe filters">
-        <label><input v-model="vegan" type="checkbox" /> {{ t('home.filters.vegan') }}</label>
-        <label><input v-model="vegetarian" type="checkbox" /> {{ t('home.filters.vegetarian') }}</label>
+        <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('home.filters.vegan') }}</label>
+        <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('home.filters.vegetarian') }}</label>
         <label><input v-model="glutenFree" type="checkbox" /> {{ t('home.filters.glutenFree') }}</label>
-        <label><input v-model="calorieConscious" type="checkbox" /> {{ t('home.filters.calorieConscious') }}</label>
+        <label><input v-model="calorieConscious" type="checkbox" /> kalorienarm</label>
         <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
-        <label><input v-model="budgetFriendly" type="checkbox" /> {{ t('home.filters.budgetFriendly') }}</label>
+        <button type="button" class="plain-filter-button" @click="ignoreLikes = !ignoreLikes">
+          {{ ignoreLikes ? 'Vorlieben wieder berücksichtigen' : 'Rezepte ohne Präferenzen anzeigen' }}
+        </button>
         <label>
           {{ t('home.filters.maxPrepTime') }}
           <input v-model.number="maxPrepTime" class="small-input" min="1" type="number" />
+        </label>
+        <label>
+          Maximale Kalorien
+          <input v-model.number="maxCalories" class="small-input" min="1" type="number" />
         </label>
         <label>
           {{ t('home.filters.mealType') }}
@@ -508,9 +588,15 @@ function formatDate(date: Date) {
             <option value="snack">{{ t('home.filters.snack') }}</option>
           </select>
         </label>
-        <label class="context-filter">
-          {{ t('home.filters.context') }}
-          <input v-model="contextSearch" class="small-input" type="text" :placeholder="t('home.filters.contextPlaceholder')" />
+        <label>
+          Sortierung
+          <select v-model="sortOrder" class="small-input">
+            <option value="">Standard</option>
+            <option value="caloriesAsc">Kalorien aufsteigend</option>
+            <option value="caloriesDesc">Kalorien absteigend</option>
+            <option value="proteinAsc">Protein aufsteigend</option>
+            <option value="proteinDesc">Protein absteigend</option>
+          </select>
         </label>
       </div>
     </section>
@@ -551,6 +637,7 @@ function formatDate(date: Date) {
 
           <div class="card-content">
             <h3 class="card-title">{{ r.title }}</h3>
+            <span v-if="r.userCreated" class="user-created-icon" title="Von Nutzer erstellt" aria-label="Von Nutzer erstellt">👤</span>
             <button
               v-if="r.source === 'external'"
               type="button"
@@ -560,30 +647,21 @@ function formatDate(date: Date) {
             >
               {{ isExternalFavorite(r) ? '♥ Favorit' : '♡ Favorit' }}
             </button>
-
             <p class="card-meta">
-              <span
-                class="pill source-pill"
-                :class="r.source === 'dishly' ? 'source-pill-dishly' : 'source-pill-external'"
-              >
-                {{ r.source === 'dishly' ? t('home.source.dishly') : t('home.source.external') }}
-              </span>
-              <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
+              <span v-if="visibleCategory(r)" class="pill pill-mint">{{ visibleCategory(r) }}</span>
               <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
+              <span v-if="hasAlcohol(r)" class="pill pill-warning">Alkohol</span>
               <span v-if="r.rating" class="pill pill-rating">
                 {{ t('home.meta.rating', { rating: r.rating.toFixed(1) }) }}
               </span>
             </p>
 
             <p class="card-times">
+              <span v-if="r.calories">{{ r.calories }} kcal</span>
+              <span v-if="r.protein"> · {{ Math.round(r.protein) }} g Protein</span>
               <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
-                {{ t('home.meta.minutes', { minutes: r.prepTimeMinutes + r.cookTimeMinutes }) }}
+                · {{ t('home.meta.minutes', { minutes: r.prepTimeMinutes + r.cookTimeMinutes }) }}
               </span>
-              <span v-if="r.servings"> · {{ t('home.meta.servings', { count: r.servings }) }}</span>
-            </p>
-
-            <p class="card-ingredients">
-              {{ r.ingredients }}
             </p>
 
             <button type="button" class="meal-plan-card-button" @click.stop="openMealPlanModal(r)">
@@ -695,6 +773,17 @@ function formatDate(date: Date) {
   padding: 7px 11px;
   color: #486b68;
   font-size: 0.9rem;
+}
+
+.plain-filter-button {
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #486b68;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 7px 11px;
 }
 
 .filter-panel .context-filter {
@@ -854,32 +943,20 @@ function formatDate(date: Date) {
   color: #b38700;
 }
 
-.source-pill {
-  font-weight: 800;
+.pill-warning {
+  background: #fff0eb;
+  color: #a14c2b;
 }
 
-.source-pill-dishly {
-  background: #eefaf8;
-  color: #1d8e90;
-  border: 1px solid #8fd5cc;
-}
-
-.source-pill-external {
-  background: #fff7fb;
-  color: #b96593;
-  border: 1px solid #f6d9ea;
+.user-created-icon {
+  display: inline-flex;
+  margin-bottom: 8px;
 }
 
 .card-times {
   font-size: 0.92rem;
   color: #486b68;
   margin-bottom: 6px;
-}
-
-.card-ingredients {
-  font-size: 0.95rem;
-  color: #324240;
-  margin-top: 4px;
 }
 
 .meal-plan-card-button {

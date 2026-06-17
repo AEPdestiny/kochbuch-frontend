@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
@@ -22,9 +22,6 @@ const glutenFree = ref(false)
 const lactoseFree = ref(false)
 const highProtein = ref(false)
 const calorieConscious = ref(false)
-const budgetFriendly = ref(false)
-const maxPrepTimeMinutes = ref<number | null>(null)
-const calorieGoal = ref<number | null>(null)
 const goal = ref<UserGoal>('MAINTAIN')
 const dailyCalorieTarget = ref<number | null>(2200)
 
@@ -50,11 +47,8 @@ async function loadPreferences() {
     lactoseFree.value = preferences.lactoseFree
     highProtein.value = preferences.highProtein
     calorieConscious.value = preferences.calorieConscious
-    budgetFriendly.value = preferences.budgetFriendly
-    maxPrepTimeMinutes.value = preferences.maxPrepTimeMinutes ?? null
     goal.value = preferences.goal ?? 'MAINTAIN'
     dailyCalorieTarget.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? defaultCaloriesForGoal(goal.value)
-    calorieGoal.value = dailyCalorieTarget.value
     error.value = null
   } catch (e: unknown) {
     error.value = toLoadError(e)
@@ -69,9 +63,8 @@ async function savePreferences() {
     return
   }
 
-  const normalizedMaxPrepTime = normalizeOptionalPositiveNumber(maxPrepTimeMinutes.value)
   const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
-  if ((normalizedMaxPrepTime !== null && normalizedMaxPrepTime < 1) || (normalizedDailyTarget !== null && normalizedDailyTarget < 1)) {
+  if (normalizedDailyTarget !== null && normalizedDailyTarget < 1) {
     error.value = t('profile.errors.validation')
     return
   }
@@ -87,7 +80,6 @@ async function savePreferences() {
     allergiesText.value = formatList(saved.allergies)
     goal.value = saved.goal ?? goal.value
     dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
-    calorieGoal.value = dailyCalorieTarget.value
     success.value = t('profile.success.saved')
   } catch (e: unknown) {
     error.value = toSaveError(e)
@@ -108,17 +100,24 @@ function toRequest(): UserPreferencesRequest {
     lactoseFree: lactoseFree.value,
     highProtein: highProtein.value,
     calorieConscious: calorieConscious.value,
-    budgetFriendly: budgetFriendly.value,
-    maxPrepTimeMinutes: normalizeOptionalPositiveNumber(maxPrepTimeMinutes.value),
+    budgetFriendly: false,
+    maxPrepTimeMinutes: null,
     calorieGoal: normalizedDailyTarget,
     goal: goal.value,
     dailyCalorieTarget: normalizedDailyTarget,
   }
 }
 
-function applyGoalSuggestion() {
-  dailyCalorieTarget.value = defaultCaloriesForGoal(goal.value)
-  calorieGoal.value = dailyCalorieTarget.value
+function onVeganChanged() {
+  if (vegan.value) {
+    vegetarian.value = false
+  }
+}
+
+function onVegetarianChanged() {
+  if (vegetarian.value) {
+    vegan.value = false
+  }
 }
 
 function defaultCaloriesForGoal(value: UserGoal) {
@@ -165,6 +164,12 @@ function toSaveError(e: unknown) {
     if (!e.status) {
       return t('profile.errors.network')
     }
+    if (e.message) {
+      return e.message
+    }
+  }
+  if (e instanceof Error && e.message) {
+    return e.message
   }
   return t('profile.errors.save')
 }
@@ -200,45 +205,18 @@ function toSaveError(e: unknown) {
 
       <fieldset>
         <legend>{{ t('profile.form.dietaryStyles') }}</legend>
-        <label><input v-model="vegan" type="checkbox" /> {{ t('profile.options.vegan') }}</label>
-        <label><input v-model="vegetarian" type="checkbox" /> {{ t('profile.options.vegetarian') }}</label>
+        <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('profile.options.vegan') }}</label>
+        <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('profile.options.vegetarian') }}</label>
         <label><input v-model="glutenFree" type="checkbox" /> {{ t('profile.options.glutenFree') }}</label>
         <label><input v-model="lactoseFree" type="checkbox" /> {{ t('profile.options.lactoseFree') }}</label>
       </fieldset>
 
-      <fieldset>
+            <fieldset>
         <legend>{{ t('profile.form.goals') }}</legend>
         <label><input v-model="highProtein" type="checkbox" /> {{ t('profile.options.highProtein') }}</label>
-        <label><input v-model="calorieConscious" type="checkbox" /> {{ t('profile.options.calorieConscious') }}</label>
-        <label><input v-model="budgetFriendly" type="checkbox" /> {{ t('profile.options.budgetFriendly') }}</label>
+        <label><input v-model="calorieConscious" type="checkbox" /> kalorienarm</label>
       </fieldset>
-
-      <fieldset>
-        <legend>Kalorienziel</legend>
-        <label>
-          Ziel auswählen
-          <select v-model="goal" @change="applyGoalSuggestion">
-            <option value="WEIGHT_LOSS">Abnehmen - Vorschlag 1800 kcal</option>
-            <option value="MAINTAIN">Gewicht halten - Vorschlag 2200 kcal</option>
-            <option value="MUSCLE_GAIN">Muskelaufbau - Vorschlag 2600 kcal</option>
-          </select>
-        </label>
-        <p class="helper-text">Der Vorschlag wird automatisch gesetzt, du kannst ihn aber manuell anpassen.</p>
-      </fieldset>
-
-      <div class="number-grid">
-        <label>
-          {{ t('profile.form.maxPrepTimeMinutes') }}
-          <input v-model.number="maxPrepTimeMinutes" min="1" type="number" />
-        </label>
-
-        <label>
-          Tagesziel Kalorien
-          <input v-model.number="dailyCalorieTarget" min="1" type="number" />
-        </label>
-      </div>
-
-      <button class="save-button" type="submit" :disabled="saving">
+<button class="save-button" type="submit" :disabled="saving">
         {{ saving ? t('profile.actions.saving') : t('profile.actions.save') }}
       </button>
     </form>

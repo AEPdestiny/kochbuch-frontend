@@ -18,6 +18,8 @@ export type RecipeResponse = RecipeRequest & {
   externalId?: string | null
   source?: 'dishly' | 'spoonacular' | string | null
   calories?: number | null
+  protein?: number | null
+  userCreated?: boolean
   language?: string | null
   sourceUrl?: string | null
 }
@@ -30,10 +32,9 @@ export type RecipeSearchFilters = {
   glutenFree?: boolean
   calorieConscious?: boolean
   highProtein?: boolean
-  budgetFriendly?: boolean
   maxPrepTime?: number | null
+  maxCalories?: number | null
   mealType?: string
-  context?: string
 }
 
 export type ExternalRecipeIngredient = {

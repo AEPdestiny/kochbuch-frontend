@@ -1,4 +1,4 @@
-import { mount, flushPromises, config } from '@vue/test-utils'
+﻿import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import ProfileView from '@/views/ProfileView.vue'
 import { profileApi } from '@/shared/api/profileApi'
@@ -60,9 +60,11 @@ describe('ProfileView', () => {
       expect.objectContaining({
         likes: ['sushi'],
         vegan: true,
+        vegetarian: false,
         highProtein: true,
         goal: 'MAINTAIN',
-        dailyCalorieTarget: 2200,
+        budgetFriendly: false,
+        maxPrepTimeMinutes: null,
       }),
     )
     expect(wrapper.text()).toContain('Präferenzen wurden gespeichert.')
@@ -82,7 +84,7 @@ describe('ProfileView', () => {
 
     expect(wrapper.text()).toContain('Validation failed')
   })
-  it('normalizes cleared optional number fields to null before saving', async () => {
+  it('keeps removed optional number fields hidden and stores neutral backend values', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(profileApi.updatePreferences).mockResolvedValue({
       ...preferences(),
@@ -94,17 +96,14 @@ describe('ProfileView', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    const inputs = wrapper.findAll('input[type="number"]')
-    await inputs[0]!.setValue('')
-    await inputs[1]!.setValue('')
+    expect(wrapper.findAll('input[type="number"]')).toHaveLength(0)
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
     expect(profileApi.updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({
         maxPrepTimeMinutes: null,
-        calorieGoal: null,
-        dailyCalorieTarget: null,
+        budgetFriendly: false,
       }),
     )
   })

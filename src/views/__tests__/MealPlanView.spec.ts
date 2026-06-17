@@ -343,7 +343,7 @@ describe('MealPlanView', () => {
     await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
     const dinnerBucket = wrapper.findAll('.bucket-card')
       .find(button => button.text().includes('Abendessen'))!
-    expect(dinnerBucket.text()).toContain('1/5')
+    expect(dinnerBucket.text()).toContain('1/7')
     await dinnerBucket.trigger('click')
 
     const removeButton = wrapper.findAll('.bucket-panel .secondary-button')
@@ -356,7 +356,7 @@ describe('MealPlanView', () => {
     expect(wrapper.find('.bucket-panel').text()).toContain('Noch keine Rezepte in diesem Bucket.')
     const updatedDinnerBucket = wrapper.findAll('.bucket-card')
       .find(button => button.text().includes('Abendessen'))!
-    expect(updatedDinnerBucket.text()).toContain('0/5')
+    expect(updatedDinnerBucket.text()).toContain('0/7')
   })
 
   it('skips to the next swipe suggestion', async () => {
@@ -695,6 +695,8 @@ function fullSlotWeekResponse(mealSlot = 'dinner'): MealPlanWeekResponse {
     '2026-06-03',
     '2026-06-04',
     '2026-06-05',
+    '2026-06-06',
+    '2026-06-07',
   ]
   return {
     weekStart: '2026-06-01',
@@ -710,6 +712,8 @@ function fullWeekResponse(): MealPlanWeekResponse {
     '2026-06-03',
     '2026-06-04',
     '2026-06-05',
+    '2026-06-06',
+    '2026-06-07',
   ]
   const slots = ['breakfast', 'lunch', 'dinner', 'snack']
   return {

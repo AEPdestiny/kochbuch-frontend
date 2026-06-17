@@ -26,7 +26,7 @@ type SlotSuggestion = {
 }
 
 const { t, locale } = useI18n()
-const BUCKET_LIMIT = 5
+const BUCKET_LIMIT = 7
 
 const loading = ref(true)
 const error = ref<string | null>(null)

@@ -118,7 +118,7 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Test Pasta')
   })
 
-  it('shows an "Extern" badge for external recipes', async () => {
+  it('does not show an external source badge for external recipes', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
@@ -128,11 +128,11 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     const firstCard = wrapper.find('.recipe-card')
-    expect(firstCard.text()).toContain('Extern')
+    expect(firstCard.find('.source-pill-external').exists()).toBe(false)
     expect(firstCard.text()).toContain('External Pasta')
   })
 
-  it('shows a "Dishly" badge for own published recipes', async () => {
+  it('does not show a Dishly source badge for own published recipes', async () => {
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Published Pasta', 'noodles', 'Italian'),
     ])
@@ -141,7 +141,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     const firstCard = wrapper.find('.recipe-card')
-    expect(firstCard.text()).toContain('Dishly')
+    expect(firstCard.find('.source-pill-dishly').exists()).toBe(false)
     expect(firstCard.text()).toContain('Published Pasta')
   })
 
@@ -257,12 +257,10 @@ describe('ApiRecipeList.vue', () => {
       'Search by title, cuisine or ingredients',
     )
     expect(wrapper.text()).toContain('Shuffle recipes')
-    expect(wrapper.text()).toContain('External')
-    expect(wrapper.text()).toContain('Dishly')
     expect(wrapper.text()).toContain('Chicken Pasta')
     expect(wrapper.text()).toContain('Italian')
     expect(wrapper.text()).toContain('Dishly Kartoffelsuppe')
-    expect(wrapper.text()).toContain('Kartoffeln')
+    expect(wrapper.text()).not.toContain('Kartoffeln')
   })
 
   it('shows an error when initial loading fails', async () => {

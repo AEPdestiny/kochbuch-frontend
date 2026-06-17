@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import profileImg from '../assets/salma-profile.jpg'
+import profileImg from '../assets/dishly-logo.png'
 import food1 from '../assets/food1.jpg'
 import food2 from '../assets/food2.jpg'
 import food3 from '../assets/food3.jpg'
