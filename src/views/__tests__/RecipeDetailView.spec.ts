@@ -215,44 +215,23 @@ describe('RecipeDetailView', () => {
     expect(wrapper.text()).toContain('200 g Tomaten')
   })
 
-  it('shows online instruction search when instructions are missing', async () => {
+  it('shows source hint when instructions are missing', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
       ...localRecipe(),
       instructions: '',
-    })
-    vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
-      configured: true,
-      googleSearchUrl: 'https://www.google.com/search?q=Dishly+Pasta+recipe+instructions',
-      results: [
-        {
-          title: 'Dishly Pasta Anleitung',
-          url: 'https://example.com/instructions',
-          snippet: 'Eine mögliche Zubereitung.',
-        },
-      ],
+      sourceUrl: 'https://example.com/source',
     })
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Für dieses Rezept ist keine Zubereitung hinterlegt.')
-    const button = wrapper.findAll('button').find(item => item.text() === 'Zubereitung online suchen')
-    expect(button).toBeTruthy()
-
-    await button!.trigger('click')
-    await flushPromises()
-
-    expect(recipeApi.searchInstructions).toHaveBeenCalledWith({
-      recipeTitle: 'Dishly Pasta',
-      sourceUrl: null,
-      sourceName: 'dishly',
-    })
-    expect(wrapper.text()).toContain('Online gefundene mögliche Zubereitungen')
-    expect(wrapper.text()).toContain('Diese Treffer stammen aus der Websuche und müssen geprüft werden.')
-    expect(wrapper.text()).toContain('Dishly Pasta Anleitung')
+    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.text()).toContain('Zur Originalquelle')
+    expect(wrapper.find('.google-search-link').attributes('href')).toBe('https://example.com/source')
+    expect(recipeApi.searchInstructions).not.toHaveBeenCalled()
   })
 
-  it('treats placeholder instructions as missing and shows search button', async () => {
+  it('treats placeholder instructions as missing and shows source hint', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
       ...localRecipe(),
@@ -261,12 +240,11 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Für dieses Rezept ist keine Zubereitung hinterlegt.')
-    expect(wrapper.text()).toContain('Zubereitung online suchen')
+    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
     expect(wrapper.text()).not.toContain('Keine Anleitung angegeben.')
   })
 
-  it('treats placeholder steps as missing and shows search button', async () => {
+  it('treats placeholder steps as missing and shows source hint', async () => {
     vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue({
       ...externalDetail(),
       instructions: '',
@@ -275,49 +253,23 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Für dieses Rezept ist keine Zubereitung hinterlegt.')
-    expect(wrapper.text()).toContain('Zubereitung online suchen')
+    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.text()).toContain('Zur Originalquelle')
     expect(wrapper.text()).not.toContain('Keine Anleitung angegeben.')
   })
 
-  it('shows configured fallback when Tavily is missing', async () => {
+  it('does not render a source link when instructions and source url are missing', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
       ...localRecipe(),
       instructions: '',
-    })
-    vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
-      configured: false,
-      message: 'Online-Suche ist aktuell nicht konfiguriert.',
-      googleSearchUrl: 'https://www.google.com/search?q=Dishly+Pasta+recipe+instructions',
-      results: [],
+      sourceUrl: null,
     })
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    const button = wrapper.findAll('button').find(item => item.text() === 'Zubereitung online suchen')
-    await button!.trigger('click')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Online-Suche ist aktuell nicht konfiguriert.')
-    expect(wrapper.text()).toContain('Google-Suche öffnen')
-  })
-
-  it('shows instruction search errors', async () => {
-    routeName = 'recipe-detail'
-    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
-      ...localRecipe(),
-      instructions: '',
-    })
-    vi.mocked(recipeApi.searchInstructions).mockRejectedValue(new Error('network'))
-    const wrapper = mount(RecipeDetailView)
-    await flushPromises()
-
-    const button = wrapper.findAll('button').find(item => item.text() === 'Zubereitung online suchen')
-    await button!.trigger('click')
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('Online-Suche konnte aktuell nicht durchgeführt werden.')
+    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.find('.google-search-link').exists()).toBe(false)
   })
 
   it('opens meal plan modal and adds local recipe to selected slot', async () => {

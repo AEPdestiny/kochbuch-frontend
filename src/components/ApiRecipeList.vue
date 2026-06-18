@@ -38,6 +38,7 @@ const pantryIngredients = ref<string[]>([])
 const externalFavoriteIds = ref<Set<string>>(new Set())
 const loading = ref(true)
 const error = ref<string | null>(null)
+const searchNotice = ref<string | null>(null)
 const mealPlanModalOpen = ref(false)
 const mealPlanTarget = ref<DisplayRecipe | null>(null)
 const mealPlanLoading = ref(false)
@@ -129,17 +130,9 @@ const loadRecipes = async () => {
   try {
     await loadPersonalization()
     ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
-    try {
-      allExternal.value = englishRecipesAllowed.value && ownPublished.value.length < 100
-        ? await fetchExternalRecipes()
-        : []
-      error.value = null
-    } catch {
-      allExternal.value = []
-      error.value = ownPublished.value.length === 0
-        ? t('home.errors.externalSearch')
-        : null
-    }
+    allExternal.value = []
+    error.value = null
+    searchNotice.value = null
     buildView()
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
@@ -149,22 +142,42 @@ const loadRecipes = async () => {
 }
 
 const loadExternalRecipes = async (query: string) => {
+  const requestId = ++externalRequestCounter
+  const normalizedQuery = query.toLowerCase().trim()
+
+  try {
+    ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value, normalizedQuery || undefined)
+  } catch (e: any) {
+    error.value = e.message ?? t('home.errors.initialLoad')
+    return
+  }
+
+  const localSource = ownPublished.value.filter(recipe => !recipe.userCreated)
+  const localMatches = filterRecipes(localSource, normalizedQuery)
+
+  if (!normalizedQuery) {
+    allExternal.value = []
+    buildView()
+    error.value = null
+    searchNotice.value = null
+    return
+  }
+
   if (!englishRecipesAllowed.value) {
     allExternal.value = []
     buildView()
     error.value = null
+    searchNotice.value = localMatches.length < 20
+      ? `Für diese Suche gibt es aktuell nur ${localMatches.length} lokale Rezepte in dieser Sprache.`
+      : null
     return
   }
 
-  const requestId = ++externalRequestCounter
-  const normalizedQuery = query.toLowerCase().trim()
-  const localSource = normalizedQuery
-    ? ownPublished.value
-    : ownPublished.value.filter(recipe => !recipe.userCreated)
-  if (filterRecipes(localSource, normalizedQuery).length >= 100) {
+  if (localMatches.length >= 20 || !isSpecificSearch(normalizedQuery)) {
     allExternal.value = []
     buildView()
     error.value = null
+    searchNotice.value = null
     return
   }
 
@@ -177,6 +190,7 @@ const loadExternalRecipes = async (query: string) => {
     allExternal.value = external
     buildView()
     error.value = null
+    searchNotice.value = null
   } catch {
     if (requestId !== externalRequestCounter) {
       return
@@ -185,6 +199,7 @@ const loadExternalRecipes = async (query: string) => {
     allExternal.value = []
     buildView()
     error.value = t('home.errors.externalSearch')
+    searchNotice.value = null
   }
 }
 
@@ -295,8 +310,7 @@ function logMealPlanError(
 }
 
 const shuffleRecipes = () => {
-  if (!allExternal.value.length) return
-  buildView()
+  loadRecipes()
 }
 
 onMounted(() => {
@@ -421,6 +435,10 @@ function buildExternalQuery(query = search.value) {
   if (highProtein.value) parts.push('high protein')
   if (calorieConscious.value) parts.push('low calorie')
   return parts.join(' ').trim() || undefined
+}
+
+function isSpecificSearch(query: string) {
+  return query.trim().length >= 2
 }
 
 function matchesText(recipe: Recipe, query: string) {
@@ -673,6 +691,9 @@ function formatDate(date: Date) {
       <div v-else class="recipe-grid">
         <p v-if="error" class="status-text error">
           {{ t('home.errors.prefix') }} {{ error }}
+        </p>
+        <p v-if="searchNotice" class="status-text">
+          {{ searchNotice }}
         </p>
         <p v-if="mealPlanMessage" class="status-text success">
           {{ mealPlanMessage }}

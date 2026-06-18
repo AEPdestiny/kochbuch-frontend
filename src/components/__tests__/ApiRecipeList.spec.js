@@ -104,27 +104,34 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Rezepte werden geladen...')
   })
 
-  it('loads external and published recipes on initial render', async () => {
+  it('loads only published local-language recipes on initial render', async () => {
     setLocale('en')
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(1, 'Test Pasta', 'noodles', 'Italian'),
     ])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipes).toHaveBeenCalledWith(undefined, undefined, 'en')
-    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('en')
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Test Pasta')
   })
 
   it('does not show an external source badge for external recipes', async () => {
     setLocale('en')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
 
     const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('input[type="search"]').setValue('pasta')
+    await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
     const firstCard = wrapper.find('.recipe-card')
@@ -210,11 +217,18 @@ describe('ApiRecipeList.vue', () => {
 
   it('navigates external recipe cards to the external detail route', async () => {
     setLocale('en')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
 
     const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('input[type="search"]').setValue('pasta')
+    await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
     await wrapper.find('.recipe-card').trigger('click')
 
@@ -235,12 +249,19 @@ describe('ApiRecipeList.vue', () => {
 
   it('opens meal plan modal from home and plans external recipe as customTitle', async () => {
     setLocale('en')
+    vi.useFakeTimers()
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
 
     const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('input[type="search"]').setValue('pasta')
+    await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
     await wrapper.find('.meal-plan-card-button').trigger('click')
@@ -288,12 +309,19 @@ describe('ApiRecipeList.vue', () => {
 
   it('favorites external recipes from home through backend api', async () => {
     setLocale('en')
+    vi.useFakeTimers()
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(1, 'External Pasta', 'noodles', 'Italian', { externalId: '716429', source: 'spoonacular' }),
     ])
 
     const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+    await wrapper.find('input[type="search"]').setValue('pasta')
+    await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
     await wrapper.find('.favorite-button').trigger('click')
@@ -310,10 +338,8 @@ describe('ApiRecipeList.vue', () => {
 
   it('shows translated English home UI while keeping recipe data unchanged', async () => {
     setLocale('en')
-    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(1, 'Chicken Pasta', 'noodles', 'Italian'),
-    ])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(1, 'Chicken Pasta', 'noodles', 'Italian'),
       recipe(10, 'Dishly Kartoffelsuppe', 'Kartoffeln', 'Deutsch'),
     ])
 
@@ -333,7 +359,7 @@ describe('ApiRecipeList.vue', () => {
 
   it('shows an error when initial loading fails', async () => {
     setLocale('en')
-    vi.mocked(recipeApi.getExternalRecipes).mockRejectedValue(
+    vi.mocked(recipeApi.getPublishedRecipes).mockRejectedValue(
       new Error('Error while loading recipes'),
     )
 
@@ -347,18 +373,21 @@ describe('ApiRecipeList.vue', () => {
     setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
-      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([recipe(2, 'Chicken Curry', 'chicken', 'Indian')])
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
     await wrapper.find('input[type="search"]').setValue('chicken')
-    expect(recipeApi.getExternalRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
 
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
+    expect(recipeApi.getPublishedRecipes).toHaveBeenLastCalledWith('en', 'chicken')
     expect(recipeApi.getExternalRecipes).toHaveBeenLastCalledWith('chicken', undefined, 'en')
     expect(wrapper.text()).toContain('Chicken Curry')
   })
@@ -373,16 +402,17 @@ describe('ApiRecipeList.vue', () => {
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
   })
 
-  it('loads default external recipes when search is cleared', async () => {
+  it('reloads local recipes when search is cleared without default external fallback', async () => {
     setLocale('en')
     vi.useFakeTimers()
-    vi.mocked(recipeApi.getExternalRecipes)
+    vi.mocked(recipeApi.getPublishedRecipes)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([recipe(2, 'Chicken Curry', 'chicken', 'Indian')])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([recipe(3, 'Default Pasta', 'noodles', 'Italian')])
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([recipe(2, 'Chicken Curry', 'chicken', 'Indian')])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -396,7 +426,7 @@ describe('ApiRecipeList.vue', () => {
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipes).toHaveBeenLastCalledWith(undefined, undefined, 'en')
+    expect(recipeApi.getPublishedRecipes).toHaveBeenLastCalledWith('en', undefined)
     expect(wrapper.text()).toContain('Default Pasta')
   })
 
@@ -404,12 +434,10 @@ describe('ApiRecipeList.vue', () => {
     setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
-      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([recipe(2, 'External Chicken', 'chicken', 'American')])
-    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
-      recipe(10, 'Published Chicken Soup', 'chicken', 'Soup'),
-      recipe(11, 'Published Pasta', 'noodles', 'Italian'),
-    ])
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([recipe(11, 'Published Pasta', 'noodles', 'Italian')])
+      .mockResolvedValueOnce([recipe(10, 'Published Chicken Soup', 'chicken', 'Soup')])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -427,11 +455,10 @@ describe('ApiRecipeList.vue', () => {
     setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
-      .mockResolvedValueOnce([])
       .mockRejectedValueOnce(new Error('Spoonacular unavailable'))
-    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
-      recipe(10, 'Published Chicken Soup', 'chicken', 'Soup'),
-    ])
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([recipe(10, 'Published Chicken Soup', 'chicken', 'Soup')])
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()

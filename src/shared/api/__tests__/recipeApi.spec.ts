@@ -61,6 +61,16 @@ describe('recipeApi', () => {
     })
   })
 
+  it('getPublishedRecipes sends language and search params when provided', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
+
+    await recipeApi.getPublishedRecipes('de', ' sushi ')
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/published', {
+      params: { language: 'de', search: 'sushi' },
+    })
+  })
+
   it('getExternalRecipes calls /recipes/external with search param', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
 

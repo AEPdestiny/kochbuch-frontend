@@ -395,6 +395,7 @@ describe('MealPlanView', () => {
 
   it('skips to the next swipe suggestion', async () => {
     setLocale('en')
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
       recipe(99, 'Pizza'),
       recipe(100, 'Burger'),
@@ -415,6 +416,7 @@ describe('MealPlanView', () => {
 
     expect(wrapper.text()).toContain('Burger')
     expect(wrapper.text()).toContain('2/2')
+    randomSpy.mockRestore()
   })
 
   it('accepts swipe suggestion as customTitle', async () => {

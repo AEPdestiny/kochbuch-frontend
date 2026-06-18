@@ -15,8 +15,8 @@ export const recipeApi = {
     return response.data
   },
 
-  async getPublishedRecipes(language?: string): Promise<RecipeResponse[]> {
-    const response = await apiClient.get<RecipeResponse[]>('/recipes/published', languageConfig(language))
+  async getPublishedRecipes(language?: string, search?: string): Promise<RecipeResponse[]> {
+    const response = await apiClient.get<RecipeResponse[]>('/recipes/published', languageSearchConfig(language, search))
     return response.data
   },
 
@@ -95,6 +95,19 @@ export const recipeApi = {
 function languageConfig(language?: string) {
   const normalized = language?.trim().toLowerCase()
   return normalized ? { params: { language: normalized } } : undefined
+}
+
+function languageSearchConfig(language?: string, search?: string) {
+  const params: Record<string, string> = {}
+  const normalized = language?.trim().toLowerCase()
+  const normalizedSearch = search?.trim()
+  if (normalized) {
+    params.language = normalized
+  }
+  if (normalizedSearch) {
+    params.search = normalizedSearch
+  }
+  return Object.keys(params).length ? { params } : undefined
 }
 
 function toDiet(filters?: RecipeSearchFilters) {

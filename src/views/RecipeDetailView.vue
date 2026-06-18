@@ -593,15 +593,18 @@ function formatDate(date: Date) {
         </ol>
         <p v-else-if="hasInstructions" class="instruction-text">{{ recipe.instructions }}</p>
         <div v-else class="instruction-search-panel">
-          <p class="instruction-text">Für dieses Rezept ist keine Zubereitung hinterlegt.</p>
-          <button
-            type="button"
-            class="secondary-button"
-            :disabled="instructionSearchLoading"
-            @click="searchInstructionsOnline"
+          <p class="instruction-text">
+            Zubereitungsschritte sind für dieses Rezept nicht verfügbar. Weitere Details findest du über die Quelle.
+          </p>
+          <a
+            v-if="recipe.sourceUrl"
+            :href="recipe.sourceUrl"
+            class="google-search-link"
+            target="_blank"
+            rel="noreferrer"
           >
-            {{ instructionSearchLoading ? 'Online-Suche läuft...' : 'Zubereitung online suchen' }}
-          </button>
+            Zur Originalquelle
+          </a>
           <p v-if="instructionSearchError" class="status-text error">{{ instructionSearchError }}</p>
           <p v-if="instructionSearchMessage" class="status-text">{{ instructionSearchMessage }}</p>
           <a
