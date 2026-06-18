@@ -29,6 +29,7 @@ type DetailRecipe = {
   title: string
   imageUrl: string
   calories?: number | null
+  protein?: number | null
   readyInMinutes: number
   servings: number
   tags: string[]
@@ -121,6 +122,7 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
     title: response.title,
     imageUrl: response.imageUrl,
     calories: response.calories,
+    protein: response.protein,
     readyInMinutes: response.readyInMinutes || response.cookTimeMinutes,
     servings: response.servings,
     tags: response.tags ?? [],
@@ -138,6 +140,7 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     title: response.title,
     imageUrl: response.imageUrl,
     calories: response.calories,
+    protein: response.protein,
     readyInMinutes: response.prepTimeMinutes + response.cookTimeMinutes,
     servings: response.servings,
     tags: [response.category, response.difficulty].filter(Boolean) as string[],
@@ -354,7 +357,14 @@ function mealPlanPayload(detailRecipe: DetailRecipe): number | MealPlanEntryRequ
   if (detailRecipe.source === 'dishly' && Number.isFinite(id) && id > 0) {
     return id
   }
-  return { customTitle: detailRecipe.title }
+  return {
+    customTitle: detailRecipe.title,
+    caloriesSnapshot: detailRecipe.calories ?? null,
+    proteinSnapshot: detailRecipe.protein ?? null,
+    imageUrlSnapshot: detailRecipe.imageUrl ?? null,
+    externalRecipeId: String(detailRecipe.id),
+    externalSource: detailRecipe.source,
+  }
 }
 
 function logMealPlanError(
@@ -433,6 +443,7 @@ function formatDate(date: Date) {
 
         <div class="meta-grid">
           <span v-if="recipe.calories">{{ t('recipeDetail.meta.calories', { calories: recipe.calories }) }}</span>
+          <span v-if="recipe.protein">{{ Math.round(recipe.protein) }} g Protein</span>
           <span v-if="recipe.readyInMinutes">{{ t('recipeDetail.meta.time', { minutes: recipe.readyInMinutes }) }}</span>
           <span v-if="recipe.servings">{{ t('recipeDetail.meta.servings', { count: recipe.servings }) }}</span>
         </div>

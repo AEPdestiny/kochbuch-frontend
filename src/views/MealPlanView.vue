@@ -20,6 +20,7 @@ type SlotSuggestion = {
   title: string
   source: 'dishly' | 'external'
   calories?: number | null
+  protein?: number | null
   imageUrl?: string | null
   externalRecipeId?: string | null
   externalSource?: string | null
@@ -309,19 +310,22 @@ function onSlotSearch(date: string, slot: MealSlot) {
   suggestionTimers[key] = setTimeout(async () => {
     const localSuggestions = recipes.value
       .filter(recipe => recipe.title.toLowerCase().includes(query.toLowerCase()))
+      .filter(hasIngredients)
       .slice(0, 5)
-      .map(recipe => ({ id: recipe.id, title: recipe.title, source: 'dishly' as const }))
+      .map(recipe => ({ id: recipe.id, title: recipe.title, source: 'dishly' as const, protein: recipe.protein }))
     try {
       const externalRecipes = englishRecipesAllowed.value
         ? await recipeApi.getExternalRecipes(query, undefined, currentLanguage.value)
         : []
       const externalSuggestions = externalRecipes
+        .filter(hasIngredients)
         .slice(0, 5)
         .map(recipe => ({
           id: recipe.externalId ?? recipe.id,
           title: recipe.title,
           source: 'external' as const,
           calories: recipe.calories,
+          protein: recipe.protein,
           imageUrl: recipe.imageUrl,
           externalRecipeId: recipe.externalId ? String(recipe.externalId) : recipe.id ? String(recipe.id) : null,
           externalSource: recipe.source ?? 'external',
@@ -348,6 +352,7 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
   selectedRecipeBySlot.value[key] = ''
   customSnapshotBySlot.value[key] = {
     caloriesSnapshot: suggestion.calories ?? null,
+    proteinSnapshot: suggestion.protein ?? null,
     imageUrlSnapshot: suggestion.imageUrl ?? null,
     externalRecipeId: suggestion.externalRecipeId ?? String(suggestion.id),
     externalSource: suggestion.externalSource ?? 'external',
@@ -364,6 +369,7 @@ async function loadSwipeSuggestions() {
     const publishedRecipes = await recipeApi.getPublishedRecipes(currentLanguage.value)
     const seen = new Set<string>()
     let candidates = publishedRecipes
+      .filter(hasIngredients)
       .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
       .filter(recipe => {
         const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -375,6 +381,7 @@ async function loadSwipeSuggestions() {
     if (candidates.length === 0 && englishRecipesAllowed.value) {
       const externalRecipes = await recipeApi.getExternalRecipes(undefined, swipeFilters(), currentLanguage.value)
       candidates = externalRecipes
+        .filter(hasIngredients)
         .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
         .filter(recipe => {
           const key = `${recipe.source ?? 'external'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -429,6 +436,7 @@ async function acceptSwipeSuggestion() {
     const saved = await mealPlanApi.setSlot(date, slot, {
       customTitle: suggestion.title,
       caloriesSnapshot: suggestion.calories ?? null,
+      proteinSnapshot: suggestion.protein ?? null,
       imageUrlSnapshot: suggestion.imageUrl ?? null,
       externalRecipeId: suggestion.externalId ? String(suggestion.externalId) : suggestion.id ? String(suggestion.id) : null,
       externalSource: suggestion.source ?? 'dishly-public',
@@ -466,6 +474,19 @@ function totalCaloriesForBucket(slot: MealSlot) {
 
 function entryCalories(entry: MealPlanEntryResponse | null | undefined) {
   return entry?.calories ?? entry?.recipe?.calories ?? entry?.caloriesSnapshot ?? 0
+}
+
+function entryProtein(entry: MealPlanEntryResponse | null | undefined) {
+  return entry?.recipe?.protein ?? entry?.proteinSnapshot ?? null
+}
+
+function formatProtein(value: number | null | undefined) {
+  return typeof value === 'number' ? `${Math.round(value)} g Protein` : ''
+}
+
+function hasIngredients(recipe: RecipeResponse) {
+  const ingredients = recipe.ingredients?.trim()
+  return Boolean(ingredients && ingredients !== '[]' && ingredients.toLowerCase() !== 'keine zutaten angegeben.')
 }
 
 function firstFreeDateForSlot(slot: MealSlot) {
@@ -618,6 +639,7 @@ function formatDate(date: Date) {
                 <p>
                   {{ t(item.day.labelKey) }} · {{ item.day.date }}
                   <span v-if="entryCalories(item.entry)"> · {{ entryCalories(item.entry) }} kcal</span>
+                  <span v-if="entryProtein(item.entry)"> · {{ formatProtein(entryProtein(item.entry)) }}</span>
                 </p>
               </div>
               <button type="button" class="secondary-button" @click="removeDay(item.day.date, activeBucket)">
@@ -647,6 +669,7 @@ function formatDate(date: Date) {
                 {{ currentSwipeRecipe.prepTimeMinutes + currentSwipeRecipe.cookTimeMinutes }} min
               </span>
               <span v-if="currentSwipeRecipe.calories">{{ currentSwipeRecipe.calories }} kcal</span>
+              <span v-if="currentSwipeRecipe.protein">{{ Math.round(currentSwipeRecipe.protein) }} g Protein</span>
             </div>
             <div class="tag-list">
               <span v-if="currentSwipeRecipe.category">{{ currentSwipeRecipe.category }}</span>

@@ -93,7 +93,7 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
 }
 
 const filterRecipes = (items: Recipe[], q: string) => {
-  return items.filter(r => matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
+  return items.filter(r => hasIngredients(r) && matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
 }
 
 const buildView = () => {
@@ -409,6 +409,11 @@ function matchesText(recipe: Recipe, query: string) {
   if (!query) return true
   const haystack = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
   return haystack.includes(query)
+}
+
+function hasIngredients(recipe: Recipe) {
+  const ingredients = recipe.ingredients?.trim()
+  return Boolean(ingredients && ingredients !== '[]' && ingredients.toLowerCase() !== 'keine zutaten angegeben.')
 }
 
 function matchesLocalFilters(recipe: Recipe) {

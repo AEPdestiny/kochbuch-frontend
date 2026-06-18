@@ -57,6 +57,7 @@ export type ExternalRecipeDetailResponse = {
   category?: string | null
   tags: string[]
   calories?: number | null
+  protein?: number | null
   ingredients: ExternalRecipeIngredient[]
   instructions?: string | null
   steps: string[]

@@ -145,7 +145,7 @@ describe('ApiRecipeList.vue', () => {
     expect(firstCard.text()).toContain('Published Pasta')
   })
 
-  it('shows published JSON recipes even when ingredients are missing', async () => {
+  it('does not show published seed recipes when ingredients are missing', async () => {
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Breakfast Without Ingredients', '', 'breakfast'),
     ])
@@ -153,10 +153,34 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Breakfast Without Ingredients')
+    expect(wrapper.text()).not.toContain('Breakfast Without Ingredients')
   })
 
   it('shows protein on recipe cards when protein exists', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Protein Bowl', 'beans', 'lunch', { protein: 24.4 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('24 g Protein')
+  })
+
+  it('shows protein on English recipe cards', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Protein Bowl', 'beans', 'lunch', { protein: 24.4 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('24 g Protein')
+  })
+
+  it('shows protein on Arabic recipe cards', async () => {
+    setLocale('ar')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Protein Bowl', 'beans', 'lunch', { protein: 24.4 }),
     ])
@@ -171,7 +195,7 @@ describe('ApiRecipeList.vue', () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 100 }, (_, index) =>
-        recipe(index + 1, `Recipe ${index + 1}`, '', index < 25 ? 'breakfast' : index < 50 ? 'lunch' : index < 75 ? 'dinner' : 'snack'),
+        recipe(index + 1, `Recipe ${index + 1}`, 'ingredient', index < 25 ? 'breakfast' : index < 50 ? 'lunch' : index < 75 ? 'dinner' : 'snack'),
       ),
     )
 
