@@ -93,7 +93,7 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
 }
 
 const filterRecipes = (items: Recipe[], q: string) => {
-  return items.filter(r => hasIngredients(r) && matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
+  return items.filter(r => matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
 }
 
 const buildView = () => {
@@ -103,10 +103,13 @@ const buildView = () => {
     : ownPublished.value.filter(recipe => !recipe.userCreated)
   const matchingPublished = filterRecipes(localSource, q)
   const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
-  const externalSlice = filterRecipes(shuffled, q).slice(0, EXTERNAL_CHUNK)
+  const externalFallbackLimit = Math.max(0, 100 - matchingPublished.length)
+  const externalSlice = externalFallbackLimit > 0
+    ? filterRecipes(shuffled, q).slice(0, Math.min(EXTERNAL_CHUNK, externalFallbackLimit))
+    : []
   recipes.value = sortRecipes(applyPreferenceBoost([
-    ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
     ...matchingPublished.map(recipe => toDisplayRecipe(recipe, 'dishly')),
+    ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
   ]))
 }
 
@@ -114,17 +117,19 @@ const loadRecipes = async () => {
   loading.value = true
   try {
     await loadPersonalization()
-    const [externalResult, ownResult] = await Promise.allSettled([
-      englishRecipesAllowed.value ? fetchExternalRecipes() : Promise.resolve([]),
-      recipeApi.getPublishedRecipes(currentLanguage.value),
-    ])
-
-    allExternal.value = externalResult.status === 'fulfilled' ? externalResult.value : []
-    ownPublished.value = ownResult.status === 'fulfilled' ? ownResult.value : []
+    ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
+    try {
+      allExternal.value = englishRecipesAllowed.value && ownPublished.value.length < 100
+        ? await fetchExternalRecipes()
+        : []
+      error.value = null
+    } catch {
+      allExternal.value = []
+      error.value = ownPublished.value.length === 0
+        ? t('home.errors.externalSearch')
+        : null
+    }
     buildView()
-    error.value = externalResult.status === 'rejected' && ownPublished.value.length === 0
-      ? t('home.errors.externalSearch')
-      : null
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
@@ -141,6 +146,17 @@ const loadExternalRecipes = async (query: string) => {
   }
 
   const requestId = ++externalRequestCounter
+  const normalizedQuery = query.toLowerCase().trim()
+  const localSource = normalizedQuery
+    ? ownPublished.value
+    : ownPublished.value.filter(recipe => !recipe.userCreated)
+  if (filterRecipes(localSource, normalizedQuery).length >= 100) {
+    allExternal.value = []
+    buildView()
+    error.value = null
+    return
+  }
+
   try {
     const external = await fetchExternalRecipes(query)
     if (requestId !== externalRequestCounter) {
@@ -395,10 +411,6 @@ function matchesText(recipe: Recipe, query: string) {
   return haystack.includes(query)
 }
 
-function hasIngredients(recipe: Recipe) {
-  return Boolean(recipe.ingredients?.trim())
-}
-
 function matchesLocalFilters(recipe: Recipe) {
   const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
   const totalTime = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
@@ -451,16 +463,29 @@ function sortRecipes(items: DisplayRecipe[]) {
     return sorted.sort((a, b) => optionalNumber(b.calories) - optionalNumber(a.calories))
   }
   if (sortOrder.value === 'proteinAsc') {
-    return sorted.sort((a, b) => optionalNumber(a.protein) - optionalNumber(b.protein))
+    return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'asc'))
   }
   if (sortOrder.value === 'proteinDesc') {
-    return sorted.sort((a, b) => optionalNumber(b.protein) - optionalNumber(a.protein))
+    return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'desc'))
   }
   return sorted
 }
 
 function optionalNumber(value: number | null | undefined) {
   return typeof value === 'number' ? value : Number.MAX_SAFE_INTEGER
+}
+
+function compareOptionalNumbers(
+  a: number | null | undefined,
+  b: number | null | undefined,
+  direction: 'asc' | 'desc',
+) {
+  const hasA = typeof a === 'number'
+  const hasB = typeof b === 'number'
+  if (!hasA && !hasB) return 0
+  if (!hasA) return 1
+  if (!hasB) return -1
+  return direction === 'asc' ? a - b : b - a
 }
 
 function recommendationReasons(recipe: Recipe, source: RecipeSource) {

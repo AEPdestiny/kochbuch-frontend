@@ -145,6 +145,45 @@ describe('ApiRecipeList.vue', () => {
     expect(firstCard.text()).toContain('Published Pasta')
   })
 
+  it('shows published JSON recipes even when ingredients are missing', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Breakfast Without Ingredients', '', 'breakfast'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Breakfast Without Ingredients')
+  })
+
+  it('shows protein on recipe cards when protein exists', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Protein Bowl', 'beans', 'lunch', { protein: 24.4 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('24 g Protein')
+  })
+
+  it('renders 100 published database recipes from the backend response', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 100 }, (_, index) =>
+        recipe(index + 1, `Recipe ${index + 1}`, '', index < 25 ? 'breakfast' : index < 50 ? 'lunch' : index < 75 ? 'dinner' : 'snack'),
+      ),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(100)
+    expect(wrapper.text()).toContain('Recipe 1')
+    expect(wrapper.text()).toContain('Recipe 100')
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
+  })
+
   it('navigates external recipe cards to the external detail route', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
@@ -375,6 +414,32 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Published Chicken Soup')
     expect(wrapper.text()).toContain('Error:')
     expect(wrapper.text()).toContain('External recipes could not be loaded.')
+  })
+
+  it('sorts by real protein values and keeps missing protein last', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'No Protein Recipe', 'rice', 'lunch', { protein: null }),
+      recipe(11, 'High Protein Recipe', 'beans', 'lunch', { protein: 35 }),
+      recipe(12, 'Low Protein Recipe', 'salad', 'lunch', { protein: 8 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const sortSelect = wrapper.findAll('select').find(select =>
+      select.text().includes('Protein absteigend'),
+    )
+    expect(sortSelect?.exists()).toBe(true)
+    if (!sortSelect) throw new Error('Protein sort select not found')
+    await sortSelect.setValue('proteinDesc')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('High Protein Recipe')
+    expect(cards[1]).toContain('Low Protein Recipe')
+    expect(cards[2]).toContain('No Protein Recipe')
   })
 
   it('renders Arabic home UI without errors', async () => {
