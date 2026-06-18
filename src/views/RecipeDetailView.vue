@@ -86,7 +86,7 @@ const mealSlots: { key: MealSlot; labelKey: string }[] = [
 
 const hasInstructions = computed(() => {
   const current = recipe.value
-  return !!current && (current.steps.length > 0 || !!current.instructions.trim())
+  return !!current && (current.steps.length > 0 || hasRealInstructionText(current.instructions))
 })
 
 onMounted(() => {
@@ -128,6 +128,8 @@ async function loadExternalFavoriteState() {
 }
 
 function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
+  const instructions = normalizeInstructions(response.instructions)
+  const steps = normalizeSteps(response.steps)
   return {
     id: response.externalId ?? response.id,
     source: 'spoonacular',
@@ -139,13 +141,14 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
     servings: response.servings,
     tags: response.tags ?? [],
     ingredients: response.ingredients.map(mapIngredient),
-    instructions: response.instructions ?? '',
-    steps: response.steps ?? [],
+    instructions,
+    steps,
     sourceUrl: response.sourceUrl,
   }
 }
 
 function mapDishly(response: RecipeResponse): DetailRecipe {
+  const instructions = normalizeInstructions(response.instructions)
   return {
     id: response.id,
     source: 'dishly',
@@ -157,12 +160,40 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     servings: response.servings,
     tags: [response.category, response.difficulty].filter(Boolean) as string[],
     ingredients: splitIngredients(response.ingredients),
-    instructions: response.instructions,
-    steps: response.instructions
-      ? response.instructions.split(/\n+/).map(step => step.trim()).filter(Boolean)
-      : [],
+    instructions,
+    steps: splitInstructionSteps(instructions),
     sourceUrl: response.sourceUrl,
   }
+}
+
+function normalizeInstructions(value?: string | null) {
+  const normalized = value?.trim() ?? ''
+  return isInstructionPlaceholder(normalized) ? '' : normalized
+}
+
+function normalizeSteps(values?: string[] | null) {
+  return (values ?? [])
+    .map(step => normalizeInstructions(step))
+    .filter(Boolean)
+}
+
+function splitInstructionSteps(value: string) {
+  return value
+    ? value.split(/\n+/).map(step => normalizeInstructions(step)).filter(Boolean)
+    : []
+}
+
+function hasRealInstructionText(value?: string | null) {
+  return !!normalizeInstructions(value)
+}
+
+function isInstructionPlaceholder(value: string) {
+  const normalized = value.trim().toLowerCase()
+  return normalized === ''
+    || normalized === 'keine anleitung angegeben.'
+    || normalized === 'keine zubereitung angegeben.'
+    || normalized === 'no instructions provided.'
+    || normalized === 'no instructions available.'
 }
 
 function mapIngredient(ingredient: ExternalRecipeIngredient): DetailIngredient {

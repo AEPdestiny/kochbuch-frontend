@@ -251,6 +251,34 @@ describe('RecipeDetailView', () => {
     expect(wrapper.text()).toContain('Dishly Pasta Anleitung')
   })
 
+  it('treats placeholder instructions as missing and shows search button', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: 'Keine Anleitung angegeben.',
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Für dieses Rezept ist keine Zubereitung hinterlegt.')
+    expect(wrapper.text()).toContain('Zubereitung online suchen')
+    expect(wrapper.text()).not.toContain('Keine Anleitung angegeben.')
+  })
+
+  it('treats placeholder steps as missing and shows search button', async () => {
+    vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue({
+      ...externalDetail(),
+      instructions: '',
+      steps: ['Keine Anleitung angegeben.'],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Für dieses Rezept ist keine Zubereitung hinterlegt.')
+    expect(wrapper.text()).toContain('Zubereitung online suchen')
+    expect(wrapper.text()).not.toContain('Keine Anleitung angegeben.')
+  })
+
   it('shows configured fallback when Tavily is missing', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
