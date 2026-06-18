@@ -29,6 +29,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getExternalRecipeDetail: vi.fn(),
     getRecipe: vi.fn(),
+    searchInstructions: vi.fn(),
   },
 }))
 
@@ -68,6 +69,10 @@ describe('RecipeDetailView', () => {
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue(externalDetail())
     vi.mocked(recipeApi.getRecipe).mockResolvedValue(localRecipe())
+    vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
+      configured: true,
+      results: [],
+    })
     vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
     vi.mocked(favoriteApi.addExternalFavorite).mockResolvedValue({
@@ -121,6 +126,7 @@ describe('RecipeDetailView', () => {
     expect(recipeApi.getExternalRecipeDetail).toHaveBeenCalledWith('716429')
     expect(wrapper.text()).toContain('Pasta with Garlic')
     expect(wrapper.text()).toContain('510 kcal')
+    expect(wrapper.text()).toContain('31 g Protein')
     expect(wrapper.text()).toContain('2 cups pasta')
     expect(wrapper.text()).toContain('Cook pasta.')
   })
@@ -204,7 +210,85 @@ describe('RecipeDetailView', () => {
 
     expect(recipeApi.getRecipe).toHaveBeenCalledWith('716429')
     expect(wrapper.text()).toContain('Dishly Pasta')
+    expect(wrapper.text()).toContain('19 g Protein')
     expect(wrapper.text()).toContain('Tomaten')
+  })
+
+  it('shows online instruction search when instructions are missing', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: '',
+    })
+    vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
+      configured: true,
+      googleSearchUrl: 'https://www.google.com/search?q=Dishly+Pasta+recipe+instructions',
+      results: [
+        {
+          title: 'Dishly Pasta Anleitung',
+          url: 'https://example.com/instructions',
+          snippet: 'Eine mögliche Zubereitung.',
+        },
+      ],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Für dieses Rezept ist keine Zubereitung hinterlegt.')
+    const button = wrapper.findAll('button').find(item => item.text() === 'Zubereitung online suchen')
+    expect(button).toBeTruthy()
+
+    await button!.trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.searchInstructions).toHaveBeenCalledWith({
+      recipeTitle: 'Dishly Pasta',
+      sourceUrl: null,
+      sourceName: 'dishly',
+    })
+    expect(wrapper.text()).toContain('Online gefundene mögliche Zubereitungen')
+    expect(wrapper.text()).toContain('Diese Treffer stammen aus der Websuche und müssen geprüft werden.')
+    expect(wrapper.text()).toContain('Dishly Pasta Anleitung')
+  })
+
+  it('shows configured fallback when Tavily is missing', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: '',
+    })
+    vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
+      configured: false,
+      message: 'Online-Suche ist aktuell nicht konfiguriert.',
+      googleSearchUrl: 'https://www.google.com/search?q=Dishly+Pasta+recipe+instructions',
+      results: [],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const button = wrapper.findAll('button').find(item => item.text() === 'Zubereitung online suchen')
+    await button!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Online-Suche ist aktuell nicht konfiguriert.')
+    expect(wrapper.text()).toContain('Google-Suche öffnen')
+  })
+
+  it('shows instruction search errors', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: '',
+    })
+    vi.mocked(recipeApi.searchInstructions).mockRejectedValue(new Error('network'))
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const button = wrapper.findAll('button').find(item => item.text() === 'Zubereitung online suchen')
+    await button!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Online-Suche konnte aktuell nicht durchgeführt werden.')
   })
 
   it('opens meal plan modal and adds local recipe to selected slot', async () => {
@@ -250,6 +334,11 @@ describe('RecipeDetailView', () => {
     expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-15')
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-15', 'breakfast', {
       customTitle: 'Pasta with Garlic',
+      caloriesSnapshot: 510,
+      proteinSnapshot: 31.2,
+      imageUrlSnapshot: 'https://example.com/pasta.jpg',
+      externalRecipeId: '716429',
+      externalSource: 'spoonacular',
     })
     expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
   })
@@ -294,6 +383,7 @@ function externalDetail() {
     category: 'main course',
     tags: ['main course', 'vegetarian'],
     calories: 510,
+    protein: 31.2,
     ingredients: [
       { name: 'pasta', original: '2 cups pasta', amount: 2, unit: 'cups' },
       { name: 'olive oil', original: '1 tbsp olive oil', amount: 1, unit: 'tbsp' },
@@ -319,5 +409,6 @@ function localRecipe() {
     instructions: 'Kochen',
     favorite: false,
     published: true,
+    protein: 18.6,
   }
 }

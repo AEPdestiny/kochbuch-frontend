@@ -2,6 +2,8 @@ import { apiClient } from './apiClient'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeMatchResponse,
+  InstructionSearchRequest,
+  InstructionSearchResponse,
   RecipeSearchFilters,
   RecipeRequest,
   RecipeResponse,
@@ -54,6 +56,11 @@ export const recipeApi = {
     const response = await apiClient.get<ExternalRecipeMatchResponse[]>('/recipes/external/by-ingredients', {
       params: { ingredients: ingredients.join(',') },
     })
+    return response.data
+  },
+
+  async searchInstructions(request: InstructionSearchRequest): Promise<InstructionSearchResponse> {
+    const response = await apiClient.post<InstructionSearchResponse>('/recipes/instructions/search', request)
     return response.data
   },
 

@@ -123,4 +123,25 @@ describe('recipeApi', () => {
       params: { ingredients: 'tomato,pasta' },
     })
   })
+
+  it('searchInstructions posts recipe context to /recipes/instructions/search', async () => {
+    const response = {
+      configured: true,
+      results: [{ title: 'Pasta instructions', url: 'https://example.com', snippet: 'Cook it.' }],
+    }
+    vi.mocked(apiClient.post).mockResolvedValue({ data: response })
+
+    const result = await recipeApi.searchInstructions({
+      recipeTitle: 'Pasta',
+      sourceUrl: 'https://source.example.com',
+      sourceName: 'Dishly',
+    })
+
+    expect(apiClient.post).toHaveBeenCalledWith('/recipes/instructions/search', {
+      recipeTitle: 'Pasta',
+      sourceUrl: 'https://source.example.com',
+      sourceName: 'Dishly',
+    })
+    expect(result).toEqual(response)
+  })
 })

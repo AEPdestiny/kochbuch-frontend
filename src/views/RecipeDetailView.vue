@@ -11,6 +11,7 @@ import { favoriteApi } from '@/shared/api/favoriteApi'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
+  InstructionSearchResult,
   RecipeResponse,
 } from '@/types/recipe'
 import type { RestaurantResponse } from '@/types/restaurant'
@@ -59,6 +60,11 @@ const mealPlanLoading = ref(false)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const externalFavorite = ref(false)
 const favoriteError = ref<string | null>(null)
+const instructionSearchLoading = ref(false)
+const instructionSearchError = ref<string | null>(null)
+const instructionSearchMessage = ref<string | null>(null)
+const instructionSearchResults = ref<InstructionSearchResult[]>([])
+const instructionGoogleUrl = ref<string | null>(null)
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
 const weekDays = computed(() => {
@@ -78,6 +84,11 @@ const mealSlots: { key: MealSlot; labelKey: string }[] = [
   { key: 'snack', labelKey: 'mealPlan.slots.snack' },
 ]
 
+const hasInstructions = computed(() => {
+  const current = recipe.value
+  return !!current && (current.steps.length > 0 || !!current.instructions.trim())
+})
+
 onMounted(() => {
   loadRecipe()
 })
@@ -90,6 +101,7 @@ async function loadRecipe() {
     recipe.value = isExternal.value
       ? mapExternal(await recipeApi.getExternalRecipeDetail(id))
       : mapDishly(await recipeApi.getRecipe(id))
+    resetInstructionSearch()
     await loadExternalFavoriteState()
   } catch {
     error.value = t('recipeDetail.errors.load')
@@ -299,6 +311,46 @@ async function toggleExternalFavorite() {
   }
 }
 
+async function searchInstructionsOnline() {
+  if (!recipe.value) return
+  instructionSearchLoading.value = true
+  instructionSearchError.value = null
+  instructionSearchMessage.value = null
+  instructionSearchResults.value = []
+  instructionGoogleUrl.value = null
+
+  try {
+    const response = await recipeApi.searchInstructions({
+      recipeTitle: recipe.value.title,
+      sourceUrl: recipe.value.sourceUrl ?? null,
+      sourceName: recipe.value.source,
+    })
+    instructionSearchResults.value = response.results ?? []
+    instructionGoogleUrl.value = response.googleSearchUrl ?? null
+    if (!response.configured) {
+      instructionSearchError.value = response.message || 'Online-Suche ist aktuell nicht konfiguriert.'
+    } else if (response.message) {
+      instructionSearchMessage.value = response.message
+    } else if (instructionSearchResults.value.length === 0) {
+      instructionSearchMessage.value = 'Keine Online-Treffer gefunden.'
+    }
+  } catch (e: unknown) {
+    instructionSearchError.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : 'Online-Suche konnte aktuell nicht durchgeführt werden.'
+  } finally {
+    instructionSearchLoading.value = false
+  }
+}
+
+function resetInstructionSearch() {
+  instructionSearchLoading.value = false
+  instructionSearchError.value = null
+  instructionSearchMessage.value = null
+  instructionSearchResults.value = []
+  instructionGoogleUrl.value = null
+}
+
 const currentPosition = (): Promise<GeolocationPosition> => new Promise((resolve, reject) => {
   navigator.geolocation.getCurrentPosition(resolve, reject)
 })
@@ -497,7 +549,39 @@ function formatDate(date: Date) {
         <ol v-if="recipe.steps.length" class="step-list">
           <li v-for="step in recipe.steps" :key="step">{{ step }}</li>
         </ol>
-        <p v-else class="instruction-text">{{ recipe.instructions || t('recipeDetail.instructions.empty') }}</p>
+        <p v-else-if="hasInstructions" class="instruction-text">{{ recipe.instructions }}</p>
+        <div v-else class="instruction-search-panel">
+          <p class="instruction-text">Für dieses Rezept ist keine Zubereitung hinterlegt.</p>
+          <button
+            type="button"
+            class="secondary-button"
+            :disabled="instructionSearchLoading"
+            @click="searchInstructionsOnline"
+          >
+            {{ instructionSearchLoading ? 'Online-Suche läuft...' : 'Zubereitung online suchen' }}
+          </button>
+          <p v-if="instructionSearchError" class="status-text error">{{ instructionSearchError }}</p>
+          <p v-if="instructionSearchMessage" class="status-text">{{ instructionSearchMessage }}</p>
+          <a
+            v-if="instructionGoogleUrl"
+            class="google-search-link"
+            :href="instructionGoogleUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Google-Suche öffnen
+          </a>
+          <div v-if="instructionSearchResults.length" class="instruction-results">
+            <h3>Online gefundene mögliche Zubereitungen</h3>
+            <p class="hint">Diese Treffer stammen aus der Websuche und müssen geprüft werden.</p>
+            <ul>
+              <li v-for="result in instructionSearchResults" :key="result.url">
+                <a :href="result.url" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
+                <p v-if="result.snippet">{{ result.snippet }}</p>
+              </li>
+            </ul>
+          </div>
+        </div>
       </section>
 
       <section class="detail-section">
@@ -715,6 +799,47 @@ function formatDate(date: Date) {
 .hint {
   color: #486b68;
   white-space: pre-line;
+}
+
+.instruction-search-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.google-search-link {
+  color: #cc7da9;
+  font-weight: 800;
+}
+
+.instruction-results {
+  background: #f4fbfa;
+  border: 1px solid #c3e7e1;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.instruction-results h3 {
+  color: #2b1b23;
+  font-size: 1rem;
+  margin: 0 0 8px 0;
+}
+
+.instruction-results ul {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 10px 0 0 0;
+  padding: 0;
+}
+
+.instruction-results a {
+  color: #1d8e90;
+  font-weight: 800;
+}
+
+.instruction-results p {
+  color: #486b68;
+  margin: 4px 0 0 0;
 }
 
 .restaurant-list li {

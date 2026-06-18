@@ -75,3 +75,22 @@ export type ExternalRecipeMatchResponse = {
   usedIngredients: string[]
   missedIngredients: string[]
 }
+
+export type InstructionSearchRequest = {
+  recipeTitle: string
+  sourceUrl?: string | null
+  sourceName?: string | null
+}
+
+export type InstructionSearchResult = {
+  title: string
+  url: string
+  snippet?: string | null
+}
+
+export type InstructionSearchResponse = {
+  configured: boolean
+  message?: string | null
+  googleSearchUrl?: string | null
+  results: InstructionSearchResult[]
+}
