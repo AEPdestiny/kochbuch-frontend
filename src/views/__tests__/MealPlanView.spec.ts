@@ -239,25 +239,36 @@ describe('MealPlanView', () => {
     })
   })
 
-  it('uses external suggestions as custom text instead of fake recipe ids', async () => {
-    setLocale('en')
+  it('uses public database suggestions as custom text with nutrition snapshot', async () => {
     vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(99, 'Sushi Bowl', {
+        calories: 450,
+        protein: 24,
+        imageUrl: 'https://example.com/sushi.jpg',
+        externalId: 'seed-99',
+        source: 'dishly',
+        userCreated: false,
+      }),
+    ])
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
     })
     await flushPromises()
 
     const tuesdayCard = wrapper.findAll('.day-card')
-      .find(card => card.text().includes('Tuesday'))!
+      .find(card => card.text().includes('Dienstag'))!
     await tuesdayCard.find('input').setValue('sushi')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
-    const externalButton = tuesdayCard.findAll('.suggestion-list button')
-      .find(button => button.text().includes('Externer Vorschlag'))!
-    await externalButton.trigger('click')
+    const localButton = tuesdayCard.findAll('.suggestion-list button')
+      .find(button => button.text().includes('Lokaler Vorschlag'))!
+    expect(localButton.text()).toContain('450 kcal')
+    expect(localButton.text()).toContain('24 g Protein')
+    await localButton.trigger('click')
 
-    expect(wrapper.text()).toContain('Externe Vorschläge werden aktuell als Freitext gespeichert.')
+    expect(wrapper.text()).toContain('Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert.')
     expect((tuesdayCard.find('input').element as HTMLInputElement).value).toBe('Sushi Bowl')
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 9,
@@ -275,8 +286,8 @@ describe('MealPlanView', () => {
       caloriesSnapshot: 450,
       proteinSnapshot: 24,
       imageUrlSnapshot: 'https://example.com/sushi.jpg',
-      externalRecipeId: 'ext-99',
-      externalSource: 'spoonacular',
+      externalRecipeId: 'seed-99',
+      externalSource: 'dishly',
     })
     vi.useRealTimers()
   })

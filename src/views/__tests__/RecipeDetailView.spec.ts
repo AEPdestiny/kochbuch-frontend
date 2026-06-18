@@ -211,7 +211,8 @@ describe('RecipeDetailView', () => {
     expect(recipeApi.getRecipe).toHaveBeenCalledWith('716429')
     expect(wrapper.text()).toContain('Dishly Pasta')
     expect(wrapper.text()).toContain('19 g Protein')
-    expect(wrapper.text()).toContain('Tomaten')
+    expect(wrapper.text()).toContain('2 Zutaten')
+    expect(wrapper.text()).toContain('200 g Tomaten')
   })
 
   it('shows online instruction search when instructions are missing', async () => {
@@ -433,7 +434,7 @@ function localRecipe() {
     difficulty: 'easy',
     category: 'Italian',
     rating: 4.5,
-    ingredients: 'Tomaten, Pasta',
+    ingredients: '200 g Tomaten, 150 g Pasta',
     instructions: 'Kochen',
     favorite: false,
     published: true,

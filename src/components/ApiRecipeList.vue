@@ -92,6 +92,17 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
   return arr
 }
 
+const shuffleDisplayRecipes = (items: DisplayRecipe[]): DisplayRecipe[] => {
+  const arr: DisplayRecipe[] = [...items]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const tmp = arr[i] as DisplayRecipe
+    arr[i] = arr[j] as DisplayRecipe
+    arr[j] = tmp
+  }
+  return arr
+}
+
 const filterRecipes = (items: Recipe[], q: string) => {
   return items.filter(r => matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
 }
@@ -447,17 +458,25 @@ function matchesLikes(recipe: DisplayRecipe) {
 }
 
 function applyPreferenceBoost(items: DisplayRecipe[]) {
-  if (ignoreLikes.value || likes.value.length === 0 || items.length < 4) {
+  if (ignoreLikes.value) {
+    return shuffleDisplayRecipes(items)
+  }
+  if (likes.value.length === 0 || items.length < 4) {
     return items
   }
-  const preferred = items.filter(matchesLikes)
-  const mixed = items.filter(recipe => !matchesLikes(recipe))
-  const preferredLimit = Math.max(1, Math.floor(items.length * 0.25))
-  return [
+  const preferred = shuffleDisplayRecipes(items.filter(matchesLikes))
+  const mixed = shuffleDisplayRecipes(items.filter(recipe => !matchesLikes(recipe)))
+  const preferredLimit = Math.min(preferred.length, Math.floor(items.length * 0.5))
+  const mixedLimit = Math.min(mixed.length, items.length - preferredLimit)
+  const balanced = [
     ...preferred.slice(0, preferredLimit),
-    ...mixed,
-    ...preferred.slice(preferredLimit),
+    ...mixed.slice(0, mixedLimit),
   ]
+  const selected = new Set(balanced.map(recipe => `${recipe.source}-${recipe.id}`))
+  const remaining = [...mixed.slice(mixedLimit), ...preferred.slice(preferredLimit)]
+    .filter(recipe => !selected.has(`${recipe.source}-${recipe.id}`))
+
+  return shuffleDisplayRecipes([...balanced, ...remaining].slice(0, items.length))
 }
 
 function sortRecipes(items: DisplayRecipe[]) {

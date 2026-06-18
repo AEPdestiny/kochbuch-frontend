@@ -90,6 +90,7 @@ const hasInstructions = computed(() => {
   const current = recipe.value
   return !!current && (current.steps.length > 0 || hasRealInstructionText(current.instructions))
 })
+const ingredientCount = computed(() => recipe.value?.ingredients.length ?? 0)
 
 onMounted(() => {
   loadRecipe()
@@ -571,7 +572,10 @@ function formatDate(date: Date) {
       </div>
 
       <section class="detail-section">
-        <h2>{{ t('recipeDetail.ingredients.title') }}</h2>
+        <h2>
+          {{ t('recipeDetail.ingredients.title') }}
+          <span v-if="ingredientCount">({{ ingredientCount }} Zutaten)</span>
+        </h2>
         <ul class="ingredient-list">
           <li v-for="ingredient in recipe.ingredients" :key="ingredient.original">
             <span>{{ ingredient.original }}</span>

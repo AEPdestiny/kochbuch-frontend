@@ -25,6 +25,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
 vi.mock('@/shared/api/favoriteApi', () => ({
   favoriteApi: {
     getExternalFavorites: vi.fn(),
+    removeExternalFavorite: vi.fn(),
   },
 }))
 
@@ -40,6 +41,7 @@ describe('RecipeList.vue', () => {
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
+    vi.mocked(favoriteApi.removeExternalFavorite).mockResolvedValue()
   })
 
   it('loads /recipes/mine and shows "Deine erstellten Rezepte" with items for logged-in users', async () => {
@@ -433,6 +435,63 @@ describe('RecipeList.vue', () => {
     await wrapper.find('.recipe-grid .recipe-card').trigger('click')
 
     expect(push).toHaveBeenCalledWith('/recipe/external/716429')
+  })
+
+  it('removes external favorites directly from the favorites grid', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([
+      {
+        id: 1,
+        externalRecipeId: '716429',
+        externalTitle: 'External Pasta',
+        externalImageUrl: 'https://example.com/pasta.jpg',
+        externalSource: 'SPOONACULAR',
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('External Pasta')
+    await wrapper.find('.favorite-remove-button').trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.removeExternalFavorite).toHaveBeenCalledWith('SPOONACULAR', '716429')
+    expect(wrapper.text()).not.toContain('External Pasta')
+  })
+
+  it('removes own favorites directly by updating the recipe', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const ownFavorite = {
+      id: 1,
+      title: 'Fav 1',
+      imageUrl: '',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 0,
+      difficulty: '',
+      category: '',
+      rating: 0,
+      ingredients: 'x',
+      instructions: 'y',
+      favorite: true,
+      published: false,
+    }
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([ownFavorite])
+    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...ownFavorite, favorite: false })
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    await wrapper.find('.favorite-remove-button').trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(1, expect.objectContaining({
+      favorite: false,
+      published: false,
+    }))
+    expect(wrapper.find('.recipe-grid').text()).not.toContain('Fav 1')
   })
   it('shows English recipe UI texts after locale switch while recipe data stays unchanged', async () => {
     setLocale('en')

@@ -19,6 +19,7 @@ type SlotSuggestion = {
   id: number | string
   title: string
   source: 'dishly' | 'external'
+  planAsRecipe?: boolean
   calories?: number | null
   protein?: number | null
   imageUrl?: string | null
@@ -119,12 +120,13 @@ async function loadData() {
   actionError.value = null
 
   try {
-    const [loadedWeek, ownRecipes] = await Promise.all([
+    const [loadedWeek, ownRecipes, publishedRecipes] = await Promise.all([
       mealPlanApi.getWeek(),
       recipeApi.getMyRecipes(),
+      recipeApi.getPublishedRecipes(currentLanguage.value),
     ])
     week.value = loadedWeek
-    recipes.value = ownRecipes
+    recipes.value = mergeRecipes(ownRecipes, publishedRecipes)
     syncSelectedRecipes(loadedWeek.entries)
     loadPreferences()
   } catch {
@@ -310,32 +312,20 @@ function onSlotSearch(date: string, slot: MealSlot) {
   suggestionTimers[key] = setTimeout(async () => {
     const localSuggestions = recipes.value
       .filter(recipe => recipe.title.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 5)
+      .slice(0, 8)
       .map(recipe => ({
         id: recipe.id,
         title: recipe.title,
-        source: 'dishly' as const,
+        source: recipe.userCreated ? 'dishly' as const : 'external' as const,
+        planAsRecipe: recipe.userCreated === true,
         calories: recipe.calories,
         protein: recipe.protein,
         imageUrl: recipe.imageUrl,
+        externalRecipeId: recipe.externalId ? String(recipe.externalId) : String(recipe.id),
+        externalSource: recipe.source ?? 'dishly-public',
       }))
     try {
-      const externalRecipes = englishRecipesAllowed.value
-        ? await recipeApi.getExternalRecipes(query, undefined, currentLanguage.value)
-        : []
-      const externalSuggestions = externalRecipes
-        .slice(0, 5)
-        .map(recipe => ({
-          id: recipe.externalId ?? recipe.id,
-          title: recipe.title,
-          source: 'external' as const,
-          calories: recipe.calories,
-          protein: recipe.protein,
-          imageUrl: recipe.imageUrl,
-          externalRecipeId: recipe.externalId ? String(recipe.externalId) : recipe.id ? String(recipe.id) : null,
-          externalSource: recipe.source ?? 'external',
-        }))
-      suggestionsBySlot.value[key] = [...localSuggestions, ...externalSuggestions].slice(0, 8)
+      suggestionsBySlot.value[key] = localSuggestions
     } catch {
       suggestionsBySlot.value[key] = localSuggestions
     } finally {
@@ -348,7 +338,7 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
   const key = slotKey(date, slot)
   customTitleBySlot.value[key] = suggestion.title
   suggestionsBySlot.value[key] = []
-  if (suggestion.source === 'dishly') {
+  if (suggestion.planAsRecipe) {
     selectedRecipeBySlot.value[key] = String(suggestion.id)
     customSnapshotBySlot.value[key] = {}
     suggestionNoticeBySlot.value[key] = ''
@@ -362,7 +352,7 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
     externalRecipeId: suggestion.externalRecipeId ?? String(suggestion.id),
     externalSource: suggestion.externalSource ?? 'external',
   }
-  suggestionNoticeBySlot.value[key] = 'Externe Vorschläge werden aktuell als Freitext gespeichert.'
+  suggestionNoticeBySlot.value[key] = 'Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert.'
 }
 
 async function loadSwipeSuggestions() {
@@ -394,7 +384,7 @@ async function loadSwipeSuggestions() {
         })
     }
 
-    swipeSuggestions.value = candidates
+    swipeSuggestions.value = shuffleArray(candidates)
       .slice(0, 20)
     if (swipeSuggestions.value.length === 0) {
       swipeError.value = englishRecipesAllowed.value
@@ -465,6 +455,30 @@ function swipeFilters(): RecipeSearchFilters {
     glutenFree: profile?.glutenFree || undefined,
     maxPrepTime: profile?.maxPrepTimeMinutes ?? null,
   }
+}
+
+function mergeRecipes(ownRecipes: RecipeResponse[], publishedRecipes: RecipeResponse[]) {
+  const seen = new Set<string>()
+  const own = ownRecipes.map(recipe => ({ ...recipe, userCreated: true }))
+  return [...own, ...publishedRecipes].filter(recipe => {
+    const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
+    if (seen.has(key)) {
+      return false
+    }
+    seen.add(key)
+    return true
+  })
+}
+
+function shuffleArray<T>(items: T[]): T[] {
+  const shuffled = [...items]
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const current = shuffled[i]
+    shuffled[i] = shuffled[j] as T
+    shuffled[j] = current as T
+  }
+  return shuffled
 }
 
 function countEntriesForSlot(slot: MealSlot) {
@@ -733,7 +747,12 @@ function formatDate(date: Date) {
             >
               <button type="button" @click="chooseSuggestion(day.date, slot.key, suggestion)">
                 <span>{{ suggestion.title }}</span>
-                <small>{{ suggestion.source === 'dishly' ? 'Dishly-Rezept' : 'Externer Vorschlag' }}</small>
+                <small>{{ suggestion.planAsRecipe ? 'Eigenes Rezept' : 'Lokaler Vorschlag' }}</small>
+                <small v-if="suggestion.calories || suggestion.protein">
+                  <span v-if="suggestion.calories">{{ suggestion.calories }} kcal</span>
+                  <span v-if="suggestion.calories && suggestion.protein"> · </span>
+                  <span v-if="suggestion.protein">{{ Math.round(suggestion.protein) }} g Protein</span>
+                </small>
               </button>
             </li>
           </ul>

@@ -30,7 +30,6 @@ const newRating = ref<number | null>(null)
 const newIngredients = ref('')
 const newInstructions = ref('')
 const newFavorite = ref(false)
-const newPublished = ref(false)
 
 const editing = ref<Recipe | null>(null)
 const selectedFavorite = ref<Recipe | null>(null)
@@ -128,7 +127,7 @@ const createRecipe = async () => {
       ingredients: newIngredients.value,
       instructions: newInstructions.value,
       favorite: newFavorite.value,
-      published: newPublished.value,
+      published: false,
     })
 
     recipes.value.push(saved)
@@ -143,7 +142,6 @@ const createRecipe = async () => {
     newIngredients.value = ''
     newInstructions.value = ''
     newFavorite.value = false
-    newPublished.value = false
     error.value = null
   } catch (e: unknown) {
     formError.value = toCreateRecipeErrorMessage(e)
@@ -204,7 +202,7 @@ const updateRecipe = async () => {
       ingredients: editing.value.ingredients,
       instructions: editing.value.instructions,
       favorite: editing.value.favorite,
-      published: editing.value.published,
+      published: false,
     })
 
     const idx = recipes.value.findIndex(r => r.id === updated.id)
@@ -303,6 +301,50 @@ const openFavoriteDetails = (r: Recipe) => {
 
 const closeFavoriteDetails = () => {
   selectedFavorite.value = null
+}
+
+const removeFavorite = async (r: Recipe) => {
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = t('recipes.errors.sessionExpired')
+    return
+  }
+
+  try {
+    if (r.source === 'spoonacular' || r.source === 'external') {
+      await favoriteApi.removeExternalFavorite('SPOONACULAR', String(r.externalId ?? r.id))
+      externalFavorites.value = externalFavorites.value.filter(favorite => favorite.id !== r.id)
+      if (selectedFavorite.value?.id === r.id) {
+        selectedFavorite.value = null
+      }
+      return
+    }
+
+    const updated = await recipeApi.updateRecipe(r.id, {
+      title: r.title,
+      imageUrl: r.imageUrl,
+      prepTimeMinutes: r.prepTimeMinutes,
+      cookTimeMinutes: r.cookTimeMinutes,
+      servings: r.servings,
+      difficulty: r.difficulty,
+      category: r.category,
+      rating: r.rating,
+      ingredients: r.ingredients,
+      instructions: r.instructions,
+      favorite: false,
+      published: false,
+    })
+    const index = recipes.value.findIndex(recipe => recipe.id === r.id)
+    if (index >= 0) {
+      recipes.value[index] = updated
+    }
+    if (selectedFavorite.value?.id === r.id) {
+      selectedFavorite.value = null
+    }
+  } catch (e: unknown) {
+    error.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : 'Favorit konnte nicht entfernt werden.'
+  }
 }
 </script>
 
@@ -424,10 +466,6 @@ const closeFavoriteDetails = () => {
             <input type="checkbox" v-model="newFavorite" />
             <span>{{ t('recipes.status.favorite') }}</span>
           </label>
-          <label class="toggle-item">
-            <input type="checkbox" v-model="newPublished" />
-            <span>{{ t('recipes.status.showOnHome') }}</span>
-          </label>
         </div>
 
         <button type="submit" class="submit-btn">
@@ -478,7 +516,6 @@ const closeFavoriteDetails = () => {
                 </div>
                 <div class="badge-column">
                   <span v-if="r.favorite" class="badge badge-fav">{{ t('recipes.status.favoriteBadge') }}</span>
-                  <span v-if="r.published" class="badge badge-published">{{ t('recipes.status.publishedBadge') }}</span>
                 </div>
               </div>
 
@@ -558,10 +595,6 @@ const closeFavoriteDetails = () => {
             <input type="checkbox" v-model="editing.favorite" />
             <span>{{ t('recipes.status.favorite') }}</span>
           </label>
-          <label class="toggle-item">
-            <input type="checkbox" v-model="editing.published" />
-            <span>{{ t('recipes.status.showOnHome') }}</span>
-          </label>
         </div>
 
         <div class="edit-buttons">
@@ -592,6 +625,14 @@ const closeFavoriteDetails = () => {
           class="recipe-card"
           @click="openFavoriteDetails(r)"
         >
+          <button
+            type="button"
+            class="favorite-remove-button"
+            aria-label="Favorit entfernen"
+            @click.stop="removeFavorite(r)"
+          >
+            -
+          </button>
           <div class="image-wrap" v-if="r.imageUrl">
             <img :src="r.imageUrl" :alt="r.title" />
           </div>
@@ -839,6 +880,7 @@ textarea {
 }
 
 .recipe-card {
+  position: relative;
   background: #f4fbfa;
   border-radius: 14px;
   border: 1px solid #c3e7e1;
@@ -907,15 +949,25 @@ textarea {
   color: #b38700;
 }
 
-.badge-published {
-  background: #e0f5f2;
-  color: #26b6b8;
-}
-
 .ingredients {
   margin-top: 4px;
   font-size: 0.94rem;
   color: #324240;
+}
+
+.favorite-remove-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #f2b6c9;
+  border-radius: 999px;
+  background: #fff7fb;
+  color: #9d174d;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .card-actions {
