@@ -272,7 +272,7 @@ describe('MealPlanView', () => {
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
       customTitle: 'Sushi Bowl',
       caloriesSnapshot: 450,
-      proteinSnapshot: null,
+      proteinSnapshot: 24,
       imageUrlSnapshot: 'https://example.com/sushi.jpg',
       externalRecipeId: 'ext-99',
       externalSource: 'spoonacular',
@@ -305,6 +305,29 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('1/1')
   })
 
+  it('does not show swipe suggestions without ingredients', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(98, 'Invalid Local Suggestion', { ingredients: '' }),
+    ])
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Invalid External Suggestion', { ingredients: '' }),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Invalid Local Suggestion')
+    expect(wrapper.text()).not.toContain('Invalid External Suggestion')
+    expect(wrapper.text()).toContain('Keine Vorschläge gefunden.')
+  })
+
   it('opens and closes bucket panels from real week state', async () => {
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -321,6 +344,7 @@ describe('MealPlanView', () => {
     expect(wrapper.find('.bucket-panel').text()).toContain('Montag')
     expect(wrapper.find('.bucket-panel').text()).toContain('2026-06-01')
     expect(wrapper.find('.bucket-panel').text()).toContain('600 kcal')
+    expect(wrapper.find('.bucket-panel').text()).toContain('24 g Protein')
 
     await dinnerBucket.trigger('click')
     expect(wrapper.find('.bucket-panel').exists()).toBe(false)
@@ -385,7 +409,7 @@ describe('MealPlanView', () => {
   it('accepts swipe suggestion as customTitle', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
-      recipe(99, 'Pizza', { calories: 700, imageUrl: 'https://example.com/pizza.jpg', externalId: 'ext-pizza', source: 'spoonacular' }),
+      recipe(99, 'Pizza', { calories: 700, protein: 32.4, imageUrl: 'https://example.com/pizza.jpg', externalId: 'ext-pizza', source: 'spoonacular' }),
     ])
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 4,
@@ -395,6 +419,7 @@ describe('MealPlanView', () => {
       customTitle: 'Pizza',
       calories: 700,
       caloriesSnapshot: 700,
+      proteinSnapshot: 32.4,
     })
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -411,10 +436,12 @@ describe('MealPlanView', () => {
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'dinner', {
       customTitle: 'Pizza',
       caloriesSnapshot: 700,
+      proteinSnapshot: 32.4,
       imageUrlSnapshot: 'https://example.com/pizza.jpg',
       externalRecipeId: 'ext-pizza',
       externalSource: 'spoonacular',
     })
+    expect(wrapper.text()).toContain('32 g Protein')
     expect(wrapper.text()).toContain('Pizza wurde für Abendessen am 2026-06-02 übernommen.')
   })
 
@@ -750,6 +777,7 @@ function recipe(id: number, title: string, overrides: Partial<RecipeResponse> = 
     favorite: false,
     published: true,
     calories: 600,
+    protein: 24,
     ...overrides,
   }
 }
