@@ -145,7 +145,7 @@ describe('ApiRecipeList.vue', () => {
     expect(firstCard.text()).toContain('Published Pasta')
   })
 
-  it('does not show published seed recipes when ingredients are missing', async () => {
+  it('shows published seed recipes when ingredients are missing', async () => {
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Breakfast Without Ingredients', '', 'breakfast'),
     ])
@@ -153,7 +153,7 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(wrapper.text()).not.toContain('Breakfast Without Ingredients')
+    expect(wrapper.text()).toContain('Breakfast Without Ingredients')
   })
 
   it('shows protein on recipe cards when protein exists', async () => {
@@ -254,6 +254,11 @@ describe('ApiRecipeList.vue', () => {
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith(expect.any(String), 'breakfast', {
       customTitle: 'External Pasta',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: '',
+      externalRecipeId: '716429',
+      externalSource: 'spoonacular',
     })
     expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
   })
@@ -464,6 +469,46 @@ describe('ApiRecipeList.vue', () => {
     expect(cards[0]).toContain('High Protein Recipe')
     expect(cards[1]).toContain('Low Protein Recipe')
     expect(cards[2]).toContain('No Protein Recipe')
+  })
+
+  it('sorts calorie conscious recipes by calories ascending and keeps missing calories last', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'No Calories Recipe', 'rice', 'lunch', { calories: null }),
+      recipe(11, 'Low Calories Recipe', 'salad', 'lunch', { calories: 220 }),
+      recipe(12, 'Medium Calories Recipe', 'beans', 'lunch', { calories: 480 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const calorieCheckbox = wrapper.findAll('label').find(label =>
+      label.text().includes('kalorienarm'),
+    )?.find('input')
+    expect(calorieCheckbox?.exists()).toBe(true)
+    if (!calorieCheckbox) throw new Error('Calorie conscious checkbox not found')
+    await calorieCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('Low Calories Recipe')
+    expect(cards[1]).toContain('Medium Calories Recipe')
+    expect(cards[2]).toContain('No Calories Recipe')
+  })
+
+  it('shows alcohol badge only when alcohol values are present', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Wine Sauce', 'wine', 'dinner', { alcohol: 1.2, alcoholPercent: 0.4 }),
+      recipe(11, 'Apple Juice', 'apple', 'snack', { alcohol: 0, alcoholPercent: 0 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('Alkohol')
+    expect(cards[1]).not.toContain('Alkohol')
   })
 
   it('renders Arabic home UI without errors', async () => {

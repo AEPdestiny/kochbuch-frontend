@@ -310,15 +310,20 @@ function onSlotSearch(date: string, slot: MealSlot) {
   suggestionTimers[key] = setTimeout(async () => {
     const localSuggestions = recipes.value
       .filter(recipe => recipe.title.toLowerCase().includes(query.toLowerCase()))
-      .filter(hasIngredients)
       .slice(0, 5)
-      .map(recipe => ({ id: recipe.id, title: recipe.title, source: 'dishly' as const, protein: recipe.protein }))
+      .map(recipe => ({
+        id: recipe.id,
+        title: recipe.title,
+        source: 'dishly' as const,
+        calories: recipe.calories,
+        protein: recipe.protein,
+        imageUrl: recipe.imageUrl,
+      }))
     try {
       const externalRecipes = englishRecipesAllowed.value
         ? await recipeApi.getExternalRecipes(query, undefined, currentLanguage.value)
         : []
       const externalSuggestions = externalRecipes
-        .filter(hasIngredients)
         .slice(0, 5)
         .map(recipe => ({
           id: recipe.externalId ?? recipe.id,
@@ -369,7 +374,6 @@ async function loadSwipeSuggestions() {
     const publishedRecipes = await recipeApi.getPublishedRecipes(currentLanguage.value)
     const seen = new Set<string>()
     let candidates = publishedRecipes
-      .filter(hasIngredients)
       .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
       .filter(recipe => {
         const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -381,7 +385,6 @@ async function loadSwipeSuggestions() {
     if (candidates.length === 0 && englishRecipesAllowed.value) {
       const externalRecipes = await recipeApi.getExternalRecipes(undefined, swipeFilters(), currentLanguage.value)
       candidates = externalRecipes
-        .filter(hasIngredients)
         .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
         .filter(recipe => {
           const key = `${recipe.source ?? 'external'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -482,11 +485,6 @@ function entryProtein(entry: MealPlanEntryResponse | null | undefined) {
 
 function formatProtein(value: number | null | undefined) {
   return typeof value === 'number' ? `${Math.round(value)} g Protein` : ''
-}
-
-function hasIngredients(recipe: RecipeResponse) {
-  const ingredients = recipe.ingredients?.trim()
-  return Boolean(ingredients && ingredients !== '[]' && ingredients.toLowerCase() !== 'keine zutaten angegeben.')
 }
 
 function firstFreeDateForSlot(slot: MealSlot) {

@@ -127,7 +127,7 @@ describe('MealPlanView', () => {
 
   it('sets an own recipe suggestion for a day', async () => {
     vi.useFakeTimers()
-    vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(2, 'Soup'), 'breakfast'))
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(2, 'Soup', { calories: 380, protein: 18 }), 'breakfast'))
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
     })
@@ -144,6 +144,7 @@ describe('MealPlanView', () => {
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', 2)
     expect(wrapper.text()).toContain('Soup')
+    expect(wrapper.text()).toContain('380 / 2000 kcal')
     vi.useRealTimers()
   })
 
@@ -305,7 +306,7 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('1/1')
   })
 
-  it('does not show swipe suggestions without ingredients', async () => {
+  it('shows swipe suggestions even without ingredients', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(98, 'Invalid Local Suggestion', { ingredients: '' }),
@@ -323,9 +324,8 @@ describe('MealPlanView', () => {
     await wrapper.find('.swipe-planner .primary-button').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).not.toContain('Invalid Local Suggestion')
-    expect(wrapper.text()).not.toContain('Invalid External Suggestion')
-    expect(wrapper.text()).toContain('Keine Vorschläge gefunden.')
+    expect(wrapper.text()).toContain('Invalid Local Suggestion')
+    expect(wrapper.text()).not.toContain('Keine Vorschläge gefunden.')
   })
 
   it('opens and closes bucket panels from real week state', async () => {

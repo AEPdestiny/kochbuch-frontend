@@ -19,9 +19,18 @@ export type RecipeResponse = RecipeRequest & {
   source?: 'dishly' | 'spoonacular' | string | null
   calories?: number | null
   protein?: number | null
+  alcohol?: number | null
+  alcoholPercent?: number | null
   userCreated?: boolean
   language?: string | null
   sourceUrl?: string | null
+  sourceName?: string | null
+  dishTypes?: string | null
+  diets?: string | null
+  vegetarian?: boolean
+  vegan?: boolean
+  glutenFree?: boolean
+  dairyFree?: boolean
 }
 
 export type Recipe = RecipeResponse
@@ -58,6 +67,8 @@ export type ExternalRecipeDetailResponse = {
   tags: string[]
   calories?: number | null
   protein?: number | null
+  alcohol?: number | null
+  alcoholPercent?: number | null
   ingredients: ExternalRecipeIngredient[]
   instructions?: string | null
   steps: string[]

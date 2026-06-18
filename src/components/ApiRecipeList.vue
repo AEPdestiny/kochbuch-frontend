@@ -93,7 +93,7 @@ const shuffleArray = (items: Recipe[]): Recipe[] => {
 }
 
 const filterRecipes = (items: Recipe[], q: string) => {
-  return items.filter(r => hasIngredients(r) && matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
+  return items.filter(r => matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
 }
 
 const buildView = () => {
@@ -238,7 +238,14 @@ function mealPlanPayload(recipe: DisplayRecipe): number | MealPlanEntryRequest {
   if (recipe.source === 'dishly' && Number.isFinite(id) && id > 0) {
     return id
   }
-  return { customTitle: recipe.title }
+  return {
+    customTitle: recipe.title,
+    caloriesSnapshot: recipe.calories ?? null,
+    proteinSnapshot: recipe.protein ?? null,
+    imageUrlSnapshot: recipe.imageUrl ?? null,
+    externalRecipeId: String(recipe.externalId ?? recipe.id),
+    externalSource: recipe.sourceName ?? 'spoonacular',
+  }
 }
 
 function plannedTitle(date: string, slot: MealSlot) {
@@ -411,22 +418,16 @@ function matchesText(recipe: Recipe, query: string) {
   return haystack.includes(query)
 }
 
-function hasIngredients(recipe: Recipe) {
-  const ingredients = recipe.ingredients?.trim()
-  return Boolean(ingredients && ingredients !== '[]' && ingredients.toLowerCase() !== 'keine zutaten angegeben.')
-}
-
 function matchesLocalFilters(recipe: Recipe) {
-  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category} ${recipe.dishTypes ?? ''} ${recipe.diets ?? ''}`.toLowerCase()
   const totalTime = (recipe.prepTimeMinutes ?? 0) + (recipe.cookTimeMinutes ?? 0)
   if (maxPrepTime.value && totalTime > maxPrepTime.value) return false
   if (maxCalories.value && recipe.calories && recipe.calories > maxCalories.value) return false
   if (calorieConscious.value && recipe.calories && recipe.calories > 650) return false
   if (mealType.value && !text.includes(mealType.value.toLowerCase())) return false
-  if (vegan.value && !text.includes('vegan')) return false
-  if (vegetarian.value && !text.includes('vegetarian') && !text.includes('vegetarisch')) return false
-  if (glutenFree.value && !text.includes('gluten')) return false
-  if (highProtein.value && !/(protein|chicken|egg|fish|tofu|beans)/.test(text)) return false
+  if (vegan.value && !recipe.vegan && !text.includes('vegan')) return false
+  if (vegetarian.value && !recipe.vegetarian && !text.includes('vegetarian') && !text.includes('vegetarisch')) return false
+  if (glutenFree.value && !recipe.glutenFree && !text.includes('gluten free') && !text.includes('glutenfrei')) return false
   return true
 }
 
@@ -462,10 +463,10 @@ function applyPreferenceBoost(items: DisplayRecipe[]) {
 function sortRecipes(items: DisplayRecipe[]) {
   const sorted = [...items]
   if (sortOrder.value === 'caloriesAsc') {
-    return sorted.sort((a, b) => optionalNumber(a.calories) - optionalNumber(b.calories))
+    return sorted.sort((a, b) => compareOptionalNumbers(a.calories, b.calories, 'asc'))
   }
   if (sortOrder.value === 'caloriesDesc') {
-    return sorted.sort((a, b) => optionalNumber(b.calories) - optionalNumber(a.calories))
+    return sorted.sort((a, b) => compareOptionalNumbers(a.calories, b.calories, 'desc'))
   }
   if (sortOrder.value === 'proteinAsc') {
     return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'asc'))
@@ -473,11 +474,13 @@ function sortRecipes(items: DisplayRecipe[]) {
   if (sortOrder.value === 'proteinDesc') {
     return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'desc'))
   }
+  if (calorieConscious.value) {
+    return sorted.sort((a, b) => compareOptionalNumbers(a.calories, b.calories, 'asc'))
+  }
+  if (highProtein.value) {
+    return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'desc'))
+  }
   return sorted
-}
-
-function optionalNumber(value: number | null | undefined) {
-  return typeof value === 'number' ? value : Number.MAX_SAFE_INTEGER
 }
 
 function compareOptionalNumbers(
@@ -495,10 +498,10 @@ function compareOptionalNumbers(
 
 function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   const reasons: string[] = []
-  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
-  if (source === 'external' && vegan.value) reasons.push(t('home.reasons.vegan'))
-  if (source === 'external' && vegetarian.value) reasons.push(t('home.reasons.vegetarian'))
-  if (source === 'external' && glutenFree.value) reasons.push(t('home.reasons.glutenFree'))
+  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category} ${recipe.dishTypes ?? ''} ${recipe.diets ?? ''}`.toLowerCase()
+  if ((source === 'external' || recipe.vegan) && vegan.value) reasons.push(t('home.reasons.vegan'))
+  if ((source === 'external' || recipe.vegetarian) && vegetarian.value) reasons.push(t('home.reasons.vegetarian'))
+  if ((source === 'external' || recipe.glutenFree) && glutenFree.value) reasons.push(t('home.reasons.glutenFree'))
   if (calorieConscious.value && recipe.calories && recipe.calories <= 650) reasons.push(t('home.reasons.calorieConscious'))
   if (maxPrepTime.value && (recipe.prepTimeMinutes + recipe.cookTimeMinutes) <= maxPrepTime.value) reasons.push(t('home.reasons.time'))
   if (highProtein.value && /(protein|chicken|egg|fish|tofu|beans)/.test(text)) reasons.push(t('home.reasons.highProtein'))
@@ -516,8 +519,7 @@ function isExternalFavorite(recipe: DisplayRecipe) {
 }
 
 function hasAlcohol(recipe: Recipe) {
-  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
-  return /(alcohol|wine|beer|vodka|rum|whiskey|whisky|champagne|liqueur|bier|wein|sekt|alkohol)/.test(text)
+  return (recipe.alcohol ?? 0) > 0 || (recipe.alcoholPercent ?? 0) > 0
 }
 
 function visibleCategory(recipe: Recipe) {

@@ -31,6 +31,8 @@ type DetailRecipe = {
   imageUrl: string
   calories?: number | null
   protein?: number | null
+  alcohol?: number | null
+  alcoholPercent?: number | null
   readyInMinutes: number
   servings: number
   tags: string[]
@@ -137,6 +139,8 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
     imageUrl: response.imageUrl,
     calories: response.calories,
     protein: response.protein,
+    alcohol: response.alcohol,
+    alcoholPercent: response.alcoholPercent,
     readyInMinutes: response.readyInMinutes || response.cookTimeMinutes,
     servings: response.servings,
     tags: response.tags ?? [],
@@ -156,6 +160,8 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     imageUrl: response.imageUrl,
     calories: response.calories,
     protein: response.protein,
+    alcohol: response.alcohol,
+    alcoholPercent: response.alcoholPercent,
     readyInMinutes: response.prepTimeMinutes + response.cookTimeMinutes,
     servings: response.servings,
     tags: [response.category, response.difficulty].filter(Boolean) as string[],
@@ -527,6 +533,7 @@ function formatDate(date: Date) {
         <div class="meta-grid">
           <span v-if="recipe.calories">{{ t('recipeDetail.meta.calories', { calories: recipe.calories }) }}</span>
           <span v-if="recipe.protein">{{ Math.round(recipe.protein) }} g Protein</span>
+          <span v-if="(recipe.alcohol ?? 0) > 0 || (recipe.alcoholPercent ?? 0) > 0">Alkohol</span>
           <span v-if="recipe.readyInMinutes">{{ t('recipeDetail.meta.time', { minutes: recipe.readyInMinutes }) }}</span>
           <span v-if="recipe.servings">{{ t('recipeDetail.meta.servings', { count: recipe.servings }) }}</span>
         </div>
