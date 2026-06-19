@@ -39,6 +39,7 @@ export type RecipeSearchFilters = {
   vegan?: boolean
   vegetarian?: boolean
   glutenFree?: boolean
+  lactoseFree?: boolean
   calorieConscious?: boolean
   highProtein?: boolean
   maxPrepTime?: number | null

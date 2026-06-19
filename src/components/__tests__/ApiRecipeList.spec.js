@@ -199,6 +199,131 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('24 g Protein')
   })
 
+  it('shows a clear profile personalization toggle and status', async () => {
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Personalisierung ausschalten')
+    expect(wrapper.text()).toContain('Profil aktiv')
+
+    await wrapper.find('.plain-filter-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Personalisierung aktivieren')
+    expect(wrapper.text()).toContain('Profil ignoriert - Allergien und Abneigungen bleiben aktiv')
+  })
+
+  it('disables soft profile personalization but keeps allergies and dislikes active', async () => {
+    vi.useFakeTimers()
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: ['pasta'],
+      dislikes: ['mushroom'],
+      allergies: ['nuts'],
+      vegan: true,
+      vegetarian: false,
+      glutenFree: true,
+      lactoseFree: true,
+      highProtein: true,
+      calorieConscious: true,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: 30,
+      calorieGoal: null,
+      dailyCalorieTarget: 650,
+    })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Vegan Pasta', 'tomato pasta', 'lunch', {
+        vegan: true,
+        glutenFree: true,
+        dairyFree: true,
+        calories: 420,
+      }),
+      recipe(11, 'Chicken Rice', 'rice chicken', 'lunch', {
+        vegan: false,
+        glutenFree: false,
+        dairyFree: false,
+        calories: 700,
+      }),
+      recipe(12, 'Mushroom Pasta', 'mushroom pasta', 'lunch', {
+        vegan: true,
+        glutenFree: true,
+        dairyFree: true,
+        calories: 400,
+      }),
+      recipe(13, 'Nut Salad', 'nuts salad', 'lunch', {
+        vegan: true,
+        glutenFree: true,
+        dairyFree: true,
+        calories: 400,
+      }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Vegan Pasta')
+    expect(wrapper.text()).not.toContain('Chicken Rice')
+    expect(wrapper.text()).not.toContain('Mushroom Pasta')
+    expect(wrapper.text()).not.toContain('Nut Salad')
+
+    await wrapper.find('.plain-filter-button').trigger('click')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Chicken Rice')
+    expect(wrapper.text()).not.toContain('Mushroom Pasta')
+    expect(wrapper.text()).not.toContain('Nut Salad')
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledTimes(2)
+  })
+
+  it('prioritizes search query over soft profile filters while keeping hard exclusions', async () => {
+    vi.useFakeTimers()
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: ['pasta'],
+      dislikes: ['mushroom'],
+      allergies: [],
+      vegan: true,
+      vegetarian: false,
+      glutenFree: true,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+      dailyCalorieTarget: null,
+    })
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([
+        recipe(10, 'Vegan Pasta', 'tomato pasta', 'lunch', {
+          vegan: true,
+          glutenFree: true,
+        }),
+      ])
+      .mockResolvedValueOnce([
+        recipe(11, 'Chicken Rice', 'rice chicken', 'lunch', {
+          vegan: false,
+          glutenFree: false,
+        }),
+        recipe(12, 'Mushroom Rice', 'mushroom rice', 'lunch', {
+          vegan: false,
+          glutenFree: false,
+        }),
+      ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('rice')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Chicken Rice')
+    expect(wrapper.text()).not.toContain('Mushroom Rice')
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
+  })
+
   it('renders 100 published database recipes from the backend response', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(

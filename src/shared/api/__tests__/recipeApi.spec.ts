@@ -87,6 +87,7 @@ describe('recipeApi', () => {
     await recipeApi.getExternalRecipes(' bowl ', {
       vegan: true,
       glutenFree: true,
+      lactoseFree: true,
       maxPrepTime: 25,
       mealType: 'lunch',
       highProtein: true,
@@ -97,7 +98,7 @@ describe('recipeApi', () => {
         language: 'en',
         search: 'bowl',
         diet: 'vegan',
-        intolerances: 'gluten',
+        intolerances: 'gluten,dairy',
         maxReadyTime: 25,
         type: 'lunch',
       },

@@ -121,5 +121,6 @@ function toIntolerances(filters?: RecipeSearchFilters) {
   if (!filters) return undefined
   const values = []
   if (filters.glutenFree) values.push('gluten')
+  if (filters.lactoseFree) values.push('dairy')
   return values.join(',') || undefined
 }

@@ -10,6 +10,7 @@ import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
+import type { UserPreferencesResponse } from '@/types/profile'
 import type { Recipe, RecipeSearchFilters } from '@/types/recipe'
 
 type RecipeSource = 'external' | 'dishly'
@@ -22,16 +23,18 @@ const search = ref('')
 const vegan = ref(false)
 const vegetarian = ref(false)
 const glutenFree = ref(false)
+const lactoseFree = ref(false)
 const calorieConscious = ref(false)
 const highProtein = ref(false)
 const maxPrepTime = ref<number | null>(null)
 const maxCalories = ref<number | null>(null)
 const mealType = ref('')
 const sortOrder = ref('')
-const ignoreLikes = ref(false)
+const profilePersonalizationEnabled = ref(true)
 const recipes = ref<DisplayRecipe[]>([])
 const allExternal = ref<Recipe[]>([])
 const ownPublished = ref<Recipe[]>([])
+const loadedPreferences = ref<UserPreferencesResponse | null>(null)
 const likes = ref<string[]>([])
 const dislikes = ref<string[]>([])
 const allergies = ref<string[]>([])
@@ -60,7 +63,26 @@ const currentLanguage = computed(() => {
   return (language || 'de').toLowerCase()
 })
 const englishRecipesAllowed = computed(() => currentLanguage.value === 'en')
-const personalizationActive = computed(() => !ignoreLikes.value && likes.value.length > 0 && !search.value.trim())
+const hasSoftProfilePreferences = computed(() => Boolean(
+  likes.value.length
+  || vegan.value
+  || vegetarian.value
+  || glutenFree.value
+  || lactoseFree.value
+  || calorieConscious.value
+  || highProtein.value
+  || maxPrepTime.value
+  || maxCalories.value,
+))
+const personalizationActive = computed(() => profilePersonalizationEnabled.value && hasSoftProfilePreferences.value && !search.value.trim())
+const personalizationButtonText = computed(() =>
+  profilePersonalizationEnabled.value ? 'Personalisierung ausschalten' : 'Personalisierung aktivieren',
+)
+const personalizationStatusText = computed(() =>
+  profilePersonalizationEnabled.value
+    ? 'Profil aktiv'
+    : 'Profil ignoriert - Allergien und Abneigungen bleiben aktiv',
+)
 const weekDays = computed(() => {
   const monday = startOfCurrentWeek()
   return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -107,7 +129,12 @@ const shuffleDisplayRecipes = (items: DisplayRecipe[]): DisplayRecipe[] => {
 }
 
 const filterRecipes = (items: Recipe[], q: string) => {
-  return items.filter(r => matchesText(r, q) && matchesLocalFilters(r) && matchesHardPreferences(r))
+  const hasSearchQuery = Boolean(q.trim())
+  return items.filter(r =>
+    matchesText(r, q)
+    && matchesHardPreferences(r)
+    && (hasSearchQuery || matchesLocalFilters(r)),
+  )
 }
 
 const buildView = () => {
@@ -321,7 +348,7 @@ onMounted(() => {
   loadRecipes()
 })
 
-watch([search, vegan, vegetarian, glutenFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, ignoreLikes], () => {
+watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, profilePersonalizationEnabled], () => {
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -356,15 +383,11 @@ async function loadPersonalization() {
 
   if (profileResult.status === 'fulfilled') {
     const preferences = profileResult.value
-    vegan.value = preferences.vegan
-    vegetarian.value = preferences.vegetarian
-    glutenFree.value = preferences.glutenFree
-    calorieConscious.value = preferences.calorieConscious
-    highProtein.value = preferences.highProtein
-    maxPrepTime.value = preferences.maxPrepTimeMinutes ?? null
+    loadedPreferences.value = preferences
     likes.value = preferences.likes?.map(value => value.toLowerCase()) ?? []
     dislikes.value = preferences.dislikes?.map(value => value.toLowerCase()) ?? []
     allergies.value = preferences.allergies?.map(value => value.toLowerCase()) ?? []
+    applyProfilePersonalization()
   }
 
   if (pantryResult.status === 'fulfilled') {
@@ -389,6 +412,7 @@ function currentFilters(): RecipeSearchFilters {
     vegan: vegan.value,
     vegetarian: vegetarian.value,
     glutenFree: glutenFree.value,
+    lactoseFree: lactoseFree.value,
     calorieConscious: calorieConscious.value,
     highProtein: highProtein.value,
     maxPrepTime: maxPrepTime.value,
@@ -409,7 +433,44 @@ function onVegetarianChanged() {
   }
 }
 
-function activeFilters(): RecipeSearchFilters | undefined {
+function toggleProfilePersonalization() {
+  profilePersonalizationEnabled.value = !profilePersonalizationEnabled.value
+  applyProfilePersonalization()
+  buildView()
+}
+
+function applyProfilePersonalization() {
+  const preferences = loadedPreferences.value
+  if (!preferences || !profilePersonalizationEnabled.value) {
+    clearSoftProfilePersonalization()
+    return
+  }
+
+  vegan.value = preferences.vegan
+  vegetarian.value = !preferences.vegan && preferences.vegetarian
+  glutenFree.value = preferences.glutenFree
+  lactoseFree.value = preferences.lactoseFree
+  calorieConscious.value = preferences.calorieConscious
+  highProtein.value = preferences.highProtein
+  maxPrepTime.value = preferences.maxPrepTimeMinutes ?? null
+  maxCalories.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? null
+}
+
+function clearSoftProfilePersonalization() {
+  vegan.value = false
+  vegetarian.value = false
+  glutenFree.value = false
+  lactoseFree.value = false
+  calorieConscious.value = false
+  highProtein.value = false
+  maxPrepTime.value = null
+  maxCalories.value = null
+}
+
+function activeFilters(query = search.value): RecipeSearchFilters | undefined {
+  if (query.trim()) {
+    return undefined
+  }
   const filters = currentFilters()
   const hasActiveFilter = Object.entries(filters).some(([, value]) => {
     if (typeof value === 'boolean') return value
@@ -424,7 +485,7 @@ function fetchExternalRecipes(query = search.value) {
     return Promise.resolve([])
   }
   const externalQuery = buildExternalQuery(query)
-  const filters = activeFilters()
+  const filters = activeFilters(query)
   if (!externalQuery && !filters) {
     return recipeApi.getExternalRecipes(undefined, undefined, currentLanguage.value)
   }
@@ -439,8 +500,8 @@ function fetchExternalRecipes(query = search.value) {
 
 function buildExternalQuery(query = search.value) {
   const parts = [query.trim()].filter(Boolean)
-  if (highProtein.value) parts.push('high protein')
-  if (calorieConscious.value) parts.push('low calorie')
+  if (!query.trim() && profilePersonalizationEnabled.value && highProtein.value) parts.push('high protein')
+  if (!query.trim() && profilePersonalizationEnabled.value && calorieConscious.value) parts.push('low calorie')
   return parts.join(' ').trim() || undefined
 }
 
@@ -464,6 +525,7 @@ function matchesLocalFilters(recipe: Recipe) {
   if (vegan.value && !recipe.vegan && !text.includes('vegan')) return false
   if (vegetarian.value && !recipe.vegetarian && !text.includes('vegetarian') && !text.includes('vegetarisch')) return false
   if (glutenFree.value && !recipe.glutenFree && !text.includes('gluten free') && !text.includes('glutenfrei')) return false
+  if (lactoseFree.value && !recipe.dairyFree && !text.includes('dairy free') && !text.includes('lactose free') && !text.includes('laktosefrei') && !text.includes('milchfrei')) return false
   return true
 }
 
@@ -475,7 +537,7 @@ function matchesHardPreferences(recipe: Recipe) {
 }
 
 function matchesLikes(recipe: DisplayRecipe) {
-  if (ignoreLikes.value || likes.value.length === 0) {
+  if (!profilePersonalizationEnabled.value || likes.value.length === 0) {
     return false
   }
   const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
@@ -483,7 +545,7 @@ function matchesLikes(recipe: DisplayRecipe) {
 }
 
 function applyPreferenceBoost(items: DisplayRecipe[]) {
-  if (ignoreLikes.value) {
+  if (!profilePersonalizationEnabled.value) {
     return shuffleDisplayRecipes(items)
   }
   if (likes.value.length === 0 || items.length < 4) {
@@ -543,12 +605,14 @@ function compareOptionalNumbers(
 function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   const reasons: string[] = []
   const text = `${recipe.title} ${recipe.ingredients} ${recipe.category} ${recipe.dishTypes ?? ''} ${recipe.diets ?? ''}`.toLowerCase()
-  if ((source === 'external' || recipe.vegan) && vegan.value) reasons.push(t('home.reasons.vegan'))
-  if ((source === 'external' || recipe.vegetarian) && vegetarian.value) reasons.push(t('home.reasons.vegetarian'))
-  if ((source === 'external' || recipe.glutenFree) && glutenFree.value) reasons.push(t('home.reasons.glutenFree'))
-  if (calorieConscious.value && recipe.calories && recipe.calories <= 650) reasons.push(t('home.reasons.calorieConscious'))
-  if (maxPrepTime.value && (recipe.prepTimeMinutes + recipe.cookTimeMinutes) <= maxPrepTime.value) reasons.push(t('home.reasons.time'))
-  if (highProtein.value && /(protein|chicken|egg|fish|tofu|beans)/.test(text)) reasons.push(t('home.reasons.highProtein'))
+  if (profilePersonalizationEnabled.value) {
+    if ((source === 'external' || recipe.vegan) && vegan.value) reasons.push(t('home.reasons.vegan'))
+    if ((source === 'external' || recipe.vegetarian) && vegetarian.value) reasons.push(t('home.reasons.vegetarian'))
+    if ((source === 'external' || recipe.glutenFree) && glutenFree.value) reasons.push(t('home.reasons.glutenFree'))
+    if (calorieConscious.value && recipe.calories && recipe.calories <= 650) reasons.push(t('home.reasons.calorieConscious'))
+    if (maxPrepTime.value && (recipe.prepTimeMinutes + recipe.cookTimeMinutes) <= maxPrepTime.value) reasons.push(t('home.reasons.time'))
+    if (highProtein.value && /(protein|chicken|egg|fish|tofu|beans)/.test(text)) reasons.push(t('home.reasons.highProtein'))
+  }
   const pantryHit = pantryIngredients.value.find(ingredient => text.includes(ingredient))
   if (pantryHit) reasons.push(t('home.reasons.pantry', { ingredient: pantryHit }))
   return reasons.slice(0, 3)
@@ -653,10 +717,16 @@ function formatDate(date: Date) {
         <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('home.filters.vegan') }}</label>
         <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('home.filters.vegetarian') }}</label>
         <label><input v-model="glutenFree" type="checkbox" /> {{ t('home.filters.glutenFree') }}</label>
+        <label><input v-model="lactoseFree" type="checkbox" /> milchfrei</label>
         <label><input v-model="calorieConscious" type="checkbox" /> kalorienarm</label>
         <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
-        <button type="button" class="plain-filter-button" @click="ignoreLikes = !ignoreLikes">
-          {{ ignoreLikes ? 'Vorlieben wieder berücksichtigen' : 'Rezepte ohne Präferenzen anzeigen' }}
+        <button
+          type="button"
+          class="plain-filter-button"
+          :aria-pressed="!profilePersonalizationEnabled"
+          @click="toggleProfilePersonalization"
+        >
+          {{ personalizationButtonText }}
         </button>
         <label>
           {{ t('home.filters.maxPrepTime') }}
@@ -687,8 +757,11 @@ function formatDate(date: Date) {
           </select>
         </label>
       </div>
+      <p class="personalization-status">
+        {{ personalizationStatusText }}
+      </p>
       <p v-if="personalizationActive" class="personalization-note">
-        Personalisiert nach deinen Vorlieben
+        Personalisiert nach deinem Profil
       </p>
     </section>
 
@@ -884,6 +957,12 @@ function formatDate(date: Date) {
   font-size: 0.92rem;
   font-weight: 700;
   margin: 12px 0 0;
+}
+
+.personalization-status {
+  color: #486b68;
+  font-size: 0.9rem;
+  margin: 10px 0 0;
 }
 
 .filter-panel .context-filter {
