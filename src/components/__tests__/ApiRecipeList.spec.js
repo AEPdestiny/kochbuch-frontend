@@ -161,6 +161,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Breakfast Without Ingredients')
+    expect(wrapper.text()).toContain('Frühstück')
   })
 
   it('shows protein on recipe cards when protein exists', async () => {
@@ -306,7 +307,6 @@ describe('ApiRecipeList.vue', () => {
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith(expect.any(String), 'breakfast', 10)
   })
-
   it('favorites external recipes from home through backend api', async () => {
     setLocale('en')
     vi.useFakeTimers()
@@ -332,6 +332,27 @@ describe('ApiRecipeList.vue', () => {
       externalTitle: 'External Pasta',
       externalImageUrl: '',
       externalSource: 'SPOONACULAR',
+    })
+    expect(wrapper.text()).toContain('♥ Favorit')
+  })
+
+  it('favorites local Dishly recipes from home through backend favorite api', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Published Pasta', 'noodles', 'dinner'),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('.favorite-button').trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.addExternalFavorite).toHaveBeenCalledWith({
+      externalRecipeId: '10',
+      externalTitle: 'Published Pasta',
+      externalImageUrl: '',
+      externalSource: 'DISHLY',
     })
     expect(wrapper.text()).toContain('♥ Favorit')
   })

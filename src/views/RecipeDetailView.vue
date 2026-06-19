@@ -8,6 +8,7 @@ import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
+import { displayCategory } from '@/shared/recipeDisplay'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
@@ -44,7 +45,7 @@ type DetailRecipe = {
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const recipe = ref<DetailRecipe | null>(null)
 const loading = ref(true)
@@ -60,7 +61,7 @@ const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
 const mealPlanLoading = ref(false)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
-const externalFavorite = ref(false)
+const favorite = ref(false)
 const favoriteError = ref<string | null>(null)
 const instructionSearchLoading = ref(false)
 const instructionSearchError = ref<string | null>(null)
@@ -105,7 +106,7 @@ async function loadRecipe() {
       ? mapExternal(await recipeApi.getExternalRecipeDetail(id))
       : mapDishly(await recipeApi.getRecipe(id))
     resetInstructionSearch()
-    await loadExternalFavoriteState()
+    await loadFavoriteState()
   } catch {
     error.value = t('recipeDetail.errors.load')
   } finally {
@@ -113,20 +114,20 @@ async function loadRecipe() {
   }
 }
 
-async function loadExternalFavoriteState() {
-  externalFavorite.value = false
+async function loadFavoriteState() {
+  favorite.value = false
   favoriteError.value = null
-  if (!recipe.value || recipe.value.source !== 'spoonacular' || !sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+  if (!recipe.value || !sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     return
   }
   try {
     const favorites = await favoriteApi.getExternalFavorites()
-    externalFavorite.value = favorites.some(favorite =>
-      favorite.externalRecipeId === String(recipe.value?.id)
-      && (favorite.externalSource ?? 'SPOONACULAR').toUpperCase() === 'SPOONACULAR',
+    favorite.value = favorites.some(savedFavorite =>
+      savedFavorite.externalRecipeId === favoriteId(recipe.value!)
+      && (savedFavorite.externalSource ?? 'SPOONACULAR').toUpperCase() === favoriteSource(recipe.value!),
     )
   } catch {
-    externalFavorite.value = false
+    favorite.value = false
   }
 }
 
@@ -319,19 +320,20 @@ async function findNearbyRestaurants() {
   }
 }
 
-async function toggleExternalFavorite() {
-  if (!recipe.value || recipe.value.source !== 'spoonacular') return
+async function toggleFavorite() {
+  if (!recipe.value) return
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    favoriteError.value = 'Bitte melde dich an, um API-Rezepte zu favorisieren.'
+    favoriteError.value = 'Bitte melde dich an, um Rezepte zu favorisieren.'
     return
   }
 
-  const id = String(recipe.value.id)
+  const id = favoriteId(recipe.value)
+  const source = favoriteSource(recipe.value)
   try {
     favoriteError.value = null
-    if (externalFavorite.value) {
-      await favoriteApi.removeExternalFavorite('SPOONACULAR', id)
-      externalFavorite.value = false
+    if (favorite.value) {
+      await favoriteApi.removeExternalFavorite(source, id)
+      favorite.value = false
       return
     }
 
@@ -339,14 +341,26 @@ async function toggleExternalFavorite() {
       externalRecipeId: id,
       externalTitle: recipe.value.title,
       externalImageUrl: recipe.value.imageUrl,
-      externalSource: 'SPOONACULAR',
+      externalSource: source,
     })
-    externalFavorite.value = true
+    favorite.value = true
   } catch (e: unknown) {
     favoriteError.value = e instanceof ApiClientError && e.message
       ? e.message
       : 'Favorit konnte nicht gespeichert werden.'
   }
+}
+
+function favoriteId(detailRecipe: DetailRecipe) {
+  return String(detailRecipe.id)
+}
+
+function favoriteSource(detailRecipe: DetailRecipe) {
+  return detailRecipe.source === 'spoonacular' ? 'SPOONACULAR' : 'DISHLY'
+}
+
+function visibleTag(tag: string) {
+  return displayCategory(tag, String(locale.value))
 }
 
 async function searchInstructionsOnline() {
@@ -540,7 +554,7 @@ function formatDate(date: Date) {
         </div>
 
         <div v-if="recipe.tags.length" class="tag-list">
-          <span v-for="tag in recipe.tags" :key="tag" class="tag">{{ tag }}</span>
+          <span v-for="tag in recipe.tags" :key="tag" class="tag">{{ visibleTag(tag) }}</span>
         </div>
 
         <div class="action-row">
@@ -554,13 +568,12 @@ function formatDate(date: Date) {
             {{ t('recipeDetail.actions.addToMealPlan') }}
           </button>
           <button
-            v-if="recipe.source === 'spoonacular'"
             type="button"
             class="secondary-button"
-            :aria-pressed="externalFavorite"
-            @click="toggleExternalFavorite"
+            :aria-pressed="favorite"
+            @click="toggleFavorite"
           >
-            {{ externalFavorite ? '♥ Favorit' : '♡ Favorit' }}
+            {{ favorite ? '♥ Favorit' : '♡ Favorit' }}
           </button>
         </div>
 
@@ -1002,3 +1015,5 @@ function formatDate(date: Date) {
   }
 }
 </style>
+
+

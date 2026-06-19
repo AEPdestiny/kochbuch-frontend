@@ -5,10 +5,11 @@ import { useRouter } from 'vue-router'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { displayCategory } from '@/shared/recipeDisplay'
 import type { Recipe } from '@/types/recipe'
 
 const props = defineProps<{ search?: string }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
 const recipes = ref<Recipe[]>([])
@@ -30,6 +31,8 @@ const newRating = ref<number | null>(null)
 const newIngredients = ref('')
 const newInstructions = ref('')
 const newFavorite = ref(false)
+const newImagePreviewUrl = ref('')
+const editImagePreviewUrl = ref('')
 
 const editing = ref<Recipe | null>(null)
 const selectedFavorite = ref<Recipe | null>(null)
@@ -142,6 +145,7 @@ const createRecipe = async () => {
     newIngredients.value = ''
     newInstructions.value = ''
     newFavorite.value = false
+    clearNewImagePreview()
     error.value = null
   } catch (e: unknown) {
     formError.value = toCreateRecipeErrorMessage(e)
@@ -166,10 +170,12 @@ const toCreateRecipeErrorMessage = (e: unknown) => {
 
 const startEdit = (r: Recipe) => {
   editing.value = { ...r }
+  editImagePreviewUrl.value = ''
 }
 
 const cancelEdit = () => {
   editing.value = null
+  clearEditImagePreview()
 }
 
 const updateRecipe = async () => {
@@ -211,6 +217,7 @@ const updateRecipe = async () => {
     }
 
     editing.value = null
+    clearEditImagePreview()
     error.value = null
   } catch (e: unknown) {
     editFormError.value = toUpdateRecipeErrorMessage(e)
@@ -303,6 +310,79 @@ const closeFavoriteDetails = () => {
   selectedFavorite.value = null
 }
 
+const currentLanguage = computed(() => {
+  const [language] = String(locale.value).split('-')
+  return (language || 'de').toLowerCase()
+})
+
+function visibleCategory(category?: string | null) {
+  return displayCategory(category, currentLanguage.value)
+}
+
+function handleNewImageFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (file) {
+    setNewImagePreview(file)
+  }
+}
+
+function handleEditImageFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (file) {
+    setEditImagePreview(file)
+  }
+}
+
+function handleNewImageDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0]
+  if (file) {
+    setNewImagePreview(file)
+  }
+}
+
+function handleEditImageDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0]
+  if (file) {
+    setEditImagePreview(file)
+  }
+}
+
+function setNewImagePreview(file: File) {
+  if (!file.type.startsWith('image/')) {
+    formError.value = 'Bitte wähle eine Bilddatei aus.'
+    return
+  }
+  clearNewImagePreview()
+  newImagePreviewUrl.value = URL.createObjectURL(file)
+  formError.value = null
+}
+
+function setEditImagePreview(file: File) {
+  if (!file.type.startsWith('image/')) {
+    editFormError.value = 'Bitte wähle eine Bilddatei aus.'
+    return
+  }
+  clearEditImagePreview()
+  editImagePreviewUrl.value = URL.createObjectURL(file)
+  editFormError.value = null
+}
+
+function clearNewImagePreview() {
+  if (newImagePreviewUrl.value) {
+    URL.revokeObjectURL(newImagePreviewUrl.value)
+  }
+  newImagePreviewUrl.value = ''
+}
+
+function clearEditImagePreview() {
+  if (editImagePreviewUrl.value) {
+    URL.revokeObjectURL(editImagePreviewUrl.value)
+  }
+  editImagePreviewUrl.value = ''
+}
+
 const removeFavorite = async (r: Recipe) => {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     error.value = t('recipes.errors.sessionExpired')
@@ -376,6 +456,19 @@ const removeFavorite = async (r: Recipe) => {
               type="url"
               :placeholder="t('recipes.form.imageUrlPlaceholder', { protocol: 'https://' })"
             />
+            <label class="image-upload-box" @dragover.prevent @drop.prevent="handleNewImageDrop">
+              <span>Bild hochladen oder hier ablegen</span>
+              <input type="file" accept="image/*" capture="environment" @change="handleNewImageFile" />
+            </label>
+            <img
+              v-if="newImagePreviewUrl || newImageUrl"
+              class="image-preview"
+              :src="newImagePreviewUrl || newImageUrl"
+              alt="Bildvorschau"
+            />
+            <small v-if="newImagePreviewUrl" class="upload-note">
+              Die Vorschau wird nicht gespeichert. Für persistente Bilder bitte eine Image URL verwenden.
+            </small>
           </div>
         </div>
 
@@ -503,7 +596,7 @@ const removeFavorite = async (r: Recipe) => {
                     {{ r.title }}
                   </h4>
                   <p class="meta">
-                    <span v-if="r.category">{{ r.category }}</span>
+                    <span v-if="r.category">{{ visibleCategory(r.category) }}</span>
                     <span v-if="r.difficulty"> - {{ r.difficulty }}</span>
                     <span v-if="r.rating"> - {{ t('recipes.status.rating', { rating: r.rating.toFixed(1) }) }}</span>
                   </p>
@@ -547,6 +640,19 @@ const removeFavorite = async (r: Recipe) => {
           <div class="form-field">
             <label>{{ t('recipes.form.imageUrl') }}</label>
             <input v-model="editing.imageUrl" type="url" />
+            <label class="image-upload-box" @dragover.prevent @drop.prevent="handleEditImageDrop">
+              <span>Bild hochladen oder hier ablegen</span>
+              <input type="file" accept="image/*" capture="environment" @change="handleEditImageFile" />
+            </label>
+            <img
+              v-if="editImagePreviewUrl || editing.imageUrl"
+              class="image-preview"
+              :src="editImagePreviewUrl || editing.imageUrl"
+              alt="Bildvorschau"
+            />
+            <small v-if="editImagePreviewUrl" class="upload-note">
+              Die Vorschau wird nicht gespeichert. Für persistente Bilder bitte eine Image URL verwenden.
+            </small>
           </div>
         </div>
 
@@ -641,7 +747,7 @@ const removeFavorite = async (r: Recipe) => {
             <h3 class="card-title">{{ r.title }}</h3>
 
             <p class="card-meta">
-              <span v-if="r.category" class="pill pill-mint">{{ r.category }}</span>
+              <span v-if="r.category" class="pill pill-mint">{{ visibleCategory(r.category) }}</span>
               <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
               <span v-if="r.rating" class="pill pill-rating">
                 {{ t('recipes.status.rating', { rating: r.rating.toFixed(1) }) }}
@@ -674,7 +780,7 @@ const removeFavorite = async (r: Recipe) => {
         <h3 class="overlay-title">{{ selectedFavorite.title }}</h3>
 
         <p class="overlay-meta">
-          <span v-if="selectedFavorite.category">{{ selectedFavorite.category }}</span>
+          <span v-if="selectedFavorite.category">{{ visibleCategory(selectedFavorite.category) }}</span>
           <span v-if="selectedFavorite.difficulty"> - {{ selectedFavorite.difficulty }}</span>
           <span v-if="selectedFavorite.rating"> - {{ t('recipes.status.rating', { rating: selectedFavorite.rating.toFixed(1) }) }}</span>
         </p>
@@ -776,6 +882,37 @@ textarea {
 input:focus,
 textarea:focus {
   border-color: #26b6b8;
+}
+
+.image-upload-box {
+  align-items: center;
+  background: #f4fbfa;
+  border: 1.5px dashed #8fd5cc;
+  border-radius: 10px;
+  color: #486b68;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  min-height: 72px;
+  padding: 10px;
+  text-align: center;
+}
+
+.image-upload-box input {
+  display: none;
+}
+
+.image-preview {
+  border-radius: 10px;
+  border: 1px solid #c3e7e1;
+  max-height: 180px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.upload-note {
+  color: #486b68;
+  font-size: 0.82rem;
 }
 
 textarea {

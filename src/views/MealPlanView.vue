@@ -5,6 +5,7 @@ import { ApiClientError } from '@/shared/api/apiClient'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
+import { displayCategory } from '@/shared/recipeDisplay'
 import type { MealPlanEntryResponse, MealPlanWeekResponse, MealSlot } from '@/types/mealPlan'
 import type { RecipeResponse, RecipeSearchFilters } from '@/types/recipe'
 import type { UserPreferencesResponse } from '@/types/profile'
@@ -533,6 +534,10 @@ function slotForRecipe(recipe: RecipeResponse | null | undefined): MealSlot {
   return 'dinner'
 }
 
+function visibleCategory(category?: string | null) {
+  return displayCategory(category, currentLanguage.value)
+}
+
 function slotLabel(slot: MealSlot) {
   if (slot === 'breakfast') return 'Frühstück'
   if (slot === 'lunch') return 'Mittagessen'
@@ -684,7 +689,7 @@ function formatDate(date: Date) {
               <span v-if="currentSwipeRecipe.protein">{{ Math.round(currentSwipeRecipe.protein) }} g Protein</span>
             </div>
             <div class="tag-list">
-              <span v-if="currentSwipeRecipe.category">{{ currentSwipeRecipe.category }}</span>
+              <span v-if="currentSwipeRecipe.category">{{ visibleCategory(currentSwipeRecipe.category) }}</span>
               <span v-if="currentSwipeRecipe.difficulty">{{ currentSwipeRecipe.difficulty }}</span>
             </div>
             <p class="suggestion-state">

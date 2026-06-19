@@ -8,6 +8,7 @@ import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { displayCategory } from '@/shared/recipeDisplay'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 import type { Recipe, RecipeSearchFilters } from '@/types/recipe'
 
@@ -59,6 +60,7 @@ const currentLanguage = computed(() => {
   return (language || 'de').toLowerCase()
 })
 const englishRecipesAllowed = computed(() => currentLanguage.value === 'en')
+const personalizationActive = computed(() => !ignoreLikes.value && likes.value.length > 0 && !search.value.trim())
 const weekDays = computed(() => {
   const monday = startOfCurrentWeek()
   return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -132,8 +134,10 @@ const loadRecipes = async () => {
     ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
     allExternal.value = []
     error.value = null
-    searchNotice.value = null
     buildView()
+    searchNotice.value = ownPublished.value.length < 100
+      ? `Es wurden ${ownPublished.value.length} lokale Rezepte geladen.`
+      : null
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
@@ -371,7 +375,10 @@ async function loadPersonalization() {
 
   try {
     const favorites = await favoriteApi.getExternalFavorites()
-    externalFavoriteIds.value = new Set(favorites.map(favorite => favorite.externalRecipeId))
+    externalFavoriteIds.value = new Set(favorites.map(favorite => favoriteKey(
+      favorite.externalSource ?? 'SPOONACULAR',
+      favorite.externalRecipeId,
+    )))
   } catch {
     externalFavoriteIds.value = new Set()
   }
@@ -547,12 +554,20 @@ function recommendationReasons(recipe: Recipe, source: RecipeSource) {
   return reasons.slice(0, 3)
 }
 
-function externalFavoriteId(recipe: DisplayRecipe) {
+function favoriteId(recipe: DisplayRecipe) {
   return String(recipe.externalId ?? recipe.id)
 }
 
-function isExternalFavorite(recipe: DisplayRecipe) {
-  return recipe.source === 'external' && externalFavoriteIds.value.has(externalFavoriteId(recipe))
+function favoriteSource(recipe: DisplayRecipe) {
+  return recipe.source === 'external' ? 'SPOONACULAR' : 'DISHLY'
+}
+
+function favoriteKey(source: string, id: number | string) {
+  return `${source.toUpperCase()}:${String(id)}`
+}
+
+function isRecipeFavorite(recipe: DisplayRecipe) {
+  return externalFavoriteIds.value.has(favoriteKey(favoriteSource(recipe), favoriteId(recipe)))
 }
 
 function hasAlcohol(recipe: Recipe) {
@@ -564,24 +579,23 @@ function visibleCategory(recipe: Recipe) {
   if (!category || category.toLowerCase() === 'side dish') {
     return ''
   }
-  return category
+  return displayCategory(category, currentLanguage.value)
 }
 
-async function toggleExternalFavorite(recipe: DisplayRecipe) {
-  if (recipe.source !== 'external') {
-    return
-  }
+async function toggleRecipeFavorite(recipe: DisplayRecipe) {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = 'Bitte melde dich an, um API-Rezepte zu favorisieren.'
+    error.value = 'Bitte melde dich an, um Rezepte zu favorisieren.'
     return
   }
 
-  const id = externalFavoriteId(recipe)
+  const id = favoriteId(recipe)
+  const source = favoriteSource(recipe)
+  const key = favoriteKey(source, id)
   try {
-    if (externalFavoriteIds.value.has(id)) {
-      await favoriteApi.removeExternalFavorite('SPOONACULAR', id)
+    if (externalFavoriteIds.value.has(key)) {
+      await favoriteApi.removeExternalFavorite(source, id)
       const next = new Set(externalFavoriteIds.value)
-      next.delete(id)
+      next.delete(key)
       externalFavoriteIds.value = next
       return
     }
@@ -590,9 +604,9 @@ async function toggleExternalFavorite(recipe: DisplayRecipe) {
       externalRecipeId: id,
       externalTitle: recipe.title,
       externalImageUrl: recipe.imageUrl,
-      externalSource: 'SPOONACULAR',
+      externalSource: source,
     })
-    externalFavoriteIds.value = new Set([...externalFavoriteIds.value, id])
+    externalFavoriteIds.value = new Set([...externalFavoriteIds.value, key])
   } catch (e: unknown) {
     error.value = e instanceof ApiClientError && e.message
       ? e.message
@@ -673,6 +687,9 @@ function formatDate(date: Date) {
           </select>
         </label>
       </div>
+      <p v-if="personalizationActive" class="personalization-note">
+        Personalisiert nach deinen Vorlieben
+      </p>
     </section>
 
     <div class="shuffle-wrap">
@@ -716,13 +733,12 @@ function formatDate(date: Date) {
             <h3 class="card-title">{{ r.title }}</h3>
             <span v-if="r.userCreated" class="user-created-icon" title="Von Nutzer erstellt" aria-label="Von Nutzer erstellt">👤</span>
             <button
-              v-if="r.source === 'external'"
               type="button"
               class="favorite-button"
-              :aria-pressed="isExternalFavorite(r)"
-              @click.stop="toggleExternalFavorite(r)"
+              :aria-pressed="isRecipeFavorite(r)"
+              @click.stop="toggleRecipeFavorite(r)"
             >
-              {{ isExternalFavorite(r) ? '♥ Favorit' : '♡ Favorit' }}
+              {{ isRecipeFavorite(r) ? '♥ Favorit' : '♡ Favorit' }}
             </button>
             <p class="card-meta">
               <span v-if="visibleCategory(r)" class="pill pill-mint">{{ visibleCategory(r) }}</span>
@@ -861,6 +877,13 @@ function formatDate(date: Date) {
   font: inherit;
   font-size: 0.9rem;
   padding: 7px 11px;
+}
+
+.personalization-note {
+  color: #2f6f62;
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 12px 0 0;
 }
 
 .filter-panel .context-filter {

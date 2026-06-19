@@ -42,6 +42,14 @@ describe('RecipeList.vue', () => {
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
     vi.mocked(favoriteApi.removeExternalFavorite).mockResolvedValue()
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:image-preview'),
+    })
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: vi.fn(),
+    })
   })
 
   it('loads /recipes/mine and shows "Deine erstellten Rezepte" with items for logged-in users', async () => {
@@ -77,6 +85,25 @@ describe('RecipeList.vue', () => {
     expect(recipeApi.getRecipes).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Deine erstellten Rezepte')
     expect(wrapper.text()).toContain('Test Pasta')
+  })
+
+  it('shows a local image preview when a file is selected', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    const file = new File(['image'], 'rezept.png', { type: 'image/png' })
+    const fileInput = wrapper.find('input[type="file"]')
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [file],
+    })
+
+    await fileInput.trigger('change')
+
+    expect(URL.createObjectURL).toHaveBeenCalledWith(file)
+    expect(wrapper.find('.image-preview').attributes('src')).toBe('blob:image-preview')
+    expect(wrapper.text()).toContain('Die Vorschau wird nicht gespeichert.')
   })
 
   it('does not load recipes without login and shows a hint', async () => {
