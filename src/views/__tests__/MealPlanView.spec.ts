@@ -292,6 +292,121 @@ describe('MealPlanView', () => {
     vi.useRealTimers()
   })
 
+  it('loads and limits randomized German autocomplete suggestions to five', async () => {
+    vi.useFakeTimers()
+    const matches = Array.from({ length: 6 }, (_, index) => (
+      recipe(100 + index, `Sushi ${index + 1}`, { userCreated: false, language: 'de' })
+    ))
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(matches)
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    vi.mocked(recipeApi.getPublishedRecipes).mockClear()
+
+    const input = wrapper.findAll('.day-card').at(1)!.find('input')
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    await input.setValue('sush')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    const firstSuggestions = wrapper.findAll('.day-card').at(1)!.findAll('.suggestion-list button')
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('de', 'sush')
+    expect(firstSuggestions).toHaveLength(5)
+    expect(firstSuggestions.map(button => button.text())).toEqual(expect.arrayContaining([
+      expect.stringContaining('Sushi 1'),
+      expect.stringContaining('Sushi 5'),
+    ]))
+    expect(firstSuggestions.map(button => button.text()).join(' ')).not.toContain('Sushi 6')
+
+    randomSpy.mockReturnValue(0)
+    await input.setValue('')
+    await input.setValue('sush')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    const secondSuggestions = wrapper.findAll('.day-card').at(1)!.findAll('.suggestion-list button')
+    expect(secondSuggestions).toHaveLength(5)
+    expect(secondSuggestions.map(button => button.text()).join(' ')).toContain('Sushi 6')
+    expect(secondSuggestions.map(button => button.text())).not.toEqual(firstSuggestions.map(button => button.text()))
+    randomSpy.mockRestore()
+  })
+
+  it('uses the English locale for autocomplete searches', async () => {
+    vi.useFakeTimers()
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(110, 'Pasta Primavera', { userCreated: false, language: 'en' }),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    vi.mocked(recipeApi.getPublishedRecipes).mockClear()
+
+    const input = wrapper.findAll('.day-card').at(1)!.find('input')
+    await input.setValue('pasta')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('en', 'pasta')
+    expect(wrapper.text()).toContain('Pasta Primavera')
+  })
+
+  it('does not search when the autocomplete query is cleared', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    vi.mocked(recipeApi.getPublishedRecipes).mockClear()
+
+    const input = wrapper.findAll('.day-card').at(1)!.find('input')
+    await input.setValue('sush')
+    await input.setValue('')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(recipeApi.getPublishedRecipes).not.toHaveBeenCalled()
+    expect(wrapper.findAll('.day-card').at(1)!.find('.suggestion-list').exists()).toBe(false)
+  })
+
+  it('keeps free-text planning available when autocomplete loading fails', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockImplementation(async (_language, search) => {
+      if (search) throw new Error('search unavailable')
+      return []
+    })
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 11,
+      plannedDate: '2026-06-02',
+      mealSlot: 'breakfast',
+      recipe: null,
+      customTitle: 'Sushi frei',
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card').at(1)!
+    await tuesdayCard.find('input').setValue('Sushi frei')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(tuesdayCard.text()).toContain('Vorschläge konnten nicht geladen werden. Freitext bleibt möglich.')
+    await tuesdayCard.find('.primary-button').trigger('click')
+    await flushPromises()
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
+      customTitle: 'Sushi frei',
+      caloriesSnapshot: null,
+      proteinSnapshot: null,
+      imageUrlSnapshot: null,
+      externalRecipeId: null,
+      externalSource: null,
+    })
+  })
+
   it('loads swipe suggestions with profile filters and bucket counters', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([

@@ -44,6 +44,7 @@ const suggestionsBySlot = ref<Record<string, SlotSuggestion[]>>({})
 const suggestionLoadingBySlot = ref<Record<string, boolean>>({})
 const suggestionNoticeBySlot = ref<Record<string, string>>({})
 const suggestionTimers: Record<string, ReturnType<typeof setTimeout>> = {}
+const suggestionRequestIds: Record<string, number> = {}
 const preferences = ref<UserPreferencesResponse | null>(null)
 const swipeSuggestions = ref<RecipeResponse[]>([])
 const swipeIndex = ref(0)
@@ -298,6 +299,8 @@ function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
 
 function onSlotSearch(date: string, slot: MealSlot) {
   const key = slotKey(date, slot)
+  const requestId = (suggestionRequestIds[key] ?? 0) + 1
+  suggestionRequestIds[key] = requestId
   selectedRecipeBySlot.value[key] = ''
   suggestionNoticeBySlot.value[key] = ''
   clearTimeout(suggestionTimers[key])
@@ -311,28 +314,52 @@ function onSlotSearch(date: string, slot: MealSlot) {
 
   suggestionLoadingBySlot.value[key] = true
   suggestionTimers[key] = setTimeout(async () => {
-    const localSuggestions = recipes.value
-      .filter(recipe => recipe.title.toLowerCase().includes(query.toLowerCase()))
-      .slice(0, 8)
-      .map(recipe => ({
-        id: recipe.id,
-        title: recipe.title,
-        source: recipe.userCreated ? 'dishly' as const : 'external' as const,
-        planAsRecipe: recipe.userCreated === true,
-        calories: recipe.calories,
-        protein: recipe.protein,
-        imageUrl: recipe.imageUrl,
-        externalRecipeId: recipe.externalId ? String(recipe.externalId) : String(recipe.id),
-        externalSource: recipe.source ?? 'dishly-public',
-      }))
     try {
-      suggestionsBySlot.value[key] = localSuggestions
+      const language = currentLanguage.value
+      const publishedMatches = await recipeApi.getPublishedRecipes(language, query)
+      if (suggestionRequestIds[key] !== requestId) {
+        return
+      }
+
+      const normalizedQuery = query.toLowerCase()
+      const ownMatches = recipes.value.filter(recipe => (
+        recipe.userCreated === true
+        && recipe.title.toLowerCase().includes(normalizedQuery)
+      ))
+      const suggestions = shuffleArray(mergeRecipes(ownMatches, publishedMatches))
+        .slice(0, 5)
+        .map(toSlotSuggestion)
+
+      suggestionsBySlot.value[key] = suggestions
+      if (suggestions.length === 0) {
+        suggestionNoticeBySlot.value[key] = 'Keine passenden Rezepte gefunden. Freitext bleibt möglich.'
+      }
     } catch {
-      suggestionsBySlot.value[key] = localSuggestions
+      if (suggestionRequestIds[key] !== requestId) {
+        return
+      }
+      suggestionsBySlot.value[key] = []
+      suggestionNoticeBySlot.value[key] = 'Vorschläge konnten nicht geladen werden. Freitext bleibt möglich.'
     } finally {
-      suggestionLoadingBySlot.value[key] = false
+      if (suggestionRequestIds[key] === requestId) {
+        suggestionLoadingBySlot.value[key] = false
+      }
     }
   }, 300)
+}
+
+function toSlotSuggestion(recipe: RecipeResponse): SlotSuggestion {
+  return {
+    id: recipe.id,
+    title: recipe.title,
+    source: recipe.userCreated ? 'dishly' : 'external',
+    planAsRecipe: recipe.userCreated === true,
+    calories: recipe.calories,
+    protein: recipe.protein,
+    imageUrl: recipe.imageUrl,
+    externalRecipeId: recipe.externalId ? String(recipe.externalId) : String(recipe.id),
+    externalSource: recipe.source ?? 'dishly-public',
+  }
 }
 
 function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggestion) {
