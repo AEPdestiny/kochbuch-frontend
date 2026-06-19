@@ -210,7 +210,23 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Personalisierung aktivieren')
-    expect(wrapper.text()).toContain('Profil ignoriert - Allergien und Abneigungen bleiben aktiv')
+    expect(wrapper.text()).toContain('Profil ignoriert – Allergien und Abneigungen bleiben aktiv')
+  })
+
+  it('translates the personalization controls into English', async () => {
+    setLocale('en')
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Turn off personalization')
+    expect(wrapper.text()).toContain('Profile active')
+    expect(wrapper.text()).not.toContain('Personalisierung ausschalten')
+
+    await wrapper.find('.plain-filter-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Turn on personalization')
+    expect(wrapper.text()).toContain('Profile ignored – allergies and dislikes remain active')
   })
 
   it('disables soft profile personalization but keeps allergies and dislikes active', async () => {
@@ -407,7 +423,7 @@ describe('ApiRecipeList.vue', () => {
       externalRecipeId: '716429',
       externalSource: 'spoonacular',
     })
-    expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
+    expect(wrapper.text()).toContain('Recipe added to meal plan.')
   })
 
   it('plans Dishly recipe from home with recipeId', async () => {
@@ -497,6 +513,9 @@ describe('ApiRecipeList.vue', () => {
       'Search by title, cuisine or ingredients',
     )
     expect(wrapper.text()).toContain('Shuffle recipes')
+    expect(wrapper.text()).toContain('Low calorie')
+    expect(wrapper.text()).toContain('Calories ascending')
+    expect(wrapper.text()).toContain('Turn off personalization')
     expect(wrapper.text()).toContain('Chicken Pasta')
     expect(wrapper.text()).toContain('Italian')
     expect(wrapper.text()).toContain('Dishly Kartoffelsuppe')
@@ -656,7 +675,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     const calorieCheckbox = wrapper.findAll('label').find(label =>
-      label.text().includes('kalorienarm'),
+      label.text().includes('Kalorienarm'),
     )?.find('input')
     expect(calorieCheckbox?.exists()).toBe(true)
     if (!calorieCheckbox) throw new Error('Calorie conscious checkbox not found')
@@ -664,10 +683,49 @@ describe('ApiRecipeList.vue', () => {
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
 
+    const sortSelect = wrapper.findAll('select').find(select =>
+      select.text().includes('Kalorien aufsteigend'),
+    )
+    expect(sortSelect?.element.value).toBe('caloriesAsc')
+
     const cards = wrapper.findAll('.recipe-card').map(card => card.text())
     expect(cards[0]).toContain('Low Calories Recipe')
     expect(cards[1]).toContain('Medium Calories Recipe')
     expect(cards[2]).toContain('No Calories Recipe')
+  })
+
+  it('keeps low-calorie, high-protein, sorting and personalization state after shuffle', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Protein Bowl', 'beans', 'lunch', { calories: 350, protein: 28 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const calorieLabel = wrapper.findAll('label').find(label => label.text().includes('Kalorienarm'))
+    const proteinLabel = wrapper.findAll('label').find(label => label.text().includes('Proteinreich'))
+    const calorieCheckbox = calorieLabel?.find('input')
+    const proteinCheckbox = proteinLabel?.find('input')
+    const sortSelect = wrapper.findAll('select').find(select => select.text().includes('Kalorien aufsteigend'))
+
+    expect(calorieCheckbox?.exists()).toBe(true)
+    expect(proteinCheckbox?.exists()).toBe(true)
+    expect(sortSelect?.exists()).toBe(true)
+    if (!calorieCheckbox || !proteinCheckbox || !sortSelect) throw new Error('Filter controls not found')
+
+    await calorieCheckbox.setValue(true)
+    await proteinCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+    await wrapper.find('.shuffle-btn').trigger('click')
+    await flushPromises()
+
+    expect(calorieCheckbox.element.checked).toBe(true)
+    expect(proteinCheckbox.element.checked).toBe(true)
+    expect(sortSelect.element.value).toBe('caloriesAsc')
+    expect(wrapper.text()).toContain('Personalisierung ausschalten')
+    expect(wrapper.text()).toContain('Profil aktiv')
   })
 
   it('shows alcohol badge only when alcohol values are present', async () => {

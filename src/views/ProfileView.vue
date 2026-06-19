@@ -20,7 +20,7 @@ const glutenFree = ref(false)
 const lactoseFree = ref(false)
 const highProtein = ref(false)
 const calorieConscious = ref(false)
-const dailyCalorieTarget = ref<number | null>(2200)
+const dailyCalorieTarget = ref<number | null>(null)
 
 onMounted(() => {
   loadPreferences()
@@ -44,7 +44,7 @@ async function loadPreferences() {
     lactoseFree.value = preferences.lactoseFree
     highProtein.value = preferences.highProtein
     calorieConscious.value = preferences.calorieConscious
-    dailyCalorieTarget.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? 2200
+    dailyCalorieTarget.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? null
     error.value = null
   } catch (e: unknown) {
     error.value = toLoadError(e)
@@ -176,43 +176,84 @@ function toSaveError(e: unknown) {
     <p v-if="success" class="success-message" role="status">{{ success }}</p>
 
     <form v-if="!loading" class="preferences-form" @submit.prevent="savePreferences">
-      <label>
-        {{ t('profile.form.likes') }}
-        <textarea v-model="likesText" :placeholder="t('profile.form.likesPlaceholder')" />
-      </label>
+      <section class="profile-card">
+        <div class="section-heading">
+          <h2>{{ t('profile.sections.taste.title') }}</h2>
+          <p>{{ t('profile.sections.taste.description') }}</p>
+        </div>
+        <div class="field-grid">
+          <label>
+            {{ t('profile.form.likes') }}
+            <textarea v-model="likesText" :placeholder="t('profile.form.likesPlaceholder')" />
+          </label>
 
-      <label>
-        {{ t('profile.form.dislikes') }}
-        <textarea v-model="dislikesText" :placeholder="t('profile.form.dislikesPlaceholder')" />
-      </label>
+          <label>
+            {{ t('profile.form.dislikes') }}
+            <textarea v-model="dislikesText" :placeholder="t('profile.form.dislikesPlaceholder')" />
+          </label>
+        </div>
+      </section>
 
-      <label>
-        {{ t('profile.form.allergies') }}
-        <textarea v-model="allergiesText" :placeholder="t('profile.form.allergiesPlaceholder')" />
-      </label>
+      <section class="profile-card profile-card-safety">
+        <div class="section-heading">
+          <h2>{{ t('profile.sections.safety.title') }}</h2>
+          <p>{{ t('profile.sections.safety.description') }}</p>
+        </div>
+        <label>
+          {{ t('profile.form.allergies') }}
+          <textarea v-model="allergiesText" :placeholder="t('profile.form.allergiesPlaceholder')" />
+        </label>
+        <p class="helper-text">{{ t('profile.hints.allergiesAlwaysActive') }}</p>
+      </section>
 
-      <fieldset>
-        <legend>{{ t('profile.form.dietaryStyles') }}</legend>
-        <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('profile.options.vegan') }}</label>
-        <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('profile.options.vegetarian') }}</label>
-        <label><input v-model="glutenFree" type="checkbox" /> {{ t('profile.options.glutenFree') }}</label>
-        <label><input v-model="lactoseFree" type="checkbox" /> {{ t('profile.options.lactoseFree') }}</label>
-      </fieldset>
+      <section class="profile-card">
+        <div class="section-heading">
+          <h2>{{ t('profile.sections.diet.title') }}</h2>
+          <p>{{ t('profile.sections.diet.description') }}</p>
+        </div>
+        <fieldset class="option-grid">
+          <legend class="sr-only">{{ t('profile.form.dietaryStyles') }}</legend>
+          <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('profile.options.vegan') }}</label>
+          <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('profile.options.vegetarian') }}</label>
+          <label><input v-model="glutenFree" type="checkbox" /> {{ t('profile.options.glutenFree') }}</label>
+          <label><input v-model="lactoseFree" type="checkbox" /> {{ t('profile.options.lactoseFree') }}</label>
+        </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>{{ t('profile.form.goals') }}</legend>
-        <label><input v-model="highProtein" type="checkbox" /> {{ t('profile.options.highProtein') }}</label>
-        <label><input v-model="calorieConscious" type="checkbox" /> kalorienarm</label>
-      </fieldset>
+      <section class="profile-card">
+        <div class="section-heading">
+          <h2>{{ t('profile.sections.goals.title') }}</h2>
+          <p>{{ t('profile.sections.goals.description') }}</p>
+        </div>
+        <fieldset class="option-grid">
+          <legend class="sr-only">{{ t('profile.form.goals') }}</legend>
+          <label><input v-model="highProtein" type="checkbox" /> {{ t('profile.options.highProtein') }}</label>
+          <label><input v-model="calorieConscious" type="checkbox" /> {{ t('profile.options.calorieConscious') }}</label>
+        </fieldset>
 
-      <label>
-        Tagesziel Kalorien
-        <input v-model.number="dailyCalorieTarget" type="number" min="1" step="1" placeholder="z. B. 2200" />
-      </label>
+        <label class="calorie-field">
+          {{ t('profile.form.calorieGoal') }}
+          <input
+            v-model.number="dailyCalorieTarget"
+            type="number"
+            min="1"
+            step="1"
+            :placeholder="t('profile.form.calorieGoalPlaceholder')"
+          />
+          <span class="helper-text">{{ t('profile.hints.calorieGoal') }}</span>
+        </label>
+      </section>
 
-      <button class="save-button" type="submit" :disabled="saving">
-        {{ saving ? t('profile.actions.saving') : t('profile.actions.save') }}
-      </button>
+      <aside class="profile-guidance">
+        <strong>{{ t('profile.hints.personalizationTitle') }}</strong>
+        <p>{{ t('profile.hints.personalization') }}</p>
+      </aside>
+
+      <div class="form-actions">
+        <button class="save-button" type="submit" :disabled="saving">
+          {{ saving ? t('profile.actions.saving') : t('profile.actions.save') }}
+        </button>
+      </div>
     </form>
   </main>
 </template>
@@ -243,14 +284,47 @@ function toSaveError(e: unknown) {
 
 .preferences-form {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
-.preferences-form label,
-.preferences-form fieldset {
+.preferences-form label {
   display: grid;
   gap: 0.45rem;
   font-weight: 700;
+}
+
+.profile-card {
+  border: 1px solid #d7e8e3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 1.25rem;
+  box-shadow: 0 5px 18px rgba(36, 59, 56, 0.06);
+}
+
+.profile-card-safety {
+  border-left: 4px solid #d18a5d;
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+.section-heading h2 {
+  margin: 0 0 0.3rem;
+  font-size: 1.2rem;
+}
+
+.section-heading p,
+.profile-guidance p {
+  margin: 0;
+  color: #486b68;
+  line-height: 1.5;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
 }
 
 .preferences-form textarea,
@@ -275,27 +349,47 @@ function toSaveError(e: unknown) {
   resize: vertical;
 }
 
-.preferences-form fieldset {
-  border: 1px solid #d7e8e3;
-  border-radius: 8px;
-  padding: 1rem;
+.option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-.preferences-form fieldset label {
+.option-grid label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+  border: 1px solid #d7e8e3;
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
 }
 
-.number-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+.calorie-field {
+  max-width: 420px;
+  margin-top: 1rem;
+}
+
+.profile-guidance {
+  border-radius: 8px;
+  background: #eef8f4;
+  padding: 1rem 1.1rem;
+}
+
+.profile-guidance strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .save-button {
-  justify-self: start;
   border: 0;
   border-radius: 8px;
   background: #2f8f7b;
@@ -303,6 +397,18 @@ function toSaveError(e: unknown) {
   padding: 0.75rem 1.15rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .save-button:disabled {

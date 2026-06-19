@@ -56,6 +56,7 @@ const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
+let calorieSortWasAutomatic = false
 
 const filtered = computed(() => recipes.value)
 const currentLanguage = computed(() => {
@@ -76,12 +77,14 @@ const hasSoftProfilePreferences = computed(() => Boolean(
 ))
 const personalizationActive = computed(() => profilePersonalizationEnabled.value && hasSoftProfilePreferences.value && !search.value.trim())
 const personalizationButtonText = computed(() =>
-  profilePersonalizationEnabled.value ? 'Personalisierung ausschalten' : 'Personalisierung aktivieren',
+  profilePersonalizationEnabled.value
+    ? t('home.personalization.disable')
+    : t('home.personalization.enable'),
 )
 const personalizationStatusText = computed(() =>
   profilePersonalizationEnabled.value
-    ? 'Profil aktiv'
-    : 'Profil ignoriert - Allergien und Abneigungen bleiben aktiv',
+    ? t('home.personalization.active')
+    : t('home.personalization.inactive'),
 )
 const weekDays = computed(() => {
   const monday = startOfCurrentWeek()
@@ -163,7 +166,7 @@ const loadRecipes = async () => {
     error.value = null
     buildView()
     searchNotice.value = ownPublished.value.length < 100
-      ? `Es wurden ${ownPublished.value.length} lokale Rezepte geladen.`
+      ? t('home.notices.localRecipesLoaded', { count: ownPublished.value.length })
       : null
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
@@ -199,7 +202,7 @@ const loadExternalRecipes = async (query: string) => {
     buildView()
     error.value = null
     searchNotice.value = localMatches.length < 20
-      ? `Für diese Suche gibt es aktuell nur ${localMatches.length} lokale Rezepte in dieser Sprache.`
+      ? t('home.notices.localSearchResults', { count: localMatches.length })
       : null
     return
   }
@@ -246,7 +249,7 @@ async function openMealPlanModal(recipe: DisplayRecipe) {
   mealPlanMessage.value = null
   mealPlanError.value = null
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    mealPlanError.value = 'Bitte melde dich an, um Rezepte zum Wochenplan hinzuzufügen.'
+    mealPlanError.value = t('recipeDetail.errors.loginRequiredMealPlan')
     return
   }
 
@@ -261,7 +264,7 @@ async function openMealPlanModal(recipe: DisplayRecipe) {
     plannedEntries.value = []
     mealPlanError.value = e instanceof ApiClientError && e.message
       ? e.message
-      : 'Der Wochenplan konnte nicht geladen werden.'
+      : t('mealPlan.errors.load')
   } finally {
     mealPlanLoading.value = false
   }
@@ -278,13 +281,13 @@ async function addToMealPlan(date: string, slot: MealSlot) {
     plannedEntries.value = plannedEntries.value
       .filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
       .concat(savedEntry)
-    mealPlanMessage.value = 'Rezept wurde zum Wochenplan hinzugefügt.'
+    mealPlanMessage.value = t('recipeDetail.mealPlan.added')
     mealPlanModalOpen.value = false
   } catch (e: unknown) {
     logMealPlanError(e, date, slot, payload)
     mealPlanError.value = e instanceof ApiClientError && e.message
       ? e.message
-      : 'Das Rezept konnte nicht zum Wochenplan hinzugefügt werden.'
+      : t('recipeDetail.errors.mealPlan')
   } finally {
     mealPlanLoading.value = false
   }
@@ -340,8 +343,14 @@ function logMealPlanError(
   console.error('Meal plan request failed', { error: errorValue, payload, date, slot })
 }
 
-const shuffleRecipes = () => {
-  loadRecipes()
+const shuffleRecipes = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    await loadExternalRecipes(search.value)
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => {
@@ -362,6 +371,19 @@ watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, hig
   searchTimeout = setTimeout(() => {
     loadExternalRecipes(query)
   }, SEARCH_DEBOUNCE_MS)
+})
+
+watch(calorieConscious, enabled => {
+  if (enabled) {
+    sortOrder.value = 'caloriesAsc'
+    calorieSortWasAutomatic = true
+    return
+  }
+
+  if (calorieSortWasAutomatic && sortOrder.value === 'caloriesAsc') {
+    sortOrder.value = ''
+  }
+  calorieSortWasAutomatic = false
 })
 
 watch(locale, () => {
@@ -431,6 +453,10 @@ function onVegetarianChanged() {
   if (vegetarian.value) {
     vegan.value = false
   }
+}
+
+function onSortChanged() {
+  calorieSortWasAutomatic = false
 }
 
 function toggleProfilePersonalization() {
@@ -580,13 +606,23 @@ function sortRecipes(items: DisplayRecipe[]) {
   if (sortOrder.value === 'proteinDesc') {
     return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'desc'))
   }
-  if (calorieConscious.value) {
-    return sorted.sort((a, b) => compareOptionalNumbers(a.calories, b.calories, 'asc'))
+  if (sortOrder.value === 'timeAsc') {
+    return sorted.sort((a, b) => compareOptionalNumbers(totalRecipeTime(a), totalRecipeTime(b), 'asc'))
+  }
+  if (sortOrder.value === 'timeDesc') {
+    return sorted.sort((a, b) => compareOptionalNumbers(totalRecipeTime(a), totalRecipeTime(b), 'desc'))
   }
   if (highProtein.value) {
     return sorted.sort((a, b) => compareOptionalNumbers(a.protein, b.protein, 'desc'))
   }
   return sorted
+}
+
+function totalRecipeTime(recipe: Recipe) {
+  const prepTime = recipe.prepTimeMinutes ?? 0
+  const cookTime = recipe.cookTimeMinutes ?? 0
+  const total = prepTime + cookTime
+  return total > 0 ? total : null
 }
 
 function compareOptionalNumbers(
@@ -713,12 +749,12 @@ function formatDate(date: Date) {
         :placeholder="t('home.searchPlaceholder')"
         :aria-label="t('home.searchAria')"
       />
-      <div class="filter-panel" aria-label="Recipe filters">
+      <div class="filter-panel" :aria-label="t('home.filters.ariaLabel')">
         <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('home.filters.vegan') }}</label>
         <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('home.filters.vegetarian') }}</label>
         <label><input v-model="glutenFree" type="checkbox" /> {{ t('home.filters.glutenFree') }}</label>
-        <label><input v-model="lactoseFree" type="checkbox" /> milchfrei</label>
-        <label><input v-model="calorieConscious" type="checkbox" /> kalorienarm</label>
+        <label><input v-model="lactoseFree" type="checkbox" /> {{ t('home.filters.lactoseFree') }}</label>
+        <label><input v-model="calorieConscious" type="checkbox" /> {{ t('home.filters.calorieConscious') }}</label>
         <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
         <button
           type="button"
@@ -733,7 +769,7 @@ function formatDate(date: Date) {
           <input v-model.number="maxPrepTime" class="small-input" min="1" type="number" />
         </label>
         <label>
-          Maximale Kalorien
+          {{ t('home.filters.maxCalories') }}
           <input v-model.number="maxCalories" class="small-input" min="1" type="number" />
         </label>
         <label>
@@ -744,16 +780,20 @@ function formatDate(date: Date) {
             <option value="lunch">{{ t('home.filters.lunch') }}</option>
             <option value="dinner">{{ t('home.filters.dinner') }}</option>
             <option value="snack">{{ t('home.filters.snack') }}</option>
+            <option value="dessert">{{ t('home.filters.dessert') }}</option>
+            <option value="drink">{{ t('home.filters.drink') }}</option>
           </select>
         </label>
         <label>
-          Sortierung
-          <select v-model="sortOrder" class="small-input">
-            <option value="">Standard</option>
-            <option value="caloriesAsc">Kalorien aufsteigend</option>
-            <option value="caloriesDesc">Kalorien absteigend</option>
-            <option value="proteinAsc">Protein aufsteigend</option>
-            <option value="proteinDesc">Protein absteigend</option>
+          {{ t('home.sort.label') }}
+          <select v-model="sortOrder" class="small-input" @change="onSortChanged">
+            <option value="">{{ t('home.sort.default') }}</option>
+            <option value="caloriesAsc">{{ t('home.sort.caloriesAsc') }}</option>
+            <option value="caloriesDesc">{{ t('home.sort.caloriesDesc') }}</option>
+            <option value="proteinAsc">{{ t('home.sort.proteinAsc') }}</option>
+            <option value="proteinDesc">{{ t('home.sort.proteinDesc') }}</option>
+            <option value="timeAsc">{{ t('home.sort.timeAsc') }}</option>
+            <option value="timeDesc">{{ t('home.sort.timeDesc') }}</option>
           </select>
         </label>
       </div>
@@ -761,7 +801,7 @@ function formatDate(date: Date) {
         {{ personalizationStatusText }}
       </p>
       <p v-if="personalizationActive" class="personalization-note">
-        Personalisiert nach deinem Profil
+        {{ t('home.personalization.note') }}
       </p>
     </section>
 
@@ -804,19 +844,24 @@ function formatDate(date: Date) {
 
           <div class="card-content">
             <h3 class="card-title">{{ r.title }}</h3>
-            <span v-if="r.userCreated" class="user-created-icon" title="Von Nutzer erstellt" aria-label="Von Nutzer erstellt">👤</span>
+            <span
+              v-if="r.userCreated"
+              class="user-created-icon"
+              :title="t('home.card.userCreated')"
+              :aria-label="t('home.card.userCreated')"
+            >👤</span>
             <button
               type="button"
               class="favorite-button"
               :aria-pressed="isRecipeFavorite(r)"
               @click.stop="toggleRecipeFavorite(r)"
             >
-              {{ isRecipeFavorite(r) ? '♥ Favorit' : '♡ Favorit' }}
+              {{ isRecipeFavorite(r) ? `♥ ${t('home.card.favorite')}` : `♡ ${t('home.card.favorite')}` }}
             </button>
             <p class="card-meta">
               <span v-if="visibleCategory(r)" class="pill pill-mint">{{ visibleCategory(r) }}</span>
               <span v-if="r.difficulty" class="pill pill-soft">{{ r.difficulty }}</span>
-              <span v-if="hasAlcohol(r)" class="pill pill-warning">Alkohol</span>
+              <span v-if="hasAlcohol(r)" class="pill pill-warning">{{ t('home.card.alcohol') }}</span>
               <span v-if="r.rating" class="pill pill-rating">
                 {{ t('home.meta.rating', { rating: r.rating.toFixed(1) }) }}
               </span>
@@ -824,14 +869,14 @@ function formatDate(date: Date) {
 
             <p class="card-times">
               <span v-if="r.calories">{{ r.calories }} kcal</span>
-              <span v-if="r.protein"> · {{ Math.round(r.protein) }} g Protein</span>
+              <span v-if="r.protein"> · {{ t('home.meta.protein', { protein: Math.round(r.protein) }) }}</span>
               <span v-if="r.prepTimeMinutes || r.cookTimeMinutes">
                 · {{ t('home.meta.minutes', { minutes: r.prepTimeMinutes + r.cookTimeMinutes }) }}
               </span>
             </p>
 
             <button type="button" class="meal-plan-card-button" @click.stop="openMealPlanModal(r)">
-              Zum Wochenplan hinzufügen
+              {{ t('recipeDetail.actions.addToMealPlan') }}
             </button>
 
             <ul v-if="r.recommendationReasons.length" class="reason-list">
@@ -841,18 +886,18 @@ function formatDate(date: Date) {
         </article>
 
         <p v-if="!loading && filtered.length === 0" class="status-text">
-          {{ englishRecipesAllowed ? t('home.empty') : 'Für diese Sprache sind noch keine lokalen Rezepte verfügbar.' }}
+          {{ englishRecipesAllowed ? t('home.empty') : t('home.emptyForLanguage') }}
         </p>
       </div>
     </section>
 
     <div v-if="mealPlanModalOpen" class="modal-backdrop" @click.self="mealPlanModalOpen = false">
-      <section class="meal-plan-modal" aria-label="Zum Wochenplan hinzufügen">
-        <h2>Zum Wochenplan hinzufügen</h2>
+      <section class="meal-plan-modal" :aria-label="t('recipeDetail.mealPlan.title')">
+        <h2>{{ t('recipeDetail.mealPlan.title') }}</h2>
         <p v-if="mealPlanTarget">
-          Wähle Tag und Slot für: <strong>{{ mealPlanTarget.title }}</strong>
+          {{ t('home.mealPlan.chooseSlot') }} <strong>{{ mealPlanTarget.title }}</strong>
         </p>
-        <p v-if="mealPlanLoading" class="status-text">Wochenplan wird geladen...</p>
+        <p v-if="mealPlanLoading" class="status-text">{{ t('mealPlan.loading') }}</p>
         <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
 
         <div class="day-buttons">
@@ -869,13 +914,13 @@ function formatDate(date: Date) {
             >
               <span>{{ t(slot.labelKey) }}</span>
               <small v-if="plannedTitle(day.date, slot.key)">{{ plannedTitle(day.date, slot.key) }}</small>
-              <small v-else>Frei</small>
+              <small v-else>{{ t('recipeDetail.mealPlan.freeSlot') }}</small>
             </button>
           </div>
         </div>
 
         <button type="button" class="cancel-modal" @click="mealPlanModalOpen = false">
-          Abbrechen
+          {{ t('recipeDetail.actions.cancel') }}
         </button>
       </section>
     </div>

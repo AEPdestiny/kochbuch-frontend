@@ -131,6 +131,20 @@ describe('RecipeDetailView', () => {
     expect(wrapper.text()).toContain('Cook pasta.')
   })
 
+  it('renders recipe detail controls in English without German UI labels', async () => {
+    setLocale('en')
+
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Add all ingredients to shopping list')
+    expect(wrapper.text()).toContain('Add to meal plan')
+    expect(wrapper.text()).toContain('Favorite')
+    expect(wrapper.text()).toContain('Ingredients')
+    expect(wrapper.text()).toContain('Instructions')
+    expect(wrapper.text()).not.toContain('Zum Wochenplan hinzufügen')
+  })
+
   it('adds all ingredients to the shopping list with recipe context', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(RecipeDetailView)

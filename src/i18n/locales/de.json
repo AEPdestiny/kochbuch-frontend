@@ -266,6 +266,11 @@
     "shuffle": "Rezepte neu mischen",
     "loading": "Rezepte werden geladen...",
     "empty": "Keine passenden Rezepte gefunden.",
+    "emptyForLanguage": "Für diese Sprache sind noch keine lokalen Rezepte verfügbar.",
+    "notices": {
+      "localRecipesLoaded": "Es wurden {count} lokale Rezepte geladen.",
+      "localSearchResults": "Für diese Suche gibt es aktuell nur {count} lokale Rezepte in dieser Sprache."
+    },
     "errors": {
       "prefix": "Fehler:",
       "externalSearch": "Externe Rezepte konnten nicht geladen werden.",
@@ -284,24 +289,55 @@
     "meta": {
       "minutes": "{minutes} min",
       "servings": "{count} Portionen",
+      "protein": "{protein} g Protein",
       "rating": "★ {rating}"
     },
     "filters": {
+      "ariaLabel": "Rezeptfilter",
       "vegan": "Vegan",
       "vegetarian": "Vegetarisch",
       "glutenFree": "Glutenfrei",
+      "lactoseFree": "Milchfrei / laktosefrei",
       "calorieConscious": "Kalorienarm",
       "highProtein": "Proteinreich",
       "budgetFriendly": "Günstig",
       "maxPrepTime": "Max. Zeit",
+      "maxCalories": "Maximale Kalorien",
       "mealType": "Kategorie",
       "anyMealType": "Alle",
       "breakfast": "Frühstück",
       "lunch": "Mittagessen",
       "dinner": "Abendessen",
       "snack": "Snack",
+      "dessert": "Dessert",
+      "drink": "Getränk",
       "context": "Kontext",
       "contextPlaceholder": "gestresst, günstig, Date-Abend"
+    },
+    "sort": {
+      "label": "Sortierung",
+      "default": "Standard",
+      "caloriesAsc": "Kalorien aufsteigend",
+      "caloriesDesc": "Kalorien absteigend",
+      "proteinAsc": "Protein aufsteigend",
+      "proteinDesc": "Protein absteigend",
+      "timeAsc": "Zeit aufsteigend",
+      "timeDesc": "Zeit absteigend"
+    },
+    "personalization": {
+      "disable": "Personalisierung ausschalten",
+      "enable": "Personalisierung aktivieren",
+      "active": "Profil aktiv",
+      "inactive": "Profil ignoriert – Allergien und Abneigungen bleiben aktiv",
+      "note": "Personalisiert nach deinem Profil"
+    },
+    "card": {
+      "userCreated": "Von einem Nutzer erstellt",
+      "favorite": "Favorit",
+      "alcohol": "Alkohol"
+    },
+    "mealPlan": {
+      "chooseSlot": "Wähle Tag und Slot für:"
     },
     "reasons": {
       "vegan": "Vegan passend zu deinem Profil",
@@ -406,19 +442,31 @@
       "addAllToShoppingList": "Alle Zutaten zur Einkaufsliste hinzufügen",
       "addOne": "+ Hinzufügen",
       "addToMealPlan": "Zum Wochenplan hinzufügen",
+      "favorite": "Favorit",
       "cancel": "Abbrechen"
     },
     "meta": {
       "calories": "{calories} kcal",
+      "protein": "{protein} g Protein",
+      "alcohol": "Alkohol",
       "time": "{minutes} min",
       "servings": "{count} Portionen"
     },
     "ingredients": {
-      "title": "Zutaten"
+      "title": "Zutaten",
+      "count": "{count} Zutaten"
     },
     "instructions": {
       "title": "Zubereitung",
-      "empty": "Keine Zubereitung verfügbar."
+      "empty": "Keine Zubereitung verfügbar.",
+      "sourceHint": "Zubereitungsschritte sind für dieses Rezept nicht verfügbar. Weitere Details findest du über die Quelle.",
+      "openSource": "Zur Originalquelle",
+      "openGoogleSearch": "Google-Suche öffnen",
+      "searchResultsTitle": "Online gefundene mögliche Zubereitungen",
+      "searchDisclaimer": "Diese Treffer stammen aus der Websuche und müssen geprüft werden.",
+      "searchNotConfigured": "Online-Suche ist aktuell nicht konfiguriert.",
+      "noSearchResults": "Keine Online-Treffer gefunden.",
+      "searchFailed": "Online-Suche konnte aktuell nicht durchgeführt werden."
     },
     "restaurants": {
       "title": "Passende Restaurants"
@@ -446,14 +494,33 @@
   "ai": {
     "button": "KI-Assistent",
     "title": "Dishly KI-Assistent",
+    "drawerTitle": "Küchenassistent",
     "placeholder": "KI-Assistent ist vorbereitet, Backend folgt.",
     "close": "Schließen"
   },
   "profile": {
     "eyebrow": "Profil",
-    "title": "Deine Präferenzen",
-    "subtitle": "Speichere Vorlieben, Abneigungen, Allergien und Ziele für bessere Empfehlungen.",
+    "title": "Dein Ernährungsprofil",
+    "subtitle": "Speichere Vorlieben, Abneigungen, Allergien und Ziele, damit Dishly bessere Rezeptvorschläge machen kann.",
     "loading": "Profil wird geladen...",
+    "sections": {
+      "taste": {
+        "title": "Geschmack",
+        "description": "Trage ein, was du gerne isst und was Dishly aus deinen Vorschlägen ausschließen soll."
+      },
+      "safety": {
+        "title": "Sicherheit",
+        "description": "Hinterlege Zutaten, die wegen einer Allergie nicht in deinen Empfehlungen vorkommen dürfen."
+      },
+      "diet": {
+        "title": "Ernährungsweise",
+        "description": "Wähle die Ernährungsweisen aus, die deine Empfehlungen berücksichtigen sollen."
+      },
+      "goals": {
+        "title": "Ziele",
+        "description": "Lege optionale Ziele für die Sortierung und Auswahl deiner Rezeptvorschläge fest."
+      }
+    },
     "form": {
       "likes": "Vorlieben",
       "likesPlaceholder": "z.B. Pasta, Curry, Tomaten",
@@ -464,7 +531,8 @@
       "dietaryStyles": "Ernährungsstil",
       "goals": "Ziele",
       "maxPrepTimeMinutes": "Maximale Zubereitungszeit in Minuten",
-      "calorieGoal": "Kalorienziel"
+      "calorieGoal": "Optionales Tagesziel Kalorien",
+      "calorieGoalPlaceholder": "z. B. 2200"
     },
     "options": {
       "vegan": "Vegan",
@@ -474,6 +542,12 @@
       "highProtein": "Proteinreich",
       "calorieConscious": "Kalorienbewusst",
       "budgetFriendly": "Budgetfreundlich"
+    },
+    "hints": {
+      "allergiesAlwaysActive": "Allergien werden immer berücksichtigt.",
+      "calorieGoal": "Wird zur groben Orientierung genutzt, nicht als medizinische Empfehlung.",
+      "personalizationTitle": "So verwendet Dishly dein Profil",
+      "personalization": "Vorlieben und Ziele beeinflussen die Empfehlungen auf der Startseite. Allergien und Abneigungen bleiben auch dann aktiv, wenn du die Personalisierung ausschaltest."
     },
     "actions": {
       "save": "Präferenzen speichern",

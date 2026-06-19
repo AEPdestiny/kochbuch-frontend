@@ -380,16 +380,16 @@ async function searchInstructionsOnline() {
     instructionSearchResults.value = response.results ?? []
     instructionGoogleUrl.value = response.googleSearchUrl ?? null
     if (!response.configured) {
-      instructionSearchError.value = response.message || 'Online-Suche ist aktuell nicht konfiguriert.'
+      instructionSearchError.value = response.message || t('recipeDetail.instructions.searchNotConfigured')
     } else if (response.message) {
       instructionSearchMessage.value = response.message
     } else if (instructionSearchResults.value.length === 0) {
-      instructionSearchMessage.value = 'Keine Online-Treffer gefunden.'
+      instructionSearchMessage.value = t('recipeDetail.instructions.noSearchResults')
     }
   } catch (e: unknown) {
     instructionSearchError.value = e instanceof ApiClientError && e.message
       ? e.message
-      : 'Online-Suche konnte aktuell nicht durchgeführt werden.'
+      : t('recipeDetail.instructions.searchFailed')
   } finally {
     instructionSearchLoading.value = false
   }
@@ -547,8 +547,8 @@ function formatDate(date: Date) {
 
         <div class="meta-grid">
           <span v-if="recipe.calories">{{ t('recipeDetail.meta.calories', { calories: recipe.calories }) }}</span>
-          <span v-if="recipe.protein">{{ Math.round(recipe.protein) }} g Protein</span>
-          <span v-if="(recipe.alcohol ?? 0) > 0 || (recipe.alcoholPercent ?? 0) > 0">Alkohol</span>
+          <span v-if="recipe.protein">{{ t('recipeDetail.meta.protein', { protein: Math.round(recipe.protein) }) }}</span>
+          <span v-if="(recipe.alcohol ?? 0) > 0 || (recipe.alcoholPercent ?? 0) > 0">{{ t('recipeDetail.meta.alcohol') }}</span>
           <span v-if="recipe.readyInMinutes">{{ t('recipeDetail.meta.time', { minutes: recipe.readyInMinutes }) }}</span>
           <span v-if="recipe.servings">{{ t('recipeDetail.meta.servings', { count: recipe.servings }) }}</span>
         </div>
@@ -573,7 +573,7 @@ function formatDate(date: Date) {
             :aria-pressed="favorite"
             @click="toggleFavorite"
           >
-            {{ favorite ? '♥ Favorit' : '♡ Favorit' }}
+            {{ favorite ? `♥ ${t('recipeDetail.actions.favorite')}` : `♡ ${t('recipeDetail.actions.favorite')}` }}
           </button>
         </div>
 
@@ -587,7 +587,7 @@ function formatDate(date: Date) {
       <section class="detail-section">
         <h2>
           {{ t('recipeDetail.ingredients.title') }}
-          <span v-if="ingredientCount">({{ ingredientCount }} Zutaten)</span>
+          <span v-if="ingredientCount">({{ t('recipeDetail.ingredients.count', { count: ingredientCount }) }})</span>
         </h2>
         <ul class="ingredient-list">
           <li v-for="ingredient in recipe.ingredients" :key="ingredient.original">
@@ -607,7 +607,7 @@ function formatDate(date: Date) {
         <p v-else-if="hasInstructions" class="instruction-text">{{ recipe.instructions }}</p>
         <div v-else class="instruction-search-panel">
           <p class="instruction-text">
-            Zubereitungsschritte sind für dieses Rezept nicht verfügbar. Weitere Details findest du über die Quelle.
+            {{ t('recipeDetail.instructions.sourceHint') }}
           </p>
           <a
             v-if="recipe.sourceUrl"
@@ -616,7 +616,7 @@ function formatDate(date: Date) {
             target="_blank"
             rel="noreferrer"
           >
-            Zur Originalquelle
+            {{ t('recipeDetail.instructions.openSource') }}
           </a>
           <p v-if="instructionSearchError" class="status-text error">{{ instructionSearchError }}</p>
           <p v-if="instructionSearchMessage" class="status-text">{{ instructionSearchMessage }}</p>
@@ -627,11 +627,11 @@ function formatDate(date: Date) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Google-Suche öffnen
+            {{ t('recipeDetail.instructions.openGoogleSearch') }}
           </a>
           <div v-if="instructionSearchResults.length" class="instruction-results">
-            <h3>Online gefundene mögliche Zubereitungen</h3>
-            <p class="hint">Diese Treffer stammen aus der Websuche und müssen geprüft werden.</p>
+            <h3>{{ t('recipeDetail.instructions.searchResultsTitle') }}</h3>
+            <p class="hint">{{ t('recipeDetail.instructions.searchDisclaimer') }}</p>
             <ul>
               <li v-for="result in instructionSearchResults" :key="result.url">
                 <a :href="result.url" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>

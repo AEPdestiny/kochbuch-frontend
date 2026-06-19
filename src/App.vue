@@ -97,9 +97,9 @@ async function logout() {
         <div class="ai-drawer-header">
           <div>
             <p>Dishly AI</p>
-            <h2>Küchenassistent</h2>
+            <h2>{{ t('ai.drawerTitle') }}</h2>
           </div>
-          <button type="button" class="drawer-close" @click="aiDrawerOpen = false">Schließen</button>
+          <button type="button" class="drawer-close" @click="aiDrawerOpen = false">{{ t('ai.close') }}</button>
         </div>
         <AiChatPanel />
       </aside>

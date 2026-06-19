@@ -130,6 +130,7 @@ describe('App navigation', () => {
 
     expect(wrapper.text()).toContain('Home')
     expect(wrapper.text()).toContain('Login')
+    expect(wrapper.text()).not.toContain('Startseite')
     expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('en')
     expect(document.documentElement.lang).toBe('en')
   })

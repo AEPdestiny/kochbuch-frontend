@@ -40,6 +40,28 @@ describe('ProfileView', () => {
     expect(profileApi.getPreferences).toHaveBeenCalledTimes(1)
     expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe('pasta, curry')
     expect(wrapper.text()).toContain('Proteinreich')
+    expect(wrapper.text()).toContain('Geschmack')
+    expect(wrapper.text()).toContain('Sicherheit')
+    expect(wrapper.text()).toContain('Ernährungsweise')
+    expect(wrapper.text()).toContain('Ziele')
+    expect(wrapper.text()).toContain('Allergien werden immer berücksichtigt.')
+  })
+
+  it('renders the professional profile structure in English without German labels', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('en')
+
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Your food profile')
+    expect(wrapper.text()).toContain('Taste')
+    expect(wrapper.text()).toContain('Safety')
+    expect(wrapper.text()).toContain('Dietary style')
+    expect(wrapper.text()).toContain('Optional daily calorie target')
+    expect(wrapper.text()).toContain('Allergies are always taken into account.')
+    expect(wrapper.text()).not.toContain('Dein Ernährungsprofil')
+    expect(wrapper.text()).not.toContain('kalorienarm')
   })
 
   it('saves preferences and shows success message', async () => {

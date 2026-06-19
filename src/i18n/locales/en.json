@@ -266,6 +266,11 @@
     "shuffle": "Shuffle recipes",
     "loading": "Loading recipes...",
     "empty": "No matching recipes found.",
+    "emptyForLanguage": "No local recipes are available for this language yet.",
+    "notices": {
+      "localRecipesLoaded": "{count} local recipes were loaded.",
+      "localSearchResults": "Only {count} local recipes in this language currently match this search."
+    },
     "errors": {
       "prefix": "Error:",
       "externalSearch": "External recipes could not be loaded.",
@@ -284,24 +289,55 @@
     "meta": {
       "minutes": "{minutes} min",
       "servings": "{count} servings",
+      "protein": "{protein} g Protein",
       "rating": "★ {rating}"
     },
     "filters": {
+      "ariaLabel": "Recipe filters",
       "vegan": "Vegan",
       "vegetarian": "Vegetarian",
       "glutenFree": "Gluten-free",
+      "lactoseFree": "Dairy-free / lactose-free",
       "calorieConscious": "Low calorie",
       "highProtein": "High protein",
       "budgetFriendly": "Budget friendly",
       "maxPrepTime": "Max. time",
+      "maxCalories": "Maximum calories",
       "mealType": "Category",
       "anyMealType": "Any",
       "breakfast": "Breakfast",
       "lunch": "Lunch",
       "dinner": "Dinner",
       "snack": "Snack",
+      "dessert": "Dessert",
+      "drink": "Drink",
       "context": "Context",
       "contextPlaceholder": "stressed, cheap, date night"
+    },
+    "sort": {
+      "label": "Sorting",
+      "default": "Default",
+      "caloriesAsc": "Calories ascending",
+      "caloriesDesc": "Calories descending",
+      "proteinAsc": "Protein ascending",
+      "proteinDesc": "Protein descending",
+      "timeAsc": "Time ascending",
+      "timeDesc": "Time descending"
+    },
+    "personalization": {
+      "disable": "Turn off personalization",
+      "enable": "Turn on personalization",
+      "active": "Profile active",
+      "inactive": "Profile ignored – allergies and dislikes remain active",
+      "note": "Personalized using your profile"
+    },
+    "card": {
+      "userCreated": "Created by a user",
+      "favorite": "Favorite",
+      "alcohol": "Alcohol"
+    },
+    "mealPlan": {
+      "chooseSlot": "Choose a day and slot for:"
     },
     "reasons": {
       "vegan": "Vegan match for your profile",
@@ -406,19 +442,31 @@
       "addAllToShoppingList": "Add all ingredients to shopping list",
       "addOne": "+ Add",
       "addToMealPlan": "Add to meal plan",
+      "favorite": "Favorite",
       "cancel": "Cancel"
     },
     "meta": {
       "calories": "{calories} kcal",
+      "protein": "{protein} g Protein",
+      "alcohol": "Alcohol",
       "time": "{minutes} min",
       "servings": "{count} servings"
     },
     "ingredients": {
-      "title": "Ingredients"
+      "title": "Ingredients",
+      "count": "{count} ingredients"
     },
     "instructions": {
       "title": "Instructions",
-      "empty": "No instructions available."
+      "empty": "No instructions available.",
+      "sourceHint": "Preparation steps are not available for this recipe. You can find more details at the original source.",
+      "openSource": "Open original source",
+      "openGoogleSearch": "Open Google search",
+      "searchResultsTitle": "Possible instructions found online",
+      "searchDisclaimer": "These results come from web search and must be reviewed.",
+      "searchNotConfigured": "Online search is currently not configured.",
+      "noSearchResults": "No online results were found.",
+      "searchFailed": "Online search could not be completed right now."
     },
     "restaurants": {
       "title": "Matching restaurants"
@@ -446,14 +494,33 @@
   "ai": {
     "button": "AI assistant",
     "title": "Dishly AI Assistant",
+    "drawerTitle": "Kitchen assistant",
     "placeholder": "The AI assistant is prepared; backend integration follows.",
     "close": "Close"
   },
   "profile": {
     "eyebrow": "Profile",
-    "title": "Your preferences",
-    "subtitle": "Save likes, dislikes, allergies, and goals for better recommendations.",
+    "title": "Your food profile",
+    "subtitle": "Save likes, dislikes, allergies and goals so Dishly can recommend better recipes.",
     "loading": "Loading profile...",
+    "sections": {
+      "taste": {
+        "title": "Taste",
+        "description": "Enter what you enjoy and what Dishly should exclude from your suggestions."
+      },
+      "safety": {
+        "title": "Safety",
+        "description": "Add ingredients that must not appear in your recommendations because of an allergy."
+      },
+      "diet": {
+        "title": "Dietary style",
+        "description": "Choose the dietary styles that your recommendations should consider."
+      },
+      "goals": {
+        "title": "Goals",
+        "description": "Set optional goals for sorting and selecting your recipe suggestions."
+      }
+    },
     "form": {
       "likes": "Likes",
       "likesPlaceholder": "e.g. pasta, curry, tomatoes",
@@ -464,7 +531,8 @@
       "dietaryStyles": "Dietary style",
       "goals": "Goals",
       "maxPrepTimeMinutes": "Maximum prep time in minutes",
-      "calorieGoal": "Calorie goal"
+      "calorieGoal": "Optional daily calorie target",
+      "calorieGoalPlaceholder": "e.g. 2200"
     },
     "options": {
       "vegan": "Vegan",
@@ -474,6 +542,12 @@
       "highProtein": "High protein",
       "calorieConscious": "Calorie conscious",
       "budgetFriendly": "Budget friendly"
+    },
+    "hints": {
+      "allergiesAlwaysActive": "Allergies are always taken into account.",
+      "calorieGoal": "Used as general guidance, not as medical advice.",
+      "personalizationTitle": "How Dishly uses your profile",
+      "personalization": "Likes and goals influence recommendations on the home page. Allergies and dislikes remain active even when you turn off personalization."
     },
     "actions": {
       "save": "Save preferences",
