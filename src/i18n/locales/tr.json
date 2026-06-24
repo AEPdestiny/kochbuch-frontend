@@ -211,6 +211,7 @@
       "showOnHome": "Ana sayfada göster",
       "favoriteBadge": "Favori",
       "publishedBadge": "Ana sayfada görünür",
+      "privateBadge": "Özel",
       "rating": "★ {rating}",
       "totalTime": "{minutes} dk",
       "servings": "{count} porsiyon"

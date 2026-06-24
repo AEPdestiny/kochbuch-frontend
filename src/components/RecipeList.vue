@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
-import type { Recipe } from '@/types/recipe'
+import type { Recipe, RecipeRequest } from '@/types/recipe'
 
 const props = defineProps<{ search?: string }>()
 const { t, locale } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const recipes = ref<Recipe[]>([])
 const externalFavorites = ref<Recipe[]>([])
@@ -31,6 +32,7 @@ const newRating = ref<number | null>(null)
 const newIngredients = ref('')
 const newInstructions = ref('')
 const newFavorite = ref(false)
+const newPublished = ref(false)
 const newImagePreviewUrl = ref('')
 const editImagePreviewUrl = ref('')
 
@@ -53,6 +55,7 @@ const loadRecipes = async () => {
     ])
     recipes.value = ownRecipes
     externalFavorites.value = externalFavoriteRecipes
+    openRequestedRecipeEditor()
     error.value = null
     loginRequired.value = false
   } catch (err: unknown) {
@@ -130,7 +133,8 @@ const createRecipe = async () => {
       ingredients: newIngredients.value,
       instructions: newInstructions.value,
       favorite: newFavorite.value,
-      published: false,
+      published: newPublished.value,
+      language: currentLanguage.value,
     })
 
     recipes.value.push(saved)
@@ -145,6 +149,7 @@ const createRecipe = async () => {
     newIngredients.value = ''
     newInstructions.value = ''
     newFavorite.value = false
+    newPublished.value = false
     clearNewImagePreview()
     error.value = null
   } catch (e: unknown) {
@@ -196,20 +201,10 @@ const updateRecipe = async () => {
   }
 
   try {
-    const updated = await recipeApi.updateRecipe(editing.value.id, {
-      title: editing.value.title,
-      imageUrl: editing.value.imageUrl,
-      prepTimeMinutes: editing.value.prepTimeMinutes,
-      cookTimeMinutes: editing.value.cookTimeMinutes,
-      servings: editing.value.servings,
-      difficulty: editing.value.difficulty,
-      category: editing.value.category,
-      rating: editing.value.rating,
-      ingredients: editing.value.ingredients,
-      instructions: editing.value.instructions,
-      favorite: editing.value.favorite,
-      published: false,
-    })
+    const updated = await recipeApi.updateRecipe(
+      editing.value.id,
+      recipeRequestFrom(editing.value),
+    )
 
     const idx = recipes.value.findIndex(r => r.id === updated.id)
     if (idx !== -1) {
@@ -258,6 +253,30 @@ const deleteRecipe = async (id: number | string) => {
     }
   } catch (e: unknown) {
     error.value = toDeleteRecipeErrorMessage(e)
+  }
+}
+
+const togglePublished = async (recipe: Recipe) => {
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    error.value = t('recipes.errors.updateLoginRequired')
+    return
+  }
+
+  try {
+    const updated = await recipeApi.updateRecipe(
+      recipe.id,
+      recipeRequestFrom(recipe, { published: !recipe.published }),
+    )
+    const index = recipes.value.findIndex(item => item.id === updated.id)
+    if (index >= 0) {
+      recipes.value[index] = updated
+    }
+    if (editing.value?.id === updated.id) {
+      editing.value = { ...updated }
+    }
+    error.value = null
+  } catch (e: unknown) {
+    error.value = toUpdateRecipeErrorMessage(e)
   }
 }
 
@@ -314,6 +333,36 @@ const currentLanguage = computed(() => {
   const [language] = String(locale.value).split('-')
   return (language || 'de').toLowerCase()
 })
+
+function openRequestedRecipeEditor() {
+  const requestedId = Array.isArray(route.query.edit) ? route.query.edit[0] : route.query.edit
+  if (typeof requestedId !== 'string') {
+    return
+  }
+  const requestedRecipe = recipes.value.find(recipe => String(recipe.id) === requestedId)
+  if (requestedRecipe) {
+    startEdit(requestedRecipe)
+  }
+}
+
+function recipeRequestFrom(recipe: Recipe, overrides: Partial<RecipeRequest> = {}): RecipeRequest {
+  return {
+    title: recipe.title,
+    imageUrl: recipe.imageUrl,
+    prepTimeMinutes: recipe.prepTimeMinutes,
+    cookTimeMinutes: recipe.cookTimeMinutes,
+    servings: recipe.servings,
+    difficulty: recipe.difficulty,
+    category: recipe.category,
+    rating: recipe.rating,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
+    favorite: recipe.favorite,
+    published: recipe.published,
+    language: recipe.language ?? currentLanguage.value,
+    ...overrides,
+  }
+}
 
 function visibleCategory(category?: string | null) {
   return displayCategory(category, currentLanguage.value)
@@ -399,20 +448,10 @@ const removeFavorite = async (r: Recipe) => {
       return
     }
 
-    const updated = await recipeApi.updateRecipe(r.id, {
-      title: r.title,
-      imageUrl: r.imageUrl,
-      prepTimeMinutes: r.prepTimeMinutes,
-      cookTimeMinutes: r.cookTimeMinutes,
-      servings: r.servings,
-      difficulty: r.difficulty,
-      category: r.category,
-      rating: r.rating,
-      ingredients: r.ingredients,
-      instructions: r.instructions,
-      favorite: false,
-      published: false,
-    })
+    const updated = await recipeApi.updateRecipe(
+      r.id,
+      recipeRequestFrom(r, { favorite: false }),
+    )
     const index = recipes.value.findIndex(recipe => recipe.id === r.id)
     if (index >= 0) {
       recipes.value[index] = updated
@@ -559,6 +598,10 @@ const removeFavorite = async (r: Recipe) => {
             <input type="checkbox" v-model="newFavorite" />
             <span>{{ t('recipes.status.favorite') }}</span>
           </label>
+          <label class="toggle-item">
+            <input type="checkbox" v-model="newPublished" />
+            <span>{{ t('recipes.status.showOnHome') }}</span>
+          </label>
         </div>
 
         <button type="submit" class="submit-btn">
@@ -609,6 +652,8 @@ const removeFavorite = async (r: Recipe) => {
                 </div>
                 <div class="badge-column">
                   <span v-if="r.favorite" class="badge badge-fav">{{ t('recipes.status.favoriteBadge') }}</span>
+                  <span v-if="r.published" class="badge badge-published">{{ t('recipes.status.publishedBadge') }}</span>
+                  <span v-else class="badge badge-private">{{ t('recipes.status.privateBadge') }}</span>
                 </div>
               </div>
 
@@ -619,6 +664,14 @@ const removeFavorite = async (r: Recipe) => {
               <div class="card-actions">
                 <button class="link-btn" @click.stop="startEdit(r)">{{ t('recipes.actions.edit') }}</button>
                 <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">{{ t('recipes.actions.delete') }}</button>
+                <label class="publish-toggle" @click.stop>
+                  <input
+                    type="checkbox"
+                    :checked="r.published"
+                    @change.stop="togglePublished(r)"
+                  />
+                  <span>{{ t('recipes.status.showOnHome') }}</span>
+                </label>
               </div>
             </div>
           </div>
@@ -700,6 +753,10 @@ const removeFavorite = async (r: Recipe) => {
           <label class="toggle-item">
             <input type="checkbox" v-model="editing.favorite" />
             <span>{{ t('recipes.status.favorite') }}</span>
+          </label>
+          <label class="toggle-item">
+            <input type="checkbox" v-model="editing.published" />
+            <span>{{ t('recipes.status.showOnHome') }}</span>
           </label>
         </div>
 
@@ -1086,6 +1143,16 @@ textarea {
   color: #b38700;
 }
 
+.badge-published {
+  background: #e0f5f2;
+  color: #16766c;
+}
+
+.badge-private {
+  background: #f1f1f1;
+  color: #5f6665;
+}
+
 .ingredients {
   margin-top: 4px;
   font-size: 0.94rem;
@@ -1110,7 +1177,22 @@ textarea {
 .card-actions {
   margin-top: 6px;
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.publish-toggle {
+  align-items: center;
+  color: #486b68;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.86rem;
+  gap: 5px;
+}
+
+.publish-toggle input {
+  width: auto;
 }
 
 .link-btn {

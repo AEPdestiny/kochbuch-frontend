@@ -142,9 +142,7 @@ const filterRecipes = (items: Recipe[], q: string) => {
 
 const buildView = () => {
   const q = search.value.toLowerCase().trim()
-  const localSource = q
-    ? ownPublished.value
-    : ownPublished.value.filter(recipe => !recipe.userCreated)
+  const localSource = ownPublished.value
   const matchingPublished = filterRecipes(localSource, q)
   const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
   const externalFallbackLimit = Math.max(0, 100 - matchingPublished.length)

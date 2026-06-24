@@ -211,6 +211,7 @@
       "showOnHome": "ホームに表示",
       "favoriteBadge": "お気に入り",
       "publishedBadge": "ホームに表示中",
+      "privateBadge": "非公開",
       "rating": "★ {rating}",
       "totalTime": "{minutes} 分",
       "servings": "{count} 人分"

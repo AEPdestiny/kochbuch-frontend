@@ -211,6 +211,7 @@
       "showOnHome": "إظهار على الصفحة الرئيسية",
       "favoriteBadge": "مفضلة",
       "publishedBadge": "مرئية على الصفحة الرئيسية",
+      "privateBadge": "خاص",
       "rating": "★ {rating}",
       "totalTime": "{minutes} دقيقة",
       "servings": "{count} حصص"

@@ -211,6 +211,7 @@
       "showOnHome": "Show on home",
       "favoriteBadge": "Favorite",
       "publishedBadge": "Visible on home",
+      "privateBadge": "Private",
       "rating": "★ {rating}",
       "totalTime": "{minutes} min",
       "servings": "{count} servings"

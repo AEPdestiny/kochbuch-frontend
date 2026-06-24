@@ -7,9 +7,11 @@ import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
 
 const push = vi.fn()
+let routeQuery = {}
 
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push }),
+  useRoute: () => ({ query: routeQuery }),
 }))
 
 vi.mock('@/shared/api/recipeApi', () => ({
@@ -35,6 +37,7 @@ describe('RecipeList.vue', () => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
     push.mockClear()
+    routeQuery = {}
     sessionStorage.clear()
     setLocale('de')
     config.global.plugins = [i18n]
@@ -152,7 +155,8 @@ describe('RecipeList.vue', () => {
         ingredients: 'x',
         instructions: 'y',
         favorite: false,
-        published: false,
+        published: true,
+        language: 'de',
     })
 
     // Formularfelder mit Testwerten befüllen
@@ -165,6 +169,10 @@ describe('RecipeList.vue', () => {
     await wrapper
       .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
       .setValue('y')
+    const publishToggle = wrapper.findAll('.new-recipe-form .toggle-item')
+      .find(label => label.text().includes('Auf Startseite anzeigen'))
+    expect(publishToggle).toBeDefined()
+    await publishToggle.find('input').setValue(true)
 
     // Formular absenden
     await wrapper.find('form').trigger('submit.prevent')
@@ -177,6 +185,8 @@ describe('RecipeList.vue', () => {
         title: 'New Dish',
         ingredients: 'x',
         instructions: 'y',
+        published: true,
+        language: 'de',
       })
     )
     // Neues Rezept erscheint
@@ -275,6 +285,70 @@ describe('RecipeList.vue', () => {
     )
     // Neuer Titel wird angezeigt
     expect(wrapper.text()).toContain('Updated Title')
+  })
+
+  it('shows private and published status and toggles publication', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const privateRecipe = {
+      id: 1,
+      title: 'Private Soup',
+      imageUrl: '',
+      prepTimeMinutes: 5,
+      cookTimeMinutes: 10,
+      servings: 2,
+      difficulty: 'easy',
+      category: 'lunch',
+      rating: 4,
+      ingredients: 'soup',
+      instructions: 'cook',
+      favorite: false,
+      published: false,
+      language: 'de',
+    }
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([privateRecipe])
+    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...privateRecipe, published: true })
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.find('.badge-private').text()).toBe('Privat')
+    expect(wrapper.find('.publish-toggle input').element.checked).toBe(false)
+    await wrapper.find('.publish-toggle input').setValue(true)
+    await flushPromises()
+
+    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(1, expect.objectContaining({
+      published: true,
+      language: 'de',
+    }))
+    expect(wrapper.find('.badge-published').text()).toBe('Auf Startseite sichtbar')
+    expect(wrapper.find('.publish-toggle input').element.checked).toBe(true)
+  })
+
+  it('opens the requested owned recipe in edit mode', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    routeQuery = { edit: '7' }
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([{
+      id: 7,
+      title: 'Editable Soup',
+      imageUrl: '',
+      prepTimeMinutes: 5,
+      cookTimeMinutes: 10,
+      servings: 2,
+      difficulty: 'easy',
+      category: 'lunch',
+      rating: 4,
+      ingredients: 'soup',
+      instructions: 'cook',
+      favorite: false,
+      published: true,
+      language: 'de',
+    }])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.find('.edit-panel').exists()).toBe(true)
+    expect(wrapper.find('.edit-panel input[type="text"]').element.value).toBe('Editable Soup')
   })
 
   it('does not update a recipe without login', async () => {
@@ -503,7 +577,8 @@ describe('RecipeList.vue', () => {
       ingredients: 'x',
       instructions: 'y',
       favorite: true,
-      published: false,
+      published: true,
+      language: 'de',
     }
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([ownFavorite])
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...ownFavorite, favorite: false })
@@ -516,7 +591,8 @@ describe('RecipeList.vue', () => {
 
     expect(recipeApi.updateRecipe).toHaveBeenCalledWith(1, expect.objectContaining({
       favorite: false,
-      published: false,
+      published: true,
+      language: 'de',
     }))
     expect(wrapper.find('.recipe-grid').text()).not.toContain('Fav 1')
   })

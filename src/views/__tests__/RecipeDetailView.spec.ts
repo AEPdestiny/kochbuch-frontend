@@ -29,6 +29,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
   recipeApi: {
     getExternalRecipeDetail: vi.fn(),
     getRecipe: vi.fn(),
+    deleteRecipe: vi.fn(),
     searchInstructions: vi.fn(),
   },
 }))
@@ -69,6 +70,7 @@ describe('RecipeDetailView', () => {
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue(externalDetail())
     vi.mocked(recipeApi.getRecipe).mockResolvedValue(localRecipe())
+    vi.mocked(recipeApi.deleteRecipe).mockResolvedValue()
     vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
       configured: true,
       results: [],
@@ -227,6 +229,32 @@ describe('RecipeDetailView', () => {
     expect(wrapper.text()).toContain('19 g Protein')
     expect(wrapper.text()).toContain('2 Zutaten')
     expect(wrapper.text()).toContain('200 g Tomaten')
+    expect(wrapper.find('.owner-edit-button').exists()).toBe(false)
+    expect(wrapper.find('.owner-delete-button').exists()).toBe(false)
+  })
+
+  it('shows edit and delete actions only for the recipe owner', async () => {
+    routeName = 'recipe-detail'
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      ownedByCurrentUser: true,
+    })
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.find('.owner-edit-button').exists()).toBe(true)
+    expect(wrapper.find('.owner-delete-button').exists()).toBe(true)
+
+    await wrapper.find('.owner-edit-button').trigger('click')
+    expect(push).toHaveBeenCalledWith({ path: '/my-recipes', query: { edit: '1' } })
+
+    await wrapper.find('.owner-delete-button').trigger('click')
+    await flushPromises()
+    expect(recipeApi.deleteRecipe).toHaveBeenCalledWith(1)
+    expect(push).toHaveBeenCalledWith('/my-recipes')
+    confirmSpy.mockRestore()
   })
 
   it('shows source hint when instructions are missing', async () => {
@@ -289,13 +317,14 @@ describe('RecipeDetailView', () => {
   it('opens meal plan modal and adds local recipe to selected slot', async () => {
     routeName = 'recipe-detail'
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const weekStart = currentWeekStart()
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
     await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-15')
+    expect(mealPlanApi.getWeek).toHaveBeenCalledWith(weekStart)
     expect(wrapper.findAll('.day-button-group')).toHaveLength(7)
     expect(wrapper.findAll('.day-button')).toHaveLength(28)
     expect(wrapper.text()).toContain('Abendessen')
@@ -304,15 +333,16 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.day-button').trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-15', 'breakfast', 1)
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith(weekStart, 'breakfast', 1)
     expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
     expect(wrapper.find('.meal-plan-modal').exists()).toBe(false)
   })
 
   it('adds external recipes to meal plan as customTitle', async () => {
+    const weekStart = currentWeekStart()
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 3,
-      plannedDate: '2026-06-15',
+      plannedDate: weekStart,
       mealSlot: 'breakfast',
       recipe: null,
       customTitle: 'Pasta with Garlic',
@@ -326,8 +356,8 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.day-button').trigger('click')
     await flushPromises()
 
-    expect(mealPlanApi.getWeek).toHaveBeenCalledWith('2026-06-15')
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-15', 'breakfast', {
+    expect(mealPlanApi.getWeek).toHaveBeenCalledWith(weekStart)
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith(weekStart, 'breakfast', {
       customTitle: 'Pasta with Garlic',
       caloriesSnapshot: 510,
       proteinSnapshot: 31.2,
@@ -404,6 +434,18 @@ function localRecipe() {
     instructions: 'Kochen',
     favorite: false,
     published: true,
+    ownedByCurrentUser: false,
     protein: 18.6,
   }
+}
+
+function currentWeekStart() {
+  const now = new Date()
+  const day = now.getDay() === 0 ? 7 : now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - day + 1)
+  const year = monday.getFullYear()
+  const month = String(monday.getMonth() + 1).padStart(2, '0')
+  const date = String(monday.getDate()).padStart(2, '0')
+  return `${year}-${month}-${date}`
 }

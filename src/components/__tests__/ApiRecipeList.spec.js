@@ -141,7 +141,7 @@ describe('ApiRecipeList.vue', () => {
 
   it('does not show a Dishly source badge for own published recipes', async () => {
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
-      recipe(10, 'Published Pasta', 'noodles', 'Italian'),
+      recipe(10, 'Published Pasta', 'noodles', 'Italian', { userCreated: true, published: true }),
     ])
 
     const wrapper = mount(ApiRecipeList)

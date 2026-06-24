@@ -41,6 +41,8 @@ type DetailRecipe = {
   instructions: string
   steps: string[]
   sourceUrl?: string | null
+  published: boolean
+  ownedByCurrentUser: boolean
 }
 
 const route = useRoute()
@@ -63,6 +65,7 @@ const mealPlanLoading = ref(false)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const favorite = ref(false)
 const favoriteError = ref<string | null>(null)
+const ownerActionError = ref<string | null>(null)
 const instructionSearchLoading = ref(false)
 const instructionSearchError = ref<string | null>(null)
 const instructionSearchMessage = ref<string | null>(null)
@@ -150,6 +153,8 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
     instructions,
     steps,
     sourceUrl: response.sourceUrl,
+    published: true,
+    ownedByCurrentUser: false,
   }
 }
 
@@ -171,6 +176,8 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     instructions,
     steps: splitInstructionSteps(instructions),
     sourceUrl: response.sourceUrl,
+    published: response.published,
+    ownedByCurrentUser: response.ownedByCurrentUser === true,
   }
 }
 
@@ -235,6 +242,26 @@ function goBack() {
     return
   }
   router.push('/')
+}
+
+function editOwnRecipe() {
+  if (!recipe.value?.ownedByCurrentUser) return
+  router.push({ path: '/my-recipes', query: { edit: String(recipe.value.id) } })
+}
+
+async function deleteOwnRecipe() {
+  if (!recipe.value?.ownedByCurrentUser) return
+  if (!window.confirm(`${t('recipes.actions.delete')}?`)) return
+
+  ownerActionError.value = null
+  try {
+    await recipeApi.deleteRecipe(recipe.value.id)
+    await router.push('/my-recipes')
+  } catch (e: unknown) {
+    ownerActionError.value = e instanceof ApiClientError && e.message
+      ? e.message
+      : t('recipes.errors.delete')
+  }
 }
 
 async function addIngredientToShoppingList(ingredient: DetailIngredient) {
@@ -575,6 +602,22 @@ function formatDate(date: Date) {
           >
             {{ favorite ? `♥ ${t('recipeDetail.actions.favorite')}` : `♡ ${t('recipeDetail.actions.favorite')}` }}
           </button>
+          <button
+            v-if="recipe.ownedByCurrentUser"
+            type="button"
+            class="secondary-button owner-edit-button"
+            @click="editOwnRecipe"
+          >
+            {{ t('recipes.actions.edit') }}
+          </button>
+          <button
+            v-if="recipe.ownedByCurrentUser"
+            type="button"
+            class="secondary-button owner-delete-button"
+            @click="deleteOwnRecipe"
+          >
+            {{ t('recipes.actions.delete') }}
+          </button>
         </div>
 
         <p v-if="shoppingMessage" class="status-text success">{{ shoppingMessage }}</p>
@@ -582,6 +625,7 @@ function formatDate(date: Date) {
         <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
         <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
         <p v-if="favoriteError" class="status-text error">{{ favoriteError }}</p>
+        <p v-if="ownerActionError" class="status-text error">{{ ownerActionError }}</p>
       </div>
 
       <section class="detail-section">

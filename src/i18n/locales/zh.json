@@ -211,6 +211,7 @@
       "showOnHome": "在首页显示",
       "favoriteBadge": "收藏",
       "publishedBadge": "首页可见",
+      "privateBadge": "私密",
       "rating": "★ {rating}",
       "totalTime": "{minutes} 分钟",
       "servings": "{count} 份"

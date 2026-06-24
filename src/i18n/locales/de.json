@@ -211,6 +211,7 @@
       "showOnHome": "Auf Startseite anzeigen",
       "favoriteBadge": "Favorit",
       "publishedBadge": "Auf Startseite sichtbar",
+      "privateBadge": "Privat",
       "rating": "★ {rating}",
       "totalTime": "{minutes} min",
       "servings": "{count} Portionen"

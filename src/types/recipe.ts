@@ -11,6 +11,7 @@ export type RecipeRequest = {
   instructions: string
   favorite: boolean
   published: boolean
+  language?: string | null
 }
 
 export type RecipeResponse = RecipeRequest & {
@@ -22,7 +23,7 @@ export type RecipeResponse = RecipeRequest & {
   alcohol?: number | null
   alcoholPercent?: number | null
   userCreated?: boolean
-  language?: string | null
+  ownedByCurrentUser?: boolean
   sourceUrl?: string | null
   sourceName?: string | null
   dishTypes?: string | null
