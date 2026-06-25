@@ -202,9 +202,14 @@
       "login": "إلى تسجيل الدخول",
       "save": "حفظ الوصفة",
       "saveChanges": "حفظ التغييرات",
+      "view": "عرض",
       "edit": "تعديل",
       "delete": "حذف",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "createFirst": "أنشئ أول وصفة",
+      "discover": "استكشف الوصفات",
+      "removeFavorite": "إزالة من المفضلة",
+      "backToMyRecipes": "العودة إلى وصفاتي"
     },
     "status": {
       "favorite": "وضع علامة كمفضلة",

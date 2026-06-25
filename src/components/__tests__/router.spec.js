@@ -27,6 +27,7 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
 
 import HomeView from '@/views/HomeView.vue'
 import MyRecipesView from '@/views/MyRecipesView.vue'
+import NewRecipeView from '@/views/NewRecipeView.vue'
 import PantryView from '@/views/PantryView.vue'
 import ShoppingListView from '@/views/ShoppingListView.vue'
 import MealPlanView from '@/views/MealPlanView.vue'
@@ -38,6 +39,7 @@ const router = createRouter({
   routes: [
     { path: '/', component: HomeView },
     { path: '/my-recipes', component: MyRecipesView },
+    { path: '/recipes/new', component: NewRecipeView },
     { path: '/pantry', component: PantryView },
     { path: '/shopping-list', component: ShoppingListView },
     { path: '/meal-plan', component: MealPlanView },
@@ -83,6 +85,22 @@ describe('App routing', () => {
     })
 
     expect(wrapper.text()).toContain('Dein persönliches Dishly-Kochbuch')
+    expect(wrapper.text()).toContain('+ Neues Rezept erstellen')
+    expect(wrapper.find('.new-recipe-form').exists()).toBe(false)
+    expect(wrapper.find('a.create-recipe-link').attributes('href')).toBe('/recipes/new')
+  })
+
+  it('renders NewRecipeView on /recipes/new with the creation form', async () => {
+    router.push('/recipes/new')
+    await router.isReady()
+    const wrapper = mount(NewRecipeView, {
+      global: { plugins: [router, i18n] },
+    })
+
+    expect(wrapper.text()).toContain('Neues Rezept erstellen')
+    expect(wrapper.find('.new-recipe-form').exists()).toBe(true)
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true)
+    expect(wrapper.find('a.back-link').attributes('href')).toBe('/my-recipes')
   })
 
   it('renders PantryView on /pantry', async () => {

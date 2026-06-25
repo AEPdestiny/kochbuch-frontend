@@ -170,11 +170,11 @@
       "createTitle": "Create a new recipe",
       "requiredHintStart": "All fields marked with",
       "requiredHintEnd": "are required.",
-      "createdTitle": "Your created recipes",
+      "createdTitle": "Own recipes",
       "favoritesTitle": "Your favorite recipes",
       "editTitle": "Edit recipe",
       "pageTitle": "Your personal Dishly cookbook",
-      "pageSubtitle": "Create, save and manage your own recipes. Mark favorites and decide which dishes appear on the home page."
+      "pageSubtitle": "Manage your own recipes and favorites in one place."
     },
     "form": {
       "title": "Title",
@@ -202,9 +202,14 @@
       "login": "Go to login",
       "save": "Save recipe",
       "saveChanges": "Save changes",
+      "view": "View",
       "edit": "Edit",
       "delete": "Delete",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "createFirst": "Create first recipe",
+      "discover": "Discover recipes",
+      "removeFavorite": "Remove favorite",
+      "backToMyRecipes": "Back to my recipes"
     },
     "status": {
       "favorite": "Mark as favorite",
@@ -217,8 +222,8 @@
       "servings": "{count} servings"
     },
     "empty": {
-      "created": "No recipes found. Create your first Dishly recipe above.",
-      "favorites": "You do not have any favorites yet. Mark recipes as favorites to see them here."
+      "created": "You have not created any recipes yet.",
+      "favorites": "You do not have any favorites yet."
     },
     "errors": {
       "prefix": "Error:",

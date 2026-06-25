@@ -83,6 +83,8 @@ describe('App navigation', () => {
     expect(wrapper.text()).toContain('Dashboard')
     expect(wrapper.text()).toContain('Profil')
     expect(wrapper.text()).toContain('Wochenplan')
+    expect(wrapper.text()).not.toContain('Rezept erstellen')
+    expect(wrapper.text()).not.toContain('Favoriten')
   })
 
   it('opens Dishly AI as a same-page drawer for authenticated users', async () => {

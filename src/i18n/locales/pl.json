@@ -202,9 +202,14 @@
       "login": "Przejdź do logowania",
       "save": "Zapisz przepis",
       "saveChanges": "Zapisz zmiany",
+      "view": "Zobacz",
       "edit": "Edytuj",
       "delete": "Usuń",
-      "cancel": "Anuluj"
+      "cancel": "Anuluj",
+      "createFirst": "Utwórz pierwszy przepis",
+      "discover": "Odkryj przepisy",
+      "removeFavorite": "Usuń z ulubionych",
+      "backToMyRecipes": "Wróć do moich przepisów"
     },
     "status": {
       "favorite": "Oznacz jako ulubione",

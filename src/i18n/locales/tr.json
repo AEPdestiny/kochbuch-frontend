@@ -202,9 +202,14 @@
       "login": "Girişe git",
       "save": "Tarifi kaydet",
       "saveChanges": "Değişiklikleri kaydet",
+      "view": "Görüntüle",
       "edit": "Düzenle",
       "delete": "Sil",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "createFirst": "İlk tarifi oluştur",
+      "discover": "Tarifleri keşfet",
+      "removeFavorite": "Favoriden kaldır",
+      "backToMyRecipes": "Tariflerime dön"
     },
     "status": {
       "favorite": "Favori olarak işaretle",

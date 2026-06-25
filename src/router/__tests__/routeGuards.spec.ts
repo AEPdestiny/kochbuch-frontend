@@ -55,6 +55,13 @@ describe('route guards', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/my-recipes')
   })
 
+  it('redirects guests from /recipes/new to login with redirect query', async () => {
+    await router.push('/recipes/new')
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/recipes/new')
+  })
+
   it('redirects guests from /dashboard to login with redirect query', async () => {
     await router.push('/dashboard')
 

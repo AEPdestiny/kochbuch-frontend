@@ -170,11 +170,11 @@
       "createTitle": "Neues Rezept erstellen",
       "requiredHintStart": "Alle mit",
       "requiredHintEnd": "markierten Felder sind Pflichtfelder.",
-      "createdTitle": "Deine erstellten Rezepte",
+      "createdTitle": "Eigene Rezepte",
       "favoritesTitle": "Deine Favoriten",
       "editTitle": "Rezept bearbeiten",
       "pageTitle": "Dein persönliches Dishly-Kochbuch",
-      "pageSubtitle": "Erstelle, speichere und verwalte deine eigenen Rezepte. Markiere Favoriten und entscheide, welche Gerichte auf der Startseite erscheinen."
+      "pageSubtitle": "Verwalte deine eigenen Rezepte und Favoriten an einem Ort."
     },
     "form": {
       "title": "Titel",
@@ -202,9 +202,14 @@
       "login": "Zum Login",
       "save": "Rezept speichern",
       "saveChanges": "Änderungen speichern",
+      "view": "Ansehen",
       "edit": "Bearbeiten",
       "delete": "Löschen",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "createFirst": "Erstes Rezept erstellen",
+      "discover": "Rezepte entdecken",
+      "removeFavorite": "Favorit entfernen",
+      "backToMyRecipes": "Zurück zu meinen Rezepten"
     },
     "status": {
       "favorite": "Als Favorit markieren",
@@ -217,8 +222,8 @@
       "servings": "{count} Portionen"
     },
     "empty": {
-      "created": "Keine Rezepte gefunden. Erstelle oben dein erstes Dishly-Rezept.",
-      "favorites": "Du hast noch keine Favoriten. Markiere Rezepte als Favoriten, um sie hier zu sehen."
+      "created": "Du hast noch keine eigenen Rezepte erstellt.",
+      "favorites": "Du hast noch keine Favoriten."
     },
     "errors": {
       "prefix": "Fehler:",

@@ -202,9 +202,14 @@
       "login": "前往登录",
       "save": "保存食谱",
       "saveChanges": "保存更改",
+      "view": "查看",
       "edit": "编辑",
       "delete": "删除",
-      "cancel": "取消"
+      "cancel": "取消",
+      "createFirst": "创建第一个食谱",
+      "discover": "探索食谱",
+      "removeFavorite": "从收藏中移除",
+      "backToMyRecipes": "返回我的食谱"
     },
     "status": {
       "favorite": "标记为收藏",

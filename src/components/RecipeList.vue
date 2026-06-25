@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import type { Recipe, RecipeRequest } from '@/types/recipe'
 
-const props = defineProps<{ search?: string }>()
+const props = withDefaults(defineProps<{ search?: string; mode?: 'manager' | 'create' }>(), {
+  mode: 'manager',
+})
 const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
@@ -42,6 +44,9 @@ const editImageUploaded = ref(false)
 
 const editing = ref<Recipe | null>(null)
 const selectedFavorite = ref<Recipe | null>(null)
+const activeTab = ref<'own' | 'favorites'>('own')
+
+const isCreateMode = computed(() => props.mode === 'create')
 
 const loadRecipes = async () => {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
@@ -145,7 +150,9 @@ const createRecipe = async () => {
       language: currentLanguage.value,
     })
 
-    recipes.value.push(saved)
+    if (!isCreateMode.value) {
+      recipes.value.push(saved)
+    }
     newTitle.value = ''
     newImageUrl.value = ''
     newPrepTime.value = null
@@ -161,6 +168,9 @@ const createRecipe = async () => {
     newImageUploaded.value = false
     clearNewImagePreview()
     error.value = null
+    if (isCreateMode.value) {
+      await router.push(`/recipe/${saved.id}`)
+    }
   } catch (e: unknown) {
     formError.value = toCreateRecipeErrorMessage(e)
   }
@@ -318,6 +328,10 @@ const toDeleteRecipeErrorMessage = (e: unknown) => {
 }
 
 onMounted(() => {
+  if (isCreateMode.value) {
+    loading.value = false
+    return
+  }
   loadRecipes()
 })
 
@@ -340,11 +354,15 @@ const openFavoriteDetails = (r: Recipe) => {
     router.push(`/recipe/external/${r.externalId ?? r.id}`)
     return
   }
-  selectedFavorite.value = r
+  router.push(`/recipe/${r.id}`)
 }
 
 const closeFavoriteDetails = () => {
   selectedFavorite.value = null
+}
+
+const setActiveTab = (tab: 'own' | 'favorites') => {
+  activeTab.value = tab
 }
 
 const currentLanguage = computed(() => {
@@ -541,7 +559,7 @@ const removeFavorite = async (r: Recipe) => {
 
 <template>
   <section class="recipe-manager">
-    <div class="form-card">
+    <div v-if="isCreateMode" class="form-card">
       <h3 class="form-title">{{ t('recipes.my.createTitle') }}</h3>
       <p class="form-subtitle">
         {{ t('recipes.my.requiredHintStart') }} <span class="required-star">*</span> {{ t('recipes.my.requiredHintEnd') }}
@@ -692,7 +710,28 @@ const removeFavorite = async (r: Recipe) => {
       </form>
     </div>
 
-    <div class="list-card">
+    <div v-if="!isCreateMode" class="recipe-tabs" role="tablist" aria-label="Rezeptbereiche">
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'own'"
+        :class="{ active: activeTab === 'own' }"
+        @click="setActiveTab('own')"
+      >
+        {{ t('recipes.my.createdTitle') }}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'favorites'"
+        :class="{ active: activeTab === 'favorites' }"
+        @click="setActiveTab('favorites')"
+      >
+        {{ t('recipes.my.favoritesTitle') }}
+      </button>
+    </div>
+
+    <div v-if="!isCreateMode && activeTab === 'own'" class="list-card">
       <h3 class="recipes-title">{{ t('recipes.my.createdTitle') }}</h3>
 
       <p v-if="loading" class="status-text">{{ t('recipes.loading') }}</p>
@@ -740,6 +779,9 @@ const removeFavorite = async (r: Recipe) => {
               </p>
 
               <div class="card-actions">
+                <RouterLink class="link-btn detail-link" :to="`/recipe/${r.id}`">
+                  {{ t('recipes.actions.view') }}
+                </RouterLink>
                 <button class="link-btn" @click.stop="startEdit(r)">{{ t('recipes.actions.edit') }}</button>
                 <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">{{ t('recipes.actions.delete') }}</button>
                 <label class="publish-toggle" @click.stop>
@@ -756,7 +798,10 @@ const removeFavorite = async (r: Recipe) => {
         </li>
 
         <li v-if="!loading && filtered.length === 0" class="none-found">
-          {{ t('recipes.empty.created') }}
+          <p>{{ t('recipes.empty.created') }}</p>
+          <RouterLink to="/recipes/new" class="empty-action">
+            {{ t('recipes.actions.createFirst') }}
+          </RouterLink>
         </li>
       </ul>
 
@@ -856,7 +901,7 @@ const removeFavorite = async (r: Recipe) => {
       </div>
     </div>
 
-    <div class="list-card">
+    <div v-if="!isCreateMode && activeTab === 'favorites'" class="list-card">
       <h3 class="recipes-title">{{ t('recipes.my.favoritesTitle') }}</h3>
 
       <p v-if="loading" class="status-text">{{ t('recipes.loading') }}</p>
@@ -877,7 +922,7 @@ const removeFavorite = async (r: Recipe) => {
           <button
             type="button"
             class="favorite-remove-button"
-            aria-label="Favorit entfernen"
+            :aria-label="t('recipes.actions.removeFavorite')"
             @click.stop="removeFavorite(r)"
           >
             -
@@ -910,8 +955,11 @@ const removeFavorite = async (r: Recipe) => {
           </div>
         </article>
 
-        <p v-if="favorites.length === 0" class="status-text">
-          {{ t('recipes.empty.favorites') }}
+        <p v-if="favorites.length === 0" class="status-text empty-favorites">
+          <span>{{ t('recipes.empty.favorites') }}</span>
+          <RouterLink to="/" class="empty-action">
+            {{ t('recipes.actions.discover') }}
+          </RouterLink>
         </p>
       </div>
     </div>
@@ -965,6 +1013,33 @@ const removeFavorite = async (r: Recipe) => {
   border: 1px solid #f6d9ea;
   box-shadow: 0 2px 18px rgba(191, 140, 167, 0.12);
   padding: 22px 24px 20px 24px;
+}
+
+.recipe-tabs {
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  width: fit-content;
+}
+
+.recipe-tabs button {
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  color: #486b68;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 8px 18px;
+}
+
+.recipe-tabs button.active {
+  background: #cc7da9;
+  color: #ffffff;
 }
 
 .form-title {
@@ -1303,6 +1378,12 @@ textarea {
   padding: 0;
 }
 
+.detail-link {
+  align-items: center;
+  display: inline-flex;
+  text-decoration: none;
+}
+
 .link-btn.danger {
   color: #a14c2b;
 }
@@ -1311,7 +1392,25 @@ textarea {
   color: #486b68;
   font-size: 0.95rem;
   text-align: center;
-  padding-top: 8px;
+  padding: 18px 8px 8px;
+}
+
+.none-found p,
+.empty-favorites span {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.empty-action {
+  align-items: center;
+  background: #cc7da9;
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 8px 16px;
+  text-decoration: none;
 }
 
 .edit-panel {
@@ -1456,6 +1555,13 @@ textarea {
     padding: 18px 14px;
   }
 
+  .recipe-tabs {
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
   .form-title {
     font-size: 1.25rem;
     line-height: 1.2;
@@ -1476,7 +1582,8 @@ textarea {
   .submit-btn,
   .cancel-btn,
   .login-link,
-  .link-btn {
+  .link-btn,
+  .empty-action {
     justify-content: center;
     text-align: center;
     width: 100%;

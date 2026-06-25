@@ -10,6 +10,16 @@ const push = vi.fn()
 let routeQuery = {}
 
 vi.mock('vue-router', () => ({
+  RouterLink: {
+    name: 'RouterLink',
+    props: ['to'],
+    template: '<a :href="href"><slot /></a>',
+    computed: {
+      href() {
+        return typeof this.to === 'string' ? this.to : this.to?.path || '/'
+      },
+    },
+  },
   useRouter: () => ({ push }),
   useRoute: () => ({ query: routeQuery }),
 }))
@@ -90,13 +100,14 @@ describe('RecipeList.vue', () => {
     // Erwartung: Überschrift + Rezepttitel sichtbar
     expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
     expect(recipeApi.getRecipes).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Deine erstellten Rezepte')
+    expect(wrapper.text()).toContain('Eigene Rezepte')
     expect(wrapper.text()).toContain('Test Pasta')
+    expect(wrapper.find('.new-recipe-form').exists()).toBe(false)
   })
 
   it('uploads an image, sets imageUrl and shows persistent preview when a file is selected', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     const file = new File(['image'], 'rezept.png', { type: 'image/png' })
@@ -123,7 +134,7 @@ describe('RecipeList.vue', () => {
     vi.mocked(recipeApi.uploadRecipeImage).mockRejectedValue(
       new ApiClientError('Only JPEG, PNG and WebP images are supported.', 400),
     )
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     const file = new File(['image'], 'rezept.gif', { type: 'image/gif' })
@@ -145,7 +156,7 @@ describe('RecipeList.vue', () => {
 
   it('does not require upload when a manual image URL is used', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     vi.mocked(recipeApi.createRecipe).mockResolvedValue({
@@ -190,7 +201,7 @@ describe('RecipeList.vue', () => {
   it('still shows a local image preview immediately while upload is pending', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(recipeApi.uploadRecipeImage).mockReturnValue(new Promise(() => {}))
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     const file = new File(['image'], 'rezept.png', { type: 'image/png' })
@@ -236,7 +247,7 @@ describe('RecipeList.vue', () => {
 
   it('creates a recipe via form submit', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     // 2. Aufruf: POST /recipes -> neues Rezept wird zurückgegeben
@@ -276,8 +287,7 @@ describe('RecipeList.vue', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    // Erwartung: initialer Read lief über recipeApi, Create über recipeApi.createRecipe
-    expect(recipeApi.getMyRecipes).toHaveBeenCalledTimes(1)
+    expect(recipeApi.getMyRecipes).not.toHaveBeenCalled()
     expect(recipeApi.createRecipe).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'New Dish',
@@ -287,12 +297,11 @@ describe('RecipeList.vue', () => {
         language: 'de',
       })
     )
-    // Neues Rezept erscheint
-    expect(wrapper.text()).toContain('New Dish')
+    expect(push).toHaveBeenCalledWith('/recipe/1')
   })
 
   it('does not create a recipe without login', async () => {
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     await wrapper
@@ -314,7 +323,7 @@ describe('RecipeList.vue', () => {
   })
 
   it('shows validation error if required fields are missing', async () => {
-    const wrapper = mount(RecipeList)
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
 
     // Ohne Eingaben Submit auslösen
@@ -354,7 +363,11 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     // Edit-Button des ersten Rezepts anklicken, um Edit-Panel zu öffnen
-    await wrapper.find('.link-btn').trigger('click')
+    const editButton = wrapper
+      .findAll('button.link-btn')
+      .find(button => button.text().includes('Bearbeiten'))
+    expect(editButton).toBeDefined()
+    await editButton.trigger('click')
 
     // Update-Request liefert das aktualisierte Rezept zurück
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({
@@ -475,7 +488,11 @@ describe('RecipeList.vue', () => {
     await flushPromises()
     sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
 
-    await wrapper.find('.link-btn').trigger('click')
+    const editButton = wrapper
+      .findAll('button.link-btn')
+      .find(button => button.text().includes('Bearbeiten'))
+    expect(editButton).toBeDefined()
+    await editButton.trigger('click')
     const titleInput = wrapper.find('.edit-panel input[type="text"]')
     await titleInput.setValue('Updated Title')
 
@@ -603,6 +620,8 @@ describe('RecipeList.vue', () => {
 
     const wrapper = mount(RecipeList)
     await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
 
     // Titel aus der Favoriten-Ansicht auslesen
     const favGrid = wrapper
@@ -629,6 +648,8 @@ describe('RecipeList.vue', () => {
 
     const wrapper = mount(RecipeList)
     await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
 
     expect(wrapper.text()).toContain('External Pasta')
     await wrapper.find('.recipe-grid .recipe-card').trigger('click')
@@ -650,6 +671,8 @@ describe('RecipeList.vue', () => {
     ])
 
     const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('External Pasta')
@@ -682,6 +705,8 @@ describe('RecipeList.vue', () => {
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...ownFavorite, favorite: false })
 
     const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
     await flushPromises()
 
     await wrapper.find('.favorite-remove-button').trigger('click')
@@ -718,10 +743,9 @@ describe('RecipeList.vue', () => {
     const wrapper = mount(RecipeList)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Create a new recipe')
-    expect(wrapper.text()).toContain('Your created recipes')
+    expect(wrapper.text()).toContain('Own recipes')
     expect(wrapper.text()).toContain('Your favorite recipes')
-    expect(wrapper.text()).toContain('Save recipe')
+    expect(wrapper.text()).toContain('View')
     expect(wrapper.text()).toContain('Kartoffelsuppe')
     expect(wrapper.text()).toContain('Kartoffeln, Lauch')
     expect(wrapper.text()).toContain('Hausmannskost')
@@ -733,7 +757,7 @@ describe('RecipeList.vue', () => {
     const wrapper = mount(RecipeList)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('إنشاء وصفة جديدة')
+    expect(wrapper.text()).toContain('وصفاتك المنشأة')
     expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية وصفاتك.')
   })
 })
