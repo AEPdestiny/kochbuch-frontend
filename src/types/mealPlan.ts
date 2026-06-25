@@ -32,6 +32,12 @@ export type MealPlanWeekResponse = {
   entries: MealPlanEntryResponse[]
 }
 
+export type MealPlanMoveRequest = {
+  targetDate: string
+  targetSlot: MealSlot
+  swapIfOccupied?: boolean
+}
+
 export type MealPlanShoppingListItem = {
   name: string
   quantity?: number | string | null

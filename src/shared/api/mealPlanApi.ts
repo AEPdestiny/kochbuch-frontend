@@ -2,6 +2,7 @@ import { apiClient } from './apiClient'
 import type {
   MealPlanEntryRequest,
   MealPlanEntryResponse,
+  MealPlanMoveRequest,
   MealSlot,
   MealPlanShoppingListResponse,
   MealPlanWeekResponse,
@@ -37,6 +38,15 @@ export const mealPlanApi = {
 
   async deleteSlot(date: string, slot: MealSlot): Promise<void> {
     await apiClient.delete(`/meal-plan/days/${date}/slots/${slot}`)
+  },
+
+  async moveEntry(id: number | string, request: MealPlanMoveRequest): Promise<MealPlanWeekResponse> {
+    const response = await apiClient.patch<MealPlanWeekResponse>(`/meal-plan/entries/${id}/move`, {
+      targetDate: request.targetDate,
+      targetSlot: request.targetSlot,
+      swapIfOccupied: request.swapIfOccupied ?? true,
+    })
+    return response.data
   },
 
   async createShoppingListFromWeek(startDate?: string): Promise<MealPlanShoppingListResponse> {

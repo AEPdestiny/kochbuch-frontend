@@ -12,6 +12,7 @@ vi.mock('@/shared/api/apiClient', async () => {
       put: vi.fn(),
       delete: vi.fn(),
       post: vi.fn(),
+      patch: vi.fn(),
     },
   }
 })
@@ -145,6 +146,24 @@ describe('mealPlanApi', () => {
     await mealPlanApi.deleteSlot('2026-06-03', 'snack')
 
     expect(apiClient.delete).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack')
+  })
+
+  it('moveEntry calls PATCH /meal-plan/entries/{id}/move and returns week', async () => {
+    const week = weekResponse()
+    vi.mocked(apiClient.patch).mockResolvedValue({ data: week })
+
+    const result = await mealPlanApi.moveEntry(1, {
+      targetDate: '2026-06-04',
+      targetSlot: 'lunch',
+      swapIfOccupied: true,
+    })
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/meal-plan/entries/1/move', {
+      targetDate: '2026-06-04',
+      targetSlot: 'lunch',
+      swapIfOccupied: true,
+    })
+    expect(result).toEqual(week)
   })
 
   it('createShoppingListFromWeek calls POST /meal-plan/shopping-list with startDate and returns result', async () => {

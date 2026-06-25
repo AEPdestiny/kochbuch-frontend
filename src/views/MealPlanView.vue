@@ -8,7 +8,6 @@ import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import type {
-  MealPlanEntryRequest,
   MealPlanEntryResponse,
   MealPlanShoppingListItem,
   MealPlanShoppingListResponse,
@@ -61,6 +60,7 @@ const swipeError = ref<string | null>(null)
 const swipeMessage = ref<string | null>(null)
 const actionMessage = ref<string | null>(null)
 const activeBucket = ref<MealSlot | null>(null)
+const editingSlotKey = ref<string | null>(null)
 const moveEditorKey = ref<string | null>(null)
 const moveTargetBySlot = ref<Record<string, { date: string; slot: MealSlot }>>({})
 const shoppingListLoading = ref(false)
@@ -181,11 +181,14 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
         externalSource: customSnapshotBySlot.value[key]?.externalSource ?? null,
       })
     upsertEntry(saved)
-    selectedRecipeBySlot.value[key] = saved.recipe ? String(saved.recipe.id) : ''
-    customTitleBySlot.value[key] = entryTitle(saved)
-    customSnapshotBySlot.value[key] = {}
+    syncSlotState(saved)
+    editingSlotKey.value = null
+    moveEditorKey.value = null
     suggestionsBySlot.value[key] = []
     suggestionNoticeBySlot.value[key] = ''
+    actionMessage.value = entryFor(date, slot)?.id === saved.id
+      ? 'Rezept wurde im Wochenplan gespeichert.'
+      : 'Rezept wurde geplant.'
   } catch {
     actionError.value = t('mealPlan.errors.save')
   }
@@ -202,6 +205,12 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     customTitleBySlot.value[slotKey(date, slot)] = ''
     customSnapshotBySlot.value[slotKey(date, slot)] = {}
+    if (editingSlotKey.value === slotKey(date, slot)) {
+      editingSlotKey.value = null
+    }
+    if (moveEditorKey.value === slotKey(date, slot)) {
+      moveEditorKey.value = null
+    }
     actionMessage.value = 'Rezept wurde aus dem Wochenplan entfernt.'
   } catch {
     actionError.value = t('mealPlan.errors.remove')
@@ -233,6 +242,8 @@ async function clearWeek() {
     customSnapshotBySlot.value = {}
     suggestionsBySlot.value = {}
     suggestionNoticeBySlot.value = {}
+    editingSlotKey.value = null
+    moveEditorKey.value = null
     await reloadWeek()
     actionMessage.value = 'Die Woche wurde geleert.'
   } catch {
@@ -281,6 +292,39 @@ function toggleBucket(slot: MealSlot) {
   activeBucket.value = activeBucket.value === slot ? null : slot
 }
 
+function isEditingSlot(date: string, slot: MealSlot) {
+  return editingSlotKey.value === slotKey(date, slot)
+}
+
+function startEditSlot(date: string, slot: MealSlot) {
+  const entry = entryFor(date, slot)
+  if (!entry) {
+    return
+  }
+  const key = slotKey(date, slot)
+  editingSlotKey.value = key
+  moveEditorKey.value = null
+  syncSlotState(entry)
+  suggestionsBySlot.value[key] = []
+  suggestionNoticeBySlot.value[key] = ''
+}
+
+function cancelEditSlot(date: string, slot: MealSlot) {
+  const entry = entryFor(date, slot)
+  const key = slotKey(date, slot)
+  if (entry) {
+    syncSlotState(entry)
+  } else {
+    selectedRecipeBySlot.value[key] = ''
+    customTitleBySlot.value[key] = ''
+    customSnapshotBySlot.value[key] = {}
+  }
+  suggestionsBySlot.value[key] = []
+  suggestionNoticeBySlot.value[key] = ''
+  editingSlotKey.value = null
+  moveEditorKey.value = null
+}
+
 function openMoveEditor(date: string, slot: MealSlot) {
   const key = slotKey(date, slot)
   moveEditorKey.value = moveEditorKey.value === key ? null : key
@@ -322,10 +366,15 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
   try {
     actionError.value = null
     actionMessage.value = null
-    await mealPlanApi.setSlot(target.date, target.slot, requestFromEntry(entry))
-    await mealPlanApi.deleteSlot(currentDate, currentSlot)
-    await reloadWeek()
+    const updatedWeek = await mealPlanApi.moveEntry(entry.id, {
+      targetDate: target.date,
+      targetSlot: target.slot,
+      swapIfOccupied: true,
+    })
+    week.value = updatedWeek
+    syncSelectedRecipes(updatedWeek.entries)
     moveEditorKey.value = null
+    editingSlotKey.value = null
     actionMessage.value = t('mealPlan.messages.moved')
   } catch {
     await reloadWeek().catch(() => undefined)
@@ -340,12 +389,10 @@ function caloriesForDay(date: string) {
 }
 
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
-  selectedRecipeBySlot.value = Object.fromEntries(
-    entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), entry.recipe ? String(entry.recipe.id) : '']),
-  )
-  customTitleBySlot.value = Object.fromEntries(
-    entries.map(entry => [slotKey(entry.plannedDate, normalizedSlot(entry)), entryTitle(entry)]),
-  )
+  selectedRecipeBySlot.value = {}
+  customTitleBySlot.value = {}
+  customSnapshotBySlot.value = {}
+  entries.forEach(syncSlotState)
 }
 
 function upsertEntry(entry: MealPlanEntryResponse) {
@@ -368,17 +415,15 @@ function entryTitle(entry: MealPlanEntryResponse) {
   return entry.recipe?.title ?? entry.customTitle ?? ''
 }
 
-function requestFromEntry(entry: MealPlanEntryResponse): MealPlanEntryRequest {
-  if (entry.recipe?.id) {
-    return { recipeId: Number(entry.recipe.id) }
-  }
-  const externalRecipeId = entry.externalRecipeId ?? entry.recipe?.externalId ?? null
-  return {
-    customTitle: entry.customTitle ?? entryTitle(entry),
+function syncSlotState(entry: MealPlanEntryResponse) {
+  const key = slotKey(entry.plannedDate, normalizedSlot(entry))
+  selectedRecipeBySlot.value[key] = entry.recipe ? String(entry.recipe.id) : ''
+  customTitleBySlot.value[key] = entryTitle(entry)
+  customSnapshotBySlot.value[key] = {
     caloriesSnapshot: entry.caloriesSnapshot ?? entry.calories ?? entry.recipe?.calories ?? null,
     proteinSnapshot: entry.proteinSnapshot ?? entry.recipe?.protein ?? null,
     imageUrlSnapshot: entry.imageUrlSnapshot ?? entry.recipe?.imageUrl ?? null,
-    externalRecipeId: externalRecipeId ? String(externalRecipeId) : null,
+    externalRecipeId: entry.externalRecipeId ?? entry.recipe?.externalId ?? null,
     externalSource: entry.externalSource ?? entry.recipe?.source ?? null,
   }
 }
@@ -395,6 +440,7 @@ function onSlotSearch(date: string, slot: MealSlot) {
   const requestId = (suggestionRequestIds[key] ?? 0) + 1
   suggestionRequestIds[key] = requestId
   selectedRecipeBySlot.value[key] = ''
+  customSnapshotBySlot.value[key] = {}
   suggestionNoticeBySlot.value[key] = ''
   clearTimeout(suggestionTimers[key])
 
@@ -442,16 +488,17 @@ function onSlotSearch(date: string, slot: MealSlot) {
 }
 
 function toSlotSuggestion(recipe: RecipeResponse): SlotSuggestion {
+  const hasRecipeId = Number.isFinite(Number(recipe.id)) && Number(recipe.id) > 0
   return {
     id: recipe.id,
     title: recipe.title,
-    source: recipe.userCreated ? 'dishly' : 'external',
-    planAsRecipe: recipe.userCreated === true,
+    source: hasRecipeId ? 'dishly' : 'external',
+    planAsRecipe: hasRecipeId,
     calories: recipe.calories,
     protein: recipe.protein,
     imageUrl: recipe.imageUrl,
-    externalRecipeId: recipe.externalId ? String(recipe.externalId) : String(recipe.id),
-    externalSource: recipe.source ?? 'dishly-public',
+    externalRecipeId: recipe.externalId ? String(recipe.externalId) : hasRecipeId ? null : String(recipe.id),
+    externalSource: recipe.source ?? 'dishly',
   }
 }
 
@@ -484,7 +531,8 @@ async function loadSwipeSuggestions() {
   try {
     const publishedRecipes = await recipeApi.getPublishedRecipes(currentLanguage.value)
     const seen = new Set<string>()
-    let candidates = publishedRecipes
+    let candidates: RecipeResponse[] = publishedRecipes
+      .map(recipe => ({ ...recipe, source: 'dishly' }))
       .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
       .filter(recipe => {
         const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -547,18 +595,18 @@ async function acceptSwipeSuggestion() {
 
   try {
     swipeError.value = null
-    const saved = await mealPlanApi.setSlot(date, slot, {
-      customTitle: suggestion.title,
-      caloriesSnapshot: suggestion.calories ?? null,
-      proteinSnapshot: suggestion.protein ?? null,
-      imageUrlSnapshot: suggestion.imageUrl ?? null,
-      externalRecipeId: suggestion.externalId ? String(suggestion.externalId) : suggestion.id ? String(suggestion.id) : null,
-      externalSource: suggestion.source ?? 'dishly-public',
-    })
+    const saved = suggestion.source === 'dishly' && Number.isFinite(Number(suggestion.id))
+      ? await mealPlanApi.setSlot(date, slot, Number(suggestion.id))
+      : await mealPlanApi.setSlot(date, slot, {
+        customTitle: suggestion.title,
+        caloriesSnapshot: suggestion.calories ?? null,
+        proteinSnapshot: suggestion.protein ?? null,
+        imageUrlSnapshot: suggestion.imageUrl ?? null,
+        externalRecipeId: suggestion.externalId ? String(suggestion.externalId) : suggestion.id ? String(suggestion.id) : null,
+        externalSource: suggestion.source ?? 'dishly-public',
+      })
     upsertEntry(saved)
-    customTitleBySlot.value[slotKey(date, slot)] = entryTitle(saved)
-    customSnapshotBySlot.value[slotKey(date, slot)] = {}
-    selectedRecipeBySlot.value[slotKey(date, slot)] = ''
+    syncSlotState(saved)
     swipeMessage.value = `${suggestion.title} wurde für ${slotLabel(slot)} am ${date} übernommen.`
     if (swipeIndex.value < swipeSuggestions.value.length - 1) {
       swipeIndex.value += 1
@@ -878,8 +926,11 @@ function formatDate(date: Date) {
               <span v-if="currentSwipeRecipe.category">{{ visibleCategory(currentSwipeRecipe.category) }}</span>
               <span v-if="currentSwipeRecipe.difficulty">{{ currentSwipeRecipe.difficulty }}</span>
             </div>
-            <p class="suggestion-state">
+            <p v-if="currentSwipeRecipe.source !== 'dishly'" class="suggestion-state">
               Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
+            </p>
+            <p v-else class="suggestion-state">
+              Dishly-Rezepte werden als echte Rezeptverknüpfung gespeichert.
             </p>
             <p class="suggestion-state">
               Dieses Rezept kommt zu: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>
@@ -913,9 +964,19 @@ function formatDate(date: Date) {
 
         <div v-for="slot in mealSlots" :key="slot.key" class="slot-block">
           <h3>{{ t(slot.labelKey) }}</h3>
-          <div v-if="entryFor(day.date, slot.key)" class="planned-recipe">
+
+          <div v-if="entryFor(day.date, slot.key) && !isEditingSlot(day.date, slot.key)" class="planned-recipe compact">
             <span class="planned-label">{{ t('mealPlan.plannedRecipe') }}</span>
-            <strong>{{ entryFor(day.date, slot.key) ? entryTitle(entryFor(day.date, slot.key)!) : '' }}</strong>
+            <strong>{{ entryTitle(entryFor(day.date, slot.key)!) }}</strong>
+            <div class="planned-meta">
+              <span v-if="entryCalories(entryFor(day.date, slot.key))">
+                {{ entryCalories(entryFor(day.date, slot.key)) }} kcal
+              </span>
+              <span v-if="entryProtein(entryFor(day.date, slot.key))">
+                {{ formatProtein(entryProtein(entryFor(day.date, slot.key))) }}
+              </span>
+              <span v-if="!entryFor(day.date, slot.key)?.recipe?.id">Freitext</span>
+            </div>
             <div class="planned-actions">
               <RouterLink
                 v-if="entryFor(day.date, slot.key)?.recipe?.id"
@@ -924,10 +985,92 @@ function formatDate(date: Date) {
               >
                 {{ t('mealPlan.actions.viewRecipe') }}
               </RouterLink>
-              <button type="button" class="secondary-button" @click="openMoveEditor(day.date, slot.key)">
-                {{ t('mealPlan.actions.move') }}
+              <button type="button" class="secondary-button" @click="startEditSlot(day.date, slot.key)">
+                Bearbeiten
+              </button>
+              <button type="button" class="secondary-button" @click="removeDay(day.date, slot.key)">
+                {{ t('mealPlan.actions.remove') }}
               </button>
             </div>
+          </div>
+
+          <template v-else>
+            <p v-if="!entryFor(day.date, slot.key)" class="empty-day">{{ t('mealPlan.empty.day') }}</p>
+            <div v-else class="planned-recipe edit-summary">
+              <span class="planned-label">Bearbeitung</span>
+              <strong>{{ entryTitle(entryFor(day.date, slot.key)!) }}</strong>
+              <div class="planned-meta">
+                <span v-if="entryCalories(entryFor(day.date, slot.key))">
+                  {{ entryCalories(entryFor(day.date, slot.key)) }} kcal
+                </span>
+                <span v-if="entryProtein(entryFor(day.date, slot.key))">
+                  {{ formatProtein(entryProtein(entryFor(day.date, slot.key))) }}
+                </span>
+              </div>
+            </div>
+
+            <label class="recipe-select">
+              <span>Rezept suchen oder Freitext eingeben</span>
+              <input
+                v-model="customTitleBySlot[slotKey(day.date, slot.key)]"
+                type="text"
+                placeholder="z. B. Sushi"
+                @input="onSlotSearch(day.date, slot.key)"
+              />
+            </label>
+            <p v-if="suggestionLoadingBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
+              Vorschläge werden geladen...
+            </p>
+            <ul v-if="suggestionsBySlot[slotKey(day.date, slot.key)]?.length" class="suggestion-list">
+              <li
+                v-for="suggestion in suggestionsBySlot[slotKey(day.date, slot.key)]"
+                :key="`${suggestion.source}-${suggestion.id}`"
+              >
+                <button type="button" @click="chooseSuggestion(day.date, slot.key, suggestion)">
+                  <span>{{ suggestion.title }}</span>
+                  <small>{{ suggestion.planAsRecipe ? 'Dishly-Rezept' : 'Freitext-Vorschlag' }}</small>
+                  <small v-if="suggestion.calories || suggestion.protein">
+                    <span v-if="suggestion.calories">{{ suggestion.calories }} kcal</span>
+                    <span v-if="suggestion.calories && suggestion.protein"> · </span>
+                    <span v-if="suggestion.protein">{{ Math.round(suggestion.protein) }} g Protein</span>
+                  </small>
+                </button>
+              </li>
+            </ul>
+            <p v-if="suggestionNoticeBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
+              {{ suggestionNoticeBySlot[slotKey(day.date, slot.key)] }}
+            </p>
+
+            <div class="actions">
+              <button type="button" class="primary-button" @click="saveDay(day.date, slot.key)">
+                {{ entryFor(day.date, slot.key) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
+              </button>
+              <button
+                v-if="entryFor(day.date, slot.key)"
+                type="button"
+                class="secondary-button"
+                @click="cancelEditSlot(day.date, slot.key)"
+              >
+                {{ t('mealPlan.actions.cancel') }}
+              </button>
+              <button
+                v-if="entryFor(day.date, slot.key)"
+                type="button"
+                class="secondary-button"
+                @click="openMoveEditor(day.date, slot.key)"
+              >
+                {{ t('mealPlan.actions.move') }}
+              </button>
+              <button
+                v-if="entryFor(day.date, slot.key)"
+                type="button"
+                class="secondary-button"
+                @click="removeDay(day.date, slot.key)"
+              >
+                {{ t('mealPlan.actions.remove') }}
+              </button>
+            </div>
+
             <form
               v-if="moveEditorKey === slotKey(day.date, slot.key)"
               class="move-form"
@@ -953,61 +1096,14 @@ function formatDate(date: Date) {
                 v-if="isMoveTargetOccupied(day.date, slot.key)"
                 class="suggestion-state"
               >
-                {{ t('mealPlan.messages.targetOccupied') }}
+                Der Zielslot ist belegt. Beim Verschieben werden beide Einträge getauscht.
               </p>
               <div class="move-actions">
                 <button type="submit" class="primary-button">{{ t('mealPlan.actions.moveSave') }}</button>
                 <button type="button" class="secondary-button" @click="cancelMove">{{ t('mealPlan.actions.cancel') }}</button>
               </div>
             </form>
-          </div>
-          <p v-else class="empty-day">{{ t('mealPlan.empty.day') }}</p>
-
-          <label class="recipe-select">
-            <span>Rezept suchen oder Freitext eingeben</span>
-            <input
-              v-model="customTitleBySlot[slotKey(day.date, slot.key)]"
-              type="text"
-              placeholder="z. B. Sushi"
-              @input="onSlotSearch(day.date, slot.key)"
-            />
-          </label>
-          <p v-if="suggestionLoadingBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
-            Vorschläge werden geladen...
-          </p>
-          <ul v-if="suggestionsBySlot[slotKey(day.date, slot.key)]?.length" class="suggestion-list">
-            <li
-              v-for="suggestion in suggestionsBySlot[slotKey(day.date, slot.key)]"
-              :key="`${suggestion.source}-${suggestion.id}`"
-            >
-              <button type="button" @click="chooseSuggestion(day.date, slot.key, suggestion)">
-                <span>{{ suggestion.title }}</span>
-                <small>{{ suggestion.planAsRecipe ? 'Eigenes Rezept' : 'Lokaler Vorschlag' }}</small>
-                <small v-if="suggestion.calories || suggestion.protein">
-                  <span v-if="suggestion.calories">{{ suggestion.calories }} kcal</span>
-                  <span v-if="suggestion.calories && suggestion.protein"> · </span>
-                  <span v-if="suggestion.protein">{{ Math.round(suggestion.protein) }} g Protein</span>
-                </small>
-              </button>
-            </li>
-          </ul>
-          <p v-if="suggestionNoticeBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
-            {{ suggestionNoticeBySlot[slotKey(day.date, slot.key)] }}
-          </p>
-
-          <div class="actions">
-            <button type="button" class="primary-button" @click="saveDay(day.date, slot.key)">
-              {{ entryFor(day.date, slot.key) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
-            </button>
-            <button
-              v-if="entryFor(day.date, slot.key)"
-              type="button"
-              class="secondary-button"
-              @click="removeDay(day.date, slot.key)"
-            >
-              {{ t('mealPlan.actions.remove') }}
-            </button>
-          </div>
+          </template>
         </div>
       </article>
       </template>
@@ -1167,6 +1263,22 @@ function formatDate(date: Date) {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 6px;
+}
+
+.planned-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.planned-meta span {
+  background: #e0f5f2;
+  border-radius: 999px;
+  color: #1d8e90;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  width: fit-content;
 }
 
 .planned-link {

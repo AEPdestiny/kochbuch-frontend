@@ -17,6 +17,7 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
     deleteDay: vi.fn(),
     setSlot: vi.fn(),
     deleteSlot: vi.fn(),
+    moveEntry: vi.fn(),
     createShoppingListFromWeek: vi.fn(),
   },
 }))
@@ -55,6 +56,7 @@ describe('MealPlanView', () => {
       needsReview: [],
       alreadyOnShoppingList: [],
     })
+    vi.mocked(mealPlanApi.moveEntry).mockResolvedValue(weekResponse())
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
       recipe(1, 'Pasta'),
       recipe(2, 'Soup'),
@@ -140,6 +142,34 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Noch kein Rezept geplant.')
   })
 
+  it('keeps planned slots compact until edit is clicked', async () => {
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+
+    await flushPromises()
+
+    const mondayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Montag'))!
+    const dinnerSlot = mondayCard.findAll('.slot-block')
+      .find(slot => slot.text().includes('Abendessen'))!
+
+    expect(dinnerSlot.text()).toContain('Pasta')
+    expect(dinnerSlot.text()).toContain('Rezept ansehen')
+    expect(dinnerSlot.text()).toContain('Bearbeiten')
+    expect(dinnerSlot.find('input').exists()).toBe(false)
+    expect(dinnerSlot.text()).not.toContain('Verschiebung speichern')
+
+    await dinnerSlot.findAll('button')
+      .find(button => button.text().includes('Bearbeiten'))!
+      .trigger('click')
+
+    expect(dinnerSlot.find('input').exists()).toBe(true)
+    expect(dinnerSlot.text()).toContain('Speichern')
+    expect(dinnerSlot.text()).toContain('Abbrechen')
+    expect(dinnerSlot.text()).toContain('Verschieben')
+  })
+
   it('links planned own recipe to the recipe detail page', async () => {
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -154,15 +184,11 @@ describe('MealPlanView', () => {
   })
 
   it('moves a planned recipe to another day and slot', async () => {
-    vi.mocked(mealPlanApi.getWeek)
-      .mockResolvedValueOnce(weekResponse())
-      .mockResolvedValueOnce({
-        weekStart: '2026-06-01',
-        weekEnd: '2026-06-07',
-        entries: [entry('2026-06-02', recipe(1, 'Pasta'), 'breakfast')],
-      })
-    vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(1, 'Pasta'), 'breakfast'))
-    vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
+    vi.mocked(mealPlanApi.moveEntry).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [entry('2026-06-02', recipe(1, 'Pasta'), 'breakfast')],
+    })
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
     })
@@ -171,6 +197,10 @@ describe('MealPlanView', () => {
 
     const mondayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Montag'))!
+    const editButton = mondayCard.findAll('button')
+      .find(button => button.text().includes('Bearbeiten'))!
+    await editButton.trigger('click')
+
     const moveButton = mondayCard.findAll('button')
       .find(button => button.text().includes('Verschieben'))!
     await moveButton.trigger('click')
@@ -181,9 +211,13 @@ describe('MealPlanView', () => {
     await mondayCard.find('.move-form').trigger('submit')
     await flushPromises()
 
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', { recipeId: 1 })
-    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
-    expect(mealPlanApi.getWeek).toHaveBeenLastCalledWith('2026-06-01')
+    expect(mealPlanApi.moveEntry).toHaveBeenCalledWith('2026-06-01', {
+      targetDate: '2026-06-02',
+      targetSlot: 'breakfast',
+      swapIfOccupied: true,
+    })
+    expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
+    expect(mealPlanApi.deleteSlot).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Der Wochenplan-Eintrag wurde verschoben.')
     expect(wrapper.text()).toContain('Pasta')
   })
@@ -254,18 +288,35 @@ describe('MealPlanView', () => {
     })
     await flushPromises()
 
-    const mondayCard = wrapper.findAll('.day-card')
+    let mondayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Montag'))!
-    const inputs = mondayCard.findAll('input')
-    const buttons = mondayCard.findAll('.slot-block .primary-button')
-    await inputs[0]!.setValue('Fruehstueck frei')
-    await buttons[0]!.trigger('click')
-    await inputs[1]!.setValue('Lunch frei')
-    await buttons[1]!.trigger('click')
-    await inputs[2]!.setValue('Dinner frei')
-    await buttons[2]!.trigger('click')
-    await inputs[3]!.setValue('Snack frei')
-    await buttons[3]!.trigger('click')
+    let slotBlocks = mondayCard.findAll('.slot-block')
+    await slotBlocks[0]!.find('input').setValue('Fruehstueck frei')
+    await slotBlocks[0]!.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    mondayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Montag'))!
+    slotBlocks = mondayCard.findAll('.slot-block')
+    await slotBlocks[1]!.find('input').setValue('Lunch frei')
+    await slotBlocks[1]!.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    mondayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Montag'))!
+    slotBlocks = mondayCard.findAll('.slot-block')
+    await slotBlocks[2]!.findAll('button')
+      .find(button => button.text().includes('Bearbeiten'))!
+      .trigger('click')
+    await slotBlocks[2]!.find('input').setValue('Dinner frei')
+    await slotBlocks[2]!.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    mondayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Montag'))!
+    slotBlocks = mondayCard.findAll('.slot-block')
+    await slotBlocks[3]!.find('input').setValue('Snack frei')
+    await slotBlocks[3]!.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'breakfast', {
@@ -302,7 +353,7 @@ describe('MealPlanView', () => {
     })
   })
 
-  it('uses public database suggestions as custom text with nutrition snapshot', async () => {
+  it('uses public database suggestions as real recipe links with nutrition', async () => {
     vi.useFakeTimers()
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(99, 'Sushi Bowl', {
@@ -326,32 +377,26 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     const localButton = tuesdayCard.findAll('.suggestion-list button')
-      .find(button => button.text().includes('Lokaler Vorschlag'))!
+      .find(button => button.text().includes('Dishly-Rezept'))!
     expect(localButton.text()).toContain('450 kcal')
     expect(localButton.text()).toContain('24 g Protein')
     await localButton.trigger('click')
 
-    expect(wrapper.text()).toContain('Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert.')
+    expect(wrapper.text()).not.toContain('Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert.')
     expect((tuesdayCard.find('input').element as HTMLInputElement).value).toBe('Sushi Bowl')
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 9,
       plannedDate: '2026-06-02',
       mealSlot: 'breakfast',
-      recipe: null,
-      customTitle: 'Sushi Bowl',
+      recipe: recipe(99, 'Sushi Bowl', { calories: 450, protein: 24 }),
+      customTitle: null,
       calories: 450,
-      caloriesSnapshot: 450,
     })
     await tuesdayCard.find('.primary-button').trigger('click')
     await flushPromises()
-    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
-      customTitle: 'Sushi Bowl',
-      caloriesSnapshot: 450,
-      proteinSnapshot: 24,
-      imageUrlSnapshot: 'https://example.com/sushi.jpg',
-      externalRecipeId: 'seed-99',
-      externalSource: 'dishly',
-    })
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', 99)
+    expect(wrapper.text()).toContain('450 / 2000 kcal')
+    expect(wrapper.findAll('.planned-link').some(link => link.attributes('href') === '/recipe/99')).toBe(true)
     vi.useRealTimers()
   })
 
