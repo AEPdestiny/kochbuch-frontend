@@ -21,6 +21,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
     createRecipe: vi.fn(),
     updateRecipe: vi.fn(),
     deleteRecipe: vi.fn(),
+    uploadRecipeImage: vi.fn(),
   },
 }))
 
@@ -43,6 +44,9 @@ describe('RecipeList.vue', () => {
     config.global.plugins = [i18n]
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.uploadRecipeImage).mockResolvedValue({
+      imageUrl: 'https://example.supabase.co/storage/v1/object/public/recipe-images/recipes/1/uploaded.png',
+    })
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
     vi.mocked(favoriteApi.removeExternalFavorite).mockResolvedValue()
     Object.defineProperty(URL, 'createObjectURL', {
@@ -90,8 +94,102 @@ describe('RecipeList.vue', () => {
     expect(wrapper.text()).toContain('Test Pasta')
   })
 
-  it('shows a local image preview when a file is selected', async () => {
+  it('uploads an image, sets imageUrl and shows persistent preview when a file is selected', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    const file = new File(['image'], 'rezept.png', { type: 'image/png' })
+    const fileInput = wrapper.find('input[type="file"]')
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [file],
+    })
+
+    await fileInput.trigger('change')
+    expect(URL.createObjectURL).toHaveBeenCalledWith(file)
+
+    await flushPromises()
+
+    expect(recipeApi.uploadRecipeImage).toHaveBeenCalledWith(file)
+    const imageUrlInput = wrapper.find('input[type="url"]')
+    expect(imageUrlInput.element.value).toBe('https://example.supabase.co/storage/v1/object/public/recipe-images/recipes/1/uploaded.png')
+    expect(wrapper.find('.image-preview').attributes('src')).toBe('https://example.supabase.co/storage/v1/object/public/recipe-images/recipes/1/uploaded.png')
+    expect(wrapper.text()).toContain('Bild wurde dauerhaft gespeichert.')
+  })
+
+  it('shows an upload error and keeps manual image URL as fallback', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.uploadRecipeImage).mockRejectedValue(
+      new ApiClientError('Only JPEG, PNG and WebP images are supported.', 400),
+    )
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    const file = new File(['image'], 'rezept.gif', { type: 'image/gif' })
+    const fileInput = wrapper.find('input[type="file"]')
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [file],
+    })
+
+    await fileInput.trigger('change')
+    await flushPromises()
+
+    expect(recipeApi.uploadRecipeImage).toHaveBeenCalledWith(file)
+    expect(wrapper.text()).toContain('Only JPEG, PNG and WebP images are supported.')
+    const imageUrlInput = wrapper.find('input[type="url"]')
+    await imageUrlInput.setValue('https://example.com/manual.jpg')
+    expect(imageUrlInput.element.value).toBe('https://example.com/manual.jpg')
+  })
+
+  it('does not require upload when a manual image URL is used', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    vi.mocked(recipeApi.createRecipe).mockResolvedValue({
+      id: 1,
+      title: 'Manual Image Dish',
+      imageUrl: 'https://example.com/manual.jpg',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 0,
+      difficulty: '',
+      category: '',
+      rating: 0,
+      ingredients: 'x',
+      instructions: 'y',
+      favorite: false,
+      published: false,
+      language: 'de',
+    })
+
+    await wrapper
+      .find('input[placeholder="z. B. Cremige Tomatenpasta"]')
+      .setValue('Manual Image Dish')
+    await wrapper
+      .find('input[type="url"]')
+      .setValue('https://example.com/manual.jpg')
+    await wrapper
+      .find('textarea[placeholder="Zutaten mit Kommas getrennt eintragen."]')
+      .setValue('x')
+    await wrapper
+      .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
+      .setValue('y')
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(recipeApi.uploadRecipeImage).not.toHaveBeenCalled()
+    expect(recipeApi.createRecipe).toHaveBeenCalledWith(expect.objectContaining({
+      imageUrl: 'https://example.com/manual.jpg',
+    }))
+  })
+
+  it('still shows a local image preview immediately while upload is pending', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.uploadRecipeImage).mockReturnValue(new Promise(() => {}))
     const wrapper = mount(RecipeList)
     await flushPromises()
 
@@ -106,7 +204,7 @@ describe('RecipeList.vue', () => {
 
     expect(URL.createObjectURL).toHaveBeenCalledWith(file)
     expect(wrapper.find('.image-preview').attributes('src')).toBe('blob:image-preview')
-    expect(wrapper.text()).toContain('Die Vorschau wird nicht gespeichert.')
+    expect(wrapper.text()).toContain('Lokale Vorschau. Das Bild wird gerade dauerhaft gespeichert.')
   })
 
   it('does not load recipes without login and shows a hint', async () => {

@@ -35,6 +35,10 @@ const newFavorite = ref(false)
 const newPublished = ref(false)
 const newImagePreviewUrl = ref('')
 const editImagePreviewUrl = ref('')
+const newImageUploading = ref(false)
+const editImageUploading = ref(false)
+const newImageUploaded = ref(false)
+const editImageUploaded = ref(false)
 
 const editing = ref<Recipe | null>(null)
 const selectedFavorite = ref<Recipe | null>(null)
@@ -105,6 +109,10 @@ const toLoadRecipesErrorMessage = (e: unknown) => {
 }
 
 const createRecipe = async () => {
+  if (newImageUploading.value) {
+    formError.value = 'Bitte warte, bis das Bild hochgeladen wurde.'
+    return
+  }
   if (
     !newTitle.value.trim() ||
     !newIngredients.value.trim() ||
@@ -150,6 +158,7 @@ const createRecipe = async () => {
     newInstructions.value = ''
     newFavorite.value = false
     newPublished.value = false
+    newImageUploaded.value = false
     clearNewImagePreview()
     error.value = null
   } catch (e: unknown) {
@@ -176,15 +185,23 @@ const toCreateRecipeErrorMessage = (e: unknown) => {
 const startEdit = (r: Recipe) => {
   editing.value = { ...r }
   editImagePreviewUrl.value = ''
+  editImageUploaded.value = false
+  editImageUploading.value = false
 }
 
 const cancelEdit = () => {
   editing.value = null
+  editImageUploaded.value = false
+  editImageUploading.value = false
   clearEditImagePreview()
 }
 
 const updateRecipe = async () => {
   if (!editing.value) return
+  if (editImageUploading.value) {
+    editFormError.value = 'Bitte warte, bis das Bild hochgeladen wurde.'
+    return
+  }
   if (
     !editing.value.title.trim() ||
     !editing.value.ingredients.trim() ||
@@ -212,6 +229,7 @@ const updateRecipe = async () => {
     }
 
     editing.value = null
+    editImageUploaded.value = false
     clearEditImagePreview()
     error.value = null
   } catch (e: unknown) {
@@ -372,7 +390,7 @@ function handleNewImageFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (file) {
-    setNewImagePreview(file)
+    void uploadNewImage(file)
   }
 }
 
@@ -380,42 +398,78 @@ function handleEditImageFile(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   if (file) {
-    setEditImagePreview(file)
+    void uploadEditImage(file)
   }
 }
 
 function handleNewImageDrop(event: DragEvent) {
   const file = event.dataTransfer?.files?.[0]
   if (file) {
-    setNewImagePreview(file)
+    void uploadNewImage(file)
   }
 }
 
 function handleEditImageDrop(event: DragEvent) {
   const file = event.dataTransfer?.files?.[0]
   if (file) {
-    setEditImagePreview(file)
+    void uploadEditImage(file)
   }
 }
 
-function setNewImagePreview(file: File) {
+async function uploadNewImage(file: File) {
   if (!file.type.startsWith('image/')) {
     formError.value = 'Bitte wähle eine Bilddatei aus.'
     return
   }
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    formError.value = 'Bitte melde dich an, um ein Bild hochzuladen.'
+    return
+  }
   clearNewImagePreview()
   newImagePreviewUrl.value = URL.createObjectURL(file)
+  newImageUploading.value = true
+  newImageUploaded.value = false
   formError.value = null
+
+  try {
+    const uploaded = await recipeApi.uploadRecipeImage(file)
+    clearNewImagePreview()
+    newImageUrl.value = uploaded.imageUrl
+    newImageUploaded.value = true
+  } catch (e: unknown) {
+    formError.value = toImageUploadErrorMessage(e)
+  } finally {
+    newImageUploading.value = false
+  }
 }
 
-function setEditImagePreview(file: File) {
+async function uploadEditImage(file: File) {
   if (!file.type.startsWith('image/')) {
     editFormError.value = 'Bitte wähle eine Bilddatei aus.'
     return
   }
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    editFormError.value = 'Bitte melde dich an, um ein Bild hochzuladen.'
+    return
+  }
   clearEditImagePreview()
   editImagePreviewUrl.value = URL.createObjectURL(file)
+  editImageUploading.value = true
+  editImageUploaded.value = false
   editFormError.value = null
+
+  try {
+    const uploaded = await recipeApi.uploadRecipeImage(file)
+    clearEditImagePreview()
+    if (editing.value) {
+      editing.value.imageUrl = uploaded.imageUrl
+    }
+    editImageUploaded.value = true
+  } catch (e: unknown) {
+    editFormError.value = toImageUploadErrorMessage(e)
+  } finally {
+    editImageUploading.value = false
+  }
 }
 
 function clearNewImagePreview() {
@@ -430,6 +484,24 @@ function clearEditImagePreview() {
     URL.revokeObjectURL(editImagePreviewUrl.value)
   }
   editImagePreviewUrl.value = ''
+}
+
+function toImageUploadErrorMessage(e: unknown) {
+  if (e instanceof ApiClientError) {
+    if (e.status === 400) {
+      return e.message || 'Das Bild konnte nicht hochgeladen werden. Bitte prüfe Dateityp und Größe.'
+    }
+    if (e.status === 401 || e.status === 403) {
+      return 'Bitte melde dich erneut an, um ein Bild hochzuladen.'
+    }
+    if (e.status === 502 || e.status === 500) {
+      return 'Der Bildspeicher ist aktuell nicht erreichbar. Du kannst alternativ eine Bild-URL eintragen.'
+    }
+    if (!e.status) {
+      return 'Netzwerkfehler beim Bild-Upload. Du kannst alternativ eine Bild-URL eintragen.'
+    }
+  }
+  return 'Das Bild konnte nicht hochgeladen werden. Du kannst alternativ eine Bild-URL eintragen.'
 }
 
 const removeFavorite = async (r: Recipe) => {
@@ -506,7 +578,13 @@ const removeFavorite = async (r: Recipe) => {
               alt="Bildvorschau"
             />
             <small v-if="newImagePreviewUrl" class="upload-note">
-              Die Vorschau wird nicht gespeichert. Für persistente Bilder bitte eine Image URL verwenden.
+              Lokale Vorschau. Das Bild wird gerade dauerhaft gespeichert.
+            </small>
+            <small v-else-if="newImageUploading" class="upload-note">
+              Bild wird hochgeladen...
+            </small>
+            <small v-else-if="newImageUploaded" class="upload-note">
+              Bild wurde dauerhaft gespeichert.
             </small>
           </div>
         </div>
@@ -604,8 +682,8 @@ const removeFavorite = async (r: Recipe) => {
           </label>
         </div>
 
-        <button type="submit" class="submit-btn">
-          {{ t('recipes.actions.save') }}
+        <button type="submit" class="submit-btn" :disabled="newImageUploading">
+          {{ newImageUploading ? 'Bild wird hochgeladen...' : t('recipes.actions.save') }}
         </button>
 
         <p v-if="formError" class="error-text">
@@ -704,7 +782,13 @@ const removeFavorite = async (r: Recipe) => {
               alt="Bildvorschau"
             />
             <small v-if="editImagePreviewUrl" class="upload-note">
-              Die Vorschau wird nicht gespeichert. Für persistente Bilder bitte eine Image URL verwenden.
+              Lokale Vorschau. Das Bild wird gerade dauerhaft gespeichert.
+            </small>
+            <small v-else-if="editImageUploading" class="upload-note">
+              Bild wird hochgeladen...
+            </small>
+            <small v-else-if="editImageUploaded" class="upload-note">
+              Bild wurde dauerhaft gespeichert.
             </small>
           </div>
         </div>
@@ -761,7 +845,9 @@ const removeFavorite = async (r: Recipe) => {
         </div>
 
         <div class="edit-buttons">
-          <button class="submit-btn" @click="updateRecipe">{{ t('recipes.actions.saveChanges') }}</button>
+          <button class="submit-btn" :disabled="editImageUploading" @click="updateRecipe">
+            {{ editImageUploading ? 'Bild wird hochgeladen...' : t('recipes.actions.saveChanges') }}
+          </button>
           <button class="cancel-btn" @click="cancelEdit">{{ t('recipes.actions.cancel') }}</button>
         </div>
         <p v-if="editFormError" class="error-text">
@@ -1013,6 +1099,11 @@ textarea {
 .submit-btn:hover {
   background: #b96593;
   box-shadow: 0 3px 12px rgba(191, 140, 167, 0.5);
+}
+
+.submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .cancel-btn {

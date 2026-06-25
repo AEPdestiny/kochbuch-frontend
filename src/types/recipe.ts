@@ -36,6 +36,10 @@ export type RecipeResponse = RecipeRequest & {
 
 export type Recipe = RecipeResponse
 
+export type ImageUploadResponse = {
+  imageUrl: string
+}
+
 export type RecipeSearchFilters = {
   vegan?: boolean
   vegetarian?: boolean

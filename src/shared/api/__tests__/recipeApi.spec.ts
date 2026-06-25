@@ -155,4 +155,23 @@ describe('recipeApi', () => {
     })
     expect(result).toEqual(response)
   })
+
+  it('uploadRecipeImage posts multipart form data to /recipes/images', async () => {
+    const file = new File(['image'], 'recipe.png', { type: 'image/png' })
+    const uploadResponse = {
+      imageUrl: 'https://example.supabase.co/storage/v1/object/public/recipe-images/recipes/1/image.png',
+    }
+    vi.mocked(apiClient.post).mockResolvedValue({ data: uploadResponse })
+
+    const result = await recipeApi.uploadRecipeImage(file)
+
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/recipes/images',
+      expect.any(FormData),
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    )
+    const formData = vi.mocked(apiClient.post).mock.calls[0]![1] as FormData
+    expect(formData.get('file')).toBe(file)
+    expect(result).toEqual(uploadResponse)
+  })
 })

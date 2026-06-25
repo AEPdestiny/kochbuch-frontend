@@ -2,6 +2,7 @@ import { apiClient } from './apiClient'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeMatchResponse,
+  ImageUploadResponse,
   InstructionSearchRequest,
   InstructionSearchResponse,
   RecipeSearchFilters,
@@ -89,6 +90,17 @@ export const recipeApi = {
 
   async deleteRecipe(id: number | string): Promise<void> {
     await apiClient.delete(`/recipes/${id}`)
+  },
+
+  async uploadRecipeImage(file: File): Promise<ImageUploadResponse> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await apiClient.post<ImageUploadResponse>('/recipes/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+    return response.data
   },
 }
 
