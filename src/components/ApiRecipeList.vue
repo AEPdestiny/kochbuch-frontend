@@ -928,6 +928,9 @@ function formatDate(date: Date) {
 <style scoped>
 .home-wrap {
   width: 100%;
+  box-sizing: border-box;
+  max-width: min(1100px, 100%);
+  padding: 0 20px;
 }
 
 .hero {
@@ -939,6 +942,7 @@ function formatDate(date: Date) {
   margin: 30px 0 20px 0;
   width: 100%;
   border: 1px solid #f6d9ea;
+  box-sizing: border-box;
 }
 
 .hero-desc {
@@ -1031,6 +1035,7 @@ function formatDate(date: Date) {
 .shuffle-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: #ffffff;
   border-radius: 999px;
@@ -1041,6 +1046,7 @@ function formatDate(date: Date) {
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 1px 7px rgba(79, 127, 120, 0.18);
+  min-height: 44px;
 }
 
 .shuffle-btn:hover {
@@ -1075,7 +1081,7 @@ function formatDate(date: Date) {
 
 .recipe-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 22px;
   margin-top: 28px;
 }
@@ -1091,6 +1097,7 @@ function formatDate(date: Date) {
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
     border-color 0.15s ease;
   cursor: pointer;
+  min-width: 0;
 }
 
 .recipe-card:hover {
@@ -1122,6 +1129,7 @@ function formatDate(date: Date) {
   font-weight: 800;
   color: #2b1b23;
   margin-bottom: 8px;
+  overflow-wrap: anywhere;
 }
 
 .favorite-button {
@@ -1134,6 +1142,7 @@ function formatDate(date: Date) {
   font-size: 0.86rem;
   font-weight: 800;
   margin-bottom: 8px;
+  min-height: 44px;
   padding: 6px 10px;
 }
 
@@ -1179,6 +1188,7 @@ function formatDate(date: Date) {
   font-size: 0.92rem;
   color: #486b68;
   margin-bottom: 6px;
+  overflow-wrap: anywhere;
 }
 
 .meal-plan-card-button {
@@ -1191,6 +1201,7 @@ function formatDate(date: Date) {
   font-size: 0.9rem;
   font-weight: 800;
   margin-top: 12px;
+  min-height: 44px;
   padding: 8px 12px;
   width: fit-content;
 }
@@ -1296,5 +1307,101 @@ function formatDate(date: Date) {
   font: inherit;
   font-weight: 800;
   padding: 9px 16px;
+}
+
+@media (max-width: 640px) {
+  .home-wrap {
+    padding: 0 12px;
+  }
+
+  .hero {
+    border-radius: 16px;
+    margin: 16px 0;
+    padding: 24px 14px 18px;
+  }
+
+  .hero h1 {
+    font-size: 1.65rem;
+    line-height: 1.2;
+  }
+
+  .hero-desc {
+    font-size: 0.98rem;
+  }
+
+  .search-input {
+    font-size: 1rem;
+    width: 100%;
+  }
+
+  .filter-panel {
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .filter-panel label,
+  .plain-filter-button {
+    border-radius: 14px;
+    justify-content: space-between;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .small-input {
+    max-width: none;
+    width: 100%;
+  }
+
+  .shuffle-wrap {
+    justify-content: stretch;
+  }
+
+  .shuffle-btn {
+    width: 100%;
+  }
+
+  .recipe-grid {
+    gap: 14px;
+    grid-template-columns: 1fr;
+    margin-top: 18px;
+  }
+
+  .image-wrap {
+    height: clamp(150px, 48vw, 210px);
+  }
+
+  .card-content {
+    padding: 14px;
+  }
+
+  .card-title {
+    font-size: 1.08rem;
+  }
+
+  .favorite-button,
+  .meal-plan-card-button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .meal-plan-modal {
+    border-radius: 18px 18px 0 0;
+    max-height: 92vh;
+    padding: 18px 14px;
+  }
+
+  .day-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .cancel-modal {
+    min-height: 44px;
+    width: 100%;
+  }
 }
 </style>

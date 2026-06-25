@@ -809,6 +809,7 @@ function formatDate(date: Date) {
   max-width: 1100px;
   margin: 0 auto 48px auto;
   padding: 28px 20px;
+  box-sizing: border-box;
 }
 
 .back-button,
@@ -850,6 +851,7 @@ function formatDate(date: Date) {
   display: grid;
   grid-template-columns: minmax(280px, 440px) 1fr;
   gap: 28px;
+  min-width: 0;
 }
 
 .image-panel {
@@ -857,7 +859,8 @@ function formatDate(date: Date) {
   overflow: hidden;
   background: #f4fbfa;
   border: 1px solid #c3e7e1;
-  min-height: 280px;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
 }
 
 .image-panel img {
@@ -871,6 +874,7 @@ function formatDate(date: Date) {
   color: #2b1b23;
   font-size: 2.2rem;
   margin: 4px 0 14px 0;
+  overflow-wrap: anywhere;
 }
 
 .source-label {
@@ -907,12 +911,14 @@ function formatDate(date: Date) {
   background: #cc7da9;
   color: #ffffff;
   padding: 10px 16px;
+  min-height: 44px;
 }
 
 .secondary-button {
   background: #26b6b8;
   color: #ffffff;
   padding: 10px 16px;
+  min-height: 44px;
 }
 
 .small-button {
@@ -920,6 +926,7 @@ function formatDate(date: Date) {
   color: #26b6b8;
   border: 1px solid #8fd5cc;
   padding: 6px 12px;
+  min-height: 40px;
 }
 
 .detail-section {
@@ -956,6 +963,7 @@ function formatDate(date: Date) {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  overflow-wrap: anywhere;
 }
 
 .step-list {
@@ -985,6 +993,7 @@ function formatDate(date: Date) {
   border: 1px solid #c3e7e1;
   border-radius: 12px;
   padding: 14px;
+  overflow-wrap: anywhere;
 }
 
 .instruction-results h3 {
@@ -1001,9 +1010,17 @@ function formatDate(date: Date) {
   padding: 0;
 }
 
+.instruction-results li {
+  background: #ffffff;
+  border: 1px solid #d6eee9;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
 .instruction-results a {
   color: #1d8e90;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .instruction-results p {
@@ -1014,11 +1031,13 @@ function formatDate(date: Date) {
 .restaurant-list li {
   display: grid;
   gap: 5px;
+  overflow-wrap: anywhere;
 }
 
 .restaurant-list a {
   color: #cc7da9;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .modal-backdrop {
@@ -1034,6 +1053,8 @@ function formatDate(date: Date) {
 
 .meal-plan-modal {
   width: min(620px, 100%);
+  max-height: 90vh;
+  overflow: auto;
   background: #ffffff;
   border-radius: 18px;
   padding: 22px;
@@ -1112,17 +1133,88 @@ function formatDate(date: Date) {
 }
 
 @media (max-width: 760px) {
+  .detail-page {
+    margin-bottom: 32px;
+    padding: 16px 12px 32px;
+  }
+
+  .back-button {
+    min-height: 44px;
+    text-align: center;
+    width: 100%;
+  }
+
   .detail-layout {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .image-panel {
+    aspect-ratio: 16 / 10;
+    min-height: 180px;
   }
 
   .content-panel h1 {
-    font-size: 1.7rem;
+    font-size: 1.45rem;
+    line-height: 1.2;
+  }
+
+  .meta-grid span,
+  .tag {
+    flex: 1 1 auto;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .small-button {
+    text-align: center;
+    width: 100%;
+  }
+
+  .detail-section {
+    border-radius: 12px;
+    padding: 14px;
   }
 
   .ingredient-list li {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
+  }
+
+  .step-list {
+    padding-left: 18px;
+  }
+
+  .instruction-results {
+    padding: 12px;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .meal-plan-modal {
+    border-radius: 18px 18px 0 0;
+    max-height: 92vh;
+    padding: 18px 14px;
+  }
+
+  .day-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .cancel-modal {
+    min-height: 44px;
+    width: 100%;
   }
 }
 </style>

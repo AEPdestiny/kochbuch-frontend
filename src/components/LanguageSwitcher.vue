@@ -50,6 +50,7 @@ const selectedLocale = computed({
   font-weight: 600;
   font-size: 0.92rem;
   border-right: 1px solid #ddeeee;
+  min-height: 44px;
 }
 
 .language-switcher select {
@@ -60,5 +61,14 @@ const selectedLocale = computed({
   color: #2b1b23;
   padding: 4px 8px;
   font: inherit;
+}
+
+@media (max-width: 640px) {
+  .language-switcher {
+    border-right: none;
+    flex: 1 1 100%;
+    justify-content: center;
+    padding: 8px 10px;
+  }
 }
 </style>

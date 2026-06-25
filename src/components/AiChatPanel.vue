@@ -98,6 +98,7 @@ async function sendMessage() {
   max-width: 82%;
   padding: 10px 12px;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .chat-message.assistant {
@@ -134,6 +135,7 @@ async function sendMessage() {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
+  min-height: 44px;
   padding: 10px 18px;
 }
 
@@ -145,5 +147,21 @@ async function sendMessage() {
 .status-text.error {
   color: #a14c2b;
   font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .chat-box {
+    max-height: 55vh;
+    padding: 12px;
+  }
+
+  .chat-message {
+    max-width: 94%;
+  }
+
+  .chat-form button {
+    justify-self: stretch;
+    width: 100%;
+  }
 }
 </style>

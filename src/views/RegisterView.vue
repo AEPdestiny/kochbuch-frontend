@@ -110,6 +110,7 @@ function getSafeRedirectPath() {
   border: 1px solid #c3e7e1;
   border-radius: 8px;
   background: #ffffff;
+  box-sizing: border-box;
 }
 
 .auth-form h1 {
@@ -159,5 +160,23 @@ function getSafeRedirectPath() {
   margin: 0;
   color: #a83252;
   font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .auth-page {
+    align-items: flex-start;
+    min-height: 60vh;
+    padding: 24px 12px;
+  }
+
+  .auth-form {
+    gap: 16px;
+    padding: 22px 16px;
+  }
+
+  .auth-form h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
 }
 </style>

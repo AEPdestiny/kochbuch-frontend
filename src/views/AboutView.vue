@@ -50,6 +50,7 @@ const { t } = useI18n()
   max-width: 1200px;
   margin: 40px auto 60px auto;
   padding: 0 6vw;
+  box-sizing: border-box;
 }
 
 .about-layout {
@@ -151,6 +152,36 @@ const { t } = useI18n()
 
   .portrait-wrapper {
     margin-top: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .about {
+    margin: 24px auto 36px;
+    padding: 0 12px;
+  }
+
+  .food-grid {
+    grid-auto-rows: 130px;
+  }
+
+  .intro-card {
+    border-radius: 18px;
+    padding: 20px 16px;
+  }
+
+  .hello-text {
+    font-size: 1.8rem;
+  }
+
+  .headline {
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+
+  .portrait-img {
+    border-radius: 20px;
+    max-height: 360px;
   }
 }
 </style>

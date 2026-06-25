@@ -26,6 +26,7 @@ const { t } = useI18n()
   max-width: 1100px;
   margin: 30px auto 40px auto;
   padding: 0 10vw;
+  box-sizing: border-box;
 }
 
 .my-recipes-header {
@@ -51,5 +52,22 @@ const { t } = useI18n()
 
 .my-recipes-content {
   width: 100%;
+}
+
+@media (max-width: 640px) {
+  .my-recipes-page {
+    margin: 18px auto 32px;
+    padding: 0 12px;
+  }
+
+  .my-recipes-header {
+    border-radius: 16px;
+    padding: 20px 16px 18px;
+  }
+
+  .page-title {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
 }
 </style>

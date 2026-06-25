@@ -955,6 +955,7 @@ const removeFavorite = async (r: Recipe) => {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  box-sizing: border-box;
 }
 
 .form-card,
@@ -1001,6 +1002,7 @@ const removeFavorite = async (r: Recipe) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .form-field.small {
@@ -1092,6 +1094,7 @@ textarea {
   padding: 9px 20px;
   font-size: 0.98rem;
   font-weight: 600;
+  min-height: 44px;
   cursor: pointer;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
@@ -1113,6 +1116,7 @@ textarea {
   color: #486b68;
   padding: 8px 16px;
   font-size: 0.95rem;
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -1171,6 +1175,7 @@ textarea {
   border: 1px solid #c3e7e1;
   padding: 12px 14px 10px 14px;
   box-shadow: 0 1px 7px rgba(79, 127, 120, 0.1);
+  min-width: 0;
 }
 
 .recipe-row {
@@ -1208,6 +1213,7 @@ textarea {
   font-size: 1.1rem;
   font-weight: 700;
   color: #2b1b23;
+  overflow-wrap: anywhere;
 }
 
 .meta {
@@ -1248,6 +1254,7 @@ textarea {
   margin-top: 4px;
   font-size: 0.94rem;
   color: #324240;
+  overflow-wrap: anywhere;
 }
 
 .favorite-remove-button {
@@ -1291,6 +1298,7 @@ textarea {
   border: none;
   color: #26b6b8;
   font-size: 0.9rem;
+  min-height: 40px;
   cursor: pointer;
   padding: 0;
 }
@@ -1320,7 +1328,7 @@ textarea {
 
 .recipe-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 22px;
   margin-top: 12px;
 }
@@ -1334,6 +1342,7 @@ textarea {
   font-weight: 800;
   color: #2b1b23;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 
 .card-meta {
@@ -1384,11 +1393,12 @@ textarea {
   align-items: center;
   justify-content: center;
   z-index: 40;
+  padding: 18px;
 }
 
 .overlay-card {
   max-width: 700px;
-  width: 90%;
+  width: min(700px, 100%);
   max-height: 85vh;
   background: #ffffff;
   border-radius: 20px;
@@ -1432,5 +1442,81 @@ textarea {
   font-size: 0.95rem;
   color: #2b1b23;
   white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .recipe-manager {
+    gap: 16px;
+  }
+
+  .form-card,
+  .list-card {
+    border-radius: 16px;
+    padding: 18px 14px;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  .form-row,
+  .form-toggle-row,
+  .edit-buttons,
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .form-field.small {
+    max-width: none;
+  }
+
+  .submit-btn,
+  .cancel-btn,
+  .login-link,
+  .link-btn {
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+  }
+
+  .recipe-row,
+  .recipe-header {
+    flex-direction: column;
+  }
+
+  .image-wrap {
+    height: auto;
+    aspect-ratio: 16 / 10;
+    width: 100%;
+  }
+
+  .badge-column {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .recipe-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overlay {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .overlay-card {
+    border-radius: 18px 18px 0 0;
+    max-height: 92vh;
+    padding: 18px 14px;
+  }
+
+  .overlay-title {
+    font-size: 1.3rem;
+    line-height: 1.2;
+  }
 }
 </style>

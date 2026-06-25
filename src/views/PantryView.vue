@@ -638,6 +638,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   max-width: 900px;
   margin: 0 auto 40px auto;
   padding: 34px 24px;
+  box-sizing: border-box;
 }
 
 .pantry-header {
@@ -742,6 +743,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  min-height: 44px;
   padding: 9px 16px;
 }
 
@@ -761,7 +763,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 
 .pantry-toolbox {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -850,6 +852,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   display: grid;
   grid-template-columns: 110px 1fr;
   gap: 14px;
+  min-width: 0;
 }
 
 .recipe-match img {
@@ -881,6 +884,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   border-radius: 12px;
   background: #f4fbfa;
   padding: 14px 16px;
+  min-width: 0;
 }
 
 .pantry-item h2 {
@@ -888,6 +892,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   font-size: 1.1rem;
   font-weight: 800;
   margin: 0 0 4px 0;
+  overflow-wrap: anywhere;
 }
 
 .item-meta,
@@ -917,6 +922,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
+  min-height: 40px;
   padding: 6px 10px;
 }
 
@@ -933,6 +939,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
+  min-height: 40px;
   padding: 6px 10px;
 }
 
@@ -963,6 +970,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  min-height: 44px;
   padding: 9px 16px;
 }
 
@@ -972,9 +980,19 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 }
 
 @media (max-width: 760px) {
+  .pantry-page {
+    padding: 22px 12px 32px;
+  }
+
+  .pantry-header h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
   .pantry-form,
   .edit-form {
     grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .barcode-row,
@@ -983,12 +1001,33 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
     flex-direction: column;
   }
 
+  .recipe-match img {
+    height: auto;
+    max-height: 180px;
+    width: 100%;
+  }
+
+  .scanned-product {
+    grid-template-columns: 1fr;
+  }
+
   .pantry-item {
     grid-template-columns: 1fr;
   }
 
   .item-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .submit-btn,
+  .cancel-btn {
+    width: 100%;
+  }
+
+  .edit-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }
 </style>

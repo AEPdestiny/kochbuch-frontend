@@ -23,6 +23,7 @@ import AiChatPanel from '@/components/AiChatPanel.vue'
   max-width: 860px;
   padding: 0 20px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .eyebrow {
@@ -35,5 +36,17 @@ import AiChatPanel from '@/components/AiChatPanel.vue'
 h1 {
   color: #cc7da9;
   margin: 0 0 8px;
+}
+
+@media (max-width: 640px) {
+  .ai-page {
+    margin: 18px auto 32px;
+    padding: 0 12px;
+  }
+
+  h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
 }
 </style>

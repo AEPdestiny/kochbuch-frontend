@@ -11,3 +11,18 @@ html, body {
   color: #131313;
   overflow-x: hidden;
 }
+
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}

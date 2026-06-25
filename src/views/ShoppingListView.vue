@@ -587,6 +587,7 @@ function formatRawQuantity(item: ShoppingListItem) {
   max-width: 900px;
   margin: 0 auto 40px auto;
   padding: 34px 24px;
+  box-sizing: border-box;
 }
 
 .shopping-list-header {
@@ -674,6 +675,7 @@ function formatRawQuantity(item: ShoppingListItem) {
   cursor: pointer;
   font: inherit;
   font-weight: 700;
+  min-height: 44px;
   padding: 9px 16px;
 }
 
@@ -719,6 +721,7 @@ function formatRawQuantity(item: ShoppingListItem) {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
+  min-height: 44px;
   padding: 8px 14px;
 }
 
@@ -748,6 +751,7 @@ function formatRawQuantity(item: ShoppingListItem) {
   border-radius: 12px;
   background: #f4fbfa;
   padding: 14px 16px;
+  min-width: 0;
 }
 
 .shopping-item.checked {
@@ -773,6 +777,7 @@ function formatRawQuantity(item: ShoppingListItem) {
   font-size: 1.1rem;
   font-weight: 800;
   margin: 0 0 4px 0;
+  overflow-wrap: anywhere;
 }
 
 .item-meta,
@@ -803,6 +808,7 @@ function formatRawQuantity(item: ShoppingListItem) {
   font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
+  min-height: 40px;
   padding: 6px 10px;
 }
 
@@ -851,9 +857,19 @@ function formatRawQuantity(item: ShoppingListItem) {
 }
 
 @media (max-width: 760px) {
+  .shopping-list-page {
+    padding: 22px 12px 32px;
+  }
+
+  .shopping-list-header h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
   .shopping-list-form,
   .edit-form {
     grid-template-columns: 1fr;
+    padding: 14px;
   }
 
   .shopping-item {
@@ -863,6 +879,20 @@ function formatRawQuantity(item: ShoppingListItem) {
   .item-side {
     justify-content: flex-start;
     flex-wrap: wrap;
+  }
+
+  .shopping-actions,
+  .edit-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .submit-btn,
+  .bulk-btn,
+  .edit-btn,
+  .delete-btn,
+  .cancel-btn {
+    width: 100%;
   }
 }
 </style>

@@ -120,6 +120,7 @@ async function logout() {
   color: #2b1b23;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .top-line {
@@ -131,7 +132,7 @@ async function logout() {
 .main-header {
   background: #ffffff;
   border-bottom: 1px solid #dde4e6;
-  padding: 12px 8vw 10px 8vw;
+  padding: 12px clamp(14px, 8vw, 120px) 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -154,6 +155,7 @@ async function logout() {
 /* Höhe des Logos */
 .logo {
   height: 100px;
+  width: auto;
 }
 
 .tagline-box {
@@ -183,22 +185,31 @@ async function logout() {
 
 .nav-bar {
   margin-top: 8px;
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-self: center;
   background: #f4fbfa;
   border-radius: 999px;
   border: 1px solid #c3e7e1;
-  overflow: hidden;
+  max-width: 100%;
+  overflow: visible;
 }
 
 .nav-item {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 44px;
   padding: 8px 22px;
   text-decoration: none;
   color: #486b68;
   font-weight: 600;
   font-size: 0.98rem;
   border-right: 1px solid #ddeeee;
+  text-align: center;
   transition: background 0.2s, color 0.2s, border 0.2s;
+  white-space: normal;
 }
 
 /* Rechts außen kein Trenner mehr */
@@ -237,6 +248,7 @@ async function logout() {
   align-items: flex-start;
   justify-content: center;
   width: 100%;
+  min-width: 0;
   min-height: 80vh;
   background: #ffffff;
 }
@@ -317,4 +329,116 @@ async function logout() {
   padding: 8px 12px;
 }
 
+@media (max-width: 900px) {
+  .main-header {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .header-row {
+    gap: 14px;
+  }
+
+  .logo {
+    height: 82px;
+  }
+
+  .tagline-box {
+    margin-left: 0;
+  }
+
+  .nav-bar {
+    border-radius: 20px;
+  }
+
+  .nav-item {
+    flex: 1 1 auto;
+    padding: 9px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-header {
+    padding: 10px 12px 12px;
+  }
+
+  .header-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .logo-link {
+    justify-content: center;
+  }
+
+  .logo {
+    height: 68px;
+  }
+
+  .tagline-box {
+    border-radius: 16px;
+    padding: 8px 12px;
+    width: 100%;
+  }
+
+  .tagline-deco {
+    display: none;
+  }
+
+  .tagline-text {
+    font-size: 0.92rem;
+    line-height: 1.35;
+  }
+
+  .nav-bar {
+    align-self: stretch;
+    border-radius: 16px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .nav-item {
+    border: none;
+    border-radius: 12px;
+    flex: 1 1 calc(50% - 6px);
+    font-size: 0.94rem;
+    min-width: 130px;
+    padding: 10px 12px;
+  }
+
+  .nav-button {
+    border: none;
+  }
+
+  .user-name {
+    flex-basis: 100%;
+    min-width: 100%;
+  }
+
+  .main-main {
+    display: block;
+    min-height: 70vh;
+  }
+
+  .main-footer {
+    padding: 12px;
+  }
+
+  .chat-fab {
+    bottom: 14px;
+    right: 14px;
+    padding: 10px 14px;
+  }
+
+  .ai-drawer-backdrop {
+    align-items: stretch;
+  }
+
+  .ai-drawer {
+    max-width: none;
+    padding: 16px;
+    width: 100%;
+  }
+}
 </style>

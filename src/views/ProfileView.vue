@@ -264,6 +264,7 @@ function toSaveError(e: unknown) {
   margin: 0 auto;
   padding: 2rem 1rem 3rem;
   color: #243b38;
+  width: 100%;
 }
 
 .profile-header {
@@ -323,7 +324,7 @@ function toSaveError(e: unknown) {
 
 .field-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -351,7 +352,7 @@ function toSaveError(e: unknown) {
 
 .option-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
   gap: 0.75rem;
   margin: 0;
   padding: 0;
@@ -396,6 +397,7 @@ function toSaveError(e: unknown) {
   color: white;
   padding: 0.75rem 1.15rem;
   font-weight: 700;
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -435,5 +437,32 @@ function toSaveError(e: unknown) {
 .error-message {
   background: #fff1f1;
   color: #9b2226;
+}
+
+@media (max-width: 640px) {
+  .profile-page {
+    padding: 1.25rem 0.75rem 2rem;
+  }
+
+  .profile-header h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
+  .profile-card {
+    padding: 1rem;
+  }
+
+  .option-grid label {
+    min-height: 44px;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .save-button {
+    width: 100%;
+  }
 }
 </style>

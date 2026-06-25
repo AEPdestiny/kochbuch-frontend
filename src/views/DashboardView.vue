@@ -141,6 +141,7 @@ async function loadShoppingListItems() {
   max-width: 1100px;
   margin: 30px auto 40px auto;
   padding: 0 10vw;
+  box-sizing: border-box;
 }
 
 .dashboard-header {
@@ -181,7 +182,7 @@ async function loadShoppingListItems() {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 14px;
 }
 
@@ -238,10 +239,42 @@ async function loadShoppingListItems() {
   color: #ffffff;
   padding: 9px 16px;
   font-weight: 700;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   text-decoration: none;
 }
 
 .quick-link:hover {
   background: #b96593;
+}
+
+@media (max-width: 640px) {
+  .dashboard-page {
+    margin: 18px auto 32px;
+    padding: 0 12px;
+  }
+
+  .dashboard-header {
+    border-radius: 16px;
+    padding: 20px 16px 18px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
+  .stat-card {
+    min-height: 104px;
+    padding: 16px;
+  }
+
+  .quick-link-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 }
 </style>

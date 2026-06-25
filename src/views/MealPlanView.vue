@@ -818,6 +818,7 @@ function formatDate(date: Date) {
   max-width: 1180px;
   margin: 30px auto 44px auto;
   padding: 0 6vw;
+  box-sizing: border-box;
 }
 
 .meal-plan-header {
@@ -849,7 +850,7 @@ function formatDate(date: Date) {
 
 .week-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
   gap: 16px;
 }
 
@@ -886,6 +887,7 @@ function formatDate(date: Date) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .day-card-header {
@@ -953,6 +955,7 @@ function formatDate(date: Date) {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow-wrap: anywhere;
 }
 
 .planned-label {
@@ -982,6 +985,7 @@ function formatDate(date: Date) {
   padding: 8px 10px;
   background: #ffffff;
   font: inherit;
+  width: 100%;
 }
 
 .suggestion-list {
@@ -1005,6 +1009,7 @@ function formatDate(date: Date) {
   padding: 8px 10px;
   text-align: left;
   width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .suggestion-list small,
@@ -1068,7 +1073,7 @@ function formatDate(date: Date) {
 .bucket-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
 }
 
 .bucket-card {
@@ -1082,6 +1087,7 @@ function formatDate(date: Date) {
   justify-content: space-between;
   padding: 12px;
   text-align: left;
+  min-height: 44px;
 }
 
 .bucket-card.full {
@@ -1138,6 +1144,7 @@ function formatDate(date: Date) {
   border: 1px solid #d6eee9;
   border-radius: 12px;
   padding: 10px 12px;
+  overflow-wrap: anywhere;
 }
 
 .swipe-card {
@@ -1146,6 +1153,7 @@ function formatDate(date: Date) {
   display: grid;
   grid-template-columns: minmax(140px, 220px) 1fr;
   overflow: hidden;
+  min-width: 0;
 }
 
 .swipe-card img {
@@ -1165,6 +1173,7 @@ function formatDate(date: Date) {
   color: #2b1b23;
   font-size: 1.25rem;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .progress-pill,
@@ -1196,6 +1205,7 @@ function formatDate(date: Date) {
 .secondary-button,
 .clear-week-button {
   border-radius: 999px;
+  min-height: 44px;
   padding: 8px 14px;
   font-weight: 700;
   cursor: pointer;
@@ -1240,13 +1250,67 @@ function formatDate(date: Date) {
 }
 
 @media (max-width: 760px) {
+  .meal-plan-page {
+    margin: 18px auto 32px auto;
+    padding: 0 12px;
+  }
+
+  .meal-plan-header {
+    border-radius: 16px;
+    padding: 20px 16px 18px;
+  }
+
+  .meal-plan-header h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
+  .mode-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .day-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .week-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .week-summary .clear-week-button {
+    width: 100%;
+  }
+
   .swipe-controls,
   .swipe-card {
     grid-template-columns: 1fr;
   }
 
+  .swipe-planner {
+    padding: 14px;
+  }
+
+  .bucket-panel-header,
+  .bucket-entry-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .swipe-card img {
     max-height: 220px;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .clear-week-button {
+    width: 100%;
   }
 }
 </style>

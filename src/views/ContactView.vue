@@ -31,6 +31,8 @@ const { t } = useI18n()
   max-width: 800px;
   margin: 40px auto 60px auto;
   padding: 0 10vw;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .page-title {
@@ -90,9 +92,32 @@ p {
   color: #26b6b8;
   font-weight: 600;
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .email-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .contact {
+    margin: 24px auto 36px;
+    padding: 0 12px;
+  }
+
+  .page-title {
+    font-size: 1.65rem;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  .contact-card {
+    border-radius: 18px;
+    padding: 22px 16px 18px;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+  }
 }
 </style>
