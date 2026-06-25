@@ -20,6 +20,7 @@ export type RecipeResponse = RecipeRequest & {
   source?: 'dishly' | 'spoonacular' | string | null
   calories?: number | null
   protein?: number | null
+  ingredientsList?: string[] | null
   alcohol?: number | null
   alcoholPercent?: number | null
   userCreated?: boolean

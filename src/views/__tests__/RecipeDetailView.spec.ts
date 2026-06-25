@@ -233,6 +233,42 @@ describe('RecipeDetailView', () => {
     expect(wrapper.find('.owner-delete-button').exists()).toBe(false)
   })
 
+  it('prefers ingredientsList for local Dishly recipe details', async () => {
+    routeName = 'recipe-detail'
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      ingredients: '61 g geröstetes Kürbispüree 4 g Teffmehl 4 g Tapiokamehl 8 g Reismehl 0',
+      ingredientsList: [
+        '61 g geröstetes Kürbispüree',
+        '4 g Teffmehl',
+        '4 g Tapiokamehl',
+        '8 g Reismehl',
+      ],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('4 Zutaten')
+    expect(wrapper.text()).toContain('61 g geröstetes Kürbispüree')
+    expect(wrapper.text()).toContain('4 g Teffmehl')
+    expect(wrapper.text()).toContain('4 g Tapiokamehl')
+    expect(wrapper.text()).toContain('8 g Reismehl')
+
+    await wrapper.find('.small-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
+      name: '61 g geröstetes Kürbispüree',
+      quantity: null,
+      unit: null,
+      category: 'Rezeptzutat',
+      checked: false,
+      recipeId: '1',
+      recipeTitle: 'Dishly Pasta',
+    })
+  })
+
   it('splits normalized local ingredients and ignores meaningless ingredient values', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({

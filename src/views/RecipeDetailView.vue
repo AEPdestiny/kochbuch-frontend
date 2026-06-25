@@ -90,6 +90,15 @@ const mealSlots: { key: MealSlot; labelKey: string }[] = [
   { key: 'snack', labelKey: 'mealPlan.slots.snack' },
 ]
 
+const ingredientAmountPattern = String.raw`(?:\d+(?:[,.]\d+)?|\d+\/\d+|[\u00BC\u00BD\u00BE])`
+const directIngredientUnitPattern = String.raw`ml|g|kg|l|el|tl|tbsp|tsp|cups?|servings?|strips?|cloves?|sticks?|prise|prisen|zehe|zehen|stück|stueck|scheiben?|dose|dosen|bund|handvoll`
+const trailingIngredientUnitPattern = String.raw`cloves?|zehen?|sticks?|strips?|scheiben?`
+const embeddedIngredientBoundary = new RegExp(
+  String.raw`(?<=\p{L})\s+(?=${ingredientAmountPattern}\s+(?:(?:${directIngredientUnitPattern})\b|\p{Lu}|\p{L}+\s+(?:${trailingIngredientUnitPattern})\b))`,
+  'giu',
+)
+const commaIngredientBoundary = /,\s*(?=(?:\d|\d\/|[\u00BC\u00BD\u00BE]|\p{Lu}))/gu
+
 const hasInstructions = computed(() => {
   const current = recipe.value
   return !!current && (current.steps.length > 0 || hasRealInstructionText(current.instructions))
@@ -172,13 +181,23 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     readyInMinutes: response.prepTimeMinutes + response.cookTimeMinutes,
     servings: response.servings,
     tags: [response.category, response.difficulty].filter(Boolean) as string[],
-    ingredients: splitIngredients(response.ingredients),
+    ingredients: normalizeDishlyIngredients(response),
     instructions,
     steps: splitInstructionSteps(instructions),
     sourceUrl: response.sourceUrl,
     published: response.published,
     ownedByCurrentUser: response.ownedByCurrentUser === true,
   }
+}
+
+function normalizeDishlyIngredients(response: RecipeResponse) {
+  const responseList = response.ingredientsList
+    ?.map(item => item?.trim())
+    .filter((item): item is string => !!item)
+  if (responseList?.length) {
+    return mapIngredientStrings(responseList)
+  }
+  return splitIngredients(response.ingredients ?? '')
 }
 
 function normalizeInstructions(value?: string | null) {
@@ -221,12 +240,20 @@ function mapIngredient(ingredient: ExternalRecipeIngredient): DetailIngredient {
 }
 
 function splitIngredients(value: string): DetailIngredient[] {
-  return value
+  const rawParts = value
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
-    .split(/\n+|;\s*|,\s*(?=(?:\d|\d\/|[¼½¾]|[A-ZÄÖÜ]))/)
+    .split(/\n+|;\s*/)
+    .flatMap(item => item.split(commaIngredientBoundary))
+    .flatMap(item => item.split(embeddedIngredientBoundary))
+
+  return mapIngredientStrings(rawParts)
+}
+
+function mapIngredientStrings(values: string[]): DetailIngredient[] {
+  return values
     .map(item => item.trim())
-    .filter(item => item && /[A-Za-zÄÖÜäöüß]/.test(item) && !/^[01](?:[,.]0+)?$/.test(item))
+    .filter(item => item && /\p{L}/u.test(item) && !/^[01](?:[,.]0+)?$/.test(item))
     .filter((item, index, items) =>
       items.findIndex(candidate => candidate.toLowerCase() === item.toLowerCase()) === index,
     )
