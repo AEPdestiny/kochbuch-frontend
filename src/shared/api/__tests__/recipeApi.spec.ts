@@ -156,6 +156,27 @@ describe('recipeApi', () => {
     expect(result).toEqual(response)
   })
 
+  it('getInstructionSuggestions posts to /recipes/{id}/instruction-suggestions', async () => {
+    const response = {
+      recipeId: 1,
+      hasRealInstructions: false,
+      configured: true,
+      suggestions: [{
+        sourceTitle: 'Pasta instructions',
+        sourceUrl: 'https://example.com',
+        steps: ['Cook it.'],
+        confidence: 0.7,
+        reason: 'Source match',
+      }],
+    }
+    vi.mocked(apiClient.post).mockResolvedValue({ data: response })
+
+    const result = await recipeApi.getInstructionSuggestions(1)
+
+    expect(apiClient.post).toHaveBeenCalledWith('/recipes/1/instruction-suggestions')
+    expect(result).toEqual(response)
+  })
+
   it('uploadRecipeImage posts multipart form data to /recipes/images', async () => {
     const file = new File(['image'], 'recipe.png', { type: 'image/png' })
     const uploadResponse = {

@@ -12,7 +12,7 @@ import { displayCategory } from '@/shared/recipeDisplay'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
-  InstructionSearchResult,
+  RecipeInstructionSuggestion,
   RecipeResponse,
 } from '@/types/recipe'
 import type { RestaurantResponse } from '@/types/restaurant'
@@ -40,6 +40,7 @@ type DetailRecipe = {
   ingredients: DetailIngredient[]
   instructions: string
   steps: string[]
+  hasRealInstructions: boolean
   sourceUrl?: string | null
   published: boolean
   ownedByCurrentUser: boolean
@@ -69,8 +70,7 @@ const ownerActionError = ref<string | null>(null)
 const instructionSearchLoading = ref(false)
 const instructionSearchError = ref<string | null>(null)
 const instructionSearchMessage = ref<string | null>(null)
-const instructionSearchResults = ref<InstructionSearchResult[]>([])
-const instructionGoogleUrl = ref<string | null>(null)
+const instructionSuggestions = ref<RecipeInstructionSuggestion[]>([])
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
 const weekDays = computed(() => {
@@ -101,7 +101,7 @@ const commaIngredientBoundary = /,\s*(?=(?:\d|\d\/|[\u00BC\u00BD\u00BE]|\p{Lu}))
 
 const hasInstructions = computed(() => {
   const current = recipe.value
-  return !!current && (current.steps.length > 0 || hasRealInstructionText(current.instructions))
+  return !!current && current.hasRealInstructions && current.steps.length > 0
 })
 const ingredientCount = computed(() => recipe.value?.ingredients.length ?? 0)
 
@@ -146,6 +146,7 @@ async function loadFavoriteState() {
 function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
   const instructions = normalizeInstructions(response.instructions)
   const steps = normalizeSteps(response.steps)
+  const hasRealInstructions = steps.length > 0 || hasRealInstructionText(instructions)
   return {
     id: response.externalId ?? response.id,
     source: 'spoonacular',
@@ -161,6 +162,7 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
     ingredients: response.ingredients.map(mapIngredient),
     instructions,
     steps,
+    hasRealInstructions,
     sourceUrl: response.sourceUrl,
     published: true,
     ownedByCurrentUser: false,
@@ -169,7 +171,9 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
 
 function mapDishly(response: RecipeResponse): DetailRecipe {
   const instructions = normalizeInstructions(response.instructions)
-  const steps = normalizeResponseSteps(response.instructionsList, instructions)
+  const responseSteps = normalizeResponseSteps(response.instructionsList, instructions)
+  const hasRealInstructions = response.hasRealInstructions === true && responseSteps.length > 0
+  const steps = hasRealInstructions ? responseSteps : []
   return {
     id: response.id,
     source: 'dishly',
@@ -185,6 +189,7 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     ingredients: normalizeDishlyIngredients(response),
     instructions,
     steps,
+    hasRealInstructions,
     sourceUrl: response.sourceUrl,
     published: response.published,
     ownedByCurrentUser: response.ownedByCurrentUser === true,
@@ -432,31 +437,44 @@ function visibleTag(tag: string) {
 
 async function searchInstructionsOnline() {
   if (!recipe.value) return
+  if (recipe.value.source !== 'dishly') {
+    instructionSearchError.value = 'Zubereitungsvorschläge sind aktuell nur für Dishly-Rezepte verfügbar.'
+    instructionSearchMessage.value = null
+    instructionSuggestions.value = []
+    return
+  }
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    instructionSearchError.value = 'Bitte melde dich an, um Zubereitungsvorschläge zu suchen.'
+    instructionSearchMessage.value = null
+    instructionSuggestions.value = []
+    return
+  }
   instructionSearchLoading.value = true
   instructionSearchError.value = null
   instructionSearchMessage.value = null
-  instructionSearchResults.value = []
-  instructionGoogleUrl.value = null
+  instructionSuggestions.value = []
 
   try {
-    const response = await recipeApi.searchInstructions({
-      recipeTitle: recipe.value.title,
-      sourceUrl: recipe.value.sourceUrl ?? null,
-      sourceName: recipe.value.source,
-    })
-    instructionSearchResults.value = response.results ?? []
-    instructionGoogleUrl.value = response.googleSearchUrl ?? null
+    const response = await recipeApi.getInstructionSuggestions(recipe.value.id)
+    instructionSuggestions.value = response.suggestions ?? []
     if (!response.configured) {
       instructionSearchError.value = response.message || t('recipeDetail.instructions.searchNotConfigured')
     } else if (response.message) {
       instructionSearchMessage.value = response.message
-    } else if (instructionSearchResults.value.length === 0) {
+    } else if (instructionSuggestions.value.length === 0) {
       instructionSearchMessage.value = t('recipeDetail.instructions.noSearchResults')
     }
   } catch (e: unknown) {
-    instructionSearchError.value = e instanceof ApiClientError && e.message
-      ? e.message
-      : t('recipeDetail.instructions.searchFailed')
+    const responseMessage = e instanceof ApiClientError && isInstructionSuggestionError(e.data)
+      ? e.data.message
+      : null
+    if (responseMessage) {
+      instructionSearchError.value = responseMessage
+    } else if (e instanceof ApiClientError && e.message) {
+      instructionSearchError.value = e.message
+    } else {
+      instructionSearchError.value = t('recipeDetail.instructions.searchFailed')
+    }
   } finally {
     instructionSearchLoading.value = false
   }
@@ -466,8 +484,11 @@ function resetInstructionSearch() {
   instructionSearchLoading.value = false
   instructionSearchError.value = null
   instructionSearchMessage.value = null
-  instructionSearchResults.value = []
-  instructionGoogleUrl.value = null
+  instructionSuggestions.value = []
+}
+
+function isInstructionSuggestionError(value: unknown): value is { message?: string | null } {
+  return typeof value === 'object' && value !== null && 'message' in value
 }
 
 const currentPosition = (): Promise<GeolocationPosition> => new Promise((resolve, reject) => {
@@ -685,14 +706,14 @@ function formatDate(date: Date) {
 
       <section class="detail-section">
         <h2>{{ t('recipeDetail.instructions.title') }}</h2>
-        <ol v-if="recipe.steps.length" class="step-list">
+        <ol v-if="hasInstructions" class="step-list">
           <li v-for="step in recipe.steps" :key="step">{{ step }}</li>
         </ol>
-        <p v-else-if="hasInstructions" class="instruction-text">{{ recipe.instructions }}</p>
         <div v-else class="instruction-search-panel">
           <p class="instruction-text">
-            {{ t('recipeDetail.instructions.sourceHint') }}
+            {{ t('recipeDetail.instructions.missingVerified') }}
           </p>
+          <p class="hint">{{ t('recipeDetail.instructions.suggestionDisclaimer') }}</p>
           <a
             v-if="recipe.sourceUrl"
             :href="recipe.sourceUrl"
@@ -702,24 +723,30 @@ function formatDate(date: Date) {
           >
             {{ t('recipeDetail.instructions.openSource') }}
           </a>
+          <button
+            type="button"
+            class="secondary-button"
+            :disabled="instructionSearchLoading"
+            @click="searchInstructionsOnline"
+          >
+            {{ instructionSearchLoading
+              ? t('recipeDetail.instructions.searchingSuggestions')
+              : t('recipeDetail.instructions.searchSuggestions') }}
+          </button>
           <p v-if="instructionSearchError" class="status-text error">{{ instructionSearchError }}</p>
           <p v-if="instructionSearchMessage" class="status-text">{{ instructionSearchMessage }}</p>
-          <a
-            v-if="instructionGoogleUrl"
-            class="google-search-link"
-            :href="instructionGoogleUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {{ t('recipeDetail.instructions.openGoogleSearch') }}
-          </a>
-          <div v-if="instructionSearchResults.length" class="instruction-results">
-            <h3>{{ t('recipeDetail.instructions.searchResultsTitle') }}</h3>
-            <p class="hint">{{ t('recipeDetail.instructions.searchDisclaimer') }}</p>
+          <div v-if="instructionSuggestions.length" class="instruction-results">
+            <h3>{{ t('recipeDetail.instructions.suggestionsTitle') }}</h3>
+            <p class="hint">{{ t('recipeDetail.instructions.suggestionsDisclaimer') }}</p>
             <ul>
-              <li v-for="result in instructionSearchResults" :key="result.url">
-                <a :href="result.url" target="_blank" rel="noopener noreferrer">{{ result.title }}</a>
-                <p v-if="result.snippet">{{ result.snippet }}</p>
+              <li v-for="suggestion in instructionSuggestions" :key="suggestion.sourceUrl">
+                <a :href="suggestion.sourceUrl" target="_blank" rel="noopener noreferrer">
+                  {{ suggestion.sourceTitle || suggestion.sourceUrl }}
+                </a>
+                <ol class="step-list suggestion-step-list">
+                  <li v-for="step in suggestion.steps" :key="`${suggestion.sourceUrl}-${step}`">{{ step }}</li>
+                </ol>
+                <p v-if="suggestion.reason">{{ suggestion.reason }}</p>
               </li>
             </ul>
           </div>

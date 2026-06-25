@@ -5,6 +5,7 @@ import type {
   ImageUploadResponse,
   InstructionSearchRequest,
   InstructionSearchResponse,
+  RecipeInstructionSuggestionResponse,
   RecipeSearchFilters,
   RecipeRequest,
   RecipeResponse,
@@ -62,6 +63,11 @@ export const recipeApi = {
 
   async searchInstructions(request: InstructionSearchRequest): Promise<InstructionSearchResponse> {
     const response = await apiClient.post<InstructionSearchResponse>('/recipes/instructions/search', request)
+    return response.data
+  },
+
+  async getInstructionSuggestions(id: number | string): Promise<RecipeInstructionSuggestionResponse> {
+    const response = await apiClient.post<RecipeInstructionSuggestionResponse>(`/recipes/${id}/instruction-suggestions`)
     return response.data
   },
 

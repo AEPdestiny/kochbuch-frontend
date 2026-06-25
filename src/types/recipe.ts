@@ -22,6 +22,7 @@ export type RecipeResponse = RecipeRequest & {
   protein?: number | null
   ingredientsList?: string[] | null
   instructionsList?: string[] | null
+  hasRealInstructions?: boolean
   alcohol?: number | null
   alcoholPercent?: number | null
   userCreated?: boolean
@@ -112,4 +113,20 @@ export type InstructionSearchResponse = {
   message?: string | null
   googleSearchUrl?: string | null
   results: InstructionSearchResult[]
+}
+
+export type RecipeInstructionSuggestion = {
+  sourceTitle: string
+  sourceUrl: string
+  steps: string[]
+  confidence: number
+  reason?: string | null
+}
+
+export type RecipeInstructionSuggestionResponse = {
+  recipeId: number | string
+  hasRealInstructions: boolean
+  configured: boolean
+  message?: string | null
+  suggestions: RecipeInstructionSuggestion[]
 }

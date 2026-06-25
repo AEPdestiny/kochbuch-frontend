@@ -31,6 +31,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
     getRecipe: vi.fn(),
     deleteRecipe: vi.fn(),
     searchInstructions: vi.fn(),
+    getInstructionSuggestions: vi.fn(),
   },
 }))
 
@@ -74,6 +75,12 @@ describe('RecipeDetailView', () => {
     vi.mocked(recipeApi.searchInstructions).mockResolvedValue({
       configured: true,
       results: [],
+    })
+    vi.mocked(recipeApi.getInstructionSuggestions).mockResolvedValue({
+      recipeId: 1,
+      hasRealInstructions: false,
+      configured: true,
+      suggestions: [],
     })
     vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
@@ -346,20 +353,23 @@ describe('RecipeDetailView', () => {
     confirmSpy.mockRestore()
   })
 
-  it('shows source hint when instructions are missing', async () => {
+  it('shows transparent suggestion search when instructions are missing', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
       ...localRecipe(),
       instructions: '',
+      instructionsList: [],
+      hasRealInstructions: false,
       sourceUrl: 'https://example.com/source',
     })
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.text()).toContain('Für dieses Rezept ist noch keine geprüfte Zubereitung vorhanden.')
+    expect(wrapper.text()).toContain('Zubereitungsvorschläge suchen')
     expect(wrapper.text()).toContain('Zur Originalquelle')
     expect(wrapper.find('.google-search-link').attributes('href')).toBe('https://example.com/source')
-    expect(recipeApi.searchInstructions).not.toHaveBeenCalled()
+    expect(recipeApi.getInstructionSuggestions).not.toHaveBeenCalled()
   })
 
   it('treats placeholder instructions as missing and shows source hint', async () => {
@@ -367,11 +377,13 @@ describe('RecipeDetailView', () => {
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
       ...localRecipe(),
       instructions: 'Keine Anleitung angegeben.',
+      instructionsList: ['Keine Anleitung angegeben.'],
+      hasRealInstructions: false,
     })
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.text()).toContain('Für dieses Rezept ist noch keine geprüfte Zubereitung vorhanden.')
     expect(wrapper.text()).not.toContain('Keine Anleitung angegeben.')
   })
 
@@ -384,7 +396,7 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.text()).toContain('Für dieses Rezept ist noch keine geprüfte Zubereitung vorhanden.')
     expect(wrapper.text()).toContain('Zur Originalquelle')
     expect(wrapper.text()).not.toContain('Keine Anleitung angegeben.')
   })
@@ -394,13 +406,51 @@ describe('RecipeDetailView', () => {
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
       ...localRecipe(),
       instructions: '',
+      instructionsList: [],
+      hasRealInstructions: false,
       sourceUrl: null,
     })
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Zubereitungsschritte sind für dieses Rezept nicht verfügbar.')
+    expect(wrapper.text()).toContain('Für dieses Rezept ist noch keine geprüfte Zubereitung vorhanden.')
     expect(wrapper.find('.google-search-link').exists()).toBe(false)
+  })
+
+  it('loads instruction suggestions for a local recipe without real instructions', async () => {
+    routeName = 'recipe-detail'
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: 'Keine Anleitung angegeben.',
+      instructionsList: [],
+      hasRealInstructions: false,
+    })
+    vi.mocked(recipeApi.getInstructionSuggestions).mockResolvedValue({
+      recipeId: 1,
+      hasRealInstructions: false,
+      configured: true,
+      suggestions: [{
+        sourceTitle: 'Pasta Anleitung',
+        sourceUrl: 'https://example.com/pasta',
+        steps: ['Zutaten vorbereiten.', 'Sauce kochen.', 'Servieren.'],
+        confidence: 0.7,
+        reason: 'Aus Websuche abgeleitete Vorschlagsquelle. Bitte vor dem Kochen prüfen.',
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const searchButton = wrapper.findAll('button').find(button => button.text().includes('Zubereitungsvorschläge suchen'))
+    expect(searchButton).toBeTruthy()
+    await searchButton!.trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.getInstructionSuggestions).toHaveBeenCalledWith(1)
+    expect(wrapper.text()).toContain('Pasta Anleitung')
+    expect(wrapper.text()).toContain('Zutaten vorbereiten.')
+    expect(wrapper.text()).toContain('Sauce kochen.')
+    expect(wrapper.text()).toContain('Diese Vorschläge stammen aus der Websuche')
   })
 
   it('opens meal plan modal and adds local recipe to selected slot', async () => {
@@ -521,6 +571,8 @@ function localRecipe() {
     rating: 4.5,
     ingredients: '200 g Tomaten, 150 g Pasta',
     instructions: 'Kochen',
+    instructionsList: ['Kochen'],
+    hasRealInstructions: true,
     favorite: false,
     published: true,
     ownedByCurrentUser: false,
