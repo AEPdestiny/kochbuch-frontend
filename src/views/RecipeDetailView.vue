@@ -222,9 +222,14 @@ function mapIngredient(ingredient: ExternalRecipeIngredient): DetailIngredient {
 
 function splitIngredients(value: string): DetailIngredient[] {
   return value
-    .split(',')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split(/\n+|;\s*|,\s*(?=(?:\d|\d\/|[¼½¾]|[A-ZÄÖÜ]))/)
     .map(item => item.trim())
-    .filter(Boolean)
+    .filter(item => item && /[A-Za-zÄÖÜäöüß]/.test(item) && !/^[01](?:[,.]0+)?$/.test(item))
+    .filter((item, index, items) =>
+      items.findIndex(candidate => candidate.toLowerCase() === item.toLowerCase()) === index,
+    )
     .map(item => ({ name: item, original: item }))
 }
 

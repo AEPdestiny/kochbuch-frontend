@@ -233,6 +233,22 @@ describe('RecipeDetailView', () => {
     expect(wrapper.find('.owner-delete-button').exists()).toBe(false)
   })
 
+  it('splits normalized local ingredients and ignores meaningless ingredient values', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      ingredients: '0\n200 g Tomaten\n1\n150 g Pasta\n200 g Tomaten',
+    })
+
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('2 Zutaten')
+    expect(wrapper.text()).toContain('200 g Tomaten')
+    expect(wrapper.text()).toContain('150 g Pasta')
+    expect(wrapper.text()).not.toContain('1 Zutaten')
+  })
+
   it('shows edit and delete actions only for the recipe owner', async () => {
     routeName = 'recipe-detail'
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')

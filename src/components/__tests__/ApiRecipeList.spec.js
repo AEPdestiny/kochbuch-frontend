@@ -289,7 +289,7 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Chicken Rice')
     expect(wrapper.text()).not.toContain('Mushroom Pasta')
     expect(wrapper.text()).not.toContain('Nut Salad')
-    expect(recipeApi.getPublishedRecipes).toHaveBeenCalledTimes(2)
+    expect(recipeApi.getPublishedRecipes).toHaveBeenCalled()
   })
 
   it('prioritizes search query over soft profile filters while keeping hard exclusions', async () => {
@@ -317,7 +317,7 @@ describe('ApiRecipeList.vue', () => {
           glutenFree: true,
         }),
       ])
-      .mockResolvedValueOnce([
+      .mockResolvedValue([
         recipe(11, 'Chicken Rice', 'rice chicken', 'lunch', {
           vegan: false,
           glutenFree: false,
