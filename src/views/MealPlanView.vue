@@ -35,6 +35,15 @@ type SlotSuggestion = {
   externalSource?: string | null
 }
 
+type ShoppingResultTone = 'added' | 'pantry' | 'existing' | 'review'
+
+type ShoppingResultSection = {
+  key: string
+  label: string
+  tone: ShoppingResultTone
+  items: MealPlanShoppingListItem[]
+}
+
 const { t, locale } = useI18n()
 const BUCKET_LIMIT = 7
 
@@ -122,6 +131,41 @@ const weeklyRecommendation = computed(() => {
     return `Deine Woche hat noch ${freeSlots} freie Slots. Fülle zuerst die Tage mit wenig geplanten Mahlzeiten.`
   }
   return 'Deine Woche passt gut zu deinem Kalorienziel.'
+})
+
+const shoppingResultSections = computed<ShoppingResultSection[]>(() => {
+  locale.value
+  const result = shoppingListResult.value
+  if (!result) {
+    return []
+  }
+
+  return [
+    {
+      key: 'added',
+      label: t('mealPlan.shoppingList.added'),
+      tone: 'added',
+      items: result.added,
+    },
+    {
+      key: 'skippedBecauseInPantry',
+      label: t('mealPlan.shoppingList.inPantry'),
+      tone: 'pantry',
+      items: result.skippedBecauseInPantry,
+    },
+    {
+      key: 'alreadyOnShoppingList',
+      label: t('mealPlan.shoppingList.alreadyOnList'),
+      tone: 'existing',
+      items: result.alreadyOnShoppingList,
+    },
+    {
+      key: 'needsReview',
+      label: t('mealPlan.shoppingList.needsReview'),
+      tone: 'review',
+      items: result.needsReview,
+    },
+  ]
 })
 
 onMounted(() => {
@@ -676,6 +720,18 @@ function formatShoppingItem(item: MealPlanShoppingListItem) {
   return [quantity, unit, item.name].filter(Boolean).join(' ')
 }
 
+function shoppingItemKey(sectionKey: string, item: MealPlanShoppingListItem, index: number) {
+  return [
+    sectionKey,
+    item.name,
+    item.quantity ?? '',
+    item.unit ?? '',
+    item.recipeTitle ?? '',
+    item.reason ?? '',
+    index,
+  ].join('-')
+}
+
 function firstFreeDateForSlot(slot: MealSlot) {
   if (bucketCounts.value[slot] >= BUCKET_LIMIT) {
     return null
@@ -799,44 +855,44 @@ function formatDate(date: Date) {
           </RouterLink>
         </div>
 
-        <div class="shopping-result-grid">
-          <article>
-            <h3>{{ t('mealPlan.shoppingList.added') }}</h3>
-            <p v-if="shoppingListResult.added.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
-            <ul v-else>
-              <li v-for="item in shoppingListResult.added" :key="`${item.name}-${item.reason}`">
-                {{ formatShoppingItem(item) }}
-              </li>
-            </ul>
-          </article>
-          <article>
-            <h3>{{ t('mealPlan.shoppingList.inPantry') }}</h3>
-            <p v-if="shoppingListResult.skippedBecauseInPantry.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
-            <ul v-else>
-              <li v-for="item in shoppingListResult.skippedBecauseInPantry" :key="`${item.name}-${item.reason}`">
-                {{ formatShoppingItem(item) }}
-              </li>
-            </ul>
-          </article>
-          <article>
-            <h3>{{ t('mealPlan.shoppingList.alreadyOnList') }}</h3>
-            <p v-if="shoppingListResult.alreadyOnShoppingList.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
-            <ul v-else>
-              <li v-for="item in shoppingListResult.alreadyOnShoppingList" :key="`${item.name}-${item.reason}`">
-                {{ formatShoppingItem(item) }}
-              </li>
-            </ul>
-          </article>
-          <article>
-            <h3>{{ t('mealPlan.shoppingList.needsReview') }}</h3>
-            <p v-if="shoppingListResult.needsReview.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
-            <ul v-else>
-              <li v-for="item in shoppingListResult.needsReview" :key="`${item.name}-${item.reason}`">
-                {{ formatShoppingItem(item) }}
+        <div class="shopping-summary-chips" aria-label="Einkaufslisten-Zusammenfassung">
+          <span
+            v-for="section in shoppingResultSections"
+            :key="`${section.key}-summary`"
+            class="shopping-summary-chip"
+            :class="`tone-${section.tone}`"
+          >
+            <strong>{{ section.items.length }}</strong>
+            {{ section.label }}
+          </span>
+        </div>
+
+        <div class="shopping-result-sections">
+          <details
+            v-for="section in shoppingResultSections"
+            :key="section.key"
+            class="shopping-result-section"
+            :class="`tone-${section.tone}`"
+            :open="section.items.length > 0"
+          >
+            <summary>
+              <span>{{ section.label }} ({{ section.items.length }})</span>
+              <span aria-hidden="true">▾</span>
+            </summary>
+            <p v-if="section.items.length === 0" class="shopping-empty">
+              {{ t('mealPlan.shoppingList.none') }}
+            </p>
+            <ul v-else class="shopping-item-list">
+              <li
+                v-for="(item, index) in section.items"
+                :key="shoppingItemKey(section.key, item, index)"
+              >
+                <span>{{ formatShoppingItem(item) }}</span>
+                <small v-if="item.recipeTitle">{{ item.recipeTitle }}</small>
                 <small v-if="item.reason">{{ item.reason }}</small>
               </li>
             </ul>
-          </article>
+          </details>
         </div>
       </section>
 
@@ -1397,11 +1453,12 @@ function formatDate(date: Date) {
 }
 
 .shopping-list-result {
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fcfb 100%);
   border: 1px solid #c3e7e1;
   border-radius: 16px;
+  box-shadow: 0 1px 10px rgba(79, 127, 120, 0.08);
   display: grid;
-  gap: 14px;
+  gap: 16px;
   padding: 16px;
 }
 
@@ -1423,36 +1480,128 @@ function formatDate(date: Date) {
   margin: 0;
 }
 
-.shopping-result-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+.shopping-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.shopping-result-grid article {
+.shopping-summary-chip {
+  align-items: center;
   background: #f4fbfa;
   border: 1px solid #d6eee9;
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: 999px;
+  color: #486b68;
+  display: inline-flex;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
 }
 
-.shopping-result-grid ul {
+.shopping-summary-chip strong {
+  color: #2b1b23;
+}
+
+.shopping-summary-chip.tone-added {
+  background: #edf9f2;
+  border-color: #bfe8cf;
+  color: #247a4f;
+}
+
+.shopping-summary-chip.tone-pantry {
+  background: #f1fbfb;
+  border-color: #bde8e4;
+  color: #1d8e90;
+}
+
+.shopping-summary-chip.tone-existing {
+  background: #f6f4ff;
+  border-color: #d9d1f0;
+  color: #5b4b92;
+}
+
+.shopping-summary-chip.tone-review {
+  background: #fff8ed;
+  border-color: #f0d2a4;
+  color: #a7611d;
+}
+
+.shopping-result-sections {
+  display: grid;
+  gap: 10px;
+}
+
+.shopping-result-section {
+  background: #ffffff;
+  border: 1px solid #d6eee9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.shopping-result-section.tone-added {
+  border-color: #bfe8cf;
+}
+
+.shopping-result-section.tone-pantry {
+  border-color: #bde8e4;
+}
+
+.shopping-result-section.tone-existing {
+  border-color: #d9d1f0;
+}
+
+.shopping-result-section.tone-review {
+  border-color: #f0d2a4;
+}
+
+.shopping-result-section summary {
+  align-items: center;
+  color: #2b1b23;
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 46px;
+  padding: 10px 12px;
+}
+
+.shopping-result-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.shopping-result-section[open] summary {
+  border-bottom: 1px solid #edf6f4;
+}
+
+.shopping-item-list {
   display: grid;
   gap: 8px;
   list-style: none;
   margin: 0;
-  padding: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px 12px 12px;
 }
 
-.shopping-result-grid li {
+.shopping-item-list li {
+  background: #f7fcfb;
+  border: 1px solid #edf6f4;
+  border-radius: 10px;
   color: #2b1b23;
   display: grid;
-  gap: 2px;
+  gap: 3px;
   overflow-wrap: anywhere;
+  padding: 9px 10px;
 }
 
-.shopping-result-grid small {
+.shopping-item-list small {
   color: #486b68;
+  font-size: 0.82rem;
+}
+
+.shopping-empty {
+  padding: 12px;
 }
 
 .swipe-planner {
@@ -1698,6 +1847,15 @@ function formatDate(date: Date) {
   .shopping-list-result-header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .shopping-summary-chips {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .shopping-item-list {
+    max-height: 260px;
   }
 
   .swipe-controls,

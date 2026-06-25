@@ -877,11 +877,47 @@ describe('MealPlanView', () => {
 
     expect(mealPlanApi.createShoppingListFromWeek).toHaveBeenCalledWith('2026-06-01')
     expect(wrapper.text()).toContain('Einkaufsliste wurde aus dem Wochenplan erstellt.')
+    expect(wrapper.find('.shopping-summary-chips').exists()).toBe(true)
+    expect(wrapper.findAll('.shopping-result-section')).toHaveLength(4)
+    expect(wrapper.text()).toContain('Hinzugefügt (1)')
+    expect(wrapper.text()).toContain('Schon im Vorrat (1)')
+    expect(wrapper.text()).toContain('Bereits auf Einkaufsliste (1)')
+    expect(wrapper.text()).toContain('Menge prüfen (1)')
+    expect(wrapper.find('.shopping-list-result-header a').attributes('href')).toBe('/shopping-list')
     expect(wrapper.text()).toContain('200 g Tomaten')
     expect(wrapper.text()).toContain('2 Stück Eier')
     expect(wrapper.text()).toContain('1 EL Butter')
     expect(wrapper.text()).toContain('200 g Reis')
     expect(wrapper.text()).toContain('Einheiten sind nicht sicher vergleichbar.')
+  })
+
+  it('keeps empty shopping list result categories compact', async () => {
+    vi.mocked(mealPlanApi.createShoppingListFromWeek).mockResolvedValue({
+      added: [{ name: 'Tomaten', quantity: 200, unit: 'g', recipeTitle: 'Pasta' }],
+      skippedBecauseInPantry: [],
+      needsReview: [],
+      alreadyOnShoppingList: [],
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const createButton = wrapper.findAll('button')
+      .find(button => button.text().includes('Einkaufsliste aus Wochenplan erstellen'))!
+    await createButton.trigger('click')
+    await flushPromises()
+
+    const sections = wrapper.findAll('.shopping-result-section')
+    expect(sections).toHaveLength(4)
+    expect(sections[0]!.attributes('open')).toBeDefined()
+    expect(sections[1]!.attributes('open')).toBeUndefined()
+    expect(wrapper.text()).toContain('Hinzugefügt (1)')
+    expect(wrapper.text()).toContain('Schon im Vorrat (0)')
+    expect(wrapper.text()).toContain('Bereits auf Einkaufsliste (0)')
+    expect(wrapper.text()).toContain('Menge prüfen (0)')
+    expect(wrapper.text()).toContain('Keine Einträge.')
+    expect(wrapper.text()).toContain('200 g Tomaten')
   })
 
   it('treats 404 while clearing already empty slots as success when the reloaded week is empty', async () => {
