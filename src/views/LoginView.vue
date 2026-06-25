@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
@@ -11,6 +11,10 @@ const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
+
+onMounted(() => {
+  authStore.initFromStorage()
+})
 
 async function submitLogin() {
   try {

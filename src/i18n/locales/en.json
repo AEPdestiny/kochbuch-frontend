@@ -45,7 +45,7 @@
     "errors": {
       "invalidCredentials": "Email or password is incorrect.",
       "userExists": "Email or username is already taken.",
-      "sessionExpired": "Your session has expired. Please log in again.",
+      "sessionExpired": "Your session has expired. Please sign in again.",
       "network": "The backend is currently unavailable. Please try again.",
       "unknown": "Authentication failed."
     }

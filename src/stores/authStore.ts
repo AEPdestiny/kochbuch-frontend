@@ -6,6 +6,11 @@ import {
   ApiClientError,
   AUTH_TOKEN_STORAGE_KEY,
   AUTH_USER_STORAGE_KEY,
+  clearAuthStorage,
+  clearSessionExpiredFlag,
+  hasSessionExpiredFlag,
+  markSessionExpired,
+  resetUnauthorizedHandling,
 } from '@/shared/api/apiClient'
 import type {
   AuthResponse,
@@ -19,11 +24,17 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<UserResponse | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const sessionExpired = ref(false)
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
   function initFromStorage() {
     token.value = sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+    if (hasSessionExpiredFlag()) {
+      sessionExpired.value = true
+      error.value = translateAuthError('auth.errors.sessionExpired')
+    }
+
     const storedUser = sessionStorage.getItem(AUTH_USER_STORAGE_KEY)
     if (!storedUser) {
       user.value = null
@@ -59,7 +70,7 @@ export const useAuthStore = defineStore('auth', () => {
       sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user.value))
       return user.value
     } catch (e) {
-      logout()
+      handleSessionExpired()
       error.value = toFriendlyAuthError(e, 'auth.errors.sessionExpired')
       return null
     } finally {
@@ -71,12 +82,24 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
     error.value = null
-    sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
-    sessionStorage.removeItem(AUTH_USER_STORAGE_KEY)
+    sessionExpired.value = false
+    clearAuthStorage()
+    clearSessionExpiredFlag()
+    resetUnauthorizedHandling()
+  }
+
+  function handleSessionExpired() {
+    token.value = null
+    user.value = null
+    sessionExpired.value = true
+    error.value = translateAuthError('auth.errors.sessionExpired')
+    clearAuthStorage()
+    markSessionExpired()
   }
 
   async function authenticate(action: () => Promise<AuthResponse>) {
     loading.value = true
+    clearSessionExpired()
     error.value = null
     try {
       const response = await action()
@@ -84,6 +107,8 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.user
       sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, response.accessToken)
       sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(response.user))
+      clearSessionExpired()
+      resetUnauthorizedHandling()
       return response
     } catch (e) {
       error.value = toFriendlyAuthError(e)
@@ -114,16 +139,24 @@ export const useAuthStore = defineStore('auth', () => {
     return i18n.global.t(key)
   }
 
+  function clearSessionExpired() {
+    sessionExpired.value = false
+    clearSessionExpiredFlag()
+  }
+
   return {
     token,
     user,
     loading,
     error,
+    sessionExpired,
     isAuthenticated,
     initFromStorage,
     register,
     login,
     loadCurrentUser,
     logout,
+    handleSessionExpired,
+    clearSessionExpired,
   }
 })

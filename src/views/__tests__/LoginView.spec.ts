@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LoginView from '@/views/LoginView.vue'
 import { authApi } from '@/shared/api/authApi'
 import { i18n, setLocale } from '@/i18n'
-import { ApiClientError } from '@/shared/api/apiClient'
+import { ApiClientError, SESSION_EXPIRED_STORAGE_KEY } from '@/shared/api/apiClient'
 import type { AuthResponse } from '@/types/auth'
 
 vi.mock('@/shared/api/authApi', () => ({
@@ -117,6 +117,49 @@ describe('LoginView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Email or password is incorrect.')
+  })
+
+  it('shows the session-expired message from storage on the login page', async () => {
+    sessionStorage.setItem(SESSION_EXPIRED_STORAGE_KEY, 'true')
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/login', component: LoginView }],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.')
+  })
+
+  it('uses the English session-expired message when English is active', async () => {
+    setLocale('en')
+    sessionStorage.setItem(SESSION_EXPIRED_STORAGE_KEY, 'true')
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/login', component: LoginView }],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Your session has expired. Please sign in again.')
   })
 
   it('renders Arabic login texts without errors', async () => {

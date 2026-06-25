@@ -3,8 +3,10 @@ import { createPinia, setActivePinia } from 'pinia'
 import router from '@/router'
 import { authApi } from '@/shared/api/authApi'
 import {
+  ApiClientError,
   AUTH_TOKEN_STORAGE_KEY,
   AUTH_USER_STORAGE_KEY,
+  SESSION_EXPIRED_STORAGE_KEY,
 } from '@/shared/api/apiClient'
 import type { UserResponse } from '@/types/auth'
 
@@ -92,5 +94,25 @@ describe('route guards', () => {
 
     expect(authApi.me).toHaveBeenCalledTimes(1)
     expect(router.currentRoute.value.path).toBe('/shopping-list')
+  })
+
+  it('redirects to login and keeps the session-expired message when a stored token is invalid', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'expired-token')
+    vi.mocked(authApi.me).mockRejectedValue(new ApiClientError('Unauthorized', 401))
+
+    await router.push('/meal-plan')
+
+    expect(authApi.me).toHaveBeenCalledTimes(1)
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/meal-plan')
+    expect(sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull()
+    expect(sessionStorage.getItem(SESSION_EXPIRED_STORAGE_KEY)).toBe('true')
+  })
+
+  it('keeps public routes usable without login', async () => {
+    await router.push('/')
+
+    expect(router.currentRoute.value.path).toBe('/')
+    expect(authApi.me).not.toHaveBeenCalled()
   })
 })

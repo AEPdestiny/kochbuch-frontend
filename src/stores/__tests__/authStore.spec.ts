@@ -6,6 +6,7 @@ import {
   ApiClientError,
   AUTH_TOKEN_STORAGE_KEY,
   AUTH_USER_STORAGE_KEY,
+  SESSION_EXPIRED_STORAGE_KEY,
 } from '@/shared/api/apiClient'
 import { setLocale } from '@/i18n'
 import type { AuthResponse, UserResponse } from '@/types/auth'
@@ -61,6 +62,7 @@ describe('authStore', () => {
   it('clears token and user on logout', () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
+    sessionStorage.setItem(SESSION_EXPIRED_STORAGE_KEY, 'true')
     const store = useAuthStore()
     store.initFromStorage()
 
@@ -69,8 +71,11 @@ describe('authStore', () => {
     expect(store.token).toBeNull()
     expect(store.user).toBeNull()
     expect(store.isAuthenticated).toBe(false)
+    expect(store.error).toBeNull()
+    expect(store.sessionExpired).toBe(false)
     expect(sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull()
     expect(sessionStorage.getItem(AUTH_USER_STORAGE_KEY)).toBeNull()
+    expect(sessionStorage.getItem(SESSION_EXPIRED_STORAGE_KEY)).toBeNull()
   })
 
   it('initializes token and user from sessionStorage', () => {
@@ -112,6 +117,8 @@ describe('authStore', () => {
   })
 
   it('sets translated session-expired error when loading current user fails with 401', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'expired-token')
+    sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
     vi.mocked(authApi.me).mockRejectedValue(new ApiClientError('Unauthorized', 401))
     const store = useAuthStore()
     store.token = 'expired-token'
@@ -120,5 +127,27 @@ describe('authStore', () => {
 
     expect(result).toBeNull()
     expect(store.error).toBe('Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.')
+    expect(store.token).toBeNull()
+    expect(store.user).toBeNull()
+    expect(store.sessionExpired).toBe(true)
+    expect(sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull()
+    expect(sessionStorage.getItem(AUTH_USER_STORAGE_KEY)).toBeNull()
+    expect(sessionStorage.getItem(SESSION_EXPIRED_STORAGE_KEY)).toBe('true')
+  })
+
+  it('clears an old session-expired message after successful login', async () => {
+    sessionStorage.setItem(SESSION_EXPIRED_STORAGE_KEY, 'true')
+    vi.mocked(authApi.login).mockResolvedValue(authResponse)
+    const store = useAuthStore()
+    store.initFromStorage()
+
+    await store.login({
+      email: 'salma@example.com',
+      password: 'secret123',
+    })
+
+    expect(store.error).toBeNull()
+    expect(store.sessionExpired).toBe(false)
+    expect(sessionStorage.getItem(SESSION_EXPIRED_STORAGE_KEY)).toBeNull()
   })
 })

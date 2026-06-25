@@ -116,7 +116,6 @@ router.beforeEach(async to => {
     return true
   }
 
-  authStore.logout()
   return {
     path: '/login',
     query: { redirect: to.fullPath },
