@@ -169,6 +169,7 @@ function mapExternal(response: ExternalRecipeDetailResponse): DetailRecipe {
 
 function mapDishly(response: RecipeResponse): DetailRecipe {
   const instructions = normalizeInstructions(response.instructions)
+  const steps = normalizeResponseSteps(response.instructionsList, instructions)
   return {
     id: response.id,
     source: 'dishly',
@@ -183,11 +184,16 @@ function mapDishly(response: RecipeResponse): DetailRecipe {
     tags: [response.category, response.difficulty].filter(Boolean) as string[],
     ingredients: normalizeDishlyIngredients(response),
     instructions,
-    steps: splitInstructionSteps(instructions),
+    steps,
     sourceUrl: response.sourceUrl,
     published: response.published,
     ownedByCurrentUser: response.ownedByCurrentUser === true,
   }
+}
+
+function normalizeResponseSteps(values: string[] | null | undefined, fallbackInstructions: string) {
+  const responseSteps = normalizeSteps(values)
+  return responseSteps.length ? responseSteps : splitInstructionSteps(fallbackInstructions)
 }
 
 function normalizeDishlyIngredients(response: RecipeResponse) {
@@ -213,7 +219,9 @@ function normalizeSteps(values?: string[] | null) {
 
 function splitInstructionSteps(value: string) {
   return value
-    ? value.split(/\n+/).map(step => normalizeInstructions(step)).filter(Boolean)
+    ? value.split(/\n+/)
+      .map(step => normalizeInstructions(step).replace(/^\s*\d+[.)]\s*/, '').trim())
+      .filter(Boolean)
     : []
 }
 

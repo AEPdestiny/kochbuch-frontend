@@ -21,6 +21,7 @@ export type RecipeResponse = RecipeRequest & {
   calories?: number | null
   protein?: number | null
   ingredientsList?: string[] | null
+  instructionsList?: string[] | null
   alcohol?: number | null
   alcoholPercent?: number | null
   userCreated?: boolean

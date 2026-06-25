@@ -269,6 +269,43 @@ describe('RecipeDetailView', () => {
     })
   })
 
+  it('prefers instructionsList for local Dishly recipe details', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: 'Dieser Smoothie eignet sich gut als Frühstück. Das Rezept ergibt 2 Portionen. Quelle: Foodista.',
+      instructionsList: [
+        'Obst und weitere Zutaten vorbereiten.',
+        'Alle Zutaten in einen Mixer geben.',
+        'Fein und cremig mixen.',
+        'Sofort servieren.',
+      ],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.findAll('.step-list li')).toHaveLength(4)
+    expect(wrapper.text()).toContain('Obst und weitere Zutaten vorbereiten.')
+    expect(wrapper.text()).toContain('Alle Zutaten in einen Mixer geben.')
+    expect(wrapper.text()).not.toContain('Dieser Smoothie eignet sich gut als Frühstück.')
+  })
+
+  it('falls back to instructions text when instructionsList is missing', async () => {
+    routeName = 'recipe-detail'
+    vi.mocked(recipeApi.getRecipe).mockResolvedValue({
+      ...localRecipe(),
+      instructions: '1. Gemüse waschen.\n2. Zutaten schneiden.\n3. Servieren.',
+      instructionsList: null,
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.findAll('.step-list li')).toHaveLength(3)
+    expect(wrapper.text()).toContain('Gemüse waschen.')
+    expect(wrapper.text()).toContain('Zutaten schneiden.')
+    expect(wrapper.text()).toContain('Servieren.')
+  })
+
   it('splits normalized local ingredients and ignores meaningless ingredient values', async () => {
     routeName = 'recipe-detail'
     vi.mocked(recipeApi.getRecipe).mockResolvedValue({
