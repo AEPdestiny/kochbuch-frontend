@@ -396,7 +396,9 @@
     },
     "form": {
       "recipe": "Rezept",
-      "chooseRecipe": "Rezept auswählen"
+      "chooseRecipe": "Rezept auswählen",
+      "targetDay": "Neuer Tag",
+      "targetSlot": "Neuer Slot"
     },
     "empty": {
       "day": "Noch kein Rezept geplant.",
@@ -406,13 +408,36 @@
       "add": "Rezept planen",
       "remove": "Entfernen",
       "save": "Speichern",
-      "clearWeek": "Woche leeren"
+      "clearWeek": "Woche leeren",
+      "viewRecipe": "Rezept ansehen",
+      "move": "Verschieben",
+      "moveSave": "Verschiebung speichern",
+      "cancel": "Abbrechen"
     },
     "errors": {
       "load": "Der Wochenplan konnte nicht geladen werden.",
       "save": "Das Rezept konnte nicht geplant werden.",
       "remove": "Das Rezept konnte nicht entfernt werden.",
+      "move": "Der Wochenplan-Eintrag konnte nicht verschoben werden.",
       "noRecipeSelected": "Bitte wähle zuerst ein Rezept aus."
+    },
+    "messages": {
+      "moved": "Der Wochenplan-Eintrag wurde verschoben.",
+      "targetOccupied": "Der Zielslot ist bereits belegt und wird ersetzt."
+    },
+    "shoppingList": {
+      "action": "Einkaufsliste aus Wochenplan erstellen",
+      "loading": "Einkaufsliste wird erstellt...",
+      "success": "Einkaufsliste wurde aus dem Wochenplan erstellt.",
+      "error": "Einkaufsliste konnte nicht aus dem Wochenplan erstellt werden.",
+      "title": "Einkaufsliste aus Wochenplan",
+      "subtitle": "Dishly berücksichtigt deinen Vorrat und bestehende Einkaufslisten-Einträge nur bei sicheren Treffern.",
+      "open": "Zur Einkaufsliste",
+      "added": "Hinzugefügt",
+      "inPantry": "Schon im Vorrat",
+      "alreadyOnList": "Bereits auf Einkaufsliste",
+      "needsReview": "Menge prüfen",
+      "none": "Keine Einträge."
     },
     "days": {
       "monday": "Montag",

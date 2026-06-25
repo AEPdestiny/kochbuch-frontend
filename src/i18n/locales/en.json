@@ -396,7 +396,9 @@
     },
     "form": {
       "recipe": "Recipe",
-      "chooseRecipe": "Choose a recipe"
+      "chooseRecipe": "Choose a recipe",
+      "targetDay": "New day",
+      "targetSlot": "New slot"
     },
     "empty": {
       "day": "No recipe planned yet.",
@@ -406,13 +408,36 @@
       "add": "Plan recipe",
       "remove": "Remove",
       "save": "Save",
-      "clearWeek": "Clear week"
+      "clearWeek": "Clear week",
+      "viewRecipe": "View recipe",
+      "move": "Move",
+      "moveSave": "Save move",
+      "cancel": "Cancel"
     },
     "errors": {
       "load": "The meal plan could not be loaded.",
       "save": "The recipe could not be planned.",
       "remove": "The recipe could not be removed.",
+      "move": "The meal plan entry could not be moved.",
       "noRecipeSelected": "Please choose a recipe first."
+    },
+    "messages": {
+      "moved": "The meal plan entry was moved.",
+      "targetOccupied": "The target slot is already filled and will be replaced."
+    },
+    "shoppingList": {
+      "action": "Create shopping list from meal plan",
+      "loading": "Creating shopping list...",
+      "success": "Shopping list was created from the meal plan.",
+      "error": "Shopping list could not be created from the meal plan.",
+      "title": "Shopping list from meal plan",
+      "subtitle": "Dishly respects your pantry and existing shopping list entries only for safe matches.",
+      "open": "Open shopping list",
+      "added": "Added",
+      "inPantry": "Already in pantry",
+      "alreadyOnList": "Already on shopping list",
+      "needsReview": "Review quantity",
+      "none": "No entries."
     },
     "days": {
       "monday": "Monday",

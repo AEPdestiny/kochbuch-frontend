@@ -930,6 +930,7 @@ function formatDate(date: Date) {
   width: 100%;
   box-sizing: border-box;
   max-width: min(1100px, 100%);
+  margin: 0 auto;
   padding: 0 20px;
 }
 

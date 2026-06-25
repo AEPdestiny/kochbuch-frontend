@@ -3,6 +3,7 @@ import type {
   MealPlanEntryRequest,
   MealPlanEntryResponse,
   MealSlot,
+  MealPlanShoppingListResponse,
   MealPlanWeekResponse,
 } from '@/types/mealPlan'
 
@@ -36,6 +37,13 @@ export const mealPlanApi = {
 
   async deleteSlot(date: string, slot: MealSlot): Promise<void> {
     await apiClient.delete(`/meal-plan/days/${date}/slots/${slot}`)
+  },
+
+  async createShoppingListFromWeek(startDate?: string): Promise<MealPlanShoppingListResponse> {
+    const response = await apiClient.post<MealPlanShoppingListResponse>('/meal-plan/shopping-list', null, {
+      params: startDate ? { startDate } : undefined,
+    })
+    return response.data
   },
 }
 

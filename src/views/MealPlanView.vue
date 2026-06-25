@@ -1,12 +1,20 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError } from '@/shared/api/apiClient'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { displayCategory } from '@/shared/recipeDisplay'
-import type { MealPlanEntryResponse, MealPlanWeekResponse, MealSlot } from '@/types/mealPlan'
+import type {
+  MealPlanEntryRequest,
+  MealPlanEntryResponse,
+  MealPlanShoppingListItem,
+  MealPlanShoppingListResponse,
+  MealPlanWeekResponse,
+  MealSlot,
+} from '@/types/mealPlan'
 import type { RecipeResponse, RecipeSearchFilters } from '@/types/recipe'
 import type { UserPreferencesResponse } from '@/types/profile'
 
@@ -53,6 +61,10 @@ const swipeError = ref<string | null>(null)
 const swipeMessage = ref<string | null>(null)
 const actionMessage = ref<string | null>(null)
 const activeBucket = ref<MealSlot | null>(null)
+const moveEditorKey = ref<string | null>(null)
+const moveTargetBySlot = ref<Record<string, { date: string; slot: MealSlot }>>({})
+const shoppingListLoading = ref(false)
+const shoppingListResult = ref<MealPlanShoppingListResponse | null>(null)
 
 const dayKeys = [
   'monday',
@@ -228,6 +240,20 @@ async function clearWeek() {
   }
 }
 
+async function createShoppingListFromWeek() {
+  try {
+    actionError.value = null
+    actionMessage.value = null
+    shoppingListLoading.value = true
+    shoppingListResult.value = await mealPlanApi.createShoppingListFromWeek(week.value?.weekStart)
+    actionMessage.value = t('mealPlan.shoppingList.success')
+  } catch {
+    actionError.value = t('mealPlan.shoppingList.error')
+  } finally {
+    shoppingListLoading.value = false
+  }
+}
+
 async function reloadWeek() {
   const loadedWeek = await mealPlanApi.getWeek(week.value?.weekStart)
   week.value = loadedWeek
@@ -253,6 +279,58 @@ function entriesForBucket(slot: MealSlot) {
 
 function toggleBucket(slot: MealSlot) {
   activeBucket.value = activeBucket.value === slot ? null : slot
+}
+
+function openMoveEditor(date: string, slot: MealSlot) {
+  const key = slotKey(date, slot)
+  moveEditorKey.value = moveEditorKey.value === key ? null : key
+  moveTargetBySlot.value[key] = { date, slot }
+}
+
+function cancelMove() {
+  moveEditorKey.value = null
+}
+
+function moveTargetFor(date: string, slot: MealSlot) {
+  const key = slotKey(date, slot)
+  if (!moveTargetBySlot.value[key]) {
+    moveTargetBySlot.value[key] = { date, slot }
+  }
+  return moveTargetBySlot.value[key]!
+}
+
+function isMoveTargetOccupied(date: string, slot: MealSlot) {
+  const target = moveTargetFor(date, slot)
+  return Boolean(entryFor(target.date, target.slot))
+    && (target.date !== date || target.slot !== slot)
+}
+
+async function moveEntry(currentDate: string, currentSlot: MealSlot) {
+  const key = slotKey(currentDate, currentSlot)
+  const entry = entryFor(currentDate, currentSlot)
+  const target = moveTargetBySlot.value[key]
+  if (!entry || !target) {
+    actionError.value = t('mealPlan.errors.move')
+    return
+  }
+
+  if (target.date === currentDate && target.slot === currentSlot) {
+    moveEditorKey.value = null
+    return
+  }
+
+  try {
+    actionError.value = null
+    actionMessage.value = null
+    await mealPlanApi.setSlot(target.date, target.slot, requestFromEntry(entry))
+    await mealPlanApi.deleteSlot(currentDate, currentSlot)
+    await reloadWeek()
+    moveEditorKey.value = null
+    actionMessage.value = t('mealPlan.messages.moved')
+  } catch {
+    await reloadWeek().catch(() => undefined)
+    actionError.value = t('mealPlan.errors.move')
+  }
 }
 
 function caloriesForDay(date: string) {
@@ -288,6 +366,21 @@ function slotKey(date: string, slot: MealSlot) {
 
 function entryTitle(entry: MealPlanEntryResponse) {
   return entry.recipe?.title ?? entry.customTitle ?? ''
+}
+
+function requestFromEntry(entry: MealPlanEntryResponse): MealPlanEntryRequest {
+  if (entry.recipe?.id) {
+    return { recipeId: Number(entry.recipe.id) }
+  }
+  const externalRecipeId = entry.externalRecipeId ?? entry.recipe?.externalId ?? null
+  return {
+    customTitle: entry.customTitle ?? entryTitle(entry),
+    caloriesSnapshot: entry.caloriesSnapshot ?? entry.calories ?? entry.recipe?.calories ?? null,
+    proteinSnapshot: entry.proteinSnapshot ?? entry.recipe?.protein ?? null,
+    imageUrlSnapshot: entry.imageUrlSnapshot ?? entry.recipe?.imageUrl ?? null,
+    externalRecipeId: externalRecipeId ? String(externalRecipeId) : null,
+    externalSource: entry.externalSource ?? entry.recipe?.source ?? null,
+  }
 }
 
 function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
@@ -529,6 +622,12 @@ function formatProtein(value: number | null | undefined) {
   return typeof value === 'number' ? `${Math.round(value)} g Protein` : ''
 }
 
+function formatShoppingItem(item: MealPlanShoppingListItem) {
+  const quantity = item.quantity === null || item.quantity === undefined ? '' : `${item.quantity}`.trim()
+  const unit = item.unit?.trim() ?? ''
+  return [quantity, unit, item.name].filter(Boolean).join(' ')
+}
+
 function firstFreeDateForSlot(slot: MealSlot) {
   if (bucketCounts.value[slot] >= BUCKET_LIMIT) {
     return null
@@ -631,7 +730,67 @@ function formatDate(date: Date) {
         <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
           {{ t('mealPlan.actions.clearWeek') }}
         </button>
+        <button
+          type="button"
+          class="secondary-button"
+          :disabled="shoppingListLoading || !week?.entries.length"
+          @click="createShoppingListFromWeek"
+        >
+          {{ shoppingListLoading ? t('mealPlan.shoppingList.loading') : t('mealPlan.shoppingList.action') }}
+        </button>
       </div>
+
+      <section v-if="shoppingListResult" class="shopping-list-result full-width" aria-live="polite">
+        <div class="shopping-list-result-header">
+          <div>
+            <h2>{{ t('mealPlan.shoppingList.title') }}</h2>
+            <p>{{ t('mealPlan.shoppingList.subtitle') }}</p>
+          </div>
+          <RouterLink to="/shopping-list" class="secondary-button planned-link">
+            {{ t('mealPlan.shoppingList.open') }}
+          </RouterLink>
+        </div>
+
+        <div class="shopping-result-grid">
+          <article>
+            <h3>{{ t('mealPlan.shoppingList.added') }}</h3>
+            <p v-if="shoppingListResult.added.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
+            <ul v-else>
+              <li v-for="item in shoppingListResult.added" :key="`${item.name}-${item.reason}`">
+                {{ formatShoppingItem(item) }}
+              </li>
+            </ul>
+          </article>
+          <article>
+            <h3>{{ t('mealPlan.shoppingList.inPantry') }}</h3>
+            <p v-if="shoppingListResult.skippedBecauseInPantry.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
+            <ul v-else>
+              <li v-for="item in shoppingListResult.skippedBecauseInPantry" :key="`${item.name}-${item.reason}`">
+                {{ formatShoppingItem(item) }}
+              </li>
+            </ul>
+          </article>
+          <article>
+            <h3>{{ t('mealPlan.shoppingList.alreadyOnList') }}</h3>
+            <p v-if="shoppingListResult.alreadyOnShoppingList.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
+            <ul v-else>
+              <li v-for="item in shoppingListResult.alreadyOnShoppingList" :key="`${item.name}-${item.reason}`">
+                {{ formatShoppingItem(item) }}
+              </li>
+            </ul>
+          </article>
+          <article>
+            <h3>{{ t('mealPlan.shoppingList.needsReview') }}</h3>
+            <p v-if="shoppingListResult.needsReview.length === 0">{{ t('mealPlan.shoppingList.none') }}</p>
+            <ul v-else>
+              <li v-for="item in shoppingListResult.needsReview" :key="`${item.name}-${item.reason}`">
+                {{ formatShoppingItem(item) }}
+                <small v-if="item.reason">{{ item.reason }}</small>
+              </li>
+            </ul>
+          </article>
+        </div>
+      </section>
 
       <section v-if="planningMode === 'swipe'" class="swipe-planner full-width" aria-label="Swipe-Planung">
         <div class="swipe-controls">
@@ -757,6 +916,50 @@ function formatDate(date: Date) {
           <div v-if="entryFor(day.date, slot.key)" class="planned-recipe">
             <span class="planned-label">{{ t('mealPlan.plannedRecipe') }}</span>
             <strong>{{ entryFor(day.date, slot.key) ? entryTitle(entryFor(day.date, slot.key)!) : '' }}</strong>
+            <div class="planned-actions">
+              <RouterLink
+                v-if="entryFor(day.date, slot.key)?.recipe?.id"
+                class="secondary-button planned-link"
+                :to="`/recipe/${entryFor(day.date, slot.key)!.recipe!.id}`"
+              >
+                {{ t('mealPlan.actions.viewRecipe') }}
+              </RouterLink>
+              <button type="button" class="secondary-button" @click="openMoveEditor(day.date, slot.key)">
+                {{ t('mealPlan.actions.move') }}
+              </button>
+            </div>
+            <form
+              v-if="moveEditorKey === slotKey(day.date, slot.key)"
+              class="move-form"
+              @submit.prevent="moveEntry(day.date, slot.key)"
+            >
+              <label>
+                <span>{{ t('mealPlan.form.targetDay') }}</span>
+                <select v-model="moveTargetFor(day.date, slot.key).date">
+                  <option v-for="targetDay in weekDays" :key="targetDay.date" :value="targetDay.date">
+                    {{ t(targetDay.labelKey) }} · {{ targetDay.date }}
+                  </option>
+                </select>
+              </label>
+              <label>
+                <span>{{ t('mealPlan.form.targetSlot') }}</span>
+                <select v-model="moveTargetFor(day.date, slot.key).slot">
+                  <option v-for="targetSlot in mealSlots" :key="targetSlot.key" :value="targetSlot.key">
+                    {{ t(targetSlot.labelKey) }}
+                  </option>
+                </select>
+              </label>
+              <p
+                v-if="isMoveTargetOccupied(day.date, slot.key)"
+                class="suggestion-state"
+              >
+                {{ t('mealPlan.messages.targetOccupied') }}
+              </p>
+              <div class="move-actions">
+                <button type="submit" class="primary-button">{{ t('mealPlan.actions.moveSave') }}</button>
+                <button type="button" class="secondary-button" @click="cancelMove">{{ t('mealPlan.actions.cancel') }}</button>
+              </div>
+            </form>
           </div>
           <p v-else class="empty-day">{{ t('mealPlan.empty.day') }}</p>
 
@@ -958,6 +1161,43 @@ function formatDate(date: Date) {
   overflow-wrap: anywhere;
 }
 
+.planned-actions,
+.move-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.planned-link {
+  text-decoration: none;
+}
+
+.move-form {
+  border-top: 1px solid #d6eee9;
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.move-form label {
+  color: #2b1b23;
+  display: grid;
+  gap: 5px;
+  font-weight: 700;
+}
+
+.move-form select {
+  background: #ffffff;
+  border: 1.5px solid #c3e7e1;
+  border-radius: 8px;
+  font: inherit;
+  min-height: 40px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
 .planned-label {
   color: #26b6b8;
   font-size: 0.8rem;
@@ -1042,6 +1282,65 @@ function formatDate(date: Date) {
 .week-summary p {
   color: #486b68;
   margin: 4px 0 0;
+}
+
+.shopping-list-result {
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 16px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.shopping-list-result-header {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.shopping-list-result h2,
+.shopping-list-result h3 {
+  color: #cc7da9;
+  margin: 0 0 6px;
+}
+
+.shopping-list-result p {
+  color: #486b68;
+  margin: 0;
+}
+
+.shopping-result-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.shopping-result-grid article {
+  background: #f4fbfa;
+  border: 1px solid #d6eee9;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.shopping-result-grid ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.shopping-result-grid li {
+  color: #2b1b23;
+  display: grid;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.shopping-result-grid small {
+  color: #486b68;
 }
 
 .swipe-planner {
@@ -1279,8 +1578,14 @@ function formatDate(date: Date) {
     flex-direction: column;
   }
 
-  .week-summary .clear-week-button {
+  .week-summary .clear-week-button,
+  .week-summary .secondary-button {
     width: 100%;
+  }
+
+  .shopping-list-result-header {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .swipe-controls,
@@ -1303,6 +1608,12 @@ function formatDate(date: Date) {
   }
 
   .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .planned-actions,
+  .move-actions {
     display: grid;
     grid-template-columns: 1fr;
   }

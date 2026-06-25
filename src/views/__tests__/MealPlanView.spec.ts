@@ -1,5 +1,6 @@
 ﻿import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { config } from '@vue/test-utils'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
@@ -16,6 +17,7 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
     deleteDay: vi.fn(),
     setSlot: vi.fn(),
     deleteSlot: vi.fn(),
+    createShoppingListFromWeek: vi.fn(),
   },
 }))
 
@@ -35,11 +37,24 @@ vi.mock('@/shared/api/profileApi', () => ({
 
 enableAutoUnmount(afterEach)
 
+config.global.stubs = {
+  RouterLink: {
+    props: ['to'],
+    template: '<a :href="typeof to === \'string\' ? to : to.path"><slot /></a>',
+  },
+}
+
 describe('MealPlanView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     setLocale('de')
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue(weekResponse())
+    vi.mocked(mealPlanApi.createShoppingListFromWeek).mockResolvedValue({
+      added: [],
+      skippedBecauseInPantry: [],
+      needsReview: [],
+      alreadyOnShoppingList: [],
+    })
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
       recipe(1, 'Pasta'),
       recipe(2, 'Soup'),
@@ -123,6 +138,54 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Geplantes Rezept')
     expect(wrapper.text()).toContain('Pasta')
     expect(wrapper.text()).toContain('Noch kein Rezept geplant.')
+  })
+
+  it('links planned own recipe to the recipe detail page', async () => {
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+
+    await flushPromises()
+
+    const recipeLink = wrapper.findAll('.planned-link')
+      .find(link => link.text().includes('Rezept ansehen'))!
+    expect(recipeLink.exists()).toBe(true)
+    expect(recipeLink.attributes('href')).toBe('/recipe/1')
+  })
+
+  it('moves a planned recipe to another day and slot', async () => {
+    vi.mocked(mealPlanApi.getWeek)
+      .mockResolvedValueOnce(weekResponse())
+      .mockResolvedValueOnce({
+        weekStart: '2026-06-01',
+        weekEnd: '2026-06-07',
+        entries: [entry('2026-06-02', recipe(1, 'Pasta'), 'breakfast')],
+      })
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(1, 'Pasta'), 'breakfast'))
+    vi.mocked(mealPlanApi.deleteSlot).mockResolvedValue()
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+
+    await flushPromises()
+
+    const mondayCard = wrapper.findAll('.day-card')
+      .find(card => card.text().includes('Montag'))!
+    const moveButton = mondayCard.findAll('button')
+      .find(button => button.text().includes('Verschieben'))!
+    await moveButton.trigger('click')
+
+    const selects = mondayCard.findAll('.move-form select')
+    await selects[0]!.setValue('2026-06-02')
+    await selects[1]!.setValue('breakfast')
+    await mondayCard.find('.move-form').trigger('submit')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', { recipeId: 1 })
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
+    expect(mealPlanApi.getWeek).toHaveBeenLastCalledWith('2026-06-01')
+    expect(wrapper.text()).toContain('Der Wochenplan-Eintrag wurde verschoben.')
+    expect(wrapper.text()).toContain('Pasta')
   })
 
   it('sets an own recipe suggestion for a day', async () => {
@@ -750,6 +813,32 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).not.toContain('Pasta')
   })
 
+  it('creates a shopping list from the current week and shows the transparent result', async () => {
+    vi.mocked(mealPlanApi.createShoppingListFromWeek).mockResolvedValue({
+      added: [{ name: 'Tomaten', quantity: 200, unit: 'g', recipeTitle: 'Pasta' }],
+      skippedBecauseInPantry: [{ name: 'Eier', quantity: 2, unit: 'Stück', recipeTitle: 'Omelett' }],
+      needsReview: [{ name: 'Butter', quantity: 1, unit: 'EL', recipeTitle: 'Pasta', reason: 'Einheiten sind nicht sicher vergleichbar.' }],
+      alreadyOnShoppingList: [{ name: 'Reis', quantity: 200, unit: 'g', recipeTitle: 'Bowl' }],
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const createButton = wrapper.findAll('button')
+      .find(button => button.text().includes('Einkaufsliste aus Wochenplan erstellen'))!
+    await createButton.trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.createShoppingListFromWeek).toHaveBeenCalledWith('2026-06-01')
+    expect(wrapper.text()).toContain('Einkaufsliste wurde aus dem Wochenplan erstellt.')
+    expect(wrapper.text()).toContain('200 g Tomaten')
+    expect(wrapper.text()).toContain('2 Stück Eier')
+    expect(wrapper.text()).toContain('1 EL Butter')
+    expect(wrapper.text()).toContain('200 g Reis')
+    expect(wrapper.text()).toContain('Einheiten sind nicht sicher vergleichbar.')
+  })
+
   it('treats 404 while clearing already empty slots as success when the reloaded week is empty', async () => {
     vi.mocked(mealPlanApi.getWeek)
       .mockResolvedValueOnce(weekResponse())
@@ -794,11 +883,13 @@ describe('MealPlanView', () => {
     })
     await flushPromises()
 
-    await wrapper.find('.secondary-button').trigger('click')
+    const removeButton = wrapper.findAll('button')
+      .find(button => button.text().includes('Entfernen'))!
+    await removeButton.trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
-    expect(wrapper.find('.secondary-button').exists()).toBe(false)
+    expect(wrapper.findAll('button').some(button => button.text().includes('Entfernen'))).toBe(false)
   })
 
   it('shows empty state when no own recipes exist', async () => {

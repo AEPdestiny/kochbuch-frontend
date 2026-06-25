@@ -11,6 +11,7 @@ vi.mock('@/shared/api/apiClient', async () => {
       get: vi.fn(),
       put: vi.fn(),
       delete: vi.fn(),
+      post: vi.fn(),
     },
   }
 })
@@ -144,6 +145,40 @@ describe('mealPlanApi', () => {
     await mealPlanApi.deleteSlot('2026-06-03', 'snack')
 
     expect(apiClient.delete).toHaveBeenCalledWith('/meal-plan/days/2026-06-03/slots/snack')
+  })
+
+  it('createShoppingListFromWeek calls POST /meal-plan/shopping-list with startDate and returns result', async () => {
+    const response = {
+      added: [{ name: 'Tomaten', quantity: 200, unit: 'g' }],
+      skippedBecauseInPantry: [],
+      needsReview: [],
+      alreadyOnShoppingList: [],
+    }
+    vi.mocked(apiClient.post).mockResolvedValue({ data: response })
+
+    const result = await mealPlanApi.createShoppingListFromWeek('2026-06-01')
+
+    expect(apiClient.post).toHaveBeenCalledWith('/meal-plan/shopping-list', null, {
+      params: { startDate: '2026-06-01' },
+    })
+    expect(result).toEqual(response)
+  })
+
+  it('createShoppingListFromWeek calls POST /meal-plan/shopping-list without startDate', async () => {
+    const response = {
+      added: [],
+      skippedBecauseInPantry: [],
+      needsReview: [],
+      alreadyOnShoppingList: [],
+    }
+    vi.mocked(apiClient.post).mockResolvedValue({ data: response })
+
+    const result = await mealPlanApi.createShoppingListFromWeek()
+
+    expect(apiClient.post).toHaveBeenCalledWith('/meal-plan/shopping-list', null, {
+      params: undefined,
+    })
+    expect(result).toEqual(response)
   })
 
   it('getWeek forwards ApiClientError from apiClient', async () => {

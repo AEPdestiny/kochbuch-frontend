@@ -32,4 +32,20 @@ export type MealPlanWeekResponse = {
   entries: MealPlanEntryResponse[]
 }
 
+export type MealPlanShoppingListItem = {
+  name: string
+  quantity?: number | string | null
+  unit?: string | null
+  recipeTitle?: string | null
+  ingredient?: string | null
+  reason?: string | null
+}
+
+export type MealPlanShoppingListResponse = {
+  added: MealPlanShoppingListItem[]
+  skippedBecauseInPantry: MealPlanShoppingListItem[]
+  needsReview: MealPlanShoppingListItem[]
+  alreadyOnShoppingList: MealPlanShoppingListItem[]
+}
+
 export type MealPlanEntry = MealPlanEntryResponse
