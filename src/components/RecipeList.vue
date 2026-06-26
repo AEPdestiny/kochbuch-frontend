@@ -22,6 +22,7 @@ const error = ref<string | null>(null)
 const loginRequired = ref(false)
 const formError = ref<string | null>(null)
 const editFormError = ref<string | null>(null)
+const favoriteError = ref<string | null>(null)
 
 const newTitle = ref('')
 const newImageUrl = ref('')
@@ -81,7 +82,8 @@ const loadExternalFavoriteRecipes = async (): Promise<Recipe[]> => {
     return favorites.map(favorite => ({
       id: favorite.externalRecipeId,
       externalId: favorite.externalRecipeId,
-      source: 'spoonacular',
+      source: (favorite.externalSource ?? 'SPOONACULAR').toLowerCase(),
+      sourceName: favorite.externalSource ?? 'SPOONACULAR',
       title: favorite.externalTitle,
       imageUrl: favorite.externalImageUrl ?? '',
       prepTimeMinutes: 0,
@@ -350,7 +352,7 @@ const favorites = computed(() => [
 ])
 
 const openFavoriteDetails = (r: Recipe) => {
-  if (r.source === 'spoonacular' || r.source === 'external') {
+  if (r.externalId || r.source === 'spoonacular' || r.source === 'external') {
     router.push(`/recipe/external/${r.externalId ?? r.id}`)
     return
   }
@@ -524,14 +526,20 @@ function toImageUploadErrorMessage(e: unknown) {
 
 const removeFavorite = async (r: Recipe) => {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    error.value = t('recipes.errors.sessionExpired')
+    favoriteError.value = t('recipes.errors.sessionExpired')
     return
   }
 
   try {
-    if (r.source === 'spoonacular' || r.source === 'external') {
-      await favoriteApi.removeExternalFavorite('SPOONACULAR', String(r.externalId ?? r.id))
-      externalFavorites.value = externalFavorites.value.filter(favorite => favorite.id !== r.id)
+    favoriteError.value = null
+    if (r.externalId || r.source === 'spoonacular' || r.source === 'external') {
+      const source = r.sourceName?.trim() || r.source?.trim() || 'SPOONACULAR'
+      const externalRecipeId = String(r.externalId ?? r.id)
+      await favoriteApi.removeExternalFavorite(source, externalRecipeId)
+      externalFavorites.value = externalFavorites.value.filter(favorite =>
+        String(favorite.externalId ?? favorite.id) !== externalRecipeId
+        || (favorite.sourceName?.trim() || favorite.source?.trim() || 'SPOONACULAR').toUpperCase() !== source.toUpperCase()
+      )
       if (selectedFavorite.value?.id === r.id) {
         selectedFavorite.value = null
       }
@@ -550,7 +558,7 @@ const removeFavorite = async (r: Recipe) => {
       selectedFavorite.value = null
     }
   } catch (e: unknown) {
-    error.value = e instanceof ApiClientError && e.message
+    favoriteError.value = e instanceof ApiClientError && e.message
       ? e.message
       : 'Favorit konnte nicht entfernt werden.'
   }
@@ -913,6 +921,9 @@ const removeFavorite = async (r: Recipe) => {
       </div>
 
       <div v-else class="recipe-grid">
+        <p v-if="favoriteError" class="status-text error favorite-error">
+          {{ t('recipes.errors.prefix') }} {{ favoriteError }}
+        </p>
         <article
           v-for="r in favorites"
           :key="'fav-' + r.id"

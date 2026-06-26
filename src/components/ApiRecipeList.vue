@@ -51,6 +51,7 @@ const mealPlanMessage = ref<string | null>(null)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const { t, locale } = useI18n()
 const router = useRouter()
+const isLoggedIn = computed(() => Boolean(sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)))
 
 const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
@@ -755,6 +756,7 @@ function formatDate(date: Date) {
         <label><input v-model="calorieConscious" type="checkbox" /> {{ t('home.filters.calorieConscious') }}</label>
         <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
         <button
+          v-if="isLoggedIn"
           type="button"
           class="plain-filter-button"
           :aria-pressed="!profilePersonalizationEnabled"
@@ -795,10 +797,10 @@ function formatDate(date: Date) {
           </select>
         </label>
       </div>
-      <p class="personalization-status">
+      <p v-if="isLoggedIn" class="personalization-status">
         {{ personalizationStatusText }}
       </p>
-      <p v-if="personalizationActive" class="personalization-note">
+      <p v-if="isLoggedIn && personalizationActive" class="personalization-note">
         {{ t('home.personalization.note') }}
       </p>
     </section>

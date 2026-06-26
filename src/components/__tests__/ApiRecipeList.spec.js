@@ -200,6 +200,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows a clear profile personalization toggle and status', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
@@ -214,6 +215,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('translates the personalization controls into English', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     setLocale('en')
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -227,6 +229,16 @@ describe('ApiRecipeList.vue', () => {
 
     expect(wrapper.text()).toContain('Turn on personalization')
     expect(wrapper.text()).toContain('Profile ignored – allergies and dislikes remain active')
+  })
+
+  it('does not show profile personalization controls for guests', async () => {
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Personalisierung ausschalten')
+    expect(wrapper.text()).not.toContain('Personalisierung aktivieren')
+    expect(wrapper.text()).not.toContain('Profil aktiv')
+    expect(wrapper.find('.plain-filter-button').exists()).toBe(false)
   })
 
   it('disables soft profile personalization but keeps allergies and dislikes active', async () => {
@@ -499,6 +511,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows translated English home UI while keeping recipe data unchanged', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(1, 'Chicken Pasta', 'noodles', 'Italian'),
@@ -573,10 +586,9 @@ describe('ApiRecipeList.vue', () => {
   it('reloads local recipes when search is cleared without default external fallback', async () => {
     setLocale('en')
     vi.useFakeTimers()
-    vi.mocked(recipeApi.getPublishedRecipes)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([recipe(3, 'Default Pasta', 'noodles', 'Italian')])
+    vi.mocked(recipeApi.getPublishedRecipes).mockImplementation((_, query) =>
+      Promise.resolve(query ? [] : [recipe(3, 'Default Pasta', 'noodles', 'Italian')]),
+    )
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([recipe(2, 'Chicken Curry', 'chicken', 'Indian')])
 
     const wrapper = mount(ApiRecipeList)
@@ -600,9 +612,11 @@ describe('ApiRecipeList.vue', () => {
     vi.useFakeTimers()
     vi.mocked(recipeApi.getExternalRecipes)
       .mockResolvedValueOnce([recipe(2, 'External Chicken', 'chicken', 'American')])
-    vi.mocked(recipeApi.getPublishedRecipes)
-      .mockResolvedValueOnce([recipe(11, 'Published Pasta', 'noodles', 'Italian')])
-      .mockResolvedValueOnce([recipe(10, 'Published Chicken Soup', 'chicken', 'Soup')])
+    vi.mocked(recipeApi.getPublishedRecipes).mockImplementation((_, query) =>
+      Promise.resolve(query
+        ? [recipe(10, 'Published Chicken Soup', 'chicken', 'Soup')]
+        : [recipe(11, 'Published Pasta', 'noodles', 'Italian')]),
+    )
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -696,6 +710,7 @@ describe('ApiRecipeList.vue', () => {
 
   it('keeps low-calorie, high-protein, sorting and personalization state after shuffle', async () => {
     vi.useFakeTimers()
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Protein Bowl', 'beans', 'lunch', { calories: 350, protein: 28 }),
     ])

@@ -59,6 +59,9 @@ describe('App navigation', () => {
     expect(wrapper.text()).toContain('Anmelden')
     expect(wrapper.text()).not.toContain('Dashboard')
     expect(wrapper.text()).not.toContain('Profil')
+    expect(wrapper.text()).not.toContain('Meine Rezepte')
+    expect(wrapper.text()).not.toContain('Vorrat')
+    expect(wrapper.text()).not.toContain('Einkaufsliste')
     expect(wrapper.text()).not.toContain('Wochenplan')
   })
 
@@ -82,6 +85,9 @@ describe('App navigation', () => {
 
     expect(wrapper.text()).toContain('Dashboard')
     expect(wrapper.text()).toContain('Profil')
+    expect(wrapper.text()).toContain('Meine Rezepte')
+    expect(wrapper.text()).toContain('Vorrat')
+    expect(wrapper.text()).toContain('Einkaufsliste')
     expect(wrapper.text()).toContain('Wochenplan')
     expect(wrapper.text()).not.toContain('Rezept erstellen')
     expect(wrapper.text()).not.toContain('Favoriten')

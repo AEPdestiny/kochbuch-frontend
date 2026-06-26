@@ -642,7 +642,7 @@ describe('RecipeList.vue', () => {
         externalRecipeId: '716429',
         externalTitle: 'External Pasta',
         externalImageUrl: 'https://example.com/pasta.jpg',
-        externalSource: 'SPOONACULAR',
+        externalSource: 'spoonacular',
       },
     ])
 
@@ -666,7 +666,7 @@ describe('RecipeList.vue', () => {
         externalRecipeId: '716429',
         externalTitle: 'External Pasta',
         externalImageUrl: 'https://example.com/pasta.jpg',
-        externalSource: 'SPOONACULAR',
+        externalSource: 'spoonacular',
       },
     ])
 
@@ -679,8 +679,35 @@ describe('RecipeList.vue', () => {
     await wrapper.find('.favorite-remove-button').trigger('click')
     await flushPromises()
 
-    expect(favoriteApi.removeExternalFavorite).toHaveBeenCalledWith('SPOONACULAR', '716429')
+    expect(favoriteApi.removeExternalFavorite).toHaveBeenCalledWith('spoonacular', '716429')
     expect(wrapper.text()).not.toContain('External Pasta')
+  })
+
+  it('keeps an external favorite visible when removing it fails', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([
+      {
+        id: 1,
+        externalRecipeId: '716429',
+        externalTitle: 'External Pasta',
+        externalImageUrl: 'https://example.com/pasta.jpg',
+        externalSource: 'spoonacular',
+      },
+    ])
+    vi.mocked(favoriteApi.removeExternalFavorite).mockRejectedValue(new Error('delete failed'))
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
+
+    await wrapper.find('.favorite-remove-button').trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.removeExternalFavorite).toHaveBeenCalledWith('spoonacular', '716429')
+    expect(wrapper.text()).toContain('External Pasta')
+    expect(wrapper.text()).toContain('Favorit konnte nicht entfernt werden.')
   })
 
   it('removes own favorites directly by updating the recipe', async () => {
