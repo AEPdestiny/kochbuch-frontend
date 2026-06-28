@@ -1,5 +1,6 @@
 import { mount, flushPromises, config, enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import ApiRecipeList from '@/components/ApiRecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
@@ -8,6 +9,12 @@ import { profileApi } from '@/shared/api/profileApi'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { i18n, setLocale } from '@/i18n'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { useAuthStore } from '@/stores/authStore'
+
+function loginAsUser() {
+  sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+  useAuthStore().token = 'jwt-token'
+}
 
 const push = vi.fn()
 
@@ -58,7 +65,9 @@ describe('ApiRecipeList.vue', () => {
     sessionStorage.clear()
     push.mockClear()
     setLocale('de')
-    config.global.plugins = [i18n]
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([])
     vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
@@ -200,7 +209,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows a clear profile personalization toggle and status', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
@@ -215,7 +224,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('translates the personalization controls into English', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     setLocale('en')
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
@@ -243,7 +252,7 @@ describe('ApiRecipeList.vue', () => {
 
   it('disables soft profile personalization but keeps allergies and dislikes active', async () => {
     vi.useFakeTimers()
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(profileApi.getPreferences).mockResolvedValue({
       likes: ['pasta'],
       dislikes: ['mushroom'],
@@ -306,7 +315,7 @@ describe('ApiRecipeList.vue', () => {
 
   it('prioritizes search query over soft profile filters while keeping hard exclusions', async () => {
     vi.useFakeTimers()
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(profileApi.getPreferences).mockResolvedValue({
       likes: ['pasta'],
       dislikes: ['mushroom'],
@@ -404,7 +413,7 @@ describe('ApiRecipeList.vue', () => {
   it('opens meal plan modal from home and plans external recipe as customTitle', async () => {
     setLocale('en')
     vi.useFakeTimers()
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(recipeApi.getPublishedRecipes)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
@@ -439,7 +448,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('plans Dishly recipe from home with recipeId', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Published Pasta', 'noodles', 'Italian'),
     ])
@@ -463,7 +472,7 @@ describe('ApiRecipeList.vue', () => {
   it('favorites external recipes from home through backend api', async () => {
     setLocale('en')
     vi.useFakeTimers()
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(recipeApi.getPublishedRecipes)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
@@ -490,7 +499,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('favorites local Dishly recipes from home through backend favorite api', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Published Pasta', 'noodles', 'dinner'),
     ])
@@ -511,7 +520,7 @@ describe('ApiRecipeList.vue', () => {
   })
 
   it('shows translated English home UI while keeping recipe data unchanged', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(1, 'Chicken Pasta', 'noodles', 'Italian'),
@@ -710,7 +719,7 @@ describe('ApiRecipeList.vue', () => {
 
   it('keeps low-calorie, high-protein, sorting and personalization state after shuffle', async () => {
     vi.useFakeTimers()
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    loginAsUser()
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Protein Bowl', 'beans', 'lunch', { calories: 350, protein: 28 }),
     ])

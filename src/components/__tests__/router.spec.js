@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import { beforeEach, describe, it, expect, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { i18n, setLocale } from '@/i18n'
@@ -65,13 +66,16 @@ describe('App routing', () => {
       entries: [],
     })
     setLocale('de')
+    setActivePinia(createPinia())
   })
 
   it('renders Home with ApiRecipeList on /', async () => {
     router.push('/')
     await router.isReady()
+    const pinia = createPinia()
+    setActivePinia(pinia)
     const wrapper = mount(HomeView, {
-      global: { plugins: [router, i18n] },
+      global: { plugins: [router, i18n, pinia] },
     })
 
     expect(wrapper.html()).toContain('Entdecke Gerichte')

@@ -9,6 +9,7 @@ import { pantryApi } from '@/shared/api/pantryApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
+import { useAuthStore } from '@/stores/authStore'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 import type { UserPreferencesResponse } from '@/types/profile'
 import type { Recipe, RecipeSearchFilters } from '@/types/recipe'
@@ -51,7 +52,8 @@ const mealPlanMessage = ref<string | null>(null)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const { t, locale } = useI18n()
 const router = useRouter()
-const isLoggedIn = computed(() => Boolean(sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)))
+const authStore = useAuthStore()
+const isLoggedIn = computed(() => authStore.isAuthenticated)
 
 const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
@@ -390,6 +392,19 @@ watch(locale, () => {
     clearTimeout(searchTimeout)
   }
   loadRecipes()
+})
+
+watch(() => authStore.isAuthenticated, (authenticated) => {
+  if (!authenticated) {
+    loadedPreferences.value = null
+    likes.value = []
+    dislikes.value = []
+    allergies.value = []
+    pantryIngredients.value = []
+    externalFavoriteIds.value = new Set()
+    clearSoftProfilePersonalization()
+    profilePersonalizationEnabled.value = true
+  }
 })
 
 async function loadPersonalization() {
