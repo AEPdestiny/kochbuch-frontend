@@ -33,4 +33,5 @@ configureUnauthorizedHandler(async redirectPath => {
   }
 })
 
+
 app.mount('#app')
