@@ -58,12 +58,10 @@ const isLoggedIn = computed(() => authStore.isAuthenticated)
 const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
 const PAGE_SIZE = 30
-const RECIPE_ORDER_KEY = 'dishly.recipe.order'
-const PAGE_STORAGE_KEY = 'dishly.recipe.page'
+const SNAPSHOT_KEY = 'dishly.recipe.snapshot'
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 let calorieSortWasAutomatic = false
-let isFirstBuild = true
 
 const filtered = computed(() => recipes.value)
 const currentPage = ref(1)
@@ -73,7 +71,6 @@ const paginatedRecipes = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
   return recipes.value.slice(start, start + PAGE_SIZE)
 })
-const listWrapRef = ref<HTMLElement | null>(null)
 const currentLanguage = computed(() => {
   const [language] = String(locale.value).split('-')
   return (language || 'de').toLowerCase()
@@ -155,27 +152,45 @@ const filterRecipes = (items: Recipe[], q: string) => {
   )
 }
 
-function saveRecipeOrder(items: DisplayRecipe[]) {
+function buildContextKey() {
+  return `a:${authStore.isAuthenticated ? '1' : '0'}|l:${currentLanguage.value}`
+}
+
+function saveSnapshot(items: DisplayRecipe[], page: number) {
   try {
-    sessionStorage.setItem(RECIPE_ORDER_KEY, JSON.stringify(items.map(r => `${r.source}:${r.id}`)))
+    sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify({
+      recipes: items,
+      page,
+      contextKey: buildContextKey(),
+    }))
+  } catch {}
+}
+
+function loadSnapshot(): { recipes: DisplayRecipe[]; page: number } | null {
+  try {
+    const raw = sessionStorage.getItem(SNAPSHOT_KEY)
+    if (!raw) return null
+    const snap = JSON.parse(raw)
+    if (!snap || snap.contextKey !== buildContextKey()) return null
+    if (!Array.isArray(snap.recipes) || snap.recipes.length === 0) return null
+    return { recipes: snap.recipes, page: Number(snap.page) || 1 }
   } catch {
-    // sessionStorage might be unavailable
+    return null
   }
 }
 
-function tryRestoreOrder(built: DisplayRecipe[]): DisplayRecipe[] {
+function clearSnapshot() {
+  try { sessionStorage.removeItem(SNAPSHOT_KEY) } catch {}
+}
+
+function updateSnapshotPage(page: number) {
   try {
-    const raw = sessionStorage.getItem(RECIPE_ORDER_KEY)
-    if (!raw) return built
-    const savedKeys: string[] = JSON.parse(raw)
-    const map = new Map(built.map(r => [`${r.source}:${r.id}`, r]))
-    const restored = savedKeys.map(k => map.get(k)).filter((r): r is DisplayRecipe => r !== undefined)
-    const restoredSet = new Set(savedKeys)
-    const fresh = built.filter(r => !restoredSet.has(`${r.source}:${r.id}`))
-    return [...restored, ...fresh]
-  } catch {
-    return built
-  }
+    const raw = sessionStorage.getItem(SNAPSHOT_KEY)
+    if (!raw) return
+    const snap = JSON.parse(raw)
+    snap.page = page
+    sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snap))
+  } catch {}
 }
 
 const buildView = () => {
@@ -187,47 +202,46 @@ const buildView = () => {
   const externalSlice = externalFallbackLimit > 0
     ? filterRecipes(shuffled, q).slice(0, Math.min(EXTERNAL_CHUNK, externalFallbackLimit))
     : []
-  let built = sortRecipes(applyPreferenceBoost([
+  recipes.value = sortRecipes(applyPreferenceBoost([
     ...matchingPublished.map(recipe => toDisplayRecipe(recipe, 'dishly')),
     ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
   ]))
-
-  if (isFirstBuild) {
-    built = tryRestoreOrder(built)
-    const savedPage = Number(sessionStorage.getItem(PAGE_STORAGE_KEY)) || 1
-    if (savedPage > 1 && savedPage <= Math.ceil(built.length / PAGE_SIZE)) {
-      currentPage.value = savedPage
-    }
-    isFirstBuild = false
-  }
-
-  recipes.value = built
-  saveRecipeOrder(built)
 }
 
 function goToPage(page: number) {
   currentPage.value = page
-  try { sessionStorage.setItem(PAGE_STORAGE_KEY, String(page)) } catch {}
-  listWrapRef.value?.scrollIntoView?.({ behavior: 'auto', block: 'start' })
+  updateSnapshotPage(page)
+  window.scrollTo({ top: 0, behavior: 'auto' })
 }
 
 const loadRecipes = async () => {
   loading.value = true
   try {
     await loadPersonalization()
-    // Cancel any debounce triggered by profile-ref changes inside loadPersonalization().
-    // buildView() below will apply personalization correctly in one pass.
+    ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
+
+    // Cancel any watcher debounce that was triggered by profile-ref changes during loading.
+    // Both awaits above can yield control to Vue's scheduler; cancel after both complete.
     if (!search.value.trim() && searchTimeout) {
       clearTimeout(searchTimeout)
       searchTimeout = null
     }
-    ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
+
     allExternal.value = []
     error.value = null
-    buildView()
-    searchNotice.value = ownPublished.value.length < 100
-      ? t('home.notices.localRecipesLoaded', { count: ownPublished.value.length })
-      : null
+
+    const snap = loadSnapshot()
+    if (snap) {
+      recipes.value = snap.recipes
+      currentPage.value = snap.page
+      searchNotice.value = null
+    } else {
+      buildView()
+      saveSnapshot(recipes.value, currentPage.value)
+      searchNotice.value = ownPublished.value.length < 100
+        ? t('home.notices.localRecipesLoaded', { count: ownPublished.value.length })
+        : null
+    }
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
@@ -404,14 +418,13 @@ function logMealPlanError(
 }
 
 const shuffleRecipes = async () => {
-  sessionStorage.removeItem(RECIPE_ORDER_KEY)
-  sessionStorage.removeItem(PAGE_STORAGE_KEY)
-  isFirstBuild = false
+  clearSnapshot()
   currentPage.value = 1
   loading.value = true
   error.value = null
   try {
     await loadExternalRecipes(search.value)
+    saveSnapshot(recipes.value, 1)
   } finally {
     loading.value = false
   }
@@ -423,7 +436,7 @@ onMounted(() => {
 
 watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, profilePersonalizationEnabled], () => {
   currentPage.value = 1
-  try { sessionStorage.removeItem(PAGE_STORAGE_KEY) } catch {}
+  clearSnapshot()
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -453,6 +466,7 @@ watch(calorieConscious, enabled => {
 })
 
 watch(locale, () => {
+  clearSnapshot()
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -469,8 +483,7 @@ watch(() => authStore.isAuthenticated, (authenticated) => {
     externalFavoriteIds.value = new Set()
     clearSoftProfilePersonalization()
     profilePersonalizationEnabled.value = true
-    sessionStorage.removeItem(RECIPE_ORDER_KEY)
-    sessionStorage.removeItem(PAGE_STORAGE_KEY)
+    clearSnapshot()
     currentPage.value = 1
   }
 })
@@ -895,7 +908,7 @@ function formatDate(date: Date) {
       </button>
     </div>
 
-    <section ref="listWrapRef" class="list-wrap">
+    <section class="list-wrap">
       <p v-if="loading" class="status-text">{{ t('home.loading') }}</p>
       <p v-else-if="error && filtered.length === 0" class="status-text error">
         {{ t('home.errors.prefix') }} {{ error }}

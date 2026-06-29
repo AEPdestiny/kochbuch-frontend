@@ -515,52 +515,80 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
-  it('restores page from sessionStorage after remount (F5 simulation)', async () => {
+  it('saves a snapshot to sessionStorage after initial load', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
     )
 
-    // First mount: navigate to page 2
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const raw = sessionStorage.getItem('dishly.recipe.snapshot')
+    expect(raw).not.toBeNull()
+    const snap = JSON.parse(raw)
+    expect(snap.recipes).toHaveLength(35)
+    expect(snap.page).toBe(1)
+    wrapper.unmount()
+  })
+
+  it('restores exact recipe list and page from snapshot after remount (F5 simulation)', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
     const wrapper1 = mount(ApiRecipeList)
     await flushPromises()
 
+    // Navigate to page 2
     const nextBtn = wrapper1.findAll('.pagination-btn').find(b => b.text() === 'Next')
     await nextBtn.trigger('click')
     await flushPromises()
     expect(wrapper1.findAll('.recipe-card')).toHaveLength(5)
+    // Snapshot must include page 2
+    const snapBefore = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot'))
+    expect(snapBefore.page).toBe(2)
+
+    // Record which titles are visible on page 2
+    const titlesOnPage2 = wrapper1.findAll('.recipe-card').map(c => c.find('.card-title').text())
 
     wrapper1.unmount()
 
-    // Second mount (simulates F5) – should restore page 2
+    // Second mount (simulates F5)
     const wrapper2 = mount(ApiRecipeList)
     await flushPromises()
 
+    // Exact same 5 recipes on page 2
     expect(wrapper2.findAll('.recipe-card')).toHaveLength(5)
+    const restoredTitles = wrapper2.findAll('.recipe-card').map(c => c.find('.card-title').text())
+    expect(restoredTitles).toEqual(titlesOnPage2)
   })
 
-  it('does not overwrite stored order after initial load (no spurious second buildView)', async () => {
+  it('snapshot is unchanged after remount — no re-shuffle on F5', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
     )
 
-    const wrapper = mount(ApiRecipeList)
+    const wrapper1 = mount(ApiRecipeList)
     await flushPromises()
 
-    const orderAfterLoad = sessionStorage.getItem('dishly.recipe.order')
-    expect(orderAfterLoad).not.toBeNull()
+    const snapshotAfterFirstLoad = sessionStorage.getItem('dishly.recipe.snapshot')
+    expect(snapshotAfterFirstLoad).not.toBeNull()
 
-    // Simulate F5: remount without clearing sessionStorage
-    wrapper.unmount()
+    wrapper1.unmount()
+
+    // Remount without clearing sessionStorage
     const wrapper2 = mount(ApiRecipeList)
     await flushPromises()
 
-    // Order must be identical after remount (no re-shuffle)
-    expect(sessionStorage.getItem('dishly.recipe.order')).toBe(orderAfterLoad)
+    // Snapshot not overwritten by fresh load
+    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBe(snapshotAfterFirstLoad)
+    wrapper2.unmount()
   })
 
-  it('shuffle replaces stored snapshot and clears saved page', async () => {
+  it('shuffle replaces snapshot with page 1', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
@@ -569,23 +597,25 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
+    // Navigate to page 2
     const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
     await nextBtn.trigger('click')
     await flushPromises()
-    expect(sessionStorage.getItem('dishly.recipe.page')).toBe('2')
+
+    const snapBefore = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot'))
+    expect(snapBefore.page).toBe(2)
 
     await wrapper.find('.shuffle-btn').trigger('click')
     await flushPromises()
 
-    // Page storage cleared, back on page 1, new order stored
-    expect(sessionStorage.getItem('dishly.recipe.page')).toBeNull()
+    // New snapshot with page 1
+    const snapAfter = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot'))
+    expect(snapAfter.page).toBe(1)
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
-  it('scrolls to recipe list section when switching pages', async () => {
-    // jsdom does not implement scrollIntoView; provide a stub before spying
-    Element.prototype.scrollIntoView = () => {}
-    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
+  it('scrolls to top of page when switching pages', async () => {
+    const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
 
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
@@ -599,7 +629,8 @@ describe('ApiRecipeList.vue', () => {
     await nextBtn.trigger('click')
     await flushPromises()
 
-    expect(scrollSpy).toHaveBeenCalled()
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'auto' })
+    wrapper.unmount()
   })
 
   it('navigates external recipe cards to the external detail route', async () => {
