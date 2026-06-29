@@ -128,7 +128,7 @@ describe('PantryView', () => {
     expect(wrapper.text()).toContain('Dein Vorrat ist noch leer.')
   })
 
-  it('shows pantry items', async () => {
+  it('shows pantry items without category', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
       item('Rice', 2, 'kg', 'Grains'),
@@ -141,7 +141,8 @@ describe('PantryView', () => {
     expect(wrapper.text()).toContain('Rice')
     expect(wrapper.text()).toContain('2')
     expect(wrapper.text()).toContain('kg')
-    expect(wrapper.text()).toContain('Grains')
+    // Category is no longer displayed in the list
+    expect(wrapper.text()).not.toContain('Grains')
     expect(wrapper.text()).toContain('Milk')
   })
 
@@ -187,7 +188,8 @@ describe('PantryView', () => {
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="z.B. Reis"]')).toBe('Rice')
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="2"]')).toBe('2')
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="kg"]')).toBe('kg')
-    expect(inputValue(wrapper, 'form.edit-form input[placeholder="Vorrat"]')).toBe('Grains')
+    // Category field is no longer shown in the edit form
+    expect(wrapper.find('form.edit-form input[placeholder="Vorrat"]').exists()).toBe(false)
   })
 
   it('cancels edit without API call', async () => {
@@ -342,22 +344,20 @@ describe('PantryView', () => {
     await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Rice')
     await wrapper.find('input[placeholder="2"]').setValue(2)
     await wrapper.find('input[placeholder="kg"]').setValue('kg')
-    await wrapper.find('input[placeholder="Vorrat"]').setValue('Grains')
     await wrapper.find('form.pantry-form').trigger('submit.prevent')
     await flushPromises()
 
+    // Category is no longer part of the create form
     expect(pantryApi.createPantryItem).toHaveBeenCalledWith({
       name: 'Rice',
       quantity: 2,
       unit: 'kg',
-      category: 'Grains',
     })
     expect(wrapper.text()).toContain('Rice')
-    expect(wrapper.text()).toContain('Grains')
     expect(inputValue(wrapper, 'input[placeholder="z.B. Reis"]')).toBe('')
     expect(inputValue(wrapper, 'input[placeholder="2"]')).toBe('')
     expect(inputValue(wrapper, 'input[placeholder="kg"]')).toBe('')
-    expect(inputValue(wrapper, 'input[placeholder="Vorrat"]')).toBe('')
+    expect(wrapper.find('input[placeholder="Vorrat"]').exists()).toBe(false)
   })
 
   it('shows validation message when create returns 400', async () => {
@@ -377,17 +377,61 @@ describe('PantryView', () => {
     expect(wrapper.text()).toContain('Bitte gib eine Menge an')
   })
 
-  it('shows concrete suggestions for general pantry names', async () => {
+  it('provides a name datalist with suggestions', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(PantryView)
     await flushPromises()
 
-    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Nüsse')
+    // Name input is linked to datalist
+    const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
+    expect(nameInput.exists()).toBe(true)
+    expect(nameInput.attributes('list')).toBe('pantry-name-dl')
 
-    expect(wrapper.text()).toContain('Genauer auswählen')
-    expect(wrapper.text()).toContain('Walnüsse')
-    await wrapper.findAll('.suggestion-chips button').at(1)!.trigger('click')
-    expect(inputValue(wrapper, 'input[placeholder="z.B. Reis"]')).toBe('Mandeln')
+    // Datalist contains suggestions from all categories
+    const datalist = wrapper.find('datalist#pantry-name-dl')
+    expect(datalist.exists()).toBe(true)
+    const options = datalist.findAll('option')
+    expect(options.length).toBeGreaterThan(10)
+    const values = options.map(o => o.attributes('value') ?? '')
+    expect(values).toContain('Basmati rice')
+    expect(values).toContain('Chicken breast')
+    expect(values).toContain('Olive oil')
+  })
+
+  it('provides a unit datalist with standard units', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const datalist = wrapper.find('datalist#pantry-unit-dl')
+    expect(datalist.exists()).toBe(true)
+    const values = datalist.findAll('option').map(o => o.attributes('value') ?? '')
+    expect(values).toContain('g')
+    expect(values).toContain('kg')
+    expect(values).toContain('piece')
+    expect(values).toContain('tbsp')
+    expect(values).toContain('pinch')
+
+    // Unit input is linked to datalist (allows freetext too)
+    const unitInput = wrapper.find('form.pantry-form input[placeholder="kg"]')
+    expect(unitInput.attributes('list')).toBe('pantry-unit-dl')
+  })
+
+  it('does not show category field in add or edit form', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
+      item('Rice', 2, 'kg', 'Grains'),
+    ])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    expect(wrapper.find('input[placeholder="Vorrat"]').exists()).toBe(false)
+
+    await wrapper.find('button.edit-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('input[placeholder="Vorrat"]').exists()).toBe(false)
   })
 
   it('opens the real barcode scanner through ZXing', async () => {
@@ -446,7 +490,8 @@ describe('PantryView', () => {
       category: 'spread',
     })
     expect(wrapper.text()).toContain('Nutella wurde zum Vorrat')
-    expect(wrapper.text()).toContain('spread')
+    // Category is not displayed in the pantry list (preserved in backend only)
+    expect(wrapper.find('.pantry-list').text()).not.toContain('spread')
   })
 
   it('shows a camera permission error when scanner startup is denied', async () => {

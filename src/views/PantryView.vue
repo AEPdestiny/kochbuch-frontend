@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useToastStore } from '@/stores/toastStore'
@@ -31,12 +31,11 @@ const loginRequired = ref(false)
 const newName = ref('')
 const newQuantity = ref<number | null>(null)
 const newUnit = ref('')
-const newCategory = ref('')
 const editingId = ref<number | string | null>(null)
 const editName = ref('')
 const editQuantity = ref<number | null>(null)
 const editUnit = ref('')
-const editCategory = ref('')
+const editCategory = ref('')  // not shown in UI — preserved on update so existing data is not lost
 const editError = ref<string | null>(null)
 const barcode = ref('')
 const barcodeLoading = ref(false)
@@ -51,17 +50,36 @@ const recipeMatches = ref<ExternalRecipeMatchResponse[]>([])
 const recipeMatchLoading = ref(false)
 const recipeMatchError = ref<string | null>(null)
 
-const pantrySuggestions: Record<string, string[]> = {
-  nüsse: ['Walnüsse', 'Mandeln', 'Cashews', 'Haselnüsse'],
-  nuesse: ['Walnüsse', 'Mandeln', 'Cashews', 'Haselnüsse'],
-  reis: ['Basmatireis', 'Jasminreis', 'Vollkornreis', 'Risottoreis'],
-  bohnen: ['Kidneybohnen', 'Schwarze Bohnen', 'Weiße Bohnen', 'Kichererbsen'],
-  milch: ['Vollmilch', 'Hafermilch', 'Mandelmilch', 'Laktosefreie Milch'],
-  käse: ['Gouda', 'Feta', 'Mozzarella', 'Parmesan'],
-  kaese: ['Gouda', 'Feta', 'Mozzarella', 'Parmesan'],
-}
+const STANDARD_UNITS = ['g', 'kg', 'ml', 'l', 'piece', 'tbsp', 'tsp', 'cup', 'slice', 'can', 'pack', 'clove', 'pinch']
 
-const nameSuggestions = computed(() => pantrySuggestions[newName.value.trim().toLowerCase()] ?? [])
+const NAME_SUGGESTIONS = [
+  // Rice
+  'Basmati rice', 'Jasmine rice', 'Long grain rice', 'Short grain rice', 'Brown rice',
+  'Wild rice', 'Risotto rice', 'Milk rice', 'Sushi rice', 'Parboiled rice',
+  // Pasta & noodles
+  'Spaghetti', 'Penne', 'Fusilli', 'Farfalle', 'Tagliatelle', 'Macaroni',
+  'Lasagna sheets', 'Udon', 'Rice noodles', 'Glass noodles', 'Tortellini', 'Gnocchi',
+  // Sugar
+  'Brown sugar', 'Powdered sugar', 'Table sugar',
+  // Beans
+  'White beans', 'Kidney beans', 'Black beans', 'Soybeans',
+  // Meat
+  'Chicken breast', 'Chicken thighs', 'Turkey breast', 'Ground beef', 'Beef steak',
+  'Ground pork', 'Pork tenderloin', 'Bacon', 'Salami', 'Cooked ham',
+  // Fish & seafood
+  'Salmon fillet', 'Tuna', 'Cod', 'Pollock', 'Shrimp', 'Fish fingers',
+  'Smoked salmon', 'Sardines', 'Mackerel', 'Mussels',
+  // Milk
+  'Oat milk', 'Almond milk', 'Soy milk',
+  // Yogurt
+  'Greek yogurt', 'Quark',
+  // Dairy
+  'Cream cheese', 'Cream', 'Butter', 'Margarine',
+  // Cheese
+  'Mozzarella', 'Parmesan', 'Feta', 'Gouda',
+  // Oil
+  'Olive oil', 'Sunflower oil', 'Rapeseed oil', 'Sesame oil', 'Coconut oil',
+]
 
 onMounted(() => {
   loadPantryItems()
@@ -127,13 +145,11 @@ async function createPantryItem() {
       name: newName.value,
       quantity: newQuantity.value,
       unit: newUnit.value,
-      category: newCategory.value,
     })
     items.value.push(created)
     newName.value = ''
     newQuantity.value = null
     newUnit.value = ''
-    newCategory.value = ''
     formError.value = null
     error.value = null
     toastStore.addToast(t('notifications.pantryItemAdded'), 'success')
@@ -543,21 +559,23 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
         </article>
       </section>
 
+      <!-- Datalists shared by add + edit forms -->
+      <datalist id="pantry-name-dl">
+        <option v-for="s in NAME_SUGGESTIONS" :key="s" :value="s" />
+      </datalist>
+      <datalist id="pantry-unit-dl">
+        <option v-for="u in STANDARD_UNITS" :key="u" :value="u" />
+      </datalist>
+
       <form class="pantry-form" @submit.prevent="createPantryItem">
         <div class="form-field">
           <label>{{ t('pantry.form.name') }}</label>
-          <input v-model="newName" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
-          <div v-if="nameSuggestions.length" class="suggestion-chips">
-            <span>Genauer auswählen:</span>
-            <button
-              v-for="suggestion in nameSuggestions"
-              :key="suggestion"
-              type="button"
-              @click="newName = suggestion"
-            >
-              {{ suggestion }}
-            </button>
-          </div>
+          <input
+            v-model="newName"
+            list="pantry-name-dl"
+            type="text"
+            :placeholder="t('pantry.form.namePlaceholder')"
+          />
         </div>
 
         <div class="form-field small">
@@ -567,12 +585,12 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 
         <div class="form-field small">
           <label>{{ t('pantry.form.unit') }}</label>
-          <input v-model="newUnit" type="text" :placeholder="t('pantry.form.unitPlaceholder')" />
-        </div>
-
-        <div class="form-field">
-          <label>{{ t('pantry.form.category') }}</label>
-          <input v-model="newCategory" type="text" :placeholder="t('pantry.form.categoryPlaceholder')" />
+          <input
+            v-model="newUnit"
+            list="pantry-unit-dl"
+            type="text"
+            :placeholder="t('pantry.form.unitPlaceholder')"
+          />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('pantry.actions.create') }}</button>
@@ -588,7 +606,6 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
         <li v-for="item in items" :key="item.id" class="pantry-item">
           <div>
             <h2>{{ item.name }}</h2>
-            <p v-if="item.category" class="item-meta">{{ item.category }}</p>
           </div>
           <div class="item-actions">
             <p class="item-quantity">
@@ -611,7 +628,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
           >
             <div class="form-field">
               <label>{{ t('pantry.form.name') }}</label>
-              <input v-model="editName" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
+              <input v-model="editName" list="pantry-name-dl" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.quantity') }}</label>
@@ -619,11 +636,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.unit') }}</label>
-              <input v-model="editUnit" type="text" :placeholder="t('pantry.form.unitPlaceholder')" />
-            </div>
-            <div class="form-field">
-              <label>{{ t('pantry.form.category') }}</label>
-              <input v-model="editCategory" type="text" :placeholder="t('pantry.form.categoryPlaceholder')" />
+              <input v-model="editUnit" list="pantry-unit-dl" type="text" :placeholder="t('pantry.form.unitPlaceholder')" />
             </div>
             <div class="edit-buttons">
               <button type="submit" class="submit-btn">{{ t('pantry.actions.update') }}</button>
@@ -686,7 +699,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 
 .pantry-form {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto;
+  grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto;
   gap: 12px;
   align-items: end;
   border: 1px solid #c3e7e1;
@@ -715,30 +728,6 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
   padding: 8px 10px;
 }
 
-.suggestion-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.suggestion-chips span {
-  color: #486b68;
-  font-size: 0.85rem;
-  width: 100%;
-}
-
-.suggestion-chips button {
-  background: #e0f5f2;
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
-  color: #2f6f62;
-  cursor: pointer;
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 5px 9px;
-}
 
 .submit-btn {
   border: none;
@@ -955,7 +944,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 .edit-form {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto;
+  grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto;
   gap: 12px;
   align-items: end;
   border-top: 1px solid #c3e7e1;
