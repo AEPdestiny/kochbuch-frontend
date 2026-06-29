@@ -543,7 +543,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 
         <div class="form-field small">
           <label>{{ t('pantry.form.unit') }}</label>
-          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" :placeholder="t('pantry.form.unitPlaceholder')" />
+          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('pantry.form.unitPlaceholder')" />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('pantry.actions.create') }}</button>

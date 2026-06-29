@@ -456,7 +456,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
         <div class="form-field small">
           <label>{{ t('shoppingList.form.unit') }}</label>
-          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" :placeholder="t('shoppingList.form.unitPlaceholder')" />
+          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('shoppingList.form.unitPlaceholder')" />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('shoppingList.actions.create') }}</button>
@@ -529,7 +529,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
                 <div class="form-field small">
                   <label>{{ t('shoppingList.form.unit') }}</label>
-                  <SuggestInput v-model="editUnit" :suggestions="STANDARD_UNITS" :placeholder="t('shoppingList.form.unitPlaceholder')" />
+                  <SuggestInput v-model="editUnit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('shoppingList.form.unitPlaceholder')" />
                 </div>
 
                 <label class="checkbox-field">

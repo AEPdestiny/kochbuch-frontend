@@ -511,6 +511,29 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('piece')
   })
 
+  it('shows all standard units on focus without typing, name field stays empty', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    // Name field: focus alone shows nothing
+    const nameInput = wrapper.find('input[placeholder="z.B. Tomaten"]')
+    await nameInput.trigger('focus')
+    expect(wrapper.find('.suggest-dropdown').exists()).toBe(false)
+
+    // Unit field: focus alone shows all standard units
+    const unitInput = wrapper.find('form.shopping-list-form input[placeholder="Stück"]')
+    await unitInput.trigger('focus')
+    // Capped at 8 suggestions by default (full list has 13 standard units)
+    const dropdown = wrapper.find('.suggest-dropdown')
+    expect(dropdown.exists()).toBe(true)
+    expect(dropdown.text()).toContain('g')
+    expect(dropdown.text()).toContain('kg')
+    expect(dropdown.text()).toContain('piece')
+    expect(dropdown.findAll('li').length).toBeLessThanOrEqual(8)
+  })
+
   it('creates a shopping list item and clears the form', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])

@@ -6,6 +6,12 @@ const props = defineProps<{
   suggestions: string[]
   placeholder?: string
   type?: string
+  /** Show all suggestions immediately on focus (good for short fixed lists like units). */
+  showSuggestionsOnFocus?: boolean
+  /** Minimum characters typed before showing suggestions (default 1). */
+  minQueryLength?: number
+  /** Maximum number of suggestions to show (default 8). */
+  maxSuggestions?: number
 }>()
 
 const emit = defineEmits<{
@@ -16,9 +22,17 @@ const open = ref(false)
 let blurTimer: ReturnType<typeof setTimeout> | null = null
 
 const filtered = computed(() => {
+  const max = props.maxSuggestions ?? 8
   const query = props.modelValue.trim().toLowerCase()
-  if (!query) return []
-  return props.suggestions.filter(s => s.toLowerCase().includes(query)).slice(0, 8)
+
+  if (!query) {
+    // No text typed: show all only when configured to do so (e.g. unit fields)
+    return props.showSuggestionsOnFocus ? props.suggestions.slice(0, max) : []
+  }
+  if (query.length < (props.minQueryLength ?? 1)) {
+    return []
+  }
+  return props.suggestions.filter(s => s.toLowerCase().includes(query)).slice(0, max)
 })
 
 function onInput(event: Event) {
@@ -27,7 +41,12 @@ function onInput(event: Event) {
 }
 
 function onFocus() {
-  if (filtered.value.length > 0) open.value = true
+  if (props.showSuggestionsOnFocus) {
+    // Always open on focus for unit-style fields (dropdown of fixed options)
+    open.value = true
+  } else if (filtered.value.length > 0) {
+    open.value = true
+  }
 }
 
 function onBlur() {
@@ -72,9 +91,23 @@ function select(value: string) {
   width: 100%;
 }
 
+/* Bake in Dishly's input style so it looks consistent regardless of parent component. */
 .suggest-input input {
   width: 100%;
   box-sizing: border-box;
+  border: 1.5px solid #c3e7e1;
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 0.96rem;
+  outline: none;
+  background: #ffffff;
+  color: #2b1b23;
+  transition: border-color 0.15s ease;
+}
+
+.suggest-input input:focus {
+  border-color: #26b6b8;
 }
 
 .suggest-dropdown {

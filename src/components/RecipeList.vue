@@ -739,19 +739,23 @@ const removeFavorite = async (r: Recipe) => {
             {{ t('recipes.form.ingredients') }} <span class="required-star">*</span>
           </label>
           <div class="ingredient-rows">
+            <div class="ingredient-row-header" aria-hidden="true">
+              <span>{{ t('recipes.form.ingredientName') }}</span>
+              <span>{{ t('recipes.form.ingredientQuantity') }}</span>
+              <span>{{ t('recipes.form.ingredientUnit') }}</span>
+              <span></span>
+            </div>
             <div v-for="(row, index) in newIngredientRows" :key="index" class="ingredient-row">
               <SuggestInput v-model="row.name" :suggestions="NAME_SUGGESTIONS" :placeholder="t('recipes.form.ingredientName')" />
               <input v-model="row.quantity" type="text" class="ingredient-quantity" :placeholder="t('recipes.form.ingredientQuantity')" />
-              <SuggestInput v-model="row.unit" :suggestions="STANDARD_UNITS" :placeholder="t('recipes.form.ingredientUnit')" />
+              <SuggestInput v-model="row.unit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('recipes.form.ingredientUnit')" />
               <button
                 type="button"
                 class="ingredient-remove-btn"
                 :disabled="newIngredientRows.length <= 1"
                 :aria-label="t('recipes.form.removeIngredient')"
                 @click="removeNewIngredientRow(index)"
-              >
-                −
-              </button>
+              >−</button>
             </div>
           </div>
           <button type="button" class="ingredient-add-btn" @click="addNewIngredientRow">
@@ -948,19 +952,23 @@ const removeFavorite = async (r: Recipe) => {
         <div class="form-field">
           <label>{{ t('recipes.form.ingredients') }}</label>
           <div class="ingredient-rows">
+            <div class="ingredient-row-header" aria-hidden="true">
+              <span>{{ t('recipes.form.ingredientName') }}</span>
+              <span>{{ t('recipes.form.ingredientQuantity') }}</span>
+              <span>{{ t('recipes.form.ingredientUnit') }}</span>
+              <span></span>
+            </div>
             <div v-for="(row, index) in editIngredientRows" :key="index" class="ingredient-row">
               <SuggestInput v-model="row.name" :suggestions="NAME_SUGGESTIONS" :placeholder="t('recipes.form.ingredientName')" />
               <input v-model="row.quantity" type="text" class="ingredient-quantity" :placeholder="t('recipes.form.ingredientQuantity')" />
-              <SuggestInput v-model="row.unit" :suggestions="STANDARD_UNITS" :placeholder="t('recipes.form.ingredientUnit')" />
+              <SuggestInput v-model="row.unit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('recipes.form.ingredientUnit')" />
               <button
                 type="button"
                 class="ingredient-remove-btn"
                 :disabled="editIngredientRows.length <= 1"
                 :aria-label="t('recipes.form.removeIngredient')"
                 @click="removeEditIngredientRow(index)"
-              >
-                −
-              </button>
+              >−</button>
             </div>
           </div>
           <button type="button" class="ingredient-add-btn" @click="addEditIngredientRow">
@@ -1185,14 +1193,25 @@ const removeFavorite = async (r: Recipe) => {
 .ingredient-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
+.ingredient-row-header,
 .ingredient-row {
   display: grid;
-  grid-template-columns: minmax(140px, 2fr) 90px minmax(90px, 1fr) auto;
-  gap: 8px;
+  grid-template-columns: minmax(140px, 2fr) 90px minmax(110px, 1fr) 40px;
+  gap: 10px;
   align-items: center;
+}
+
+.ingredient-row-header span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #9ab3b0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0 2px;
 }
 
 .ingredient-quantity {
@@ -1201,16 +1220,21 @@ const removeFavorite = async (r: Recipe) => {
 }
 
 .ingredient-remove-btn {
-  border: 1.5px solid #c3e7e1;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #a14c2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1.5px solid #f0c8d6;
+  border-radius: 50%;
+  background: #fff5f8;
+  color: #c0546a;
   cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
   line-height: 1;
-  min-height: 38px;
-  min-width: 38px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .ingredient-remove-btn:disabled {
@@ -1219,20 +1243,24 @@ const removeFavorite = async (r: Recipe) => {
 }
 
 .ingredient-remove-btn:hover:not(:disabled) {
-  background: #fff0eb;
+  background: #fde8ef;
+  border-color: #e0a0b8;
 }
 
 .ingredient-add-btn {
   align-self: flex-start;
-  margin-top: 6px;
-  border: 1.5px dashed #8fd5cc;
+  margin-top: 8px;
+  border: 1.5px solid #8fd5cc;
   border-radius: 999px;
-  background: #ffffff;
+  background: #f4fbfa;
   color: #1d8e90;
   cursor: pointer;
   font: inherit;
+  font-size: 0.92rem;
   font-weight: 700;
-  padding: 7px 14px;
+  padding: 8px 16px;
+  transition: background 0.15s ease;
+  min-height: 38px;
 }
 
 .ingredient-add-btn:hover {
@@ -1240,8 +1268,22 @@ const removeFavorite = async (r: Recipe) => {
 }
 
 @media (max-width: 640px) {
+  .ingredient-row-header {
+    display: none;
+  }
+
   .ingredient-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 70px 1fr 40px;
+    gap: 6px;
+    padding: 10px;
+    background: #f9fffe;
+    border: 1px solid #d6eee9;
+    border-radius: 10px;
+  }
+
+  .ingredient-add-btn {
+    width: 100%;
+    text-align: center;
   }
 }
 

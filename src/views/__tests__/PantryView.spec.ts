@@ -438,7 +438,23 @@ describe('PantryView', () => {
     })
   })
 
-  it('shows unit suggestions when typing in the unit field', async () => {
+  it('shows all unit suggestions on focus without typing (showSuggestionsOnFocus)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const unitInput = wrapper.find('form.pantry-form input[placeholder="kg"]')
+    await unitInput.trigger('focus')
+
+    // Unit field opens immediately on focus, no typing required
+    const dropdown = wrapper.find('.suggest-dropdown')
+    expect(dropdown.exists()).toBe(true)
+    expect(dropdown.text()).toContain('g')
+    expect(dropdown.text()).toContain('kg')
+    expect(dropdown.text()).toContain('piece')
+  })
+
+  it('filters unit suggestions when typing in the unit field', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(PantryView)
     await flushPromises()
@@ -447,10 +463,12 @@ describe('PantryView', () => {
     await unitInput.setValue('p')
     await unitInput.trigger('focus')
 
-    const dropdown = unitInput.element.closest('.suggest-input')
-    expect(dropdown).toBeTruthy()
-    expect(wrapper.text()).toContain('piece')
-    expect(wrapper.text()).toContain('pack')
+    const dropdown = wrapper.find('.suggest-dropdown')
+    expect(dropdown.exists()).toBe(true)
+    expect(dropdown.text()).toContain('piece')
+    expect(dropdown.text()).toContain('pack')
+    // Other units not matching "p" are hidden
+    expect(dropdown.text()).not.toContain('ml')
   })
 
   it('does not show category field in add or edit form', async () => {
