@@ -12,6 +12,7 @@ export type RecipeRequest = {
   favorite: boolean
   published: boolean
   language?: string | null
+  calories?: number | null
 }
 
 export type RecipeResponse = RecipeRequest & {

@@ -17,6 +17,10 @@ function emptyIngredientRow(): IngredientRow {
   return { name: '', quantity: '', unit: '' }
 }
 
+function toCaloriesValue(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
 function serializeIngredientRows(rows: IngredientRow[]): string {
   return rows
     .map(r => [r.quantity, r.unit, r.name].filter(part => part.trim()).join(' ').trim())
@@ -69,6 +73,7 @@ const newCookTime = ref<number | null>(null)
 const newServings = ref<number | null>(null)
 const newDifficulty = ref('')
 const newCategory = ref('')
+const newCalories = ref<number | null>(null)
 const newIngredientRows = ref<IngredientRow[]>([emptyIngredientRow()])
 const newInstructions = ref('')
 const newFavorite = ref(false)
@@ -199,6 +204,7 @@ const createRecipe = async () => {
       favorite: newFavorite.value,
       published: newPublished.value,
       language: currentLanguage.value,
+      calories: toCaloriesValue(newCalories.value),
     })
 
     if (!isCreateMode.value) {
@@ -211,6 +217,7 @@ const createRecipe = async () => {
     newServings.value = null
     newDifficulty.value = ''
     newCategory.value = ''
+    newCalories.value = null
     newIngredientRows.value = [emptyIngredientRow()]
     newInstructions.value = ''
     newFavorite.value = false
@@ -229,6 +236,9 @@ const createRecipe = async () => {
 
 const toCreateRecipeErrorMessage = (e: unknown) => {
   if (e instanceof ApiClientError) {
+    if (e.status === 400) {
+      return t('recipes.errors.validation')
+    }
     if (e.status === 401) {
       return t('recipes.errors.createSessionExpired')
     }
@@ -316,6 +326,9 @@ const updateRecipe = async () => {
 
 const toUpdateRecipeErrorMessage = (e: unknown) => {
   if (e instanceof ApiClientError) {
+    if (e.status === 400) {
+      return t('recipes.errors.validation')
+    }
     if (e.status === 401) {
       return t('recipes.errors.updateSessionExpired')
     }
@@ -468,6 +481,7 @@ function recipeRequestFrom(recipe: Recipe, overrides: Partial<RecipeRequest> = {
     favorite: recipe.favorite,
     published: recipe.published,
     language: recipe.language ?? currentLanguage.value,
+    calories: toCaloriesValue(recipe.calories),
     ...overrides,
   }
 }
@@ -732,6 +746,15 @@ const removeFavorite = async (r: Recipe) => {
               :placeholder="t('recipes.form.categoryPlaceholder')"
             />
           </div>
+          <div class="form-field small">
+            <label>{{ t('recipes.form.calories') }}</label>
+            <input
+              v-model.number="newCalories"
+              type="number"
+              min="0"
+              :placeholder="t('recipes.form.caloriesPlaceholder')"
+            />
+          </div>
         </div>
 
         <div class="form-field">
@@ -946,6 +969,10 @@ const removeFavorite = async (r: Recipe) => {
           <div class="form-field">
             <label>{{ t('recipes.form.category') }}</label>
             <input v-model="editing.category" type="text" />
+          </div>
+          <div class="form-field small">
+            <label>{{ t('recipes.form.calories') }}</label>
+            <input v-model.number="editing.calories" type="number" min="0" :placeholder="t('recipes.form.caloriesPlaceholder')" />
           </div>
         </div>
 

@@ -398,6 +398,61 @@ describe('RecipeList.vue', () => {
     )
   })
 
+  it('shows an optional kcal field in the create form', async () => {
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    const caloriesInput = wrapper.find('input[placeholder="z. B. 450"]')
+    expect(caloriesInput.exists()).toBe(true)
+    expect(caloriesInput.attributes('type')).toBe('number')
+    expect(caloriesInput.attributes('min')).toBe('0')
+  })
+
+  it('creates a recipe without kcal (calories stays null)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    vi.mocked(recipeApi.createRecipe).mockResolvedValue({
+      id: 6, title: 'Salad', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
+      difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
+      favorite: false, published: false, calories: null,
+    })
+
+    await wrapper.find('input[placeholder="z. B. Cremige Tomatenpasta"]').setValue('Salad')
+    await wrapper.find('.new-recipe-form input[placeholder="Zutat"]').setValue('x')
+    await wrapper.find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]').setValue('y')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(recipeApi.createRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({ calories: null })
+    )
+  })
+
+  it('creates a recipe with kcal sent as a number', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    vi.mocked(recipeApi.createRecipe).mockResolvedValue({
+      id: 7, title: 'Salad', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
+      difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
+      favorite: false, published: false, calories: 450,
+    })
+
+    await wrapper.find('input[placeholder="z. B. Cremige Tomatenpasta"]').setValue('Salad')
+    await wrapper.find('.new-recipe-form input[placeholder="Zutat"]').setValue('x')
+    await wrapper.find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]').setValue('y')
+    await wrapper.find('input[placeholder="z. B. 450"]').setValue(450)
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(recipeApi.createRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({ calories: 450 })
+    )
+  })
+
   it('shows validation error if required fields are missing', async () => {
     const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
@@ -472,6 +527,82 @@ describe('RecipeList.vue', () => {
     )
     // Neuer Titel wird angezeigt
     expect(wrapper.text()).toContain('Updated Title')
+  })
+
+  it('loads existing calories into the kcal field when editing', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
+      {
+        id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
+        difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
+        favorite: false, published: false, calories: 320,
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
+    await editButton.trigger('click')
+
+    const caloriesInput = wrapper.find('.edit-panel input[placeholder="z. B. 450"]')
+    expect(caloriesInput.exists()).toBe(true)
+    expect(caloriesInput.element.value).toBe('320')
+  })
+
+  it('updates a recipe with a changed kcal value', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const initial = [
+      {
+        id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
+        difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
+        favorite: false, published: false, calories: 320,
+      },
+    ]
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
+    await editButton.trigger('click')
+
+    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...initial[0], calories: 500 })
+
+    await wrapper.find('.edit-panel input[placeholder="z. B. 450"]').setValue(500)
+    await wrapper.find('.edit-panel .submit-btn').trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ calories: 500 })
+    )
+  })
+
+  it('updates a recipe with cleared kcal (sends calories null)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const initial = [
+      {
+        id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
+        difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
+        favorite: false, published: false, calories: 320,
+      },
+    ]
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
+    await editButton.trigger('click')
+
+    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...initial[0], calories: null })
+
+    await wrapper.find('.edit-panel input[placeholder="z. B. 450"]').setValue('')
+    await wrapper.find('.edit-panel .submit-btn').trigger('click')
+    await flushPromises()
+
+    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ calories: null })
+    )
   })
 
   it('does not show a rating input field in the edit panel', async () => {
