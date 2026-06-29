@@ -1011,7 +1011,7 @@ function formatDate(date: Date) {
         </article>
 
         <p v-if="!loading && filtered.length === 0" class="status-text">
-          {{ englishRecipesAllowed ? t('home.empty') : t('home.emptyForLanguage') }}
+          {{ search.trim() ? t('home.emptySearch') : t('home.empty') }}
         </p>
       </div>
 

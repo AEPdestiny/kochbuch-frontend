@@ -272,6 +272,7 @@
     "shuffle": "Shuffle recipes",
     "loading": "Loading recipes...",
     "empty": "No matching recipes found.",
+    "emptySearch": "No matching recipes found. Try another search term or adjust your filters.",
     "emptyForLanguage": "No local recipes are available for this language yet.",
     "notices": {
       "localRecipesLoaded": "{count} local recipes were loaded.",

@@ -1139,7 +1139,7 @@ describe('ApiRecipeList.vue', () => {
     expect(document.documentElement.dir).toBe('rtl')
   })
 
-  it('does not load external English recipes for German locale and shows local-language empty state', async () => {
+  it('does not load external English recipes for German locale and shows generic empty state', async () => {
     setLocale('de')
 
     const wrapper = mount(ApiRecipeList)
@@ -1147,7 +1147,46 @@ describe('ApiRecipeList.vue', () => {
 
     expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('de')
     expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Für diese Sprache sind noch keine lokalen Rezepte verfügbar.')
+    // Generic empty message, not a language-specific technical notice
+    expect(wrapper.text()).toContain('Keine passenden Rezepte gefunden.')
+    expect(wrapper.text()).not.toContain('lokalen Rezepte verfügbar')
+  })
+
+  it('shows helpful empty-search message when search returns no results', async () => {
+    setLocale('de')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('xyz-kein-treffer')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Prüfe deine Eingabe oder ändere die Filter')
+    expect(wrapper.text()).not.toContain('lokalen Rezepte verfügbar')
+    expect(wrapper.text()).not.toContain('lokale Rezepte')
+  })
+
+  it('shows English empty-search message for English locale when search returns no results', async () => {
+    setLocale('en')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('xyz-no-match')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Try another search term or adjust your filters')
+    expect(wrapper.text()).not.toContain('local recipes')
   })
 
   it('category dropdown contains only breakfast, lunch, dinner, snack', async () => {

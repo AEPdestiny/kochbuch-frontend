@@ -272,6 +272,7 @@
     "shuffle": "Rezepte neu mischen",
     "loading": "Rezepte werden geladen...",
     "empty": "Keine passenden Rezepte gefunden.",
+    "emptySearch": "Keine passenden Rezepte gefunden. Prüfe deine Eingabe oder ändere die Filter.",
     "emptyForLanguage": "Für diese Sprache sind noch keine lokalen Rezepte verfügbar.",
     "notices": {
       "localRecipesLoaded": "Es wurden {count} lokale Rezepte geladen.",
