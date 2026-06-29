@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { useToastStore } from '@/stores/toastStore'
 import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType, type Result } from '@zxing/library'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
@@ -20,6 +21,7 @@ type ScannedProduct = {
 
 const { t } = useI18n()
 const router = useRouter()
+const toastStore = useToastStore()
 
 const items = ref<PantryItem[]>([])
 const loading = ref(true)
@@ -134,6 +136,7 @@ async function createPantryItem() {
     newCategory.value = ''
     formError.value = null
     error.value = null
+    toastStore.addToast(t('notifications.pantryItemAdded'), 'success')
   } catch (e: unknown) {
     formError.value = toCreateErrorMessage(e)
     if (e instanceof ApiClientError && e.status === 401) {
@@ -170,6 +173,7 @@ async function deletePantryItem(id: number | string) {
     await pantryApi.deletePantryItem(id)
     items.value = items.value.filter(item => item.id !== id)
     error.value = null
+    toastStore.addToast(t('notifications.pantryItemDeleted'), 'info')
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -244,6 +248,7 @@ async function updatePantryItem(id: number | string) {
     }
     cancelEdit()
     error.value = null
+    toastStore.addToast(t('notifications.pantryItemUpdated'), 'success')
   } catch (e: unknown) {
     editError.value = toUpdateErrorMessage(e)
     if (e instanceof ApiClientError && e.status === 401) {

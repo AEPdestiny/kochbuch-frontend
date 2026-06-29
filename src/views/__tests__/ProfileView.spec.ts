@@ -1,9 +1,11 @@
 ﻿import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import ProfileView from '@/views/ProfileView.vue'
 import { profileApi } from '@/shared/api/profileApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
+import { useToastStore } from '@/stores/toastStore'
 import type { UserPreferencesResponse } from '@/types/profile'
 
 vi.mock('@/shared/api/profileApi', () => ({
@@ -18,7 +20,9 @@ describe('ProfileView', () => {
     vi.clearAllMocks()
     sessionStorage.clear()
     setLocale('de')
-    config.global.plugins = [i18n]
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(profileApi.getPreferences).mockResolvedValue(preferences())
   })
 
@@ -89,7 +93,9 @@ describe('ProfileView', () => {
         dailyCalorieTarget: 2200,
       }),
     )
-    expect(wrapper.text()).toContain('Präferenzen wurden gespeichert.')
+    // Success message is now a toast, not inline text
+    const toastStore = useToastStore()
+    expect(toastStore.toasts.some(t => t.type === 'success')).toBe(true)
   })
 
   it('shows validation error from backend', async () => {

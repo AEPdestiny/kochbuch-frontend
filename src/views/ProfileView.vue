@@ -3,14 +3,15 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { profileApi } from '@/shared/api/profileApi'
+import { useToastStore } from '@/stores/toastStore'
 import type { UserPreferencesRequest } from '@/types/profile'
 
 const { t } = useI18n()
+const toastStore = useToastStore()
 
 const loading = ref(true)
 const saving = ref(false)
 const error = ref<string | null>(null)
-const success = ref<string | null>(null)
 const likesText = ref('')
 const dislikesText = ref('')
 const allergiesText = ref('')
@@ -67,7 +68,6 @@ async function savePreferences() {
 
   saving.value = true
   error.value = null
-  success.value = null
 
   try {
     const saved = await profileApi.updatePreferences(toRequest())
@@ -75,7 +75,7 @@ async function savePreferences() {
     dislikesText.value = formatList(saved.dislikes)
     allergiesText.value = formatList(saved.allergies)
     dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
-    success.value = t('profile.success.saved')
+    toastStore.addToast(t('notifications.profileSaved'), 'success')
   } catch (e: unknown) {
     error.value = toSaveError(e)
   } finally {
@@ -173,7 +173,6 @@ function toSaveError(e: unknown) {
 
     <p v-if="loading" class="status-message">{{ t('profile.loading') }}</p>
     <p v-if="error" class="error-message" role="alert">{{ error }}</p>
-    <p v-if="success" class="success-message" role="status">{{ success }}</p>
 
     <form v-if="!loading" class="preferences-form" @submit.prevent="savePreferences">
       <section class="profile-card">

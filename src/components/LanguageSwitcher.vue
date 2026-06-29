@@ -2,8 +2,10 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLocale, supportedLocales, type LocaleCode } from '@/i18n'
+import { useToastStore } from '@/stores/toastStore'
 
 const { locale, t } = useI18n()
+const toastStore = useToastStore()
 
 const languageOptions: Array<{ code: LocaleCode; label: string }> = [
   { code: 'de', label: 'Deutsch' },
@@ -18,8 +20,10 @@ const languageOptions: Array<{ code: LocaleCode; label: string }> = [
 const selectedLocale = computed({
   get: () => locale.value as LocaleCode,
   set: value => {
-    if (supportedLocales.includes(value)) {
+    if (supportedLocales.includes(value) && value !== locale.value) {
       setLocale(value)
+      // t() now uses the new locale, so the message is in the target language.
+      toastStore.addToast(t('notifications.languageChanged'), 'info')
     }
   },
 })

@@ -324,6 +324,9 @@
       "next": "次へ"
     }
   },
+  "notifications": {
+    "languageChanged": "インターフェースが日本語になりました。"
+  },
   "restaurants": {
     "actions": {
       "findNearby": "関連するレストランを探す"

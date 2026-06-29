@@ -310,6 +310,10 @@ const togglePublished = async (recipe: Recipe) => {
       editing.value = { ...updated }
     }
     error.value = null
+    toastStore.addToast(
+      t(updated.published ? 'notifications.publishedOn' : 'notifications.publishedOff', { title: updated.title }),
+      'success',
+    )
   } catch (e: unknown) {
     error.value = toUpdateRecipeErrorMessage(e)
   }

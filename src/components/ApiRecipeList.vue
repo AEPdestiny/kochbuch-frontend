@@ -468,6 +468,7 @@ const shuffleRecipes = async () => {
     buildBaseList()
     updateDisplayFromBase()
     saveSnapshot(baseRecipes.value, 1)
+    toastStore.addToast(t('notifications.shuffled'), 'info')
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
@@ -854,6 +855,7 @@ async function toggleRecipeFavorite(recipe: DisplayRecipe) {
       const next = new Set(externalFavoriteIds.value)
       next.delete(key)
       externalFavoriteIds.value = next
+      toastStore.addToast(t('notifications.favoriteRemoved'), 'info')
       return
     }
 
@@ -864,10 +866,11 @@ async function toggleRecipeFavorite(recipe: DisplayRecipe) {
       externalSource: source,
     })
     externalFavoriteIds.value = new Set([...externalFavoriteIds.value, key])
+    toastStore.addToast(t('notifications.favoriteAdded'), 'success')
   } catch (e: unknown) {
     error.value = e instanceof ApiClientError && e.message
       ? e.message
-      : 'Favorit konnte nicht gespeichert werden.'
+      : t('home.errors.prefix')
   }
 }
 

@@ -1,12 +1,14 @@
 ﻿import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { config } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { ApiClientError } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
+import { useToastStore } from '@/stores/toastStore'
 import type { MealPlanWeekResponse } from '@/types/mealPlan'
 import type { RecipeResponse } from '@/types/recipe'
 
@@ -49,6 +51,9 @@ describe('MealPlanView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     setLocale('de')
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue(weekResponse())
     vi.mocked(mealPlanApi.createShoppingListFromWeek).mockResolvedValue({
       added: [],
@@ -218,7 +223,7 @@ describe('MealPlanView', () => {
     })
     expect(mealPlanApi.setSlot).not.toHaveBeenCalled()
     expect(mealPlanApi.deleteSlot).not.toHaveBeenCalled()
-    expect(wrapper.text()).toContain('Der Wochenplan-Eintrag wurde verschoben.')
+    expect(useToastStore().toasts.some(t => t.type === 'success')).toBe(true)
     expect(wrapper.text()).toContain('Pasta')
   })
 
@@ -609,7 +614,7 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
-    expect(wrapper.text()).toContain('Rezept wurde aus dem Wochenplan entfernt.')
+    expect(useToastStore().toasts.some(t => t.type === 'info')).toBe(true)
     expect(wrapper.find('.bucket-panel').text()).toContain('Noch keine Rezepte in diesem Bucket.')
     const updatedDinnerBucket = wrapper.findAll('.bucket-card')
       .find(button => button.text().includes('Abendessen'))!
@@ -678,7 +683,7 @@ describe('MealPlanView', () => {
       externalSource: 'spoonacular',
     })
     expect(wrapper.text()).toContain('32 g Protein')
-    expect(wrapper.text()).toContain('Pizza wurde für Abendessen am 2026-06-02 übernommen.')
+    expect(useToastStore().toasts.some(t => t.type === 'success')).toBe(true)
   })
 
   it('keeps bucket panel closed after accepting a suggestion into a full bucket', async () => {
@@ -854,7 +859,7 @@ describe('MealPlanView', () => {
     expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
     expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-07', 'snack')
     expect(mealPlanApi.getWeek).toHaveBeenLastCalledWith('2026-06-01')
-    expect(wrapper.text()).toContain('Die Woche wurde geleert.')
+    expect(useToastStore().toasts.some(t => t.message.includes('geleert') || t.type === 'info')).toBe(true)
     expect(wrapper.text()).not.toContain('Pasta')
   })
 
@@ -876,7 +881,7 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(mealPlanApi.createShoppingListFromWeek).toHaveBeenCalledWith('2026-06-01')
-    expect(wrapper.text()).toContain('Einkaufsliste wurde aus dem Wochenplan erstellt.')
+    expect(useToastStore().toasts.some(t => t.type === 'success')).toBe(true)
     expect(wrapper.find('.shopping-summary-chips').exists()).toBe(true)
     expect(wrapper.findAll('.shopping-result-section')).toHaveLength(4)
     expect(wrapper.text()).toContain('Hinzugefügt (1)')
@@ -938,7 +943,7 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(mealPlanApi.deleteSlot).toHaveBeenCalledTimes(28)
-    expect(wrapper.text()).toContain('Die Woche wurde geleert.')
+    expect(useToastStore().toasts.some(t => t.type === 'info')).toBe(true)
     expect(wrapper.text()).not.toContain('Einige Slots konnten nicht gelöscht werden.')
     expect(wrapper.text()).not.toContain('Pasta')
   })

@@ -1,5 +1,6 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import PantryView from '@/views/PantryView.vue'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
@@ -49,7 +50,9 @@ describe('PantryView', () => {
     vi.clearAllMocks()
     sessionStorage.clear()
     setLocale('de')
-    config.global.plugins = [i18n]
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
     vi.stubGlobal('fetch', vi.fn())
     Object.defineProperty(navigator, 'mediaDevices', {

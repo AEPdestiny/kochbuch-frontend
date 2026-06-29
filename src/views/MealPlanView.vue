@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError } from '@/shared/api/apiClient'
+import { useToastStore } from '@/stores/toastStore'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
@@ -45,6 +46,7 @@ type ShoppingResultSection = {
 }
 
 const { t, locale } = useI18n()
+const toastStore = useToastStore()
 const BUCKET_LIMIT = 7
 
 const loading = ref(true)
@@ -67,7 +69,7 @@ const swipeIndex = ref(0)
 const swipeLoading = ref(false)
 const swipeError = ref<string | null>(null)
 const swipeMessage = ref<string | null>(null)
-const actionMessage = ref<string | null>(null)
+const actionMessage = ref<string | null>(null)  // kept for template; only errors use it
 const activeBucket = ref<MealSlot | null>(null)
 const editingSlotKey = ref<string | null>(null)
 const moveEditorKey = ref<string | null>(null)
@@ -230,9 +232,12 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
     moveEditorKey.value = null
     suggestionsBySlot.value[key] = []
     suggestionNoticeBySlot.value[key] = ''
-    actionMessage.value = entryFor(date, slot)?.id === saved.id
-      ? 'Rezept wurde im Wochenplan gespeichert.'
-      : 'Rezept wurde geplant.'
+    toastStore.addToast(
+      entryFor(date, slot)?.id === saved.id
+        ? t('notifications.mealPlanSaved')
+        : t('notifications.mealPlanned'),
+      'success',
+    )
   } catch {
     actionError.value = t('mealPlan.errors.save')
   }
@@ -255,7 +260,7 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
     if (moveEditorKey.value === slotKey(date, slot)) {
       moveEditorKey.value = null
     }
-    actionMessage.value = 'Rezept wurde aus dem Wochenplan entfernt.'
+    toastStore.addToast(t('notifications.mealPlanRemoved'), 'info')
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
@@ -264,12 +269,10 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
 async function clearWeek() {
   const allSlotTargets = weekDays.value.flatMap(day => mealSlots.map(slot => ({ date: day.date, slot: slot.key })))
   if (!week.value?.entries.length) {
-    actionMessage.value = 'Die Woche ist bereits leer.'
     return
   }
   try {
     actionError.value = null
-    actionMessage.value = null
     const results = await Promise.allSettled(
       allSlotTargets.map(target => mealPlanApi.deleteSlot(target.date, target.slot)),
     )
@@ -289,7 +292,7 @@ async function clearWeek() {
     editingSlotKey.value = null
     moveEditorKey.value = null
     await reloadWeek()
-    actionMessage.value = 'Die Woche wurde geleert.'
+    toastStore.addToast(t('notifications.weekCleared'), 'info')
   } catch {
     actionError.value = t('mealPlan.errors.remove')
   }
@@ -301,7 +304,7 @@ async function createShoppingListFromWeek() {
     actionMessage.value = null
     shoppingListLoading.value = true
     shoppingListResult.value = await mealPlanApi.createShoppingListFromWeek(week.value?.weekStart)
-    actionMessage.value = t('mealPlan.shoppingList.success')
+    toastStore.addToast(t('notifications.shoppingListCreated'), 'success')
   } catch {
     actionError.value = t('mealPlan.shoppingList.error')
   } finally {
@@ -419,7 +422,7 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
     syncSelectedRecipes(updatedWeek.entries)
     moveEditorKey.value = null
     editingSlotKey.value = null
-    actionMessage.value = t('mealPlan.messages.moved')
+    toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
   } catch {
     await reloadWeek().catch(() => undefined)
     actionError.value = t('mealPlan.errors.move')
@@ -651,7 +654,7 @@ async function acceptSwipeSuggestion() {
       })
     upsertEntry(saved)
     syncSlotState(saved)
-    swipeMessage.value = `${suggestion.title} wurde für ${slotLabel(slot)} am ${date} übernommen.`
+    toastStore.addToast(t('notifications.swipePlanned', { title: suggestion.title }), 'success')
     if (swipeIndex.value < swipeSuggestions.value.length - 1) {
       swipeIndex.value += 1
     }
@@ -810,7 +813,6 @@ function formatDate(date: Date) {
 
     <section v-else class="week-grid" :aria-label="t('mealPlan.title')">
       <p v-if="actionError" class="status-text error full-width">{{ actionError }}</p>
-      <p v-if="actionMessage" class="status-text success full-width">{{ actionMessage }}</p>
       <p v-if="recipes.length === 0" class="status-text full-width">{{ t('mealPlan.empty.noRecipes') }}</p>
       <div class="mode-switch full-width" aria-label="Planungsmodus">
         <button type="button" :class="{ active: planningMode === 'manual' }" @click="planningMode = 'manual'">
@@ -956,7 +958,6 @@ function formatDate(date: Date) {
           </ul>
         </section>
 
-        <p v-if="swipeMessage" class="status-text success">{{ swipeMessage }}</p>
         <p v-if="swipeError" class="status-text error">{{ swipeError }}</p>
         <div v-if="allBucketsFull" class="completion-card">
           <h3>Glückwunsch! Deine Woche ist vollständig geplant.</h3>

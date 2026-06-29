@@ -324,6 +324,9 @@
       "next": "下一页"
     }
   },
+  "notifications": {
+    "languageChanged": "界面现已切换为中文。"
+  },
   "restaurants": {
     "actions": {
       "findNearby": "查找匹配的餐厅"

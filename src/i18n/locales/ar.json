@@ -324,6 +324,9 @@
       "next": "التالي"
     }
   },
+  "notifications": {
+    "languageChanged": "واجهة المستخدم الآن باللغة العربية."
+  },
   "restaurants": {
     "actions": {
       "findNearby": "العثور على مطاعم مناسبة"
