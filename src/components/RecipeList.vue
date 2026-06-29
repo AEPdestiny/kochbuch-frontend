@@ -6,6 +6,7 @@ import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
+import { useToastStore } from '@/stores/toastStore'
 import type { Recipe, RecipeRequest } from '@/types/recipe'
 
 const props = withDefaults(defineProps<{ search?: string; mode?: 'manager' | 'create' }>(), {
@@ -14,6 +15,7 @@ const props = withDefaults(defineProps<{ search?: string; mode?: 'manager' | 'cr
 const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
+const toastStore = useToastStore()
 
 const recipes = ref<Recipe[]>([])
 const externalFavorites = ref<Recipe[]>([])
@@ -170,6 +172,7 @@ const createRecipe = async () => {
     newImageUploaded.value = false
     clearNewImagePreview()
     error.value = null
+    toastStore.addToast(t('notifications.recipeCreated'), 'success')
     if (isCreateMode.value) {
       await router.push(`/recipe/${saved.id}`)
     }
@@ -244,6 +247,7 @@ const updateRecipe = async () => {
     editImageUploaded.value = false
     clearEditImagePreview()
     error.value = null
+    toastStore.addToast(t('notifications.recipeUpdated'), 'success')
   } catch (e: unknown) {
     editFormError.value = toUpdateRecipeErrorMessage(e)
   }
@@ -281,6 +285,7 @@ const deleteRecipe = async (id: number | string) => {
     if (editing.value && editing.value.id === id) {
       editing.value = null
     }
+    toastStore.addToast(t('notifications.recipeDeleted'), 'info')
   } catch (e: unknown) {
     error.value = toDeleteRecipeErrorMessage(e)
   }

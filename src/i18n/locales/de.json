@@ -361,6 +361,14 @@
       "next": "Weiter"
     }
   },
+  "notifications": {
+    "loginSuccess": "Willkommen zurück, {name}!",
+    "logoutSuccess": "Du wurdest abgemeldet.",
+    "mealPlanAdded": "Rezept wurde zum Wochenplan hinzugefügt.",
+    "recipeCreated": "Rezept wurde erstellt.",
+    "recipeUpdated": "Rezept wurde gespeichert.",
+    "recipeDeleted": "Rezept wurde gelöscht."
+  },
   "restaurants": {
     "actions": {
       "findNearby": "Passende Restaurants finden"

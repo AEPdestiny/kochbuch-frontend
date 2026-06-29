@@ -3,10 +3,12 @@ import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/authStore'
+import { useToastStore } from '@/stores/toastStore'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 const { t } = useI18n()
 
 const email = ref('')
@@ -22,9 +24,13 @@ async function submitLogin() {
       email: email.value,
       password: password.value,
     })
+    toastStore.addToast(
+      t('notifications.loginSuccess', { name: authStore.user?.username ?? '' }),
+      'success',
+    )
     await router.push(getSafeRedirectPath())
   } catch {
-    // authStore already exposes the translated error message.
+    // authStore already exposes the translated error message in authStore.error.
   }
 }
 

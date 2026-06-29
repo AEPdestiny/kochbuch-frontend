@@ -361,6 +361,14 @@
       "next": "Next"
     }
   },
+  "notifications": {
+    "loginSuccess": "Welcome back, {name}!",
+    "logoutSuccess": "You have been signed out.",
+    "mealPlanAdded": "Recipe added to your meal plan.",
+    "recipeCreated": "Recipe created successfully.",
+    "recipeUpdated": "Recipe saved.",
+    "recipeDeleted": "Recipe deleted."
+  },
   "restaurants": {
     "actions": {
       "findNearby": "Find matching restaurants"

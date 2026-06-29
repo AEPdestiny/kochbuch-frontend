@@ -10,6 +10,7 @@ import { favoriteApi } from '@/shared/api/favoriteApi'
 import { i18n, setLocale } from '@/i18n'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { useAuthStore } from '@/stores/authStore'
+import { useToastStore } from '@/stores/toastStore'
 
 function loginAsUser() {
   sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
@@ -859,7 +860,11 @@ describe('ApiRecipeList.vue', () => {
       externalRecipeId: '716429',
       externalSource: 'spoonacular',
     })
-    expect(wrapper.text()).toContain('Recipe added to meal plan.')
+    // Success message is now a toast, not inline text
+    const toastStore = useToastStore()
+    expect(toastStore.toasts.some(t => t.type === 'success')).toBe(true)
+    // The recipe card remains visible (no layout shift)
+    expect(wrapper.find('.recipe-card').exists()).toBe(true)
   })
 
   it('plans Dishly recipe from home with recipeId', async () => {

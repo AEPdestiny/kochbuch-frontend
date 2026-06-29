@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { useToastStore } from '@/stores/toastStore'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { pantryApi } from '@/shared/api/pantryApi'
@@ -49,11 +50,11 @@ const mealPlanModalOpen = ref(false)
 const mealPlanTarget = ref<DisplayRecipe | null>(null)
 const mealPlanLoading = ref(false)
 const mealPlanError = ref<string | null>(null)
-const mealPlanMessage = ref<string | null>(null)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const { t, locale } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
+const toastStore = useToastStore()
 const isLoggedIn = computed(() => authStore.isAuthenticated)
 
 const EXTERNAL_CHUNK = 20
@@ -360,7 +361,6 @@ const openDetails = (recipe: DisplayRecipe) => {
 }
 
 async function openMealPlanModal(recipe: DisplayRecipe) {
-  mealPlanMessage.value = null
   mealPlanError.value = null
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     mealPlanError.value = t('recipeDetail.errors.loginRequiredMealPlan')
@@ -395,7 +395,7 @@ async function addToMealPlan(date: string, slot: MealSlot) {
     plannedEntries.value = plannedEntries.value
       .filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
       .concat(savedEntry)
-    mealPlanMessage.value = t('recipeDetail.mealPlan.added')
+    toastStore.addToast(t('notifications.mealPlanAdded'), 'success')
     mealPlanModalOpen.value = false
   } catch (e: unknown) {
     logMealPlanError(e, date, slot, payload)
@@ -979,9 +979,6 @@ function formatDate(date: Date) {
           {{ t('home.errors.prefix') }} {{ error }}
         </p>
 
-        <p v-if="mealPlanMessage" class="status-text success">
-          {{ mealPlanMessage }}
-        </p>
         <p v-if="mealPlanError && !mealPlanModalOpen" class="status-text error">
           {{ mealPlanError }}
         </p>

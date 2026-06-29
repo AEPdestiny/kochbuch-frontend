@@ -1,5 +1,6 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import RecipeList from '@/components/RecipeList.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { favoriteApi } from '@/shared/api/favoriteApi'
@@ -51,7 +52,9 @@ describe('RecipeList.vue', () => {
     routeQuery = {}
     sessionStorage.clear()
     setLocale('de')
-    config.global.plugins = [i18n]
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.uploadRecipeImage).mockResolvedValue({
