@@ -8,6 +8,8 @@ import { BarcodeFormat, DecodeHintType, type Result } from '@zxing/library'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { recipeApi } from '@/shared/api/recipeApi'
+import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
+import SuggestInput from '@/components/SuggestInput.vue'
 import type { PantryItem, PantryItemRequest } from '@/types/pantry'
 import type { ExternalRecipeMatchResponse } from '@/types/recipe'
 
@@ -49,37 +51,6 @@ const scannedProduct = ref<ScannedProduct | null>(null)
 const recipeMatches = ref<ExternalRecipeMatchResponse[]>([])
 const recipeMatchLoading = ref(false)
 const recipeMatchError = ref<string | null>(null)
-
-const STANDARD_UNITS = ['g', 'kg', 'ml', 'l', 'piece', 'tbsp', 'tsp', 'cup', 'slice', 'can', 'pack', 'clove', 'pinch']
-
-const NAME_SUGGESTIONS = [
-  // Rice
-  'Basmati rice', 'Jasmine rice', 'Long grain rice', 'Short grain rice', 'Brown rice',
-  'Wild rice', 'Risotto rice', 'Milk rice', 'Sushi rice', 'Parboiled rice',
-  // Pasta & noodles
-  'Spaghetti', 'Penne', 'Fusilli', 'Farfalle', 'Tagliatelle', 'Macaroni',
-  'Lasagna sheets', 'Udon', 'Rice noodles', 'Glass noodles', 'Tortellini', 'Gnocchi',
-  // Sugar
-  'Brown sugar', 'Powdered sugar', 'Table sugar',
-  // Beans
-  'White beans', 'Kidney beans', 'Black beans', 'Soybeans',
-  // Meat
-  'Chicken breast', 'Chicken thighs', 'Turkey breast', 'Ground beef', 'Beef steak',
-  'Ground pork', 'Pork tenderloin', 'Bacon', 'Salami', 'Cooked ham',
-  // Fish & seafood
-  'Salmon fillet', 'Tuna', 'Cod', 'Pollock', 'Shrimp', 'Fish fingers',
-  'Smoked salmon', 'Sardines', 'Mackerel', 'Mussels',
-  // Milk
-  'Oat milk', 'Almond milk', 'Soy milk',
-  // Yogurt
-  'Greek yogurt', 'Quark',
-  // Dairy
-  'Cream cheese', 'Cream', 'Butter', 'Margarine',
-  // Cheese
-  'Mozzarella', 'Parmesan', 'Feta', 'Gouda',
-  // Oil
-  'Olive oil', 'Sunflower oil', 'Rapeseed oil', 'Sesame oil', 'Coconut oil',
-]
 
 onMounted(() => {
   loadPantryItems()
@@ -559,23 +530,10 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
         </article>
       </section>
 
-      <!-- Datalists shared by add + edit forms -->
-      <datalist id="pantry-name-dl">
-        <option v-for="s in NAME_SUGGESTIONS" :key="s" :value="s" />
-      </datalist>
-      <datalist id="pantry-unit-dl">
-        <option v-for="u in STANDARD_UNITS" :key="u" :value="u" />
-      </datalist>
-
       <form class="pantry-form" @submit.prevent="createPantryItem">
         <div class="form-field">
           <label>{{ t('pantry.form.name') }}</label>
-          <input
-            v-model="newName"
-            list="pantry-name-dl"
-            type="text"
-            :placeholder="t('pantry.form.namePlaceholder')"
-          />
+          <SuggestInput v-model="newName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('pantry.form.namePlaceholder')" />
         </div>
 
         <div class="form-field small">
@@ -585,12 +543,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
 
         <div class="form-field small">
           <label>{{ t('pantry.form.unit') }}</label>
-          <input
-            v-model="newUnit"
-            list="pantry-unit-dl"
-            type="text"
-            :placeholder="t('pantry.form.unitPlaceholder')"
-          />
+          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" :placeholder="t('pantry.form.unitPlaceholder')" />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('pantry.actions.create') }}</button>
@@ -628,7 +581,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
           >
             <div class="form-field">
               <label>{{ t('pantry.form.name') }}</label>
-              <input v-model="editName" list="pantry-name-dl" type="text" :placeholder="t('pantry.form.namePlaceholder')" />
+              <SuggestInput v-model="editName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('pantry.form.namePlaceholder')" />
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.quantity') }}</label>
@@ -636,7 +589,7 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.unit') }}</label>
-              <input v-model="editUnit" list="pantry-unit-dl" type="text" :placeholder="t('pantry.form.unitPlaceholder')" />
+              <SuggestInput v-model="editUnit" :suggestions="STANDARD_UNITS" :placeholder="t('pantry.form.unitPlaceholder')" />
             </div>
             <div class="edit-buttons">
               <button type="submit" class="submit-btn">{{ t('pantry.actions.update') }}</button>

@@ -377,44 +377,80 @@ describe('PantryView', () => {
     expect(wrapper.text()).toContain('Bitte gib eine Menge an')
   })
 
-  it('provides a name datalist with suggestions', async () => {
+  it('does not show a native datalist and only suggests after typing', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(PantryView)
     await flushPromises()
 
-    // Name input is linked to datalist
+    // No native <datalist> anywhere on the page
+    expect(wrapper.find('datalist').exists()).toBe(false)
+
     const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
     expect(nameInput.exists()).toBe(true)
-    expect(nameInput.attributes('list')).toBe('pantry-name-dl')
 
-    // Datalist contains suggestions from all categories
-    const datalist = wrapper.find('datalist#pantry-name-dl')
-    expect(datalist.exists()).toBe(true)
-    const options = datalist.findAll('option')
-    expect(options.length).toBeGreaterThan(10)
-    const values = options.map(o => o.attributes('value') ?? '')
-    expect(values).toContain('Basmati rice')
-    expect(values).toContain('Chicken breast')
-    expect(values).toContain('Olive oil')
+    // Focusing without typing shows no suggestions
+    await nameInput.trigger('focus')
+    expect(wrapper.find('.suggest-dropdown').exists()).toBe(false)
+
+    // Typing shows a small custom dropdown, capped at 8 items
+    await nameInput.setValue('rice')
+    await nameInput.trigger('focus')
+    const dropdown = wrapper.find('.suggest-dropdown')
+    expect(dropdown.exists()).toBe(true)
+    const options = dropdown.findAll('li')
+    expect(options.length).toBeGreaterThan(0)
+    expect(options.length).toBeLessThanOrEqual(8)
+    expect(dropdown.text()).toContain('Basmati rice')
   })
 
-  it('provides a unit datalist with standard units', async () => {
+  it('selecting a name suggestion sets the value and closes the dropdown', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(PantryView)
     await flushPromises()
 
-    const datalist = wrapper.find('datalist#pantry-unit-dl')
-    expect(datalist.exists()).toBe(true)
-    const values = datalist.findAll('option').map(o => o.attributes('value') ?? '')
-    expect(values).toContain('g')
-    expect(values).toContain('kg')
-    expect(values).toContain('piece')
-    expect(values).toContain('tbsp')
-    expect(values).toContain('pinch')
+    const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
+    await nameInput.setValue('basmati')
 
-    // Unit input is linked to datalist (allows freetext too)
+    const option = wrapper.findAll('.suggest-dropdown li').find(li => li.text() === 'Basmati rice')
+    expect(option).toBeTruthy()
+    await option!.trigger('mousedown')
+
+    expect((wrapper.find('input[placeholder="z.B. Reis"]').element as HTMLInputElement).value).toBe('Basmati rice')
+    expect(wrapper.find('.suggest-dropdown').exists()).toBe(false)
+  })
+
+  it('allows free text for name and unit', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.createPantryItem).mockResolvedValue(item('My own thing', 1, 'jar', ''))
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('My own thing')
+    await wrapper.find('input[placeholder="2"]').setValue(1)
+    await wrapper.find('form.pantry-form input[placeholder="kg"]').setValue('jar')
+    await wrapper.find('form.pantry-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(pantryApi.createPantryItem).toHaveBeenCalledWith({
+      name: 'My own thing',
+      quantity: 1,
+      unit: 'jar',
+    })
+  })
+
+  it('shows unit suggestions when typing in the unit field', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
     const unitInput = wrapper.find('form.pantry-form input[placeholder="kg"]')
-    expect(unitInput.attributes('list')).toBe('pantry-unit-dl')
+    await unitInput.setValue('p')
+    await unitInput.trigger('focus')
+
+    const dropdown = unitInput.element.closest('.suggest-input')
+    expect(dropdown).toBeTruthy()
+    expect(wrapper.text()).toContain('piece')
+    expect(wrapper.text()).toContain('pack')
   })
 
   it('does not show category field in add or edit form', async () => {

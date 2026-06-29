@@ -7,7 +7,43 @@ import { favoriteApi } from '@/shared/api/favoriteApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import { useToastStore } from '@/stores/toastStore'
+import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
+import SuggestInput from '@/components/SuggestInput.vue'
 import type { Recipe, RecipeRequest } from '@/types/recipe'
+
+type IngredientRow = { name: string; quantity: string; unit: string }
+
+function emptyIngredientRow(): IngredientRow {
+  return { name: '', quantity: '', unit: '' }
+}
+
+function serializeIngredientRows(rows: IngredientRow[]): string {
+  return rows
+    .map(r => [r.quantity, r.unit, r.name].filter(part => part.trim()).join(' ').trim())
+    .filter(Boolean)
+    .join(', ')
+}
+
+function parseIngredientRows(ingredients: string, ingredientsList?: string[] | null): IngredientRow[] {
+  const lines = ingredientsList && ingredientsList.length > 0
+    ? ingredientsList
+    : ingredients.split(',').map(s => s.trim()).filter(Boolean)
+
+  if (lines.length === 0) {
+    return [emptyIngredientRow()]
+  }
+
+  return lines.map(line => {
+    const parts = line.trim().split(/\s+/)
+    const firstPart = parts[0] ?? ''
+    const quantity = parts.length > 1 && /^[\d.,/]+$/.test(firstPart) ? (parts.shift() ?? '') : ''
+    const nextPart = parts[0] ?? ''
+    const unit = quantity && parts.length > 0 && STANDARD_UNITS.includes(nextPart.toLowerCase())
+      ? (parts.shift() ?? '')
+      : ''
+    return { quantity, unit, name: parts.join(' ') || line.trim() }
+  })
+}
 
 const props = withDefaults(defineProps<{ search?: string; mode?: 'manager' | 'create' }>(), {
   mode: 'manager',
@@ -33,8 +69,7 @@ const newCookTime = ref<number | null>(null)
 const newServings = ref<number | null>(null)
 const newDifficulty = ref('')
 const newCategory = ref('')
-const newRating = ref<number | null>(null)
-const newIngredients = ref('')
+const newIngredientRows = ref<IngredientRow[]>([emptyIngredientRow()])
 const newInstructions = ref('')
 const newFavorite = ref(false)
 const newPublished = ref(false)
@@ -44,6 +79,7 @@ const newImageUploading = ref(false)
 const editImageUploading = ref(false)
 const newImageUploaded = ref(false)
 const editImageUploaded = ref(false)
+const editIngredientRows = ref<IngredientRow[]>([emptyIngredientRow()])
 
 const editing = ref<Recipe | null>(null)
 const selectedFavorite = ref<Recipe | null>(null)
@@ -117,6 +153,17 @@ const toLoadRecipesErrorMessage = (e: unknown) => {
   return t('recipes.errors.load')
 }
 
+const hasNewIngredients = computed(() => newIngredientRows.value.some(r => r.name.trim()))
+
+function addNewIngredientRow() {
+  newIngredientRows.value.push(emptyIngredientRow())
+}
+
+function removeNewIngredientRow(index: number) {
+  if (newIngredientRows.value.length <= 1) return
+  newIngredientRows.value.splice(index, 1)
+}
+
 const createRecipe = async () => {
   if (newImageUploading.value) {
     formError.value = 'Bitte warte, bis das Bild hochgeladen wurde.'
@@ -124,7 +171,7 @@ const createRecipe = async () => {
   }
   if (
     !newTitle.value.trim() ||
-    !newIngredients.value.trim() ||
+    !hasNewIngredients.value ||
     !newInstructions.value.trim()
   ) {
     formError.value = t('recipes.errors.requiredFields')
@@ -146,8 +193,8 @@ const createRecipe = async () => {
       servings: newServings.value ?? 0,
       difficulty: newDifficulty.value,
       category: newCategory.value,
-      rating: newRating.value ?? 0,
-      ingredients: newIngredients.value,
+      rating: 0,
+      ingredients: serializeIngredientRows(newIngredientRows.value),
       instructions: newInstructions.value,
       favorite: newFavorite.value,
       published: newPublished.value,
@@ -164,8 +211,7 @@ const createRecipe = async () => {
     newServings.value = null
     newDifficulty.value = ''
     newCategory.value = ''
-    newRating.value = null
-    newIngredients.value = ''
+    newIngredientRows.value = [emptyIngredientRow()]
     newInstructions.value = ''
     newFavorite.value = false
     newPublished.value = false
@@ -199,6 +245,7 @@ const toCreateRecipeErrorMessage = (e: unknown) => {
 
 const startEdit = (r: Recipe) => {
   editing.value = { ...r }
+  editIngredientRows.value = parseIngredientRows(r.ingredients, r.ingredientsList)
   editImagePreviewUrl.value = ''
   editImageUploaded.value = false
   editImageUploading.value = false
@@ -206,9 +253,21 @@ const startEdit = (r: Recipe) => {
 
 const cancelEdit = () => {
   editing.value = null
+  editIngredientRows.value = [emptyIngredientRow()]
   editImageUploaded.value = false
   editImageUploading.value = false
   clearEditImagePreview()
+}
+
+const hasEditIngredients = computed(() => editIngredientRows.value.some(r => r.name.trim()))
+
+function addEditIngredientRow() {
+  editIngredientRows.value.push(emptyIngredientRow())
+}
+
+function removeEditIngredientRow(index: number) {
+  if (editIngredientRows.value.length <= 1) return
+  editIngredientRows.value.splice(index, 1)
 }
 
 const updateRecipe = async () => {
@@ -219,7 +278,7 @@ const updateRecipe = async () => {
   }
   if (
     !editing.value.title.trim() ||
-    !editing.value.ingredients.trim() ||
+    !hasEditIngredients.value ||
     !editing.value.instructions.trim()
   ) {
     editFormError.value = t('recipes.errors.requiredFields')
@@ -231,6 +290,8 @@ const updateRecipe = async () => {
     editFormError.value = t('recipes.errors.updateLoginRequired')
     return
   }
+
+  editing.value.ingredients = serializeIngredientRows(editIngredientRows.value)
 
   try {
     const updated = await recipeApi.updateRecipe(
@@ -671,28 +732,31 @@ const removeFavorite = async (r: Recipe) => {
               :placeholder="t('recipes.form.categoryPlaceholder')"
             />
           </div>
-          <div class="form-field small">
-            <label>{{ t('recipes.form.rating') }}</label>
-            <input
-              v-model.number="newRating"
-              type="number"
-              min="0"
-              max="5"
-              step="0.1"
-              :placeholder="t('recipes.form.ratingPlaceholder')"
-            />
-          </div>
         </div>
 
         <div class="form-field">
           <label>
             {{ t('recipes.form.ingredients') }} <span class="required-star">*</span>
           </label>
-          <textarea
-            v-model="newIngredients"
-            rows="3"
-            :placeholder="t('recipes.form.ingredientsPlaceholder')"
-          ></textarea>
+          <div class="ingredient-rows">
+            <div v-for="(row, index) in newIngredientRows" :key="index" class="ingredient-row">
+              <SuggestInput v-model="row.name" :suggestions="NAME_SUGGESTIONS" :placeholder="t('recipes.form.ingredientName')" />
+              <input v-model="row.quantity" type="text" class="ingredient-quantity" :placeholder="t('recipes.form.ingredientQuantity')" />
+              <SuggestInput v-model="row.unit" :suggestions="STANDARD_UNITS" :placeholder="t('recipes.form.ingredientUnit')" />
+              <button
+                type="button"
+                class="ingredient-remove-btn"
+                :disabled="newIngredientRows.length <= 1"
+                :aria-label="t('recipes.form.removeIngredient')"
+                @click="removeNewIngredientRow(index)"
+              >
+                −
+              </button>
+            </div>
+          </div>
+          <button type="button" class="ingredient-add-btn" @click="addNewIngredientRow">
+            + {{ t('recipes.form.addIngredient') }}
+          </button>
         </div>
 
         <div class="form-field">
@@ -879,15 +943,29 @@ const removeFavorite = async (r: Recipe) => {
             <label>{{ t('recipes.form.category') }}</label>
             <input v-model="editing.category" type="text" />
           </div>
-          <div class="form-field small">
-            <label>{{ t('recipes.form.rating') }}</label>
-            <input v-model.number="editing.rating" type="number" min="0" max="5" step="0.1" />
-          </div>
         </div>
 
         <div class="form-field">
           <label>{{ t('recipes.form.ingredients') }}</label>
-          <textarea v-model="editing.ingredients" rows="3"></textarea>
+          <div class="ingredient-rows">
+            <div v-for="(row, index) in editIngredientRows" :key="index" class="ingredient-row">
+              <SuggestInput v-model="row.name" :suggestions="NAME_SUGGESTIONS" :placeholder="t('recipes.form.ingredientName')" />
+              <input v-model="row.quantity" type="text" class="ingredient-quantity" :placeholder="t('recipes.form.ingredientQuantity')" />
+              <SuggestInput v-model="row.unit" :suggestions="STANDARD_UNITS" :placeholder="t('recipes.form.ingredientUnit')" />
+              <button
+                type="button"
+                class="ingredient-remove-btn"
+                :disabled="editIngredientRows.length <= 1"
+                :aria-label="t('recipes.form.removeIngredient')"
+                @click="removeEditIngredientRow(index)"
+              >
+                −
+              </button>
+            </div>
+          </div>
+          <button type="button" class="ingredient-add-btn" @click="addEditIngredientRow">
+            + {{ t('recipes.form.addIngredient') }}
+          </button>
         </div>
 
         <div class="form-field">
@@ -1102,6 +1180,69 @@ const removeFavorite = async (r: Recipe) => {
 
 .form-field.small {
   max-width: 160px;
+}
+
+.ingredient-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ingredient-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 2fr) 90px minmax(90px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.ingredient-quantity {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ingredient-remove-btn {
+  border: 1.5px solid #c3e7e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #a14c2b;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  min-height: 38px;
+  min-width: 38px;
+}
+
+.ingredient-remove-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ingredient-remove-btn:hover:not(:disabled) {
+  background: #fff0eb;
+}
+
+.ingredient-add-btn {
+  align-self: flex-start;
+  margin-top: 6px;
+  border: 1.5px dashed #8fd5cc;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d8e90;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 7px 14px;
+}
+
+.ingredient-add-btn:hover {
+  background: #e0f5f2;
+}
+
+@media (max-width: 640px) {
+  .ingredient-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 label {

@@ -186,7 +186,7 @@ describe('RecipeList.vue', () => {
       .find('input[type="url"]')
       .setValue('https://example.com/manual.jpg')
     await wrapper
-      .find('textarea[placeholder="Zutaten mit Kommas getrennt eintragen."]')
+      .find('.new-recipe-form input[placeholder="Zutat"]')
       .setValue('x')
     await wrapper
       .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
@@ -276,7 +276,7 @@ describe('RecipeList.vue', () => {
       .find('input[placeholder="z. B. Cremige Tomatenpasta"]')
       .setValue('New Dish')
     await wrapper
-      .find('textarea[placeholder="Zutaten mit Kommas getrennt eintragen."]')
+      .find('.new-recipe-form input[placeholder="Zutat"]')
       .setValue('x')
     await wrapper
       .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
@@ -311,7 +311,7 @@ describe('RecipeList.vue', () => {
       .find('input[placeholder="z. B. Cremige Tomatenpasta"]')
       .setValue('New Dish')
     await wrapper
-      .find('textarea[placeholder="Zutaten mit Kommas getrennt eintragen."]')
+      .find('.new-recipe-form input[placeholder="Zutat"]')
       .setValue('x')
     await wrapper
       .find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]')
@@ -323,6 +323,79 @@ describe('RecipeList.vue', () => {
     expect(recipeApi.getMyRecipes).not.toHaveBeenCalled()
     expect(recipeApi.createRecipe).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Bitte melde dich an, um ein Rezept zu erstellen.')
+  })
+
+  it('does not show a rating input field in the create form', async () => {
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    expect(wrapper.find('input[placeholder="4.5"]').exists()).toBe(false)
+  })
+
+  it('ingredient list starts with one row and supports add/remove', async () => {
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    expect(wrapper.findAll('.new-recipe-form .ingredient-row')).toHaveLength(1)
+
+    await wrapper.find('.new-recipe-form .ingredient-add-btn').trigger('click')
+    expect(wrapper.findAll('.new-recipe-form .ingredient-row')).toHaveLength(2)
+
+    await wrapper.find('.new-recipe-form .ingredient-add-btn').trigger('click')
+    expect(wrapper.findAll('.new-recipe-form .ingredient-row')).toHaveLength(3)
+
+    await wrapper.findAll('.new-recipe-form .ingredient-remove-btn')[2].trigger('click')
+    expect(wrapper.findAll('.new-recipe-form .ingredient-row')).toHaveLength(2)
+
+    await wrapper.findAll('.new-recipe-form .ingredient-remove-btn')[1].trigger('click')
+    expect(wrapper.findAll('.new-recipe-form .ingredient-row')).toHaveLength(1)
+
+    // Cannot remove the last remaining row (button is disabled)
+    expect(wrapper.find('.new-recipe-form .ingredient-remove-btn').attributes('disabled')).toBeDefined()
+    await wrapper.find('.new-recipe-form .ingredient-remove-btn').trigger('click')
+    expect(wrapper.findAll('.new-recipe-form .ingredient-row')).toHaveLength(1)
+  })
+
+  it('creates a recipe with structured ingredient rows converted to a string', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    vi.mocked(recipeApi.createRecipe).mockResolvedValue({
+      id: 5,
+      title: 'Salad',
+      imageUrl: '',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 0,
+      difficulty: '',
+      category: '',
+      rating: 0,
+      ingredients: '200 g Tomatoes, Cucumber',
+      instructions: 'mix',
+      favorite: false,
+      published: false,
+    })
+
+    await wrapper.find('input[placeholder="z. B. Cremige Tomatenpasta"]').setValue('Salad')
+    await wrapper.find('.new-recipe-form .ingredient-add-btn').trigger('click')
+
+    const rows = wrapper.findAll('.new-recipe-form .ingredient-row')
+    await rows[0].find('input[placeholder="Zutat"]').setValue('Tomatoes')
+    await rows[0].find('input[placeholder="Menge"]').setValue('200')
+    await rows[0].find('input[placeholder="Einheit"]').setValue('g')
+    await rows[1].find('input[placeholder="Zutat"]').setValue('Cucumber')
+
+    await wrapper.find('textarea[placeholder="Beschreibe die Zubereitung Schritt für Schritt."]').setValue('mix')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(recipeApi.createRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ingredients: '200 g Tomatoes, Cucumber',
+        rating: 0,
+      })
+    )
   })
 
   it('shows validation error if required fields are missing', async () => {
@@ -399,6 +472,74 @@ describe('RecipeList.vue', () => {
     )
     // Neuer Titel wird angezeigt
     expect(wrapper.text()).toContain('Updated Title')
+  })
+
+  it('does not show a rating input field in the edit panel', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
+      { id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0, difficulty: '', category: '', rating: 4, ingredients: 'x', instructions: 'y', favorite: false, published: false },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
+    await editButton.trigger('click')
+
+    expect(wrapper.find('.edit-panel input[min="0"][max="5"]').exists()).toBe(false)
+  })
+
+  it('editing a recipe loads existing ingredients into separate rows and allows add/remove', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const initial = [
+      {
+        id: 1,
+        title: 'Salad',
+        imageUrl: '',
+        prepTimeMinutes: 0,
+        cookTimeMinutes: 0,
+        servings: 0,
+        difficulty: '',
+        category: '',
+        rating: 0,
+        ingredients: '200 g Tomatoes, 100 g Cucumber',
+        instructions: 'mix',
+        favorite: false,
+        published: false,
+      },
+    ]
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(initial)
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
+    await editButton.trigger('click')
+
+    const rows = wrapper.findAll('.edit-panel .ingredient-row')
+    expect(rows).toHaveLength(2)
+    const nameInputs = wrapper.findAll('.edit-panel .ingredient-row input[placeholder="Zutat"]')
+    expect(nameInputs[0].element.value).toBe('Tomatoes')
+    expect(nameInputs[1].element.value).toBe('Cucumber')
+
+    // Add a new ingredient row
+    await wrapper.find('.edit-panel .ingredient-add-btn').trigger('click')
+    expect(wrapper.findAll('.edit-panel .ingredient-row')).toHaveLength(3)
+    await wrapper.findAll('.edit-panel .ingredient-row input[placeholder="Zutat"]')[2].setValue('Olive oil')
+
+    // Remove the first ingredient row
+    await wrapper.findAll('.edit-panel .ingredient-remove-btn')[0].trigger('click')
+    expect(wrapper.findAll('.edit-panel .ingredient-row')).toHaveLength(2)
+
+    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...initial[0], ingredients: '100 g Cucumber, Olive oil' })
+    await wrapper.find('.edit-panel .submit-btn').trigger('click')
+    await flushPromises()
+
+    // The remaining Cucumber row keeps its original quantity/unit (100 g);
+    // the newly added Olive oil row has none.
+    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ ingredients: '100 g Cucumber, Olive oil' })
+    )
   })
 
   it('shows private and published status and toggles publication', async () => {

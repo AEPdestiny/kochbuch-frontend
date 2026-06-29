@@ -195,6 +195,11 @@
       "ratingPlaceholder": "4.5",
       "ingredients": "Zutaten",
       "ingredientsPlaceholder": "Zutaten mit Kommas getrennt eintragen.",
+      "ingredientName": "Zutat",
+      "ingredientQuantity": "Menge",
+      "ingredientUnit": "Einheit",
+      "addIngredient": "Zutat hinzufügen",
+      "removeIngredient": "Zutat entfernen",
       "instructions": "Zubereitung",
       "instructionsPlaceholder": "Beschreibe die Zubereitung Schritt für Schritt."
     },

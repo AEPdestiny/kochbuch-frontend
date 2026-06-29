@@ -104,7 +104,8 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('Tomatoes')
     expect(wrapper.text()).toContain('3')
     expect(wrapper.text()).toContain('piece')
-    expect(wrapper.text()).toContain('Vegetables')
+    // Category is no longer displayed
+    expect(wrapper.text()).not.toContain('Vegetables')
     expect(wrapper.text()).toContain('Milk')
   })
 
@@ -319,7 +320,8 @@ describe('ShoppingListView', () => {
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="z.B. Tomaten"]')).toBe('Tomatoes')
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="3"]')).toBe('3')
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="Stück"]')).toBe('piece')
-    expect(inputValue(wrapper, 'form.edit-form input[placeholder="Gemüse"]')).toBe('Vegetables')
+    // Category field is no longer shown in the edit form
+    expect(wrapper.find('form.edit-form input[placeholder="Gemüse"]').exists()).toBe(false)
     expect(inputChecked(wrapper, 'form.edit-form input[type="checkbox"]')).toBe(true)
   })
 
@@ -489,6 +491,26 @@ describe('ShoppingListView', () => {
     expect(wrapper.text()).toContain('Dieses Shopping List Item wurde nicht gefunden.')
   })
 
+  it('shows name and unit suggestions while typing, no native datalist', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.find('datalist').exists()).toBe(false)
+
+    const nameInput = wrapper.find('input[placeholder="z.B. Tomaten"]')
+    await nameInput.setValue('rice')
+    await nameInput.trigger('focus')
+    expect(wrapper.find('.suggest-dropdown').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Basmati rice')
+
+    const unitInput = wrapper.find('form.shopping-list-form input[placeholder="Stück"]')
+    await unitInput.setValue('p')
+    await unitInput.trigger('focus')
+    expect(wrapper.text()).toContain('piece')
+  })
+
   it('creates a shopping list item and clears the form', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
@@ -502,23 +524,21 @@ describe('ShoppingListView', () => {
     await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('Tomaten')
     await wrapper.find('input[placeholder="3"]').setValue(3)
     await wrapper.find('input[placeholder="Stück"]').setValue('Stück')
-    await wrapper.find('input[placeholder="Gemüse"]').setValue('Gemüse')
     await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
     await flushPromises()
 
+    // Category is no longer part of the create form
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
       name: 'Tomaten',
       quantity: 3,
       unit: 'Stück',
-      category: 'Gemüse',
       checked: false,
     })
     expect(wrapper.text()).toContain('Tomaten')
-    expect(wrapper.text()).toContain('Gemüse')
     expect(inputValue(wrapper, 'input[placeholder="z.B. Tomaten"]')).toBe('')
     expect(inputValue(wrapper, 'input[placeholder="3"]')).toBe('')
     expect(inputValue(wrapper, 'input[placeholder="Stück"]')).toBe('')
-    expect(inputValue(wrapper, 'input[placeholder="Gemüse"]')).toBe('')
+    expect(wrapper.find('input[placeholder="Gemüse"]').exists()).toBe(false)
   })
 
   it('shows validation message when create returns 400', async () => {

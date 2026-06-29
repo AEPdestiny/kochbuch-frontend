@@ -195,6 +195,11 @@
       "ratingPlaceholder": "4.5",
       "ingredients": "Ingredients",
       "ingredientsPlaceholder": "Enter ingredients separated by commas.",
+      "ingredientName": "Ingredient",
+      "ingredientQuantity": "Quantity",
+      "ingredientUnit": "Unit",
+      "addIngredient": "Add ingredient",
+      "removeIngredient": "Remove ingredient",
       "instructions": "Instructions",
       "instructionsPlaceholder": "Describe the preparation step by step."
     },

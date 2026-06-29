@@ -3,6 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
+import SuggestInput from '@/components/SuggestInput.vue'
 import type { ShoppingListItem, ShoppingListItemRequest } from '@/types/shoppingList'
 
 const { t } = useI18n()
@@ -15,13 +17,12 @@ const loginRequired = ref(false)
 const newName = ref('')
 const newQuantity = ref<number | null>(null)
 const newUnit = ref('')
-const newCategory = ref('')
 const newChecked = ref(false)
 const editingId = ref<number | string | null>(null)
 const editName = ref('')
 const editQuantity = ref<number | null>(null)
 const editUnit = ref('')
-const editCategory = ref('')
+const editCategory = ref('')  // not shown in UI — preserved on update so existing data is not lost
 const editChecked = ref(false)
 const editError = ref<string | null>(null)
 const actionMessage = ref<string | null>(null)
@@ -106,14 +107,12 @@ async function createShoppingListItem() {
       name: newName.value,
       quantity: newQuantity.value,
       unit: newUnit.value,
-      category: newCategory.value,
       checked: newChecked.value,
     })
     items.value.push(created)
     newName.value = ''
     newQuantity.value = null
     newUnit.value = ''
-    newCategory.value = ''
     newChecked.value = false
     formError.value = null
     error.value = null
@@ -447,7 +446,7 @@ function formatRawQuantity(item: ShoppingListItem) {
       <form class="shopping-list-form" @submit.prevent="createShoppingListItem">
         <div class="form-field">
           <label>{{ t('shoppingList.form.name') }}</label>
-          <input v-model="newName" type="text" :placeholder="t('shoppingList.form.namePlaceholder')" />
+          <SuggestInput v-model="newName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('shoppingList.form.namePlaceholder')" />
         </div>
 
         <div class="form-field small">
@@ -457,12 +456,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
         <div class="form-field small">
           <label>{{ t('shoppingList.form.unit') }}</label>
-          <input v-model="newUnit" type="text" :placeholder="t('shoppingList.form.unitPlaceholder')" />
-        </div>
-
-        <div class="form-field">
-          <label>{{ t('shoppingList.form.category') }}</label>
-          <input v-model="newCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
+          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" :placeholder="t('shoppingList.form.unitPlaceholder')" />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('shoppingList.actions.create') }}</button>
@@ -502,7 +496,6 @@ function formatRawQuantity(item: ShoppingListItem) {
               </label>
               <div>
                 <h3>{{ item.name }}</h3>
-                <p v-if="item.category" class="item-meta">{{ item.category }}</p>
               </div>
               <div class="item-side">
                 <p class="item-quantity">
@@ -526,7 +519,7 @@ function formatRawQuantity(item: ShoppingListItem) {
               >
                 <div class="form-field">
                   <label>{{ t('shoppingList.form.name') }}</label>
-                  <input v-model="editName" type="text" :placeholder="t('shoppingList.form.namePlaceholder')" />
+                  <SuggestInput v-model="editName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('shoppingList.form.namePlaceholder')" />
                 </div>
 
                 <div class="form-field small">
@@ -536,12 +529,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
                 <div class="form-field small">
                   <label>{{ t('shoppingList.form.unit') }}</label>
-                  <input v-model="editUnit" type="text" :placeholder="t('shoppingList.form.unitPlaceholder')" />
-                </div>
-
-                <div class="form-field">
-                  <label>{{ t('shoppingList.form.category') }}</label>
-                  <input v-model="editCategory" type="text" :placeholder="t('shoppingList.form.categoryPlaceholder')" />
+                  <SuggestInput v-model="editUnit" :suggestions="STANDARD_UNITS" :placeholder="t('shoppingList.form.unitPlaceholder')" />
                 </div>
 
                 <label class="checkbox-field">
@@ -630,7 +618,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 
 .shopping-list-form {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto;
+  grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto;
   gap: 12px;
   align-items: end;
   border: 1px solid #c3e7e1;
@@ -836,7 +824,7 @@ function formatRawQuantity(item: ShoppingListItem) {
 .edit-form {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) 120px 120px minmax(160px, 1fr) auto auto;
+  grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto auto;
   gap: 12px;
   align-items: end;
   border-top: 1px solid #c3e7e1;
