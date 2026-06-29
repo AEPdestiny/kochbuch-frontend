@@ -1297,6 +1297,97 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).not.toContain('local recipes were loaded')
     expect(wrapper.text()).toContain('Rezept 1')
   })
+
+  it('maxCalories filter is empty on initial load even when profile has dailyCalorieTarget', async () => {
+    loginAsUser()
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: [],
+      vegan: false,
+      vegetarian: false,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: 2000,
+      dailyCalorieTarget: 2000,
+    })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(1, 'Burger', 'beef', 'lunch', { calories: 900 }),
+      recipe(2, 'Salad', 'lettuce', 'lunch', { calories: 150 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    // maxCalories input must be empty — dailyCalorieTarget must NOT be applied
+    const maxCalInput = wrapper.find('input[type="number"][min="1"]').element
+    // The last number input in the filter panel is maxCalories
+    const numberInputs = wrapper.findAll('input[type="number"]')
+    const calInput = numberInputs[numberInputs.length - 1]
+    expect(calInput.element.value).toBe('')
+
+    // Both recipes visible: 900 kcal not filtered out
+    expect(wrapper.text()).toContain('Burger')
+    expect(wrapper.text()).toContain('Salad')
+  })
+
+  it('maxCalories filter hides recipes exceeding the per-dish limit', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(1, 'Big Burger', 'beef', 'lunch', { calories: 900 }),
+      recipe(2, 'Light Salad', 'lettuce', 'lunch', { calories: 200 }),
+      recipe(3, 'Medium Bowl', 'rice', 'lunch', { calories: 500 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    // All 3 visible initially
+    expect(wrapper.text()).toContain('Big Burger')
+    expect(wrapper.text()).toContain('Light Salad')
+    expect(wrapper.text()).toContain('Medium Bowl')
+
+    // Set maxCalories to 300 — only recipes ≤ 300 kcal should show
+    const numberInputs = wrapper.findAll('input[type="number"]')
+    const calInput = numberInputs[numberInputs.length - 1]
+    await calInput.setValue(300)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Big Burger')
+    expect(wrapper.text()).not.toContain('Medium Bowl')
+    expect(wrapper.text()).toContain('Light Salad')
+  })
+
+  it('clearing maxCalories filter restores the full base recipe list without reshuffling', async () => {
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(1, 'Big Burger', 'beef', 'lunch', { calories: 900 }),
+      recipe(2, 'Light Salad', 'lettuce', 'lunch', { calories: 200 }),
+      recipe(3, 'Medium Bowl', 'rice', 'lunch', { calories: 500 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const titlesBefore = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+
+    // Apply filter
+    const numberInputs = wrapper.findAll('input[type="number"]')
+    const calInput = numberInputs[numberInputs.length - 1]
+    await calInput.setValue(300)
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(1)
+
+    // Clear filter — should restore original list in same order (no reshuffle)
+    await calInput.setValue('')
+    await flushPromises()
+
+    const titlesAfter = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+    expect(titlesAfter).toEqual(titlesBefore)
+  })
 })
 
 function recipe(id, title, ingredients, category, overrides = {}) {

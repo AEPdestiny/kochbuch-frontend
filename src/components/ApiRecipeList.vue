@@ -635,7 +635,8 @@ function applyProfilePersonalization() {
   calorieConscious.value = preferences.calorieConscious
   highProtein.value = preferences.highProtein
   maxPrepTime.value = preferences.maxPrepTimeMinutes ?? null
-  maxCalories.value = preferences.dailyCalorieTarget ?? preferences.calorieGoal ?? null
+  // maxCalories is intentionally NOT set from the daily calorie target — the home page
+  // filter applies per dish, not per day. The user sets it manually if needed.
 }
 
 function clearSoftProfilePersonalization() {
