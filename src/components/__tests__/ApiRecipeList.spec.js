@@ -515,6 +515,93 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
+  it('restores page from sessionStorage after remount (F5 simulation)', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    // First mount: navigate to page 2
+    const wrapper1 = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper1.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper1.findAll('.recipe-card')).toHaveLength(5)
+
+    wrapper1.unmount()
+
+    // Second mount (simulates F5) – should restore page 2
+    const wrapper2 = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper2.findAll('.recipe-card')).toHaveLength(5)
+  })
+
+  it('does not overwrite stored order after initial load (no spurious second buildView)', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const orderAfterLoad = sessionStorage.getItem('dishly.recipe.order')
+    expect(orderAfterLoad).not.toBeNull()
+
+    // Simulate F5: remount without clearing sessionStorage
+    wrapper.unmount()
+    const wrapper2 = mount(ApiRecipeList)
+    await flushPromises()
+
+    // Order must be identical after remount (no re-shuffle)
+    expect(sessionStorage.getItem('dishly.recipe.order')).toBe(orderAfterLoad)
+  })
+
+  it('shuffle replaces stored snapshot and clears saved page', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+    expect(sessionStorage.getItem('dishly.recipe.page')).toBe('2')
+
+    await wrapper.find('.shuffle-btn').trigger('click')
+    await flushPromises()
+
+    // Page storage cleared, back on page 1, new order stored
+    expect(sessionStorage.getItem('dishly.recipe.page')).toBeNull()
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
+  })
+
+  it('scrolls to recipe list section when switching pages', async () => {
+    // jsdom does not implement scrollIntoView; provide a stub before spying
+    Element.prototype.scrollIntoView = () => {}
+    const scrollSpy = vi.spyOn(Element.prototype, 'scrollIntoView')
+
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+
+    expect(scrollSpy).toHaveBeenCalled()
+  })
+
   it('navigates external recipe cards to the external detail route', async () => {
     setLocale('en')
     vi.useFakeTimers()

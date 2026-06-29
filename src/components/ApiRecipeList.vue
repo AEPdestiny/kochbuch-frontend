@@ -59,6 +59,7 @@ const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
 const PAGE_SIZE = 30
 const RECIPE_ORDER_KEY = 'dishly.recipe.order'
+const PAGE_STORAGE_KEY = 'dishly.recipe.page'
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 let calorieSortWasAutomatic = false
@@ -72,6 +73,7 @@ const paginatedRecipes = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE
   return recipes.value.slice(start, start + PAGE_SIZE)
 })
+const listWrapRef = ref<HTMLElement | null>(null)
 const currentLanguage = computed(() => {
   const [language] = String(locale.value).split('-')
   return (language || 'de').toLowerCase()
@@ -192,6 +194,10 @@ const buildView = () => {
 
   if (isFirstBuild) {
     built = tryRestoreOrder(built)
+    const savedPage = Number(sessionStorage.getItem(PAGE_STORAGE_KEY)) || 1
+    if (savedPage > 1 && savedPage <= Math.ceil(built.length / PAGE_SIZE)) {
+      currentPage.value = savedPage
+    }
     isFirstBuild = false
   }
 
@@ -199,10 +205,22 @@ const buildView = () => {
   saveRecipeOrder(built)
 }
 
+function goToPage(page: number) {
+  currentPage.value = page
+  try { sessionStorage.setItem(PAGE_STORAGE_KEY, String(page)) } catch {}
+  listWrapRef.value?.scrollIntoView?.({ behavior: 'auto', block: 'start' })
+}
+
 const loadRecipes = async () => {
   loading.value = true
   try {
     await loadPersonalization()
+    // Cancel any debounce triggered by profile-ref changes inside loadPersonalization().
+    // buildView() below will apply personalization correctly in one pass.
+    if (!search.value.trim() && searchTimeout) {
+      clearTimeout(searchTimeout)
+      searchTimeout = null
+    }
     ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
     allExternal.value = []
     error.value = null
@@ -387,6 +405,7 @@ function logMealPlanError(
 
 const shuffleRecipes = async () => {
   sessionStorage.removeItem(RECIPE_ORDER_KEY)
+  sessionStorage.removeItem(PAGE_STORAGE_KEY)
   isFirstBuild = false
   currentPage.value = 1
   loading.value = true
@@ -404,6 +423,7 @@ onMounted(() => {
 
 watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, profilePersonalizationEnabled], () => {
   currentPage.value = 1
+  try { sessionStorage.removeItem(PAGE_STORAGE_KEY) } catch {}
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -450,6 +470,7 @@ watch(() => authStore.isAuthenticated, (authenticated) => {
     clearSoftProfilePersonalization()
     profilePersonalizationEnabled.value = true
     sessionStorage.removeItem(RECIPE_ORDER_KEY)
+    sessionStorage.removeItem(PAGE_STORAGE_KEY)
     currentPage.value = 1
   }
 })
@@ -874,7 +895,7 @@ function formatDate(date: Date) {
       </button>
     </div>
 
-    <section class="list-wrap">
+    <section ref="listWrapRef" class="list-wrap">
       <p v-if="loading" class="status-text">{{ t('home.loading') }}</p>
       <p v-else-if="error && filtered.length === 0" class="status-text error">
         {{ t('home.errors.prefix') }} {{ error }}
@@ -957,7 +978,7 @@ function formatDate(date: Date) {
           type="button"
           class="pagination-btn"
           :disabled="currentPage === 1"
-          @click="currentPage--"
+          @click="goToPage(currentPage - 1)"
         >
           {{ t('home.pagination.previous') }}
         </button>
@@ -968,7 +989,7 @@ function formatDate(date: Date) {
           class="pagination-btn"
           :class="{ 'pagination-btn--active': page === currentPage }"
           :aria-current="page === currentPage ? 'page' : undefined"
-          @click="currentPage = page"
+          @click="goToPage(page)"
         >
           {{ page }}
         </button>
@@ -976,7 +997,7 @@ function formatDate(date: Date) {
           type="button"
           class="pagination-btn"
           :disabled="currentPage === totalPages"
-          @click="currentPage++"
+          @click="goToPage(currentPage + 1)"
         >
           {{ t('home.pagination.next') }}
         </button>
