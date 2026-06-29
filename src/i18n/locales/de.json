@@ -353,6 +353,11 @@
       "highProtein": "Passt zu deinem Ziel: proteinreich",
       "time": "Passt zu deiner gewünschten Kochzeit",
       "pantry": "Verwendet Zutaten aus deinem Vorrat: {ingredient}"
+    },
+    "pagination": {
+      "label": "Seitennavigation",
+      "previous": "Zurück",
+      "next": "Weiter"
     }
   },
   "restaurants": {

@@ -317,6 +317,11 @@
       "highProtein": "Matches your goal: high protein",
       "time": "Fits your preferred cooking time",
       "pantry": "Uses ingredients from your pantry: {ingredient}"
+    },
+    "pagination": {
+      "label": "التنقل بين الصفحات",
+      "previous": "السابق",
+      "next": "التالي"
     }
   },
   "restaurants": {

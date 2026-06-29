@@ -57,11 +57,21 @@ const isLoggedIn = computed(() => authStore.isAuthenticated)
 
 const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
+const PAGE_SIZE = 30
+const RECIPE_ORDER_KEY = 'dishly.recipe.order'
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 let calorieSortWasAutomatic = false
+let isFirstBuild = true
 
 const filtered = computed(() => recipes.value)
+const currentPage = ref(1)
+const totalPages = computed(() => Math.max(1, Math.ceil(recipes.value.length / PAGE_SIZE)))
+const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1))
+const paginatedRecipes = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE
+  return recipes.value.slice(start, start + PAGE_SIZE)
+})
 const currentLanguage = computed(() => {
   const [language] = String(locale.value).split('-')
   return (language || 'de').toLowerCase()
@@ -143,6 +153,29 @@ const filterRecipes = (items: Recipe[], q: string) => {
   )
 }
 
+function saveRecipeOrder(items: DisplayRecipe[]) {
+  try {
+    sessionStorage.setItem(RECIPE_ORDER_KEY, JSON.stringify(items.map(r => `${r.source}:${r.id}`)))
+  } catch {
+    // sessionStorage might be unavailable
+  }
+}
+
+function tryRestoreOrder(built: DisplayRecipe[]): DisplayRecipe[] {
+  try {
+    const raw = sessionStorage.getItem(RECIPE_ORDER_KEY)
+    if (!raw) return built
+    const savedKeys: string[] = JSON.parse(raw)
+    const map = new Map(built.map(r => [`${r.source}:${r.id}`, r]))
+    const restored = savedKeys.map(k => map.get(k)).filter((r): r is DisplayRecipe => r !== undefined)
+    const restoredSet = new Set(savedKeys)
+    const fresh = built.filter(r => !restoredSet.has(`${r.source}:${r.id}`))
+    return [...restored, ...fresh]
+  } catch {
+    return built
+  }
+}
+
 const buildView = () => {
   const q = search.value.toLowerCase().trim()
   const localSource = ownPublished.value
@@ -152,10 +185,18 @@ const buildView = () => {
   const externalSlice = externalFallbackLimit > 0
     ? filterRecipes(shuffled, q).slice(0, Math.min(EXTERNAL_CHUNK, externalFallbackLimit))
     : []
-  recipes.value = sortRecipes(applyPreferenceBoost([
+  let built = sortRecipes(applyPreferenceBoost([
     ...matchingPublished.map(recipe => toDisplayRecipe(recipe, 'dishly')),
     ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
   ]))
+
+  if (isFirstBuild) {
+    built = tryRestoreOrder(built)
+    isFirstBuild = false
+  }
+
+  recipes.value = built
+  saveRecipeOrder(built)
 }
 
 const loadRecipes = async () => {
@@ -345,6 +386,9 @@ function logMealPlanError(
 }
 
 const shuffleRecipes = async () => {
+  sessionStorage.removeItem(RECIPE_ORDER_KEY)
+  isFirstBuild = false
+  currentPage.value = 1
   loading.value = true
   error.value = null
   try {
@@ -359,6 +403,7 @@ onMounted(() => {
 })
 
 watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, profilePersonalizationEnabled], () => {
+  currentPage.value = 1
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
@@ -404,6 +449,8 @@ watch(() => authStore.isAuthenticated, (authenticated) => {
     externalFavoriteIds.value = new Set()
     clearSoftProfilePersonalization()
     profilePersonalizationEnabled.value = true
+    sessionStorage.removeItem(RECIPE_ORDER_KEY)
+    currentPage.value = 1
   }
 })
 
@@ -848,7 +895,7 @@ function formatDate(date: Date) {
         </p>
 
         <article
-          v-for="r in filtered"
+          v-for="r in paginatedRecipes"
           :key="`${r.source}-${r.id}`"
           class="recipe-card"
           @click="openDetails(r)"
@@ -904,6 +951,36 @@ function formatDate(date: Date) {
           {{ englishRecipesAllowed ? t('home.empty') : t('home.emptyForLanguage') }}
         </p>
       </div>
+
+      <nav v-if="totalPages > 1" class="pagination" :aria-label="t('home.pagination.label')">
+        <button
+          type="button"
+          class="pagination-btn"
+          :disabled="currentPage === 1"
+          @click="currentPage--"
+        >
+          {{ t('home.pagination.previous') }}
+        </button>
+        <button
+          v-for="page in pageNumbers"
+          :key="page"
+          type="button"
+          class="pagination-btn"
+          :class="{ 'pagination-btn--active': page === currentPage }"
+          :aria-current="page === currentPage ? 'page' : undefined"
+          @click="currentPage = page"
+        >
+          {{ page }}
+        </button>
+        <button
+          type="button"
+          class="pagination-btn"
+          :disabled="currentPage === totalPages"
+          @click="currentPage++"
+        >
+          {{ t('home.pagination.next') }}
+        </button>
+      </nav>
     </section>
 
     <div v-if="mealPlanModalOpen" class="modal-backdrop" @click.self="mealPlanModalOpen = false">
@@ -1325,6 +1402,44 @@ function formatDate(date: Date) {
   font: inherit;
   font-weight: 800;
   padding: 9px 16px;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 28px 0 12px;
+}
+
+.pagination-btn {
+  border: 1.5px solid #8fd5cc;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1d8e90;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 4px 12px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #e0f5f2;
+}
+
+.pagination-btn--active {
+  background: #26b6b8;
+  border-color: #26b6b8;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.pagination-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 @media (max-width: 640px) {

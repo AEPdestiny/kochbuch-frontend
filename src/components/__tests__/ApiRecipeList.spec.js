@@ -361,7 +361,7 @@ describe('ApiRecipeList.vue', () => {
     expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
   })
 
-  it('renders 100 published database recipes from the backend response', async () => {
+  it('shows only first 30 recipes on page 1 when more than 30 are available', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 100 }, (_, index) =>
@@ -372,10 +372,147 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(wrapper.findAll('.recipe-card')).toHaveLength(100)
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
     expect(wrapper.text()).toContain('Recipe 1')
-    expect(wrapper.text()).toContain('Recipe 100')
+    expect(wrapper.text()).not.toContain('Recipe 31')
     expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
+  })
+
+  it('shows pagination controls when more than 30 recipes are available', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.find('.pagination').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Previous')
+    expect(wrapper.text()).toContain('Next')
+  })
+
+  it('does not show pagination when 30 or fewer recipes are available', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 30 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.find('.pagination').exists()).toBe(false)
+  })
+
+  it('shows page 2 recipes when next page is clicked', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
+    expect(wrapper.text()).not.toContain('Recipe 31')
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(5)
+    expect(wrapper.text()).toContain('Recipe 31')
+    expect(wrapper.text()).toContain('Recipe 35')
+  })
+
+  it('navigates back to page 1 via prev button', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+
+    const prevBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Previous')
+    await prevBtn.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
+    expect(wrapper.text()).toContain('Recipe 1')
+    expect(wrapper.text()).not.toContain('Recipe 31')
+  })
+
+  it('resets to page 1 when search input changes', async () => {
+    vi.useFakeTimers()
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(5)
+
+    // 'recipe' matches all 35 recipe titles → page resets to 1 → 30 cards
+    await wrapper.find('input[type="search"]').setValue('recipe')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
+  })
+
+  it('resets to page 1 when a filter is changed', async () => {
+    vi.useFakeTimers()
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) =>
+        recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch', { vegan: true }),
+      ),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(5)
+
+    const veganCheckbox = wrapper.findAll('label').find(l => l.text().includes('Vegan'))?.find('input')
+    await veganCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(0)
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
+  })
+
+  it('resets to page 1 and reshuffles when shuffle button is clicked', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+    await nextBtn.trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(5)
+
+    await wrapper.find('.shuffle-btn').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
   it('navigates external recipe cards to the external detail route', async () => {
