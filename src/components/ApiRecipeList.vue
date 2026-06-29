@@ -62,6 +62,8 @@ const SNAPSHOT_KEY = 'dishly.recipe.snapshot'
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 let calorieSortWasAutomatic = false
+// Prevents the filter watcher from clearing the snapshot during initial profile loading.
+let isInitializingProfile = false
 
 const filtered = computed(() => recipes.value)
 const currentPage = ref(1)
@@ -153,7 +155,24 @@ const filterRecipes = (items: Recipe[], q: string) => {
 }
 
 function buildContextKey() {
-  return `a:${authStore.isAuthenticated ? '1' : '0'}|l:${currentLanguage.value}`
+  // Fingerprint captures everything that determines which recipes are shown and in what order.
+  // When any of these change (real profile/preference update), the snapshot is automatically
+  // invalidated and a fresh personalized list is built.
+  return [
+    authStore.isAuthenticated ? '1' : '0',
+    currentLanguage.value,
+    vegan.value ? 'v' : '-',
+    vegetarian.value ? 'vg' : '-',
+    glutenFree.value ? 'gf' : '-',
+    lactoseFree.value ? 'lf' : '-',
+    calorieConscious.value ? 'cc' : '-',
+    highProtein.value ? 'hp' : '-',
+    String(maxPrepTime.value ?? 0),
+    String(maxCalories.value ?? 0),
+    [...likes.value].sort().join(','),
+    [...dislikes.value].sort().join(','),
+    [...allergies.value].sort().join(','),
+  ].join('|')
 }
 
 function saveSnapshot(items: DisplayRecipe[], page: number) {
@@ -215,13 +234,20 @@ function goToPage(page: number) {
 }
 
 const loadRecipes = async () => {
+  // Set flag BEFORE the awaits so the filter watcher (triggered by applyProfilePersonalization
+  // inside loadPersonalization) sees it and skips clearSnapshot(). The watcher fires as a
+  // microtask between our two awaits — isInitializingProfile must be true at that point.
+  isInitializingProfile = true
   loading.value = true
   try {
     await loadPersonalization()
     ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
 
-    // Cancel any watcher debounce that was triggered by profile-ref changes during loading.
-    // Both awaits above can yield control to Vue's scheduler; cancel after both complete.
+    // After both awaits complete, the watcher microtasks have already run (and were skipped).
+    // Now it is safe to clear the flag and allow normal watcher behaviour.
+    isInitializingProfile = false
+
+    // Belt-and-suspenders: cancel any debounce that somehow slipped through.
     if (!search.value.trim() && searchTimeout) {
       clearTimeout(searchTimeout)
       searchTimeout = null
@@ -230,6 +256,8 @@ const loadRecipes = async () => {
     allExternal.value = []
     error.value = null
 
+    // buildContextKey() is called here — AFTER loadPersonalization() — so the profile-derived
+    // filter refs are already set and the key correctly matches what was saved before.
     const snap = loadSnapshot()
     if (snap) {
       recipes.value = snap.recipes
@@ -245,6 +273,7 @@ const loadRecipes = async () => {
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
+    isInitializingProfile = false
     loading.value = false
   }
 }
@@ -435,6 +464,10 @@ onMounted(() => {
 })
 
 watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, profilePersonalizationEnabled], () => {
+  // Skip during initial profile loading — these ref changes come from applyProfilePersonalization,
+  // not from user interaction. Clearing the snapshot here would break F5 stability for
+  // logged-in users.
+  if (isInitializingProfile) return
   currentPage.value = 1
   clearSnapshot()
   if (searchTimeout) {

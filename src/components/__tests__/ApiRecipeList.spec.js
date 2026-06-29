@@ -633,6 +633,114 @@ describe('ApiRecipeList.vue', () => {
     wrapper.unmount()
   })
 
+  it('restores personalized list from snapshot after remount when logged in (F5 with personalization)', async () => {
+    loginAsUser()
+    setLocale('en')
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: ['pasta'],
+      dislikes: [],
+      allergies: [],
+      vegan: true,
+      vegetarian: false,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+    })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) =>
+        recipe(i + 1, `Recipe ${i + 1}`, 'pasta ingredient', 'lunch', { vegan: true }),
+      ),
+    )
+
+    // First mount: snapshot is saved
+    const wrapper1 = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper1.findAll('.recipe-card')).toHaveLength(30)
+    const titles1 = wrapper1.findAll('.recipe-card').map(c => c.find('.card-title').text())
+    const snap1 = sessionStorage.getItem('dishly.recipe.snapshot')
+    expect(snap1).not.toBeNull()
+
+    wrapper1.unmount()
+
+    // Second mount (F5): must use snapshot, same titles
+    const wrapper2 = mount(ApiRecipeList)
+    await flushPromises()
+
+    const titles2 = wrapper2.findAll('.recipe-card').map(c => c.find('.card-title').text())
+    expect(titles2).toEqual(titles1)
+    // Snapshot must not have been overwritten
+    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBe(snap1)
+    wrapper2.unmount()
+  })
+
+  it('initial loadPersonalization does not clear the personalized snapshot', async () => {
+    loginAsUser()
+    setLocale('en')
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: [],
+      vegan: true,
+      vegetarian: false,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+    })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 10 }, (_, i) =>
+        recipe(i + 1, `Vegan ${i + 1}`, 'veggies', 'lunch', { vegan: true }),
+      ),
+    )
+
+    // First mount: builds and saves snapshot
+    const wrapper1 = mount(ApiRecipeList)
+    await flushPromises()
+
+    const savedSnap = sessionStorage.getItem('dishly.recipe.snapshot')
+    expect(savedSnap).not.toBeNull()
+
+    wrapper1.unmount()
+
+    // Second mount: loadPersonalization fires the filter watcher (vegan=true changes),
+    // but the flag must prevent clearSnapshot() from running.
+    const wrapper2 = mount(ApiRecipeList)
+    await flushPromises()
+
+    // Snapshot must be intact — same value as after first load
+    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBe(savedSnap)
+    wrapper2.unmount()
+  })
+
+  it('logout clears the personalized snapshot and resets page', async () => {
+    loginAsUser()
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(sessionStorage.getItem('dishly.recipe.snapshot')).not.toBeNull()
+
+    // Simulate logout
+    sessionStorage.removeItem('dishly.auth.token')
+    useAuthStore().token = null
+    await flushPromises()
+
+    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBeNull()
+    wrapper.unmount()
+  })
+
   it('navigates external recipe cards to the external detail route', async () => {
     setLocale('en')
     vi.useFakeTimers()
