@@ -495,6 +495,58 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
+  it('toggling a filter preserves the base recipe order (no reshuffle)', async () => {
+    setLocale('en')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) =>
+        recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch', { vegan: i < 17 }),
+      ),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const titlesBefore = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+
+    // Apply vegan filter
+    const veganLabel = wrapper.findAll('label').find(l => l.text().includes('Vegan'))
+    await veganLabel.find('input').setValue(true)
+    await flushPromises()
+
+    // Remove vegan filter
+    await veganLabel.find('input').setValue(false)
+    await flushPromises()
+
+    const titlesAfter = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+    expect(titlesAfter).toEqual(titlesBefore)
+  })
+
+  it('clearing search restores base recipe order without reshuffling', async () => {
+    setLocale('en')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const titlesBefore = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+
+    // Search for 'recipe' (matches all 35 — different view)
+    await wrapper.find('input[type="search"]').setValue('recipe')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    // Clear search
+    await wrapper.find('input[type="search"]').setValue('')
+    await vi.advanceTimersByTimeAsync(0)
+    await flushPromises()
+
+    const titlesAfter = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+    expect(titlesAfter).toEqual(titlesBefore)
+  })
+
   it('resets to page 1 and reshuffles when shuffle button is clicked', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
@@ -527,7 +579,7 @@ describe('ApiRecipeList.vue', () => {
     const raw = sessionStorage.getItem('dishly.recipe.snapshot')
     expect(raw).not.toBeNull()
     const snap = JSON.parse(raw)
-    expect(snap.recipes).toHaveLength(35)
+    expect(snap.baseRecipes).toHaveLength(35)
     expect(snap.page).toBe(1)
     wrapper.unmount()
   })
@@ -955,7 +1007,7 @@ describe('ApiRecipeList.vue', () => {
     expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
   })
 
-  it('reloads local recipes when search is cleared without default external fallback', async () => {
+  it('restores base recipe list when search is cleared (no API call, no reshuffle)', async () => {
     setLocale('en')
     vi.useFakeTimers()
     vi.mocked(recipeApi.getPublishedRecipes).mockImplementation((_, query) =>
@@ -965,18 +1017,23 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    // Base list built from the full published list → Default Pasta is in baseRecipes
 
     const input = wrapper.find('input[type="search"]')
     await input.setValue('chicken')
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
+    // Search results shown (no local matches, possibly external)
 
     await input.setValue('')
-    await vi.advanceTimersByTimeAsync(400)
+    await vi.advanceTimersByTimeAsync(0)
     await flushPromises()
+    // Search cleared: updateDisplayFromBase() restores base list immediately, no extra API call
 
-    expect(recipeApi.getPublishedRecipes).toHaveBeenLastCalledWith('en', undefined)
+    // Default Pasta was in the original base list and should be restored
     expect(wrapper.text()).toContain('Default Pasta')
+    // External recipes are not shown when not searching
+    expect(recipeApi.getExternalRecipes).not.toHaveBeenCalledTimes(2)
   })
 
   it('keeps matching published recipes during external search', async () => {

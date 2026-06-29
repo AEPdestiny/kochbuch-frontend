@@ -33,6 +33,7 @@ const mealType = ref('')
 const sortOrder = ref('')
 const profilePersonalizationEnabled = ref(true)
 const recipes = ref<DisplayRecipe[]>([])
+const baseRecipes = ref<DisplayRecipe[]>([])
 const allExternal = ref<Recipe[]>([])
 const ownPublished = ref<Recipe[]>([])
 const loadedPreferences = ref<UserPreferencesResponse | null>(null)
@@ -155,44 +156,35 @@ const filterRecipes = (items: Recipe[], q: string) => {
 }
 
 function buildContextKey() {
-  // Fingerprint captures everything that determines which recipes are shown and in what order.
-  // When any of these change (real profile/preference update), the snapshot is automatically
-  // invalidated and a fresh personalized list is built.
+  // Only fields that affect the BASE list (hard preferences + preference boost).
+  // Soft filters (vegan, maxPrepTime, etc.) are applied on top and do not invalidate the snapshot.
   return [
     authStore.isAuthenticated ? '1' : '0',
     currentLanguage.value,
-    vegan.value ? 'v' : '-',
-    vegetarian.value ? 'vg' : '-',
-    glutenFree.value ? 'gf' : '-',
-    lactoseFree.value ? 'lf' : '-',
-    calorieConscious.value ? 'cc' : '-',
-    highProtein.value ? 'hp' : '-',
-    String(maxPrepTime.value ?? 0),
-    String(maxCalories.value ?? 0),
     [...likes.value].sort().join(','),
     [...dislikes.value].sort().join(','),
     [...allergies.value].sort().join(','),
   ].join('|')
 }
 
-function saveSnapshot(items: DisplayRecipe[], page: number) {
+function saveSnapshot(base: DisplayRecipe[], page: number) {
   try {
     sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify({
-      recipes: items,
+      baseRecipes: base,
       page,
       contextKey: buildContextKey(),
     }))
   } catch {}
 }
 
-function loadSnapshot(): { recipes: DisplayRecipe[]; page: number } | null {
+function loadSnapshot(): { baseRecipes: DisplayRecipe[]; page: number } | null {
   try {
     const raw = sessionStorage.getItem(SNAPSHOT_KEY)
     if (!raw) return null
     const snap = JSON.parse(raw)
     if (!snap || snap.contextKey !== buildContextKey()) return null
-    if (!Array.isArray(snap.recipes) || snap.recipes.length === 0) return null
-    return { recipes: snap.recipes, page: Number(snap.page) || 1 }
+    if (!Array.isArray(snap.baseRecipes) || snap.baseRecipes.length === 0) return null
+    return { baseRecipes: snap.baseRecipes, page: Number(snap.page) || 1 }
   } catch {
     return null
   }
@@ -212,19 +204,41 @@ function updateSnapshotPage(page: number) {
   } catch {}
 }
 
-const buildView = () => {
+// Builds the stable shuffled base list from ownPublished + allExternal.
+// Only hard preferences (dislikes/allergies) are applied here.
+// Soft filters (vegan, maxPrepTime, etc.) are applied by updateDisplayFromBase().
+const buildBaseList = () => {
+  const eligible = ownPublished.value.filter(r => matchesHardPreferences(r))
+  const shuffledExternal = shuffleArray(allExternal.value.filter(r => matchesHardPreferences(r)))
+  const externalFallbackLimit = Math.max(0, 100 - eligible.length)
+  const externalSlice = externalFallbackLimit > 0
+    ? shuffledExternal.slice(0, Math.min(EXTERNAL_CHUNK, externalFallbackLimit))
+    : []
+  baseRecipes.value = applyPreferenceBoost([
+    ...eligible.map(r => toDisplayRecipe(r, 'dishly')),
+    ...externalSlice.map(r => toDisplayRecipe(r, 'external')),
+  ])
+}
+
+// Applies current soft filters + sort to baseRecipes WITHOUT shuffling.
+// Called when filters change, search is cleared, or snapshot is restored.
+const updateDisplayFromBase = () => {
+  recipes.value = sortRecipes(baseRecipes.value.filter(r => matchesLocalFilters(r)))
+}
+
+// Builds a transient search-result view from ownPublished + allExternal.
+// No shuffle — search results follow API relevance order.
+const buildSearchView = () => {
   const q = search.value.toLowerCase().trim()
-  const localSource = ownPublished.value
-  const matchingPublished = filterRecipes(localSource, q)
-  const shuffled = q ? allExternal.value : shuffleArray(allExternal.value)
+  const matchingPublished = filterRecipes(ownPublished.value, q)
   const externalFallbackLimit = Math.max(0, 100 - matchingPublished.length)
   const externalSlice = externalFallbackLimit > 0
-    ? filterRecipes(shuffled, q).slice(0, Math.min(EXTERNAL_CHUNK, externalFallbackLimit))
+    ? filterRecipes(allExternal.value, q).slice(0, Math.min(EXTERNAL_CHUNK, externalFallbackLimit))
     : []
-  recipes.value = sortRecipes(applyPreferenceBoost([
-    ...matchingPublished.map(recipe => toDisplayRecipe(recipe, 'dishly')),
-    ...externalSlice.map(recipe => toDisplayRecipe(recipe, 'external')),
-  ]))
+  recipes.value = sortRecipes([
+    ...matchingPublished.map(r => toDisplayRecipe(r, 'dishly')),
+    ...externalSlice.map(r => toDisplayRecipe(r, 'external')),
+  ])
 }
 
 function goToPage(page: number) {
@@ -256,16 +270,18 @@ const loadRecipes = async () => {
     allExternal.value = []
     error.value = null
 
-    // buildContextKey() is called here — AFTER loadPersonalization() — so the profile-derived
-    // filter refs are already set and the key correctly matches what was saved before.
+    // buildContextKey() called here — AFTER loadPersonalization() — so profile-derived refs
+    // (likes, dislikes, allergies) are set and the key matches what was saved previously.
     const snap = loadSnapshot()
     if (snap) {
-      recipes.value = snap.recipes
+      baseRecipes.value = snap.baseRecipes
+      updateDisplayFromBase()
       currentPage.value = snap.page
       searchNotice.value = null
     } else {
-      buildView()
-      saveSnapshot(recipes.value, currentPage.value)
+      buildBaseList()
+      updateDisplayFromBase()
+      saveSnapshot(baseRecipes.value, 1)
       searchNotice.value = ownPublished.value.length < 100
         ? t('home.notices.localRecipesLoaded', { count: ownPublished.value.length })
         : null
@@ -289,30 +305,31 @@ const loadExternalRecipes = async (query: string) => {
     return
   }
 
-  const localSource = ownPublished.value.filter(recipe => !recipe.userCreated)
-  const localMatches = filterRecipes(localSource, normalizedQuery)
+  if (requestId !== externalRequestCounter) return
 
   if (!normalizedQuery) {
+    // Search cleared: restore stable filtered view without re-shuffling the base list.
     allExternal.value = []
-    buildView()
+    updateDisplayFromBase()
     error.value = null
     searchNotice.value = null
     return
   }
 
+  const localSource = ownPublished.value.filter(recipe => !recipe.userCreated)
+  const localMatches = filterRecipes(localSource, normalizedQuery)
+
   if (!englishRecipesAllowed.value) {
     allExternal.value = []
-    buildView()
+    buildSearchView()
     error.value = null
-    searchNotice.value = localMatches.length < 20
-      ? t('home.notices.localSearchResults', { count: localMatches.length })
-      : null
+    searchNotice.value = null
     return
   }
 
   if (localMatches.length >= 20 || !isSpecificSearch(normalizedQuery)) {
     allExternal.value = []
-    buildView()
+    buildSearchView()
     error.value = null
     searchNotice.value = null
     return
@@ -320,21 +337,15 @@ const loadExternalRecipes = async (query: string) => {
 
   try {
     const external = await fetchExternalRecipes(query)
-    if (requestId !== externalRequestCounter) {
-      return
-    }
-
+    if (requestId !== externalRequestCounter) return
     allExternal.value = external
-    buildView()
+    buildSearchView()
     error.value = null
     searchNotice.value = null
   } catch {
-    if (requestId !== externalRequestCounter) {
-      return
-    }
-
+    if (requestId !== externalRequestCounter) return
     allExternal.value = []
-    buildView()
+    buildSearchView()
     error.value = t('home.errors.externalSearch')
     searchNotice.value = null
   }
@@ -452,8 +463,13 @@ const shuffleRecipes = async () => {
   loading.value = true
   error.value = null
   try {
-    await loadExternalRecipes(search.value)
-    saveSnapshot(recipes.value, 1)
+    ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value)
+    allExternal.value = []
+    buildBaseList()
+    updateDisplayFromBase()
+    saveSnapshot(baseRecipes.value, 1)
+  } catch (e: any) {
+    error.value = e.message ?? t('home.errors.initialLoad')
   } finally {
     loading.value = false
   }
@@ -464,22 +480,31 @@ onMounted(() => {
 })
 
 watch([search, vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein, maxPrepTime, maxCalories, mealType, sortOrder, profilePersonalizationEnabled], () => {
-  // Skip during initial profile loading — these ref changes come from applyProfilePersonalization,
-  // not from user interaction. Clearing the snapshot here would break F5 stability for
-  // logged-in users.
+  // Skip during initial profile loading — ref changes from applyProfilePersonalization are not
+  // user actions and must not discard the snapshot or trigger re-shuffles.
   if (isInitializingProfile) return
+
   currentPage.value = 1
-  clearSnapshot()
+
   if (searchTimeout) {
     clearTimeout(searchTimeout)
+    searchTimeout = null
   }
 
   const query = search.value.trim()
-  if (query.length > 0 && query.length < 2) {
-    buildView()
+
+  if (!query || query.length < 2) {
+    // No search or single char: apply filters to stable base — no API call, no shuffle.
+    updateDisplayFromBase()
+    // Re-save snapshot so F5 after a filter change restores the updated view.
+    if (baseRecipes.value.length > 0) {
+      saveSnapshot(baseRecipes.value, 1)
+    }
     return
   }
 
+  // Active search (2+ chars): fetch from API, results are transient.
+  clearSnapshot()
   searchTimeout = setTimeout(() => {
     loadExternalRecipes(query)
   }, SEARCH_DEBOUNCE_MS)
@@ -590,7 +615,10 @@ function onSortChanged() {
 function toggleProfilePersonalization() {
   profilePersonalizationEnabled.value = !profilePersonalizationEnabled.value
   applyProfilePersonalization()
-  buildView()
+  // Rebuild base so recommendation reasons and preference boost reflect the new state.
+  buildBaseList()
+  updateDisplayFromBase()
+  saveSnapshot(baseRecipes.value, currentPage.value)
 }
 
 function applyProfilePersonalization() {
