@@ -1149,6 +1149,58 @@ describe('ApiRecipeList.vue', () => {
     expect(recipeApi.getExternalRecipes).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Für diese Sprache sind noch keine lokalen Rezepte verfügbar.')
   })
+
+  it('category dropdown contains only breakfast, lunch, dinner, snack', async () => {
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const mealTypeSelect = wrapper.findAll('select').find(s =>
+      s.findAll('option').some(o => o.element.value === 'breakfast'),
+    )
+    expect(mealTypeSelect).toBeDefined()
+
+    const optionValues = mealTypeSelect.findAll('option').map(o => o.element.value)
+    expect(optionValues).toContain('breakfast')
+    expect(optionValues).toContain('lunch')
+    expect(optionValues).toContain('dinner')
+    expect(optionValues).toContain('snack')
+    expect(optionValues).not.toContain('dessert')
+    expect(optionValues).not.toContain('drink')
+  })
+
+  it('does not render the internal local-search-results notice', async () => {
+    setLocale('en')
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([recipe(1, 'Chicken Bowl', 'chicken', 'lunch')])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    await wrapper.find('input[type="search"]').setValue('chicken')
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('local recipe')
+    expect(wrapper.text()).not.toContain('lokale Rezepte')
+    // Recipe result is still shown
+    expect(wrapper.text()).toContain('Chicken Bowl')
+  })
+
+  it('does not render the local-recipes-loaded notice after initial load', async () => {
+    setLocale('de')
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
+      Array.from({ length: 5 }, (_, i) => recipe(i + 1, `Rezept ${i + 1}`, 'zutaten', 'lunch')),
+    )
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('lokale Rezepte geladen')
+    expect(wrapper.text()).not.toContain('local recipes were loaded')
+    expect(wrapper.text()).toContain('Rezept 1')
+  })
 })
 
 function recipe(id, title, ingredients, category, overrides = {}) {

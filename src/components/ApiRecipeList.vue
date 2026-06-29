@@ -909,8 +909,6 @@ function formatDate(date: Date) {
             <option value="lunch">{{ t('home.filters.lunch') }}</option>
             <option value="dinner">{{ t('home.filters.dinner') }}</option>
             <option value="snack">{{ t('home.filters.snack') }}</option>
-            <option value="dessert">{{ t('home.filters.dessert') }}</option>
-            <option value="drink">{{ t('home.filters.drink') }}</option>
           </select>
         </label>
         <label>
@@ -951,9 +949,7 @@ function formatDate(date: Date) {
         <p v-if="error" class="status-text error">
           {{ t('home.errors.prefix') }} {{ error }}
         </p>
-        <p v-if="searchNotice" class="status-text">
-          {{ searchNotice }}
-        </p>
+
         <p v-if="mealPlanMessage" class="status-text success">
           {{ mealPlanMessage }}
         </p>
