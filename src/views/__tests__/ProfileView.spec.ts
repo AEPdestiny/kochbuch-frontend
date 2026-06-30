@@ -42,7 +42,11 @@ describe('ProfileView', () => {
     await flushPromises()
 
     expect(profileApi.getPreferences).toHaveBeenCalledTimes(1)
-    expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe('pasta, curry')
+    // Likes are now shown as chips, not textarea text
+    expect(wrapper.text()).toContain('pasta')
+    expect(wrapper.text()).toContain('curry')
+    // Allergy chip
+    expect(wrapper.text()).toContain('nuts')
     expect(wrapper.text()).toContain('Proteinreich')
     expect(wrapper.text()).toContain('Geschmack')
     expect(wrapper.text()).toContain('Sicherheit')
@@ -72,19 +76,22 @@ describe('ProfileView', () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(profileApi.updatePreferences).mockResolvedValue({
       ...preferences(),
-      likes: ['sushi'],
+      likes: ['pasta', 'curry', 'sushi'],
     })
 
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    await wrapper.find('textarea').setValue('sushi')
+    // Add 'sushi' to the likes TagInput (first .tag-text-input in the form)
+    const likesInput = wrapper.findAll('.tag-text-input').at(0)!
+    await likesInput.setValue('sushi')
+    await likesInput.trigger('keydown', { key: 'Enter' })
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
     expect(profileApi.updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({
-        likes: ['sushi'],
+        likes: expect.arrayContaining(['pasta', 'curry', 'sushi']),
         vegan: true,
         vegetarian: false,
         highProtein: true,
@@ -136,6 +143,136 @@ describe('ProfileView', () => {
         budgetFriendly: false,
         calorieGoal: 2100,
         dailyCalorieTarget: 2100,
+      }),
+    )
+  })
+
+  it('loads existing allergies as chips in the TagInput', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const chips = wrapper.findAll('.tag-chip')
+    const chipTexts = chips.map(c => c.text())
+    expect(chipTexts.some(t => t.includes('nuts'))).toBe(true)
+    expect(chipTexts.some(t => t.includes('pasta'))).toBe(true)
+    expect(chipTexts.some(t => t.includes('curry'))).toBe(true)
+  })
+
+  it('adds a new allergy chip via Enter key', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(profileApi.updatePreferences).mockResolvedValue({
+      ...preferences(),
+      allergies: ['nuts', 'Eier'],
+    })
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    // The allergies TagInput is the third one (after likes, dislikes)
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.setValue('Eier')
+    await allergyInput.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Eier')
+  })
+
+  it('adds a new tag via Comma key', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const likesInput = wrapper.findAll('.tag-text-input').at(0)!
+    await likesInput.setValue('Sushi')
+    await likesInput.trigger('keydown', { key: ',' })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Sushi')
+  })
+
+  it('removes a chip on click of the × button', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('pasta')
+
+    const pastaChip = wrapper.findAll('.tag-chip').find(c => c.text().includes('pasta'))
+    await pastaChip!.find('.tag-chip-remove').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('pasta')
+  })
+
+  it('prevents adding duplicate tags', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const pastaChipsBefore = wrapper.findAll('.tag-chip').filter(c => c.text().includes('pasta'))
+    expect(pastaChipsBefore).toHaveLength(1)
+
+    const likesInput = wrapper.findAll('.tag-text-input').at(0)!
+    await likesInput.setValue('pasta')
+    await likesInput.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    const pastaChipsAfter = wrapper.findAll('.tag-chip').filter(c => c.text().includes('pasta'))
+    expect(pastaChipsAfter).toHaveLength(1)
+  })
+
+  it('shows allergen suggestions from the predefined list on focus', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    // With showSuggestionsOnFocus=true, suggestions should appear on focus
+    const suggestions = wrapper.find('.tag-suggestions')
+    expect(suggestions.exists()).toBe(true)
+    expect(suggestions.text()).toContain('Gluten')
+    expect(suggestions.text()).toContain('Milch')
+    expect(suggestions.text()).toContain('Fisch')
+  })
+
+  it('selects a predefined allergen from the suggestion list', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const glutenOption = wrapper.findAll('.tag-suggestions li').find(li => li.text() === 'Gluten')
+    expect(glutenOption).toBeTruthy()
+    await glutenOption!.trigger('mousedown')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Gluten')
+  })
+
+  it('sends allergies as a string array to the backend', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(profileApi.updatePreferences).mockResolvedValue({
+      ...preferences(),
+      allergies: ['nuts', 'Eier'],
+    })
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.setValue('Eier')
+    await allergyInput.trigger('keydown', { key: 'Enter' })
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(profileApi.updatePreferences).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allergies: expect.arrayContaining(['nuts', 'Eier']),
       }),
     )
   })

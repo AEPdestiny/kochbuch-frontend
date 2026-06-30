@@ -602,10 +602,13 @@
     "form": {
       "likes": "Vorlieben",
       "likesPlaceholder": "z.B. Pasta, Curry, Tomaten",
+      "likesInputPlaceholder": "Vorliebe eingeben + Enter",
       "dislikes": "Abneigungen",
       "dislikesPlaceholder": "z.B. Pilze, Oliven",
+      "dislikesInputPlaceholder": "Abneigung eingeben + Enter",
       "allergies": "Allergien",
       "allergiesPlaceholder": "z.B. Nüsse, Erdnüsse",
+      "allergiesInputPlaceholder": "Allergen eingeben oder aus Liste wählen",
       "dietaryStyles": "Ernährungsstil",
       "goals": "Ziele",
       "maxPrepTimeMinutes": "Maximale Zubereitungszeit in Minuten",

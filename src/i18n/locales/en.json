@@ -602,10 +602,13 @@
     "form": {
       "likes": "Likes",
       "likesPlaceholder": "e.g. pasta, curry, tomatoes",
+      "likesInputPlaceholder": "Add a food you like + Enter",
       "dislikes": "Dislikes",
       "dislikesPlaceholder": "e.g. mushrooms, olives",
+      "dislikesInputPlaceholder": "Add a food you dislike + Enter",
       "allergies": "Allergies",
       "allergiesPlaceholder": "e.g. nuts, peanuts",
+      "allergiesInputPlaceholder": "Type allergen or choose from list",
       "dietaryStyles": "Dietary style",
       "goals": "Goals",
       "maxPrepTimeMinutes": "Maximum prep time in minutes",

@@ -4,7 +4,24 @@ import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { profileApi } from '@/shared/api/profileApi'
 import { useToastStore } from '@/stores/toastStore'
+import TagInput from '@/components/TagInput.vue'
 import type { UserPreferencesRequest } from '@/types/profile'
+
+const ALLERGEN_SUGGESTIONS = [
+  'Gluten', 'Krebstiere', 'Eier', 'Fisch', 'Erdnüsse', 'Soja',
+  'Milch', 'Schalenfrüchte', 'Sellerie', 'Senf', 'Sesam', 'Sulfite',
+  'Lupinen', 'Weichtiere',
+]
+
+const LIKES_SUGGESTIONS = [
+  'Pasta', 'Sushi', 'Pizza', 'Reis', 'Hähnchen', 'Lachs', 'Gemüse',
+  'Kartoffeln', 'Curry', 'Salat', 'Suppe', 'Käse', 'Tomaten', 'Avocado',
+]
+
+const DISLIKES_SUGGESTIONS = [
+  'Pilze', 'Oliven', 'Zwiebeln', 'Knoblauch', 'Fisch', 'Meeresfrüchte',
+  'Brokkoli', 'Spinat', 'Koriander', 'Chili', 'Sellerie',
+]
 
 const { t } = useI18n()
 const toastStore = useToastStore()
@@ -12,9 +29,9 @@ const toastStore = useToastStore()
 const loading = ref(true)
 const saving = ref(false)
 const error = ref<string | null>(null)
-const likesText = ref('')
-const dislikesText = ref('')
-const allergiesText = ref('')
+const likes = ref<string[]>([])
+const dislikes = ref<string[]>([])
+const allergies = ref<string[]>([])
 const vegan = ref(false)
 const vegetarian = ref(false)
 const glutenFree = ref(false)
@@ -36,9 +53,9 @@ async function loadPreferences() {
 
   try {
     const preferences = await profileApi.getPreferences()
-    likesText.value = formatList(preferences.likes)
-    dislikesText.value = formatList(preferences.dislikes)
-    allergiesText.value = formatList(preferences.allergies)
+    likes.value = preferences.likes ?? []
+    dislikes.value = preferences.dislikes ?? []
+    allergies.value = preferences.allergies ?? []
     vegan.value = preferences.vegan
     vegetarian.value = preferences.vegetarian
     glutenFree.value = preferences.glutenFree
@@ -71,9 +88,9 @@ async function savePreferences() {
 
   try {
     const saved = await profileApi.updatePreferences(toRequest())
-    likesText.value = formatList(saved.likes)
-    dislikesText.value = formatList(saved.dislikes)
-    allergiesText.value = formatList(saved.allergies)
+    likes.value = saved.likes ?? []
+    dislikes.value = saved.dislikes ?? []
+    allergies.value = saved.allergies ?? []
     dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
     toastStore.addToast(t('notifications.profileSaved'), 'success')
   } catch (e: unknown) {
@@ -86,9 +103,9 @@ async function savePreferences() {
 function toRequest(): UserPreferencesRequest {
   const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
   return {
-    likes: parseList(likesText.value),
-    dislikes: parseList(dislikesText.value),
-    allergies: parseList(allergiesText.value),
+    likes: likes.value,
+    dislikes: dislikes.value,
+    allergies: allergies.value,
     vegan: vegan.value,
     vegetarian: vegetarian.value,
     glutenFree: glutenFree.value,
@@ -183,12 +200,20 @@ function toSaveError(e: unknown) {
         <div class="field-grid">
           <label>
             {{ t('profile.form.likes') }}
-            <textarea v-model="likesText" :placeholder="t('profile.form.likesPlaceholder')" />
+            <TagInput
+              v-model="likes"
+              :suggestions="LIKES_SUGGESTIONS"
+              :placeholder="t('profile.form.likesInputPlaceholder')"
+            />
           </label>
 
           <label>
             {{ t('profile.form.dislikes') }}
-            <textarea v-model="dislikesText" :placeholder="t('profile.form.dislikesPlaceholder')" />
+            <TagInput
+              v-model="dislikes"
+              :suggestions="DISLIKES_SUGGESTIONS"
+              :placeholder="t('profile.form.dislikesInputPlaceholder')"
+            />
           </label>
         </div>
       </section>
@@ -200,7 +225,12 @@ function toSaveError(e: unknown) {
         </div>
         <label>
           {{ t('profile.form.allergies') }}
-          <textarea v-model="allergiesText" :placeholder="t('profile.form.allergiesPlaceholder')" />
+          <TagInput
+            v-model="allergies"
+            :suggestions="ALLERGEN_SUGGESTIONS"
+            show-suggestions-on-focus
+            :placeholder="t('profile.form.allergiesInputPlaceholder')"
+          />
         </label>
         <p class="helper-text">{{ t('profile.hints.allergiesAlwaysActive') }}</p>
       </section>
