@@ -216,7 +216,9 @@
       "createFirst": "Erstes Rezept erstellen",
       "discover": "Rezepte entdecken",
       "removeFavorite": "Favorit entfernen",
-      "backToMyRecipes": "Zurück zu meinen Rezepten"
+      "backToMyRecipes": "Zurück zu meinen Rezepten",
+      "export": "Exportieren",
+      "importBtn": "Rezept importieren"
     },
     "status": {
       "favorite": "Als Favorit markieren",
@@ -252,7 +254,13 @@
       "deleteSessionExpired": "Bitte melde dich erneut an, um ein Rezept zu löschen.",
       "deleteForbidden": "Du darfst dieses Rezept nicht löschen.",
       "delete": "Das Rezept konnte nicht gelöscht werden.",
-      "notFound": "Das Rezept wurde nicht gefunden."
+      "notFound": "Das Rezept wurde nicht gefunden.",
+      "importInvalid": "Die Datei konnte nicht gelesen werden. Bitte prüfe das Format.",
+      "importNotDishly": "Diese Datei stammt nicht von Dishly und kann nicht importiert werden.",
+      "importUnsupportedVersion": "Diese Exportversion wird nicht unterstützt.",
+      "importMissingRecipe": "Die Datei enthält kein gültiges Rezept.",
+      "importMissingTitle": "Das Rezept in der Datei hat keinen Titel.",
+      "importNegativeCalories": "Die Datei enthält ungültige Kalorienangaben (negativer Wert)."
     }
   },
   "dashboard": {
@@ -392,7 +400,9 @@
     "languageChanged": "Die Benutzeroberfläche ist nun auf Deutsch.",
     "recipeCreated": "Rezept wurde erstellt.",
     "recipeUpdated": "Rezept wurde gespeichert.",
-    "recipeDeleted": "Rezept wurde gelöscht."
+    "recipeDeleted": "Rezept wurde gelöscht.",
+    "recipeExported": "Rezept wurde exportiert.",
+    "recipeImported": "Rezept wurde importiert."
   },
   "restaurants": {
     "actions": {

@@ -216,7 +216,9 @@
       "createFirst": "Create first recipe",
       "discover": "Discover recipes",
       "removeFavorite": "Remove favorite",
-      "backToMyRecipes": "Back to my recipes"
+      "backToMyRecipes": "Back to my recipes",
+      "export": "Export",
+      "importBtn": "Import recipe"
     },
     "status": {
       "favorite": "Mark as favorite",
@@ -252,7 +254,13 @@
       "deleteSessionExpired": "Please log in again to delete a recipe.",
       "deleteForbidden": "You are not allowed to delete this recipe.",
       "delete": "The recipe could not be deleted.",
-      "notFound": "The recipe was not found."
+      "notFound": "The recipe was not found.",
+      "importInvalid": "The file could not be read. Please check the format.",
+      "importNotDishly": "This file is not from Dishly and cannot be imported.",
+      "importUnsupportedVersion": "This export version is not supported.",
+      "importMissingRecipe": "The file does not contain a valid recipe.",
+      "importMissingTitle": "The recipe in the file has no title.",
+      "importNegativeCalories": "The file contains invalid calorie data (negative value)."
     }
   },
   "dashboard": {
@@ -392,7 +400,9 @@
     "languageChanged": "The interface is now in English.",
     "recipeCreated": "Recipe created successfully.",
     "recipeUpdated": "Recipe saved.",
-    "recipeDeleted": "Recipe deleted."
+    "recipeDeleted": "Recipe deleted.",
+    "recipeExported": "Recipe exported.",
+    "recipeImported": "Recipe imported successfully."
   },
   "restaurants": {
     "actions": {

@@ -8,6 +8,7 @@ import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
+import { exportRecipe, validateDishlyImport } from '@/shared/recipeImportExport'
 import SuggestInput from '@/components/SuggestInput.vue'
 import type { Recipe, RecipeRequest } from '@/types/recipe'
 
@@ -608,6 +609,63 @@ function toImageUploadErrorMessage(e: unknown) {
   return 'Das Bild konnte nicht hochgeladen werden. Du kannst alternativ eine Bild-URL eintragen.'
 }
 
+const importFileInput = ref<HTMLInputElement | null>(null)
+const importing = ref(false)
+
+function triggerImport() {
+  importFileInput.value?.click()
+}
+
+async function handleImportFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  input.value = ''
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(await file.text())
+  } catch {
+    toastStore.addToast(t('recipes.errors.importInvalid'), 'error')
+    return
+  }
+
+  const result = validateDishlyImport(parsed)
+  if (!result.ok) {
+    const keyMap: Record<string, string> = {
+      invalidJson: 'recipes.errors.importInvalid',
+      notDishly: 'recipes.errors.importNotDishly',
+      unsupportedVersion: 'recipes.errors.importUnsupportedVersion',
+      missingRecipe: 'recipes.errors.importMissingRecipe',
+      missingTitle: 'recipes.errors.importMissingTitle',
+      negativeCalories: 'recipes.errors.importNegativeCalories',
+    }
+    toastStore.addToast(t(keyMap[result.reason] ?? 'recipes.errors.importInvalid'), 'error')
+    return
+  }
+
+  if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
+    toastStore.addToast(t('recipes.errors.createLoginRequired'), 'error')
+    return
+  }
+
+  importing.value = true
+  try {
+    const saved = await recipeApi.createRecipe(result.request)
+    recipes.value.push(saved)
+    toastStore.addToast(t('notifications.recipeImported'), 'success')
+  } catch (e: unknown) {
+    toastStore.addToast(toCreateRecipeErrorMessage(e), 'error')
+  } finally {
+    importing.value = false
+  }
+}
+
+function handleExportRecipe(r: Recipe) {
+  exportRecipe(r)
+  toastStore.addToast(t('notifications.recipeExported'), 'success')
+}
+
 const removeFavorite = async (r: Recipe) => {
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
     favoriteError.value = t('recipes.errors.sessionExpired')
@@ -840,7 +898,19 @@ const removeFavorite = async (r: Recipe) => {
     </div>
 
     <div v-if="!isCreateMode && activeTab === 'own'" class="list-card">
-      <h3 class="recipes-title">{{ t('recipes.my.createdTitle') }}</h3>
+      <div class="list-card-header">
+        <h3 class="recipes-title">{{ t('recipes.my.createdTitle') }}</h3>
+        <button type="button" class="import-btn" :disabled="importing" @click="triggerImport">
+          {{ importing ? '…' : t('recipes.actions.importBtn') }}
+        </button>
+        <input
+          ref="importFileInput"
+          type="file"
+          accept=".json"
+          class="sr-only"
+          @change="handleImportFile"
+        />
+      </div>
 
       <p v-if="loading" class="status-text">{{ t('recipes.loading') }}</p>
       <div v-else-if="error" class="status-text error">
@@ -891,6 +961,7 @@ const removeFavorite = async (r: Recipe) => {
                   {{ t('recipes.actions.view') }}
                 </RouterLink>
                 <button class="link-btn" @click.stop="startEdit(r)">{{ t('recipes.actions.edit') }}</button>
+                <button class="link-btn" @click.stop="handleExportRecipe(r)">{{ t('recipes.actions.export') }}</button>
                 <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">{{ t('recipes.actions.delete') }}</button>
                 <label class="publish-toggle" @click.stop>
                   <input
@@ -1431,6 +1502,36 @@ textarea {
   font-size: 0.92rem;
 }
 
+.list-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.list-card-header .recipes-title {
+  margin-bottom: 0;
+}
+
+.import-btn {
+  border: 1px solid #2f8f7b;
+  border-radius: 6px;
+  background: transparent;
+  color: #2f8f7b;
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.import-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .recipes-title {
   font-size: 1.3rem;
   font-weight: 800;
@@ -1855,5 +1956,17 @@ textarea {
     font-size: 1.3rem;
     line-height: 1.2;
   }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 </style>

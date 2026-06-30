@@ -209,7 +209,9 @@
       "createFirst": "İlk tarifi oluştur",
       "discover": "Tarifleri keşfet",
       "removeFavorite": "Favoriden kaldır",
-      "backToMyRecipes": "Tariflerime dön"
+      "backToMyRecipes": "Tariflerime dön",
+      "export": "Dışa aktar",
+      "importBtn": "Tarif içe aktar"
     },
     "status": {
       "favorite": "Favori olarak işaretle",
@@ -244,7 +246,13 @@
       "deleteSessionExpired": "Tarifi silmek için lütfen tekrar giriş yap.",
       "deleteForbidden": "Bu tarifi silme iznin yok.",
       "delete": "Tarif silinemedi.",
-      "notFound": "Tarif bulunamadı."
+      "notFound": "Tarif bulunamadı.",
+      "importInvalid": "Dosya okunamadı. Lütfen formatı kontrol et.",
+      "importNotDishly": "Bu dosya Dishly'den değil ve içe aktarılamaz.",
+      "importUnsupportedVersion": "Bu dışa aktarma sürümü desteklenmiyor.",
+      "importMissingRecipe": "Dosya geçerli bir tarif içermiyor.",
+      "importMissingTitle": "Dosyadaki tarifin başlığı yok.",
+      "importNegativeCalories": "Dosyada geçersiz kalori bilgisi var (negatif değer)."
     }
   },
   "dashboard": {
@@ -325,7 +333,9 @@
     }
   },
   "notifications": {
-    "languageChanged": "Arayüz artık Türkçe."
+    "languageChanged": "Arayüz artık Türkçe.",
+    "recipeExported": "Tarif dışa aktarıldı.",
+    "recipeImported": "Tarif başarıyla içe aktarıldı."
   },
   "restaurants": {
     "actions": {

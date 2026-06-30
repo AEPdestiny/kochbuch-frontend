@@ -209,7 +209,9 @@
       "createFirst": "创建第一个食谱",
       "discover": "探索食谱",
       "removeFavorite": "从收藏中移除",
-      "backToMyRecipes": "返回我的食谱"
+      "backToMyRecipes": "返回我的食谱",
+      "export": "导出",
+      "importBtn": "导入食谱"
     },
     "status": {
       "favorite": "标记为收藏",
@@ -244,7 +246,13 @@
       "deleteSessionExpired": "请重新登录以删除食谱。",
       "deleteForbidden": "你不能删除此食谱。",
       "delete": "无法删除食谱。",
-      "notFound": "未找到食谱。"
+      "notFound": "未找到食谱。",
+      "importInvalid": "无法读取文件，请检查格式。",
+      "importNotDishly": "此文件不是来自 Dishly，无法导入。",
+      "importUnsupportedVersion": "不支持此导出版本。",
+      "importMissingRecipe": "文件中不包含有效食谱。",
+      "importMissingTitle": "文件中的食谱没有标题。",
+      "importNegativeCalories": "文件中包含无效的卡路里数据（负值）。"
     }
   },
   "dashboard": {
@@ -325,7 +333,9 @@
     }
   },
   "notifications": {
-    "languageChanged": "界面现已切换为中文。"
+    "languageChanged": "界面现已切换为中文。",
+    "recipeExported": "食谱已导出。",
+    "recipeImported": "食谱已成功导入。"
   },
   "restaurants": {
     "actions": {

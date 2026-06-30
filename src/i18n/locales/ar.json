@@ -209,7 +209,9 @@
       "createFirst": "أنشئ أول وصفة",
       "discover": "استكشف الوصفات",
       "removeFavorite": "إزالة من المفضلة",
-      "backToMyRecipes": "العودة إلى وصفاتي"
+      "backToMyRecipes": "العودة إلى وصفاتي",
+      "export": "تصدير",
+      "importBtn": "استيراد وصفة"
     },
     "status": {
       "favorite": "وضع علامة كمفضلة",
@@ -244,7 +246,13 @@
       "deleteSessionExpired": "يرجى تسجيل الدخول مرة أخرى لحذف وصفة.",
       "deleteForbidden": "لا يُسمح لك بحذف هذه الوصفة.",
       "delete": "تعذر حذف الوصفة.",
-      "notFound": "لم يتم العثور على الوصفة."
+      "notFound": "لم يتم العثور على الوصفة.",
+      "importInvalid": "تعذر قراءة الملف. يرجى التحقق من التنسيق.",
+      "importNotDishly": "هذا الملف ليس من Dishly ولا يمكن استيراده.",
+      "importUnsupportedVersion": "إصدار التصدير هذا غير مدعوم.",
+      "importMissingRecipe": "الملف لا يحتوي على وصفة صالحة.",
+      "importMissingTitle": "الوصفة في الملف ليس لها عنوان.",
+      "importNegativeCalories": "يحتوي الملف على بيانات سعرات حرارية غير صالحة (قيمة سالبة)."
     }
   },
   "dashboard": {
@@ -325,7 +333,9 @@
     }
   },
   "notifications": {
-    "languageChanged": "واجهة المستخدم الآن باللغة العربية."
+    "languageChanged": "واجهة المستخدم الآن باللغة العربية.",
+    "recipeExported": "تم تصدير الوصفة.",
+    "recipeImported": "تم استيراد الوصفة بنجاح."
   },
   "restaurants": {
     "actions": {
