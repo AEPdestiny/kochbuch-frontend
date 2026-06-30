@@ -42,10 +42,10 @@ describe('ProfileView', () => {
     await flushPromises()
 
     expect(profileApi.getPreferences).toHaveBeenCalledTimes(1)
-    // Likes are now shown as chips, not textarea text
-    expect(wrapper.text()).toContain('pasta')
-    expect(wrapper.text()).toContain('curry')
-    // Allergy chip
+    // Likes are shown as chips (translated to current locale: 'pasta'→'Pasta', 'curry'→'Curry')
+    expect(wrapper.text()).toContain('Pasta')
+    expect(wrapper.text()).toContain('Curry')
+    // 'nuts' is not a known allergen entry → displayed as-is (freetext)
     expect(wrapper.text()).toContain('nuts')
     expect(wrapper.text()).toContain('Proteinreich')
     expect(wrapper.text()).toContain('Geschmack')
@@ -82,16 +82,17 @@ describe('ProfileView', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    // Add 'sushi' to the likes TagInput (first .tag-text-input in the form)
+    // Add 'Sushi' to the likes TagInput.
+    // After translation 'pasta'→'Pasta', 'curry'→'Curry', so the sent array uses capitalized labels.
     const likesInput = wrapper.findAll('.tag-text-input').at(0)!
-    await likesInput.setValue('sushi')
+    await likesInput.setValue('Sushi')
     await likesInput.trigger('keydown', { key: 'Enter' })
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
     expect(profileApi.updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({
-        likes: expect.arrayContaining(['pasta', 'curry', 'sushi']),
+        likes: expect.arrayContaining(['Pasta', 'Curry', 'Sushi']),
         vegan: true,
         vegetarian: false,
         highProtein: true,
@@ -154,9 +155,11 @@ describe('ProfileView', () => {
 
     const chips = wrapper.findAll('.tag-chip')
     const chipTexts = chips.map(c => c.text())
+    // 'nuts' is freetext (not in known allergens) → stays as-is
     expect(chipTexts.some(t => t.includes('nuts'))).toBe(true)
-    expect(chipTexts.some(t => t.includes('pasta'))).toBe(true)
-    expect(chipTexts.some(t => t.includes('curry'))).toBe(true)
+    // 'pasta'/'curry' are known likes → translated to German 'Pasta'/'Curry'
+    expect(chipTexts.some(t => t.includes('Pasta'))).toBe(true)
+    expect(chipTexts.some(t => t.includes('Curry'))).toBe(true)
   })
 
   it('adds a new allergy chip via Enter key', async () => {
@@ -195,13 +198,14 @@ describe('ProfileView', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('pasta')
+    // 'pasta' is a known like → translated to 'Pasta' in German locale
+    expect(wrapper.text()).toContain('Pasta')
 
-    const pastaChip = wrapper.findAll('.tag-chip').find(c => c.text().includes('pasta'))
+    const pastaChip = wrapper.findAll('.tag-chip').find(c => c.text().includes('Pasta'))
     await pastaChip!.find('.tag-chip-remove').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).not.toContain('pasta')
+    expect(wrapper.text()).not.toContain('Pasta')
   })
 
   it('prevents adding duplicate tags', async () => {
@@ -209,15 +213,17 @@ describe('ProfileView', () => {
     const wrapper = mount(ProfileView)
     await flushPromises()
 
-    const pastaChipsBefore = wrapper.findAll('.tag-chip').filter(c => c.text().includes('pasta'))
+    // 'pasta' is translated to 'Pasta' in German locale
+    const pastaChipsBefore = wrapper.findAll('.tag-chip').filter(c => c.text().includes('Pasta'))
     expect(pastaChipsBefore).toHaveLength(1)
 
     const likesInput = wrapper.findAll('.tag-text-input').at(0)!
-    await likesInput.setValue('pasta')
+    // Typing 'Pasta' (German translated label) should be treated as duplicate
+    await likesInput.setValue('Pasta')
     await likesInput.trigger('keydown', { key: 'Enter' })
     await flushPromises()
 
-    const pastaChipsAfter = wrapper.findAll('.tag-chip').filter(c => c.text().includes('pasta'))
+    const pastaChipsAfter = wrapper.findAll('.tag-chip').filter(c => c.text().includes('Pasta'))
     expect(pastaChipsAfter).toHaveLength(1)
   })
 
@@ -310,6 +316,285 @@ describe('ProfileView', () => {
     expect(profileApi.updatePreferences).toHaveBeenCalledWith(
       expect.objectContaining({
         allergies: expect.arrayContaining(['nuts', 'Eier']),
+      }),
+    )
+  })
+
+  // ─── Locale-aware suggestion tests ────────────────────────────────────────
+
+  it('shows German allergen suggestions with German locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('de')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('Eier')
+    expect(optionTexts).toContain('Erdnüsse')
+    expect(optionTexts).toContain('Milch')
+    expect(optionTexts).toContain('Schalenfrüchte')
+    expect(optionTexts).not.toContain('Eggs')
+    expect(optionTexts).not.toContain('Peanuts')
+  })
+
+  it('shows English allergen suggestions with English locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('en')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('Eggs')
+    expect(optionTexts).toContain('Peanuts')
+    expect(optionTexts).toContain('Milk')
+    expect(optionTexts).toContain('Tree nuts')
+    expect(optionTexts).not.toContain('Eier')
+    expect(optionTexts).not.toContain('Erdnüsse')
+  })
+
+  it('shows German likes suggestions with German locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('de')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const likesInput = wrapper.findAll('.tag-text-input').at(0)!
+    await likesInput.setValue('h')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('Hähnchen')
+    expect(optionTexts).not.toContain('Chicken')
+  })
+
+  it('shows English likes suggestions with English locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('en')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const likesInput = wrapper.findAll('.tag-text-input').at(0)!
+    await likesInput.setValue('ch')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('Chicken')
+    expect(optionTexts).not.toContain('Hähnchen')
+  })
+
+  it('translates known chip values when the locale changes', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    // Load profile in German — 'pasta' gets translated to 'Pasta'
+    setLocale('de')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Pasta')
+    expect(wrapper.text()).not.toContain('Rice')  // 'Reis' chip shown
+
+    // Switch to English — known German chips re-translate
+    setLocale('en')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Pasta') // Pasta is same in both languages
+  })
+
+  it('leaves freetext chip values unchanged on locale change', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    // 'nuts' is freetext (not in allergen entries)
+    setLocale('de')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('nuts')
+
+    // Switch to English — freetext stays unchanged
+    setLocale('en')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('nuts')
+  })
+
+  it('stored German allergen translates to English label when locale is English', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    // Backend returns German allergen 'Eier'
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      ...preferences(),
+      allergies: ['Eier'],
+    })
+    setLocale('en')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    // 'Eier' should be displayed as 'Eggs' in English UI
+    expect(wrapper.text()).toContain('Eggs')
+    expect(wrapper.text()).not.toContain('Eier')
+  })
+
+  it('stored English allergen "Eggs" recognized and shown as German "Eier" in German UI', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      ...preferences(),
+      allergies: ['Eggs'],
+    })
+    setLocale('de')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Eier')
+    expect(wrapper.text()).not.toContain('Eggs')
+  })
+
+  // ─── Multi-locale allergen suggestion tests ────────────────────────────────
+
+  it('shows Turkish allergen suggestions with Turkish locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('tr')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('Yumurta')
+    expect(optionTexts).toContain('Süt')
+    expect(optionTexts).toContain('Gluten')
+    expect(optionTexts).not.toContain('Eggs')
+    expect(optionTexts).not.toContain('Eier')
+  })
+
+  it('shows Polish allergen suggestions with Polish locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('pl')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('Jaja')
+    expect(optionTexts).toContain('Mleko')
+    expect(optionTexts).toContain('Gluten')
+    expect(optionTexts).not.toContain('Eggs')
+    expect(optionTexts).not.toContain('Eier')
+  })
+
+  it('shows Arabic allergen suggestions with Arabic locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('ar')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('البيض')
+    expect(optionTexts).toContain('الحليب')
+    expect(optionTexts).not.toContain('Eggs')
+    expect(optionTexts).not.toContain('Eier')
+  })
+
+  it('shows Chinese allergen suggestions with Chinese locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('zh')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('鸡蛋')
+    expect(optionTexts).toContain('牛奶')
+    expect(optionTexts).not.toContain('Eggs')
+    expect(optionTexts).not.toContain('Eier')
+  })
+
+  it('shows Japanese allergen suggestions with Japanese locale', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('ja')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const optionTexts = wrapper.findAll('.tag-suggestions li').map(li => li.text())
+    expect(optionTexts).toContain('卵')
+    expect(optionTexts).toContain('牛乳')
+    expect(optionTexts).not.toContain('Eggs')
+    expect(optionTexts).not.toContain('Eier')
+  })
+
+  it('chips re-translate reactively when locale changes without losing freetext', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    // Backend returns German canonical + freetext
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      ...preferences(),
+      likes: ['Hähnchen', 'mein-eigenes'],
+    })
+    setLocale('de')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    // German display
+    expect(wrapper.text()).toContain('Hähnchen')
+    expect(wrapper.text()).toContain('mein-eigenes')
+
+    // Switch to Turkish
+    setLocale('tr')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain('Tavuk')
+    expect(wrapper.text()).not.toContain('Hähnchen')
+    // Freetext unchanged
+    expect(wrapper.text()).toContain('mein-eigenes')
+  })
+
+  it('saves canonical key for known suggestion, freetext unchanged', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    setLocale('tr')
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      ...preferences(),
+      allergies: [],
+    })
+    vi.mocked(profileApi.updatePreferences).mockResolvedValue({
+      ...preferences(),
+      allergies: ['Eier', 'meine-allergie'],
+    })
+
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    // Add Turkish label 'Yumurta' → should be stored as canonical 'Eier'
+    await allergyInput.setValue('Yumurta')
+    await allergyInput.trigger('keydown', { key: 'Enter' })
+    // Add freetext
+    await allergyInput.setValue('meine-allergie')
+    await allergyInput.trigger('keydown', { key: 'Enter' })
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(profileApi.updatePreferences).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allergies: expect.arrayContaining(['Eier', 'meine-allergie']),
       }),
     )
   })

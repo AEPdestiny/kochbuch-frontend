@@ -10,6 +10,7 @@ import { pantryApi } from '@/shared/api/pantryApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
+import { ALLERGEN_ENTRIES, DISLIKES_ENTRIES, LIKES_ENTRIES, getMatchTerms } from '@/shared/profileSuggestions'
 import { useAuthStore } from '@/stores/authStore'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 import type { UserPreferencesResponse } from '@/types/profile'
@@ -717,7 +718,10 @@ function matchesHardPreferences(recipe: Recipe) {
   const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
   return ![...dislikes.value, ...allergies.value]
     .filter(Boolean)
-    .some(term => text.includes(term))
+    .some(term => {
+      const terms = getMatchTerms(term, [...ALLERGEN_ENTRIES, ...DISLIKES_ENTRIES])
+      return terms.some(t => text.includes(t))
+    })
 }
 
 function matchesLikes(recipe: DisplayRecipe) {
@@ -725,7 +729,11 @@ function matchesLikes(recipe: DisplayRecipe) {
     return false
   }
   const text = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
-  return likes.value.some(term => term && text.includes(term))
+  return likes.value.some(term => {
+    if (!term) return false
+    const terms = getMatchTerms(term, LIKES_ENTRIES)
+    return terms.some(t => text.includes(t))
+  })
 }
 
 function applyPreferenceBoost(items: DisplayRecipe[]) {

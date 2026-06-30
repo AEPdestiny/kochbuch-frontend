@@ -1,37 +1,46 @@
 ﻿<script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { profileApi } from '@/shared/api/profileApi'
 import { useToastStore } from '@/stores/toastStore'
 import TagInput from '@/components/TagInput.vue'
+import {
+  ALLERGEN_ENTRIES, LIKES_ENTRIES, DISLIKES_ENTRIES,
+  getSuggestions, toCanonical, toLocaleLabel,
+} from '@/shared/profileSuggestions'
 import type { UserPreferencesRequest } from '@/types/profile'
 
-const ALLERGEN_SUGGESTIONS = [
-  'Gluten', 'Krebstiere', 'Eier', 'Fisch', 'Erdnüsse', 'Soja',
-  'Milch', 'Schalenfrüchte', 'Sellerie', 'Senf', 'Sesam', 'Sulfite',
-  'Lupinen', 'Weichtiere',
-]
+const { t, locale } = useI18n()
 
-const LIKES_SUGGESTIONS = [
-  'Pasta', 'Sushi', 'Pizza', 'Reis', 'Hähnchen', 'Lachs', 'Gemüse',
-  'Kartoffeln', 'Curry', 'Salat', 'Suppe', 'Käse', 'Tomaten', 'Avocado',
-]
-
-const DISLIKES_SUGGESTIONS = [
-  'Pilze', 'Oliven', 'Zwiebeln', 'Knoblauch', 'Fisch', 'Meeresfrüchte',
-  'Brokkoli', 'Spinat', 'Koriander', 'Chili', 'Sellerie',
-]
-
-const { t } = useI18n()
+const allergenSuggestions = computed(() => getSuggestions(ALLERGEN_ENTRIES, locale.value))
+const likesSuggestions = computed(() => getSuggestions(LIKES_ENTRIES, locale.value))
+const dislikesSuggestions = computed(() => getSuggestions(DISLIKES_ENTRIES, locale.value))
 const toastStore = useToastStore()
 
 const loading = ref(true)
 const saving = ref(false)
 const error = ref<string | null>(null)
-const likes = ref<string[]>([])
-const dislikes = ref<string[]>([])
-const allergies = ref<string[]>([])
+
+// Internal state: canonical German keys for known values, freetext stored as-is
+const likesData = ref<string[]>([])
+const dislikesData = ref<string[]>([])
+const allergiesData = ref<string[]>([])
+
+// Display values for TagInput chips — translate canonical → current locale label reactively
+const likes = computed(() => likesData.value.map(v => toLocaleLabel(v, LIKES_ENTRIES, locale.value)))
+const dislikes = computed(() => dislikesData.value.map(v => toLocaleLabel(v, DISLIKES_ENTRIES, locale.value)))
+const allergies = computed(() => allergiesData.value.map(v => toLocaleLabel(v, ALLERGEN_ENTRIES, locale.value)))
+
+function onLikesChange(newDisplayValues: string[]) {
+  likesData.value = newDisplayValues.map(v => toCanonical(v, LIKES_ENTRIES))
+}
+function onDislikesChange(newDisplayValues: string[]) {
+  dislikesData.value = newDisplayValues.map(v => toCanonical(v, DISLIKES_ENTRIES))
+}
+function onAllergiesChange(newDisplayValues: string[]) {
+  allergiesData.value = newDisplayValues.map(v => toCanonical(v, ALLERGEN_ENTRIES))
+}
 const vegan = ref(false)
 const vegetarian = ref(false)
 const glutenFree = ref(false)
@@ -53,9 +62,9 @@ async function loadPreferences() {
 
   try {
     const preferences = await profileApi.getPreferences()
-    likes.value = preferences.likes ?? []
-    dislikes.value = preferences.dislikes ?? []
-    allergies.value = preferences.allergies ?? []
+    likesData.value = (preferences.likes ?? []).map(v => toCanonical(v, LIKES_ENTRIES))
+    dislikesData.value = (preferences.dislikes ?? []).map(v => toCanonical(v, DISLIKES_ENTRIES))
+    allergiesData.value = (preferences.allergies ?? []).map(v => toCanonical(v, ALLERGEN_ENTRIES))
     vegan.value = preferences.vegan
     vegetarian.value = preferences.vegetarian
     glutenFree.value = preferences.glutenFree
@@ -88,9 +97,9 @@ async function savePreferences() {
 
   try {
     const saved = await profileApi.updatePreferences(toRequest())
-    likes.value = saved.likes ?? []
-    dislikes.value = saved.dislikes ?? []
-    allergies.value = saved.allergies ?? []
+    likesData.value = (saved.likes ?? []).map(v => toCanonical(v, LIKES_ENTRIES))
+    dislikesData.value = (saved.dislikes ?? []).map(v => toCanonical(v, DISLIKES_ENTRIES))
+    allergiesData.value = (saved.allergies ?? []).map(v => toCanonical(v, ALLERGEN_ENTRIES))
     dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
     toastStore.addToast(t('notifications.profileSaved'), 'success')
   } catch (e: unknown) {
@@ -103,9 +112,9 @@ async function savePreferences() {
 function toRequest(): UserPreferencesRequest {
   const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
   return {
-    likes: likes.value,
-    dislikes: dislikes.value,
-    allergies: allergies.value,
+    likes: likesData.value,
+    dislikes: dislikesData.value,
+    allergies: allergiesData.value,
     vegan: vegan.value,
     vegetarian: vegetarian.value,
     glutenFree: glutenFree.value,
@@ -201,18 +210,20 @@ function toSaveError(e: unknown) {
           <label>
             {{ t('profile.form.likes') }}
             <TagInput
-              v-model="likes"
-              :suggestions="LIKES_SUGGESTIONS"
+              :model-value="likes"
+              :suggestions="likesSuggestions"
               :placeholder="t('profile.form.likesInputPlaceholder')"
+              @update:model-value="onLikesChange"
             />
           </label>
 
           <label>
             {{ t('profile.form.dislikes') }}
             <TagInput
-              v-model="dislikes"
-              :suggestions="DISLIKES_SUGGESTIONS"
+              :model-value="dislikes"
+              :suggestions="dislikesSuggestions"
               :placeholder="t('profile.form.dislikesInputPlaceholder')"
+              @update:model-value="onDislikesChange"
             />
           </label>
         </div>
@@ -226,11 +237,12 @@ function toSaveError(e: unknown) {
         <label>
           {{ t('profile.form.allergies') }}
           <TagInput
-            v-model="allergies"
-            :suggestions="ALLERGEN_SUGGESTIONS"
+            :model-value="allergies"
+            :suggestions="allergenSuggestions"
             show-suggestions-on-focus
-            :max-suggestions="ALLERGEN_SUGGESTIONS.length"
+            :max-suggestions="allergenSuggestions.length"
             :placeholder="t('profile.form.allergiesInputPlaceholder')"
+            @update:model-value="onAllergiesChange"
           />
         </label>
         <p class="helper-text">{{ t('profile.hints.allergiesAlwaysActive') }}</p>
