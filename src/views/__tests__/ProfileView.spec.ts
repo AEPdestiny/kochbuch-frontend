@@ -238,6 +238,43 @@ describe('ProfileView', () => {
     expect(suggestions.text()).toContain('Fisch')
   })
 
+  it('shows all 14 predefined allergens on focus, not just 8', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const allergyInput = wrapper.findAll('.tag-text-input').at(2)!
+    await allergyInput.trigger('focus')
+    await flushPromises()
+
+    const options = wrapper.find('.tag-suggestions').findAll('li')
+    expect(options).toHaveLength(14)
+
+    const expectedAllergens = [
+      'Gluten', 'Krebstiere', 'Eier', 'Fisch', 'Erdnüsse', 'Soja',
+      'Milch', 'Schalenfrüchte', 'Sellerie', 'Senf', 'Sesam', 'Sulfite',
+      'Lupinen', 'Weichtiere',
+    ]
+    const optionTexts = options.map(o => o.text())
+    for (const allergen of expectedAllergens) {
+      expect(optionTexts).toContain(allergen)
+    }
+  })
+
+  it('still caps likes suggestions at 8 (unchanged limit)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(ProfileView)
+    await flushPromises()
+
+    const likesInput = wrapper.findAll('.tag-text-input').at(0)!
+    // 'a' matches many of the 14 likes suggestions (Pasta, Kartoffeln, Salat, Käse, Tomaten, Avocado...)
+    await likesInput.setValue('a')
+    await flushPromises()
+
+    const options = wrapper.findAll('.tag-suggestions li')
+    expect(options.length).toBeLessThanOrEqual(8)
+  })
+
   it('selects a predefined allergen from the suggestion list', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(ProfileView)

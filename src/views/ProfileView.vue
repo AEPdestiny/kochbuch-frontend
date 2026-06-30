@@ -229,6 +229,7 @@ function toSaveError(e: unknown) {
             v-model="allergies"
             :suggestions="ALLERGEN_SUGGESTIONS"
             show-suggestions-on-focus
+            :max-suggestions="ALLERGEN_SUGGESTIONS.length"
             :placeholder="t('profile.form.allergiesInputPlaceholder')"
           />
         </label>
