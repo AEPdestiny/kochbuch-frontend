@@ -180,8 +180,10 @@ function removeIngredientRow(index: number) {
 
 <template>
   <main class="edit-recipe-page">
-    <section class="edit-header">
+    <section class="page-header">
       <p class="eyebrow">{{ t('recipes.my.editTitle') }}</p>
+      <h1 class="page-title">{{ recipe?.title || t('recipes.my.editTitle') }}</h1>
+      <p class="page-subtitle">Passe Zutaten, Zeiten und Beschreibung deines Rezeptes an.</p>
     </section>
 
     <p v-if="loading" class="status-text">{{ t('recipes.loading') }}</p>
@@ -287,19 +289,48 @@ function removeIngredientRow(index: number) {
 .edit-recipe-page {
   max-width: 980px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
+  padding: 2rem 1rem 4rem;
+  color: #243b38;
+}
+
+/* ── Page header ──────────────────────────────────── */
+.page-header {
+  margin-bottom: 1.75rem;
 }
 
 .eyebrow {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.4rem;
   color: #2f8f7b;
   font-weight: 700;
+  font-size: 0.78rem;
   text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
+.page-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1a2e2b;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #486b68;
+  font-size: 0.97rem;
+}
+
+/* ── Form card ────────────────────────────────────── */
 .edit-form {
   display: grid;
-  gap: 1.1rem;
+  gap: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #d7e8e3;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(36, 59, 56, 0.06);
 }
 
 .form-row {
@@ -312,19 +343,28 @@ function removeIngredientRow(index: number) {
   display: grid;
   gap: 0.45rem;
   font-weight: 700;
+  font-size: 0.92rem;
 }
 
-.form-field.small {
-  max-width: 160px;
-}
+.form-field.small { max-width: 160px; }
 
 .form-field input,
 .form-field textarea {
   width: 100%;
   border: 1px solid #c7ded8;
   border-radius: 8px;
-  padding: 0.75rem;
+  padding: 0.7rem 0.85rem;
   font: inherit;
+  color: #1a2e2b;
+  background: #f9fdfc;
+  transition: border-color 0.15s;
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: 2px solid #2f8f7b;
+  outline-offset: 1px;
+  border-color: #2f8f7b;
 }
 
 .form-field textarea {
@@ -332,17 +372,25 @@ function removeIngredientRow(index: number) {
   resize: vertical;
 }
 
+/* ── Image upload ─────────────────────────────────── */
 .image-upload-box {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #c7ded8;
+  border: 2px dashed #b8dbd6;
   border-radius: 8px;
-  padding: 0.75rem;
+  padding: 0.7rem;
   cursor: pointer;
   font-weight: 500;
   color: #486b68;
+  font-size: 0.88rem;
   margin-top: 0.4rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.image-upload-box:hover {
+  border-color: #2f8f7b;
+  background: #f0faf8;
 }
 
 .image-upload-box input { display: none; }
@@ -351,15 +399,18 @@ function removeIngredientRow(index: number) {
   max-height: 140px;
   border-radius: 8px;
   object-fit: cover;
-  margin-top: 0.4rem;
+  margin-top: 0.45rem;
+  border: 1px solid #d7e8e3;
 }
 
 .upload-note {
   color: #486b68;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 500;
+  margin-top: 0.25rem;
 }
 
+/* ── Ingredients ──────────────────────────────────── */
 .ingredient-rows { display: grid; gap: 6px; }
 
 .ingredient-row-header,
@@ -371,8 +422,9 @@ function removeIngredientRow(index: number) {
 }
 
 .ingredient-row-header {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: #486b68;
+  font-weight: 600;
 }
 
 .ingredient-quantity { min-width: 0; }
@@ -386,24 +438,29 @@ function removeIngredientRow(index: number) {
   cursor: pointer;
   font-size: 1.1rem;
   color: #9b2226;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.ingredient-remove-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ingredient-remove-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .ingredient-add-btn {
   margin-top: 8px;
   background: none;
-  border: 1px dashed #c7ded8;
+  border: 1px dashed #b8dbd6;
   border-radius: 8px;
   padding: 6px 14px;
   cursor: pointer;
   color: #2f8f7b;
   font-weight: 600;
+  font-size: 0.88rem;
 }
 
+/* ── Toggles ──────────────────────────────────────── */
 .form-toggle-row {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -412,28 +469,35 @@ function removeIngredientRow(index: number) {
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
+  font-size: 0.9rem;
   border: 1px solid #d7e8e3;
   border-radius: 8px;
-  padding: 0.7rem 0.8rem;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
 }
 
+/* ── Form footer ──────────────────────────────────── */
 .form-actions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eef5f3;
 }
 
 .submit-btn {
   border: 0;
   border-radius: 8px;
   background: #2f8f7b;
-  color: white;
-  padding: 0.75rem 1.15rem;
+  color: #fff;
+  padding: 0.75rem 1.4rem;
   font-weight: 700;
   min-height: 44px;
   cursor: pointer;
+  font-size: 0.95rem;
 }
 
+.submit-btn:hover { background: #267a69; }
 .submit-btn:disabled { cursor: wait; opacity: 0.7; }
 
 .cancel-btn {
@@ -447,9 +511,17 @@ function removeIngredientRow(index: number) {
   cursor: pointer;
 }
 
+.cancel-btn:hover { background: #f0faf8; }
+
+/* ── Misc ─────────────────────────────────────────── */
 .required-star { color: #d9534f; }
 
-.status-text { padding: 1rem; background: #eef8f4; border-radius: 8px; }
+.status-text {
+  padding: 1rem;
+  background: #eef8f4;
+  border-radius: 8px;
+  color: #486b68;
+}
 
 .error-text {
   padding: 0.8rem 1rem;
@@ -457,5 +529,13 @@ function removeIngredientRow(index: number) {
   color: #9b2226;
   border-radius: 8px;
   margin: 0;
+}
+
+@media (max-width: 640px) {
+  .edit-recipe-page { padding: 1.25rem 0.75rem 3rem; }
+  .page-title { font-size: 1.5rem; }
+  .edit-form { padding: 1.1rem; }
+  .form-actions { justify-content: stretch; }
+  .submit-btn, .cancel-btn { flex: 1; text-align: center; justify-content: center; }
 }
 </style>

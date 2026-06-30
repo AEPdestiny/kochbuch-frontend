@@ -1614,7 +1614,6 @@ textarea {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
-  cursor: pointer;
 }
 
 .name {
@@ -1709,11 +1708,14 @@ textarea {
   min-height: 40px;
   cursor: pointer;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  font-family: inherit;
+  line-height: 1;
 }
 
 .detail-link {
-  align-items: center;
-  display: inline-flex;
   text-decoration: none;
 }
 

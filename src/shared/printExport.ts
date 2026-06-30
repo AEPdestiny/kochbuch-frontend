@@ -197,15 +197,15 @@ export function printMealPlan(
   const daysHtml = days.map(day => {
     if (day.slots.length === 0) return ''
     const slotsHtml = day.slots.map(slot => {
-      const cal = slot.calories != null ? ` <span class="kcal">${slot.calories} ${esc(labels.kcalUnit)}</span>` : ''
-      return `<tr><td class="col-slot">${esc(slot.slotLabel)}</td><td>${esc(slot.title)}${cal}</td></tr>`
+      const cal = slot.calories != null ? `${slot.calories} ${esc(labels.kcalUnit)}` : ''
+      return `<tr><td class="col-slot">${esc(slot.slotLabel)}</td><td class="col-title">${esc(slot.title)}</td><td class="col-kcal">${cal}</td></tr>`
     }).join('')
     const dayCal = day.totalCalories != null
-      ? `<tr class="day-cal"><td>${esc(labels.totalCalories)}:</td><td><strong>${day.totalCalories} ${esc(labels.kcalUnit)}</strong></td></tr>`
+      ? `<tr class="day-cal"><td colspan="2">${esc(labels.totalCalories)}</td><td class="col-kcal"><strong>${day.totalCalories} ${esc(labels.kcalUnit)}</strong></td></tr>`
       : ''
     return `
       <h3>${esc(day.label)} <span class="date-label">${esc(day.date)}</span></h3>
-      <table><tbody>${slotsHtml}${dayCal}</tbody></table>`
+      <table><thead><tr><th class="col-slot"></th><th class="col-title"></th><th class="col-kcal">kcal</th></tr></thead><tbody>${slotsHtml}${dayCal}</tbody></table>`
   }).join('')
 
   const totalHtml = totalCalories != null
@@ -217,11 +217,13 @@ export function printMealPlan(
     : `<p class="empty">${esc(labels.emptyMessage)}</p>`
 
   const extraCss = `
-    .col-slot { width: 120px; color: #486b68; font-size: 0.85rem; }
-    .kcal { color: #2f8f7b; font-size: 0.85rem; margin-left: 6px; }
+    .col-slot { width: 110px; color: #486b68; font-size: 0.85rem; }
+    .col-title { }
+    .col-kcal { width: 80px; text-align: right; color: #2f8f7b; font-size: 0.85rem; white-space: nowrap; }
     .date-label { font-size: 0.85rem; color: #486b68; font-weight: 400; margin-left: 6px; }
     .day-cal td { border-top: 1px solid #c7ded8; padding-top: 4px; color: #486b68; font-size: 0.85rem; }
-    .week-total { margin-top: 16px; padding-top: 12px; border-top: 2px solid #2f8f7b; color: #1a2e2b; }
+    .day-cal .col-kcal { color: #1a2e2b; }
+    .week-total { margin-top: 16px; padding-top: 12px; border-top: 2px solid #2f8f7b; color: #1a2e2b; text-align: right; }
   `
 
   const html = buildPrintDocument(
