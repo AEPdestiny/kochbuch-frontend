@@ -2,11 +2,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { config } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { printMealPlan } from '@/shared/printExport'
 import MealPlanView from '@/views/MealPlanView.vue'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
-import { ApiClientError } from '@/shared/api/apiClient'
+import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
 import { useToastStore } from '@/stores/toastStore'
 import type { MealPlanWeekResponse } from '@/types/mealPlan'
@@ -36,6 +37,13 @@ vi.mock('@/shared/api/profileApi', () => ({
   profileApi: {
     getPreferences: vi.fn(),
   },
+}))
+
+vi.mock('@/shared/printExport', () => ({
+  printMealPlan: vi.fn(),
+  printShoppingList: vi.fn(),
+  printPantry: vi.fn(),
+  openPrintWindow: vi.fn(),
 }))
 
 enableAutoUnmount(afterEach)
@@ -1125,6 +1133,123 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Meal Plan')
     expect(wrapper.text()).toContain('Monday')
     expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
+  })
+
+  // ─── PDF export / totalCalories tests ────────────────────────────────────────
+
+  it('PDF button is visible when week is loaded', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(MealPlanView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))
+    expect(pdfBtn).toBeTruthy()
+  })
+
+  it('uses backend totalCalories when positive', async () => {
+    vi.useFakeTimers()
+    try {
+      sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+      vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+        weekStart: '2026-06-01',
+        weekEnd: '2026-06-07',
+        entries: [entry('2026-06-01', recipe(1, 'Pasta', { calories: 500 }), 'dinner')],
+        totalCalories: 1200,
+      })
+
+      const wrapper = mount(MealPlanView)
+      await flushPromises()
+
+      const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+      await pdfBtn.trigger('click')
+      vi.runAllTimers()
+
+      expect(vi.mocked(printMealPlan)).toHaveBeenCalledTimes(1)
+      const [, totalCal] = vi.mocked(printMealPlan).mock.calls[0]!
+      expect(totalCal).toBe(1200)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('falls back to sum of day totals when backend totalCalories is 0', async () => {
+    vi.useFakeTimers()
+    try {
+      sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+      vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+        weekStart: '2026-06-01',
+        weekEnd: '2026-06-07',
+        entries: [
+          entry('2026-06-01', recipe(1, 'Pasta', { calories: 523 }), 'dinner'),
+          entry('2026-06-02', recipe(2, 'Salad', { calories: 1447 }), 'lunch'),
+        ],
+        totalCalories: 0,
+      })
+
+      const wrapper = mount(MealPlanView)
+      await flushPromises()
+
+      const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+      await pdfBtn.trigger('click')
+      vi.runAllTimers()
+
+      expect(vi.mocked(printMealPlan)).toHaveBeenCalledTimes(1)
+      const [days, totalCal] = vi.mocked(printMealPlan).mock.calls[0]!
+      expect(totalCal).toBe(1970)
+      expect(days.some(d => d.totalCalories != null && d.totalCalories > 0)).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('falls back to sum of entry calories when day totals are also 0', async () => {
+    vi.useFakeTimers()
+    try {
+      sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+      vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+        weekStart: '2026-06-01',
+        weekEnd: '2026-06-07',
+        entries: [
+          { id: '1', plannedDate: '2026-06-01', mealSlot: 'dinner', recipe: recipe(1, 'Pasta', { calories: 300 }), calories: 300, caloriesSnapshot: 300 },
+        ],
+        totalCalories: 0,
+        caloriesByDate: {},
+      })
+
+      const wrapper = mount(MealPlanView)
+      await flushPromises()
+
+      const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+      await pdfBtn.trigger('click')
+      vi.runAllTimers()
+
+      expect(vi.mocked(printMealPlan)).toHaveBeenCalledTimes(1)
+      const [, totalCal] = vi.mocked(printMealPlan).mock.calls[0]!
+      expect(totalCal).toBeGreaterThan(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('passes null totalCalories when no calorie data exists', async () => {
+    vi.useFakeTimers()
+    try {
+      sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+      vi.mocked(mealPlanApi.getWeek).mockResolvedValue(emptyWeekResponse())
+
+      const wrapper = mount(MealPlanView)
+      await flushPromises()
+
+      const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+      await pdfBtn.trigger('click')
+      vi.runAllTimers()
+
+      expect(vi.mocked(printMealPlan)).toHaveBeenCalledTimes(1)
+      const [, totalCal] = vi.mocked(printMealPlan).mock.calls[0]!
+      expect(totalCal).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

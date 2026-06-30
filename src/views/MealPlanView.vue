@@ -497,7 +497,23 @@ function exportMealPlanAsPdf() {
     }
   })
 
-  const totalCalories = week.value?.totalCalories ?? null
+  // Robust fallback: backend totalCalories → sum of day totals → sum of entry calories
+  let totalCalories: number | null = null
+  const backendTotal = week.value?.totalCalories
+  if (typeof backendTotal === 'number' && backendTotal > 0) {
+    totalCalories = backendTotal
+  } else {
+    const daySum = days.reduce((sum, day) => sum + (day.totalCalories ?? 0), 0)
+    if (daySum > 0) {
+      totalCalories = daySum
+    } else {
+      const entrySum = (week.value?.entries ?? []).reduce(
+        (sum, e) => sum + entryCalories(e),
+        0,
+      )
+      totalCalories = entrySum > 0 ? entrySum : null
+    }
+  }
 
   toastStore.addToast(t('notifications.mealPlanPdfReady'), 'success')
 
