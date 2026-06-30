@@ -95,11 +95,15 @@ const profileChips = computed(() => {
   const p = preferences.value
   if (!p) return []
   const chips: string[] = []
+  if (p.vegan) chips.push(t('dashboard.profileVegan'))
+  if (p.vegetarian) chips.push(t('dashboard.profileVegetarian'))
+  if (p.glutenFree) chips.push(t('dashboard.profileGlutenFree'))
+  if (p.lactoseFree) chips.push(t('dashboard.profileLactoseFree'))
+  if (p.highProtein) chips.push(t('dashboard.profileHighProtein'))
+  if (p.calorieConscious) chips.push(t('dashboard.profileCalorieCons'))
   if (p.likes?.length) chips.push(t('dashboard.profileLikes'))
   if (p.dislikes?.length) chips.push(t('dashboard.profileDislikes'))
   if (p.allergies?.length) chips.push(t('dashboard.profileAllergies'))
-  if (p.highProtein) chips.push(t('dashboard.profileHighProtein'))
-  if (p.calorieConscious) chips.push(t('dashboard.profileCalorieCons'))
   return chips
 })
 
@@ -153,9 +157,6 @@ async function loadProfile() {
       <div class="dash-chips">
         <span v-if="weekPlanActive" class="chip chip-green">{{ t('dashboard.chipWeekPlan') }}</span>
         <span v-if="dailyCalorieGoal" class="chip chip-pink">{{ t('dashboard.chipCalorieGoal') }}</span>
-        <span v-if="preferences && !preferences.likes?.length && !preferences.dislikes?.length" class="chip chip-gray">
-          {{ t('dashboard.profileHint').slice(0, 30) + '…' }}
-        </span>
       </div>
     </header>
 
@@ -235,7 +236,10 @@ async function loadProfile() {
               </span>
             </li>
           </ul>
-          <p v-else class="card-empty">{{ t('dashboard.shoppingEmpty') }}</p>
+          <p v-if="openShoppingItems.length > 5" class="preview-hint">
+            {{ t('dashboard.previewShown', { shown: 5, total: openShoppingItems.length }) }}
+          </p>
+          <p v-else-if="!openShoppingItems.length" class="card-empty">{{ t('dashboard.shoppingEmpty') }}</p>
         </template>
       </article>
 
@@ -260,7 +264,10 @@ async function loadProfile() {
               </span>
             </li>
           </ul>
-          <p v-else class="card-empty">{{ t('dashboard.pantryEmpty') }}</p>
+          <p v-if="pantryItems.length > 5" class="preview-hint">
+            {{ t('dashboard.previewShown', { shown: 5, total: pantryItems.length }) }}
+          </p>
+          <p v-else-if="!pantryItems.length" class="card-empty">{{ t('dashboard.pantryEmpty') }}</p>
         </template>
       </article>
 
@@ -282,7 +289,10 @@ async function loadProfile() {
               <RouterLink :to="`/recipe/${recipe.id}`" class="recipe-link">{{ recipe.title }}</RouterLink>
             </li>
           </ul>
-          <p v-else class="card-empty">{{ t('dashboard.recipesEmpty') }}</p>
+          <p v-if="recipes.length > 3" class="preview-hint">
+            {{ t('dashboard.previewShown', { shown: 3, total: recipes.length }) }}
+          </p>
+          <p v-else-if="!recipes.length" class="card-empty">{{ t('dashboard.recipesEmpty') }}</p>
           <RouterLink to="/recipes/new" class="card-btn-secondary mt-sm">{{ t('dashboard.recipesCreate') }}</RouterLink>
         </template>
       </article>
@@ -300,7 +310,7 @@ async function loadProfile() {
           <div v-if="profileChips.length" class="profile-chips">
             <span v-for="chip in profileChips" :key="chip" class="chip chip-green">{{ chip }}</span>
           </div>
-          <p v-else class="card-empty">–</p>
+          <p v-else class="card-empty">{{ t('dashboard.profileNoValues') }}</p>
           <p class="profile-hint">{{ t('dashboard.profileHint') }}</p>
         </template>
       </article>
@@ -560,6 +570,9 @@ async function loadProfile() {
 /* ── Profile ──────────────────────────────────────────────────── */
 .profile-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .profile-hint { font-size: 0.85rem; color: #486b68; margin: 0; }
+
+/* ── Preview hint ─────────────────────────────────────────────── */
+.preview-hint { font-size: 0.8rem; color: #8aada9; margin: 0; font-style: italic; }
 
 /* ── Chips ────────────────────────────────────────────────────── */
 .chip {

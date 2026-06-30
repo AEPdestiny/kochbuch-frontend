@@ -309,6 +309,12 @@
     "profileCalorieCons": "カロリー意識",
     "profileHint": "プロフィールが充実するほど、おすすめが精度高くなります。",
     "profileEdit": "プロフィールを編集",
+    "previewShown": "{shown} / {total} 件表示",
+    "profileNoValues": "プロフィール値がまだ設定されていません。",
+    "profileVegan": "ヴィーガン",
+    "profileVegetarian": "ベジタリアン",
+    "profileGlutenFree": "グルテンフリー",
+    "profileLactoseFree": "ラクトースフリー",
     "quickActionsTitle": "クイックアクション"
   },
   "home": {

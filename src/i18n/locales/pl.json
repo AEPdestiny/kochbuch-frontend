@@ -309,6 +309,12 @@
     "profileCalorieCons": "Świadomy kalorii",
     "profileHint": "Im dokładniejszy profil, tym lepsze rekomendacje.",
     "profileEdit": "Edytuj profil",
+    "previewShown": "Pokazuje {shown} z {total}",
+    "profileNoValues": "Nie ustawiono jeszcze wartości profilu.",
+    "profileVegan": "Wegański",
+    "profileVegetarian": "Wegetariański",
+    "profileGlutenFree": "Bezglutenowy",
+    "profileLactoseFree": "Bez laktozy",
     "quickActionsTitle": "Szybkie akcje"
   },
   "home": {

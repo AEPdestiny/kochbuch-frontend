@@ -309,6 +309,12 @@
     "profileCalorieCons": "واعي بالسعرات",
     "profileHint": "كلما كان ملفك الشخصي أكثر اكتمالاً، كانت توصياتك أفضل.",
     "profileEdit": "تعديل الملف الشخصي",
+    "previewShown": "عرض {shown} من {total}",
+    "profileNoValues": "لم يتم تعيين قيم الملف الشخصي بعد.",
+    "profileVegan": "نباتي صرف",
+    "profileVegetarian": "نباتي",
+    "profileGlutenFree": "خالٍ من الغلوتين",
+    "profileLactoseFree": "خالٍ من اللاكتوز",
     "quickActionsTitle": "إجراءات سريعة"
   },
   "home": {

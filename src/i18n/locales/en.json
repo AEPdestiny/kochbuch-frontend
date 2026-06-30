@@ -317,6 +317,12 @@
     "profileCalorieCons": "Calorie conscious",
     "profileHint": "The more complete your profile, the better your recommendations.",
     "profileEdit": "Edit profile",
+    "previewShown": "Showing {shown} of {total}",
+    "profileNoValues": "No profile values set yet.",
+    "profileVegan": "Vegan",
+    "profileVegetarian": "Vegetarian",
+    "profileGlutenFree": "Gluten-free",
+    "profileLactoseFree": "Lactose-free",
     "quickActionsTitle": "Quick actions"
   },
   "home": {

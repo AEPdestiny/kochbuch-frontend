@@ -309,6 +309,12 @@
     "profileCalorieCons": "卡路里意识",
     "profileHint": "您的个人资料越完整，推荐就越好。",
     "profileEdit": "编辑个人资料",
+    "previewShown": "显示 {shown} / {total}",
+    "profileNoValues": "尚未设置个人资料值。",
+    "profileVegan": "纯素食",
+    "profileVegetarian": "素食",
+    "profileGlutenFree": "无麸质",
+    "profileLactoseFree": "无乳糖",
     "quickActionsTitle": "快速操作"
   },
   "home": {

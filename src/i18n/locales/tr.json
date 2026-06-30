@@ -309,6 +309,12 @@
     "profileCalorieCons": "Kalori bilincli",
     "profileHint": "Profiliniz ne kadar eksiksiz olursa önerileriniz o kadar iyi olur.",
     "profileEdit": "Profili düzenle",
+    "previewShown": "{shown} / {total} gösteriliyor",
+    "profileNoValues": "Henüz profil değeri ayarlanmadı.",
+    "profileVegan": "Vegan",
+    "profileVegetarian": "Vejetaryen",
+    "profileGlutenFree": "Glutensiz",
+    "profileLactoseFree": "Laktosuz",
     "quickActionsTitle": "Hızlı işlemler"
   },
   "home": {

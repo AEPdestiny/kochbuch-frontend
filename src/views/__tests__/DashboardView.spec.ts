@@ -192,6 +192,73 @@ describe('DashboardView', () => {
     expect(wrapper.text()).toContain('Proteinreich')
   })
 
+  it('shows vegan, vegetarian, glutenFree, lactoseFree chips', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      ...defaultPreferences(), vegan: true, vegetarian: true, glutenFree: true, lactoseFree: true,
+    })
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Vegan')
+    expect(wrapper.text()).toContain('Vegetarisch')
+    expect(wrapper.text()).toContain('Glutenfrei')
+    expect(wrapper.text()).toContain('Laktosefrei')
+  })
+
+  it('shows empty state when no profile chips are set', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue(defaultPreferences())
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Noch keine Profilwerte gesetzt.')
+  })
+
+  // ── Preview hints ─────────────────────────────────────────────────────────
+
+  it('shows preview hint when more than 5 open shopping items exist', async () => {
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue(
+      Array.from({ length: 8 }, (_, i) => shoppingItem(i + 1, false)),
+    )
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Zeigt 5 von 8')
+  })
+
+  it('does not show preview hint when 5 or fewer open shopping items', async () => {
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue(
+      Array.from({ length: 5 }, (_, i) => shoppingItem(i + 1, false)),
+    )
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('Zeigt 5 von 5')
+  })
+
+  it('shows preview hint when more than 5 pantry items exist', async () => {
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue(
+      Array.from({ length: 7 }, (_, i) => pantryItem(i + 1)),
+    )
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Zeigt 5 von 7')
+  })
+
+  it('shows preview hint when more than 3 recipes exist', async () => {
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(
+      Array.from({ length: 6 }, (_, i) => recipe(i + 1)),
+    )
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).toContain('Zeigt 3 von 6')
+  })
+
+  // ── Header chips ──────────────────────────────────────────────────────────
+
+  it('does not show a chip-gray chip in the header', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue(defaultPreferences())
+    const wrapper = mountDashboard()
+    await flushPromises()
+    const headerChips = wrapper.find('.dash-chips')
+    expect(headerChips.find('.chip-gray').exists()).toBe(false)
+  })
+
   // ── Error resilience ──────────────────────────────────────────────────────
 
   it('still shows other cards when pantry fails', async () => {
