@@ -71,7 +71,8 @@
       "edit": "Bearbeiten",
       "delete": "Löschen",
       "update": "Speichern",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "exportPdf": "Als PDF speichern"
     },
     "errors": {
       "loginRequired": "Bitte melde dich an, um deinen Vorrat zu sehen.",
@@ -143,7 +144,8 @@
       "edit": "Bearbeiten",
       "delete": "Löschen",
       "update": "Speichern",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "exportPdf": "Als PDF speichern"
     },
     "errors": {
       "loginRequired": "Bitte melde dich an, um deine Einkaufsliste zu sehen.",
@@ -402,7 +404,21 @@
     "recipeUpdated": "Rezept wurde gespeichert.",
     "recipeDeleted": "Rezept wurde gelöscht.",
     "recipeExported": "Rezept wurde exportiert.",
-    "recipeImported": "Rezept wurde importiert."
+    "recipeImported": "Rezept wurde importiert.",
+    "shoppingListPdfReady": "Einkaufsliste wird druckfertig vorbereitet.",
+    "pantryPdfReady": "Vorrat wird druckfertig vorbereitet.",
+    "pdfEmptyList": "Keine Einträge für PDF vorhanden."
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "Erstellt am",
+    "openSection": "Noch zu kaufen",
+    "doneSection": "Erledigt",
+    "quantityHeader": "Menge",
+    "unitHeader": "Einheit",
+    "emptyList": "Keine Einträge vorhanden.",
+    "shoppingListTitle": "Einkaufsliste",
+    "pantryTitle": "Vorrat"
   },
   "restaurants": {
     "actions": {
@@ -525,7 +541,8 @@
       "addOne": "+ Hinzufügen",
       "addToMealPlan": "Zum Wochenplan hinzufügen",
       "favorite": "Favorit",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "export": "Exportieren"
     },
     "meta": {
       "calories": "{calories} kcal",

@@ -71,7 +71,8 @@
       "edit": "编辑",
       "delete": "删除",
       "update": "保存",
-      "cancel": "取消"
+      "cancel": "取消",
+      "exportPdf": "保存为PDF"
     },
     "errors": {
       "loginRequired": "请登录以查看你的储藏。",
@@ -143,7 +144,8 @@
       "edit": "编辑",
       "delete": "删除",
       "update": "保存",
-      "cancel": "取消"
+      "cancel": "取消",
+      "exportPdf": "保存为PDF"
     },
     "errors": {
       "loginRequired": "请登录以查看你的购物清单。",
@@ -335,7 +337,21 @@
   "notifications": {
     "languageChanged": "界面现已切换为中文。",
     "recipeExported": "食谱已导出。",
-    "recipeImported": "食谱已成功导入。"
+    "recipeImported": "食谱已成功导入。",
+    "shoppingListPdfReady": "购物清单正在准备打印。",
+    "pantryPdfReady": "储藏正在准备打印。",
+    "pdfEmptyList": "没有条目可用于PDF。"
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "创建日期",
+    "openSection": "待购",
+    "doneSection": "已完成",
+    "quantityHeader": "数量",
+    "unitHeader": "单位",
+    "emptyList": "没有条目。",
+    "shoppingListTitle": "购物清单",
+    "pantryTitle": "储藏"
   },
   "restaurants": {
     "actions": {
@@ -430,7 +446,8 @@
       "addAllToShoppingList": "???????????",
       "addOne": "+ ??",
       "addToMealPlan": "添加到周计划",
-      "cancel": "取消"
+      "cancel": "取消",
+      "export": "导出"
     },
     "meta": {
       "calories": "{calories} ??",

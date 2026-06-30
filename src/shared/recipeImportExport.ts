@@ -1,5 +1,19 @@
 import type { Recipe, RecipeRequest } from '@/types/recipe'
 
+export type ExportableRecipeData = {
+  title: string
+  ingredients: string
+  instructions: string
+  prepTimeMinutes: number
+  cookTimeMinutes: number
+  servings: number
+  difficulty: string
+  category: string
+  imageUrl: string
+  language?: string | null
+  calories?: number | null
+}
+
 export type DishlyExportFile = {
   sourceApp: 'Dishly'
   exportVersion: 1
@@ -21,7 +35,7 @@ export type DishlyExportRecipe = {
   calories: number | null
 }
 
-export function buildExportPayload(recipe: Recipe, now: string): DishlyExportFile {
+export function buildExportPayload(recipe: ExportableRecipeData, now: string): DishlyExportFile {
   return {
     sourceApp: 'Dishly',
     exportVersion: 1,
@@ -52,7 +66,7 @@ export function downloadJson(filename: string, data: unknown): void {
   URL.revokeObjectURL(url)
 }
 
-export function exportRecipe(recipe: Recipe): void {
+export function exportRecipe(recipe: ExportableRecipeData): void {
   const payload = buildExportPayload(recipe, new Date().toISOString())
   const safeName = recipe.title.replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, '_').slice(0, 60)
   downloadJson(`dishly_${safeName}.json`, payload)

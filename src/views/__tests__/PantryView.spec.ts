@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import PantryView from '@/views/PantryView.vue'
 import { pantryApi } from '@/shared/api/pantryApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { printPantry } from '@/shared/printExport'
 import { i18n, setLocale } from '@/i18n'
 import type { PantryItemResponse } from '@/types/pantry'
 
@@ -43,6 +44,11 @@ vi.mock('vue-router', () => ({
   useRouter: () => ({
     push: vi.fn(),
   }),
+}))
+
+vi.mock('@/shared/printExport', () => ({
+  printPantry: vi.fn(),
+  printShoppingList: vi.fn(),
 }))
 
 describe('PantryView', () => {
@@ -612,6 +618,70 @@ describe('PantryView', () => {
 
     expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية مخزونك.')
     expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
+  })
+
+  // ─── PDF export tests ─────────────────────────────────────────────────────
+
+  it('shows the PDF export button in the toolbox', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
+      item('Reis', 1, 'kg', 'Getreide'),
+    ])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))
+    expect(pdfBtn).toBeTruthy()
+  })
+
+  it('calls printPantry with item data when PDF button is clicked', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
+      item('Mehl', 500, 'g', 'Getreide'),
+      item('Olivenöl', 0.5, 'l', 'Öle'),
+    ])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+    await pdfBtn.trigger('click')
+
+    expect(printPantry).toHaveBeenCalledTimes(1)
+    const [items] = vi.mocked(printPantry).mock.calls[0]!
+    expect(items).toHaveLength(2)
+    expect(items.some(i => i.name === 'Mehl' && i.quantity === 500 && i.unit === 'g')).toBe(true)
+    expect(items.some(i => i.name === 'Olivenöl' && i.quantity === 0.5 && i.unit === 'l')).toBe(true)
+  })
+
+  it('passes name, quantity and unit correctly to printPantry', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
+      item('Zucker', 2, 'kg', ''),
+    ])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+    await pdfBtn.trigger('click')
+
+    const [items] = vi.mocked(printPantry).mock.calls[0]!
+    expect(items[0]).toMatchObject({ name: 'Zucker', quantity: 2, unit: 'kg' })
+  })
+
+  it('shows error toast and does not call printPantry when pantry is empty', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+    await pdfBtn.trigger('click')
+
+    expect(printPantry).not.toHaveBeenCalled()
   })
 })
 

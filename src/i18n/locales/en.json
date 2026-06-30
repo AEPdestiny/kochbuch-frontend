@@ -71,7 +71,8 @@
       "edit": "Edit",
       "delete": "Delete",
       "update": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "exportPdf": "Save as PDF"
     },
     "errors": {
       "loginRequired": "Please log in to see your pantry.",
@@ -143,7 +144,8 @@
       "edit": "Edit",
       "delete": "Delete",
       "update": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "exportPdf": "Save as PDF"
     },
     "errors": {
       "loginRequired": "Please log in to see your shopping list.",
@@ -402,7 +404,21 @@
     "recipeUpdated": "Recipe saved.",
     "recipeDeleted": "Recipe deleted.",
     "recipeExported": "Recipe exported.",
-    "recipeImported": "Recipe imported successfully."
+    "recipeImported": "Recipe imported successfully.",
+    "shoppingListPdfReady": "Shopping list is being prepared for printing.",
+    "pantryPdfReady": "Pantry is being prepared for printing.",
+    "pdfEmptyList": "No items available for PDF."
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "Created on",
+    "openSection": "Still to buy",
+    "doneSection": "Done",
+    "quantityHeader": "Qty",
+    "unitHeader": "Unit",
+    "emptyList": "No items available.",
+    "shoppingListTitle": "Shopping List",
+    "pantryTitle": "Pantry"
   },
   "restaurants": {
     "actions": {
@@ -525,7 +541,8 @@
       "addOne": "+ Add",
       "addToMealPlan": "Add to meal plan",
       "favorite": "Favorite",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "export": "Export"
     },
     "meta": {
       "calories": "{calories} kcal",

@@ -71,7 +71,8 @@
       "edit": "Edytuj",
       "delete": "Usuń",
       "update": "Zapisz",
-      "cancel": "Anuluj"
+      "cancel": "Anuluj",
+      "exportPdf": "Zapisz jako PDF"
     },
     "errors": {
       "loginRequired": "Zaloguj się, aby zobaczyć swoją spiżarnię.",
@@ -143,7 +144,8 @@
       "edit": "Edytuj",
       "delete": "Usuń",
       "update": "Zapisz",
-      "cancel": "Anuluj"
+      "cancel": "Anuluj",
+      "exportPdf": "Zapisz jako PDF"
     },
     "errors": {
       "loginRequired": "Zaloguj się, aby zobaczyć swoją listę zakupów.",
@@ -335,7 +337,21 @@
   "notifications": {
     "languageChanged": "Interfejs jest teraz po polsku.",
     "recipeExported": "Przepis został wyeksportowany.",
-    "recipeImported": "Przepis został zaimportowany."
+    "recipeImported": "Przepis został zaimportowany.",
+    "shoppingListPdfReady": "Lista zakupów jest przygotowywana do druku.",
+    "pantryPdfReady": "Spiżarnia jest przygotowywana do druku.",
+    "pdfEmptyList": "Brak pozycji do PDF."
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "Utworzono",
+    "openSection": "Do kupienia",
+    "doneSection": "Gotowe",
+    "quantityHeader": "Ilość",
+    "unitHeader": "Jednostka",
+    "emptyList": "Brak pozycji.",
+    "shoppingListTitle": "Lista zakupów",
+    "pantryTitle": "Spiżarnia"
   },
   "restaurants": {
     "actions": {
@@ -424,7 +440,8 @@
       "addAllToShoppingList": "Dodaj wszystkie sk?adniki do listy zakup?w",
       "addOne": "+ Dodaj",
       "addToMealPlan": "Dodaj do planu tygodnia",
-      "cancel": "Anuluj"
+      "cancel": "Anuluj",
+      "export": "Eksportuj"
     },
     "meta": {
       "calories": "{calories} kcal",

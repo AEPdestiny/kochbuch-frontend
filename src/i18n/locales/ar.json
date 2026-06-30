@@ -71,7 +71,8 @@
       "edit": "تعديل",
       "delete": "حذف",
       "update": "حفظ",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "exportPdf": "حفظ كـ PDF"
     },
     "errors": {
       "loginRequired": "يرجى تسجيل الدخول لرؤية مخزونك.",
@@ -143,7 +144,8 @@
       "edit": "تعديل",
       "delete": "حذف",
       "update": "حفظ",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "exportPdf": "حفظ كـ PDF"
     },
     "errors": {
       "loginRequired": "يرجى تسجيل الدخول لرؤية قائمة التسوق الخاصة بك.",
@@ -335,7 +337,21 @@
   "notifications": {
     "languageChanged": "واجهة المستخدم الآن باللغة العربية.",
     "recipeExported": "تم تصدير الوصفة.",
-    "recipeImported": "تم استيراد الوصفة بنجاح."
+    "recipeImported": "تم استيراد الوصفة بنجاح.",
+    "shoppingListPdfReady": "يتم تحضير قائمة التسوق للطباعة.",
+    "pantryPdfReady": "يتم تحضير المخزون للطباعة.",
+    "pdfEmptyList": "لا توجد عناصر لإنشاء PDF."
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "تاريخ الإنشاء",
+    "openSection": "لا يزال للشراء",
+    "doneSection": "تم",
+    "quantityHeader": "الكمية",
+    "unitHeader": "الوحدة",
+    "emptyList": "لا توجد عناصر.",
+    "shoppingListTitle": "قائمة التسوق",
+    "pantryTitle": "المخزون"
   },
   "restaurants": {
     "actions": {
@@ -430,7 +446,8 @@
       "addAllToShoppingList": "????? ?? ???????? ??? ????? ??????",
       "addOne": "+ ?????",
       "addToMealPlan": "إضافة إلى خطة الوجبات",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "export": "تصدير"
     },
     "meta": {
       "calories": "{calories} ????",

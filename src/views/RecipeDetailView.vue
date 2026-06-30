@@ -9,6 +9,8 @@ import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { displayCategory } from '@/shared/recipeDisplay'
+import { exportRecipe } from '@/shared/recipeImportExport'
+import { useToastStore } from '@/stores/toastStore'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
@@ -49,6 +51,7 @@ type DetailRecipe = {
 const route = useRoute()
 const router = useRouter()
 const { t, locale } = useI18n()
+const toastStore = useToastStore()
 
 const recipe = ref<DetailRecipe | null>(null)
 const loading = ref(true)
@@ -307,6 +310,36 @@ async function deleteOwnRecipe() {
       ? e.message
       : t('recipes.errors.delete')
   }
+}
+
+function exportCurrentRecipe() {
+  const r = recipe.value
+  if (!r) return
+
+  const ingredientsStr = r.ingredients
+    .map(i => i.original || i.name)
+    .filter(Boolean)
+    .join(', ')
+
+  const instructionsStr = r.steps.length > 0
+    ? r.steps.map((step, i) => `${i + 1}. ${step}`).join('\n')
+    : r.instructions
+
+  exportRecipe({
+    title: r.title,
+    ingredients: ingredientsStr,
+    instructions: instructionsStr,
+    prepTimeMinutes: 0,
+    cookTimeMinutes: r.readyInMinutes,
+    servings: r.servings,
+    difficulty: '',
+    category: r.tags[0] ?? '',
+    imageUrl: r.imageUrl,
+    language: String(locale.value).split('-')[0] || 'de',
+    calories: r.calories ?? null,
+  })
+
+  toastStore.addToast(t('notifications.recipeExported'), 'success')
 }
 
 async function addIngredientToShoppingList(ingredient: DetailIngredient) {
@@ -678,6 +711,13 @@ function formatDate(date: Date) {
             @click="deleteOwnRecipe"
           >
             {{ t('recipes.actions.delete') }}
+          </button>
+          <button
+            type="button"
+            class="secondary-button"
+            @click="exportCurrentRecipe"
+          >
+            {{ t('recipeDetail.actions.export') }}
           </button>
         </div>
 

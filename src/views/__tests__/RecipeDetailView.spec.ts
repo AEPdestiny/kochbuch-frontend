@@ -1,5 +1,6 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import RecipeDetailView from '@/views/RecipeDetailView.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { restaurantApi } from '@/shared/api/restaurantApi'
@@ -7,6 +8,7 @@ import { favoriteApi } from '@/shared/api/favoriteApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { exportRecipe } from '@/shared/recipeImportExport'
 import { i18n, setLocale } from '@/i18n'
 
 const back = vi.fn()
@@ -62,13 +64,19 @@ vi.mock('@/shared/api/shoppingListApi', () => ({
   },
 }))
 
+vi.mock('@/shared/recipeImportExport', () => ({
+  exportRecipe: vi.fn(),
+}))
+
 describe('RecipeDetailView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     routeName = 'external-recipe-detail'
     sessionStorage.clear()
     setLocale('de')
-    config.global.plugins = [i18n]
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue(externalDetail())
     vi.mocked(recipeApi.getRecipe).mockResolvedValue(localRecipe())
     vi.mocked(recipeApi.deleteRecipe).mockResolvedValue()
@@ -530,6 +538,78 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.back-button').trigger('click')
 
     expect(push).toHaveBeenCalledWith('/')
+  })
+
+  // ─── Export button tests ──────────────────────────────────────────────────
+
+  it('shows an export button on the recipe detail page', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const buttons = wrapper.findAll('button')
+    const exportBtn = buttons.find(b => b.text().includes('Exportieren'))
+    expect(exportBtn).toBeTruthy()
+  })
+
+  it('clicking export button calls exportRecipe for an external recipe', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const exportBtn = wrapper.findAll('button').find(b => b.text().includes('Exportieren'))
+    await exportBtn!.trigger('click')
+
+    expect(exportRecipe).toHaveBeenCalledTimes(1)
+    const arg = vi.mocked(exportRecipe).mock.calls[0]![0]
+    expect(arg.title).toBe('Pasta with Garlic')
+    expect(arg.calories).toBe(510)
+    expect(typeof (arg as { ingredients: string }).ingredients).toBe('string')
+    expect((arg as { ingredients: string }).ingredients).toContain('pasta')
+  })
+
+  it('export does not include internal id', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const exportBtn = wrapper.findAll('button').find(b => b.text().includes('Exportieren'))
+    await exportBtn!.trigger('click')
+
+    const arg = vi.mocked(exportRecipe).mock.calls[0]![0]
+    expect(arg).not.toHaveProperty('id')
+    expect(arg).not.toHaveProperty('externalId')
+  })
+
+  it('export works for a local Dishly recipe', async () => {
+    routeName = 'recipe-detail'
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const exportBtn = wrapper.findAll('button').find(b => b.text().includes('Exportieren'))
+    await exportBtn!.trigger('click')
+
+    expect(exportRecipe).toHaveBeenCalledTimes(1)
+    const arg = vi.mocked(exportRecipe).mock.calls[0]![0]
+    expect(arg.title).toBe('Dishly Pasta')
+  })
+
+  it('export handles recipe with missing optional fields gracefully', async () => {
+    vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue({
+      ...externalDetail(),
+      calories: undefined,
+      protein: undefined,
+      tags: [],
+      ingredients: [],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const exportBtn = wrapper.findAll('button').find(b => b.text().includes('Exportieren'))
+    await exportBtn!.trigger('click')
+
+    expect(exportRecipe).toHaveBeenCalledTimes(1)
+    const arg = vi.mocked(exportRecipe).mock.calls[0]![0]
+    expect(arg.title).toBe('Pasta with Garlic')
+    expect(arg.calories).toBeNull()
+    expect(typeof (arg as { ingredients: string }).ingredients).toBe('string')
   })
 })
 

@@ -71,7 +71,8 @@
       "edit": "編集",
       "delete": "削除",
       "update": "保存",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "exportPdf": "PDFとして保存"
     },
     "errors": {
       "loginRequired": "在庫を見るにはログインしてください。",
@@ -143,7 +144,8 @@
       "edit": "編集",
       "delete": "削除",
       "update": "保存",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "exportPdf": "PDFとして保存"
     },
     "errors": {
       "loginRequired": "買い物リストを見るにはログインしてください。",
@@ -335,7 +337,21 @@
   "notifications": {
     "languageChanged": "インターフェースが日本語になりました。",
     "recipeExported": "レシピをエクスポートしました。",
-    "recipeImported": "レシピを正常にインポートしました。"
+    "recipeImported": "レシピを正常にインポートしました。",
+    "shoppingListPdfReady": "買い物リストを印刷用に準備しています。",
+    "pantryPdfReady": "在庫を印刷用に準備しています。",
+    "pdfEmptyList": "PDF用のアイテムがありません。"
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "作成日",
+    "openSection": "購入予定",
+    "doneSection": "完了",
+    "quantityHeader": "数量",
+    "unitHeader": "単位",
+    "emptyList": "アイテムがありません。",
+    "shoppingListTitle": "買い物リスト",
+    "pantryTitle": "在庫"
   },
   "restaurants": {
     "actions": {
@@ -430,7 +446,8 @@
       "addAllToShoppingList": "????????????????",
       "addOne": "+ ??",
       "addToMealPlan": "週間プランに追加",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "export": "エクスポート"
     },
     "meta": {
       "calories": "{calories} kcal",

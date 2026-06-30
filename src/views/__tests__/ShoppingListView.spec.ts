@@ -1,8 +1,10 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import ShoppingListView from '@/views/ShoppingListView.vue'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
+import { printShoppingList } from '@/shared/printExport'
 import { i18n, setLocale } from '@/i18n'
 import type { ShoppingListItemResponse } from '@/types/shoppingList'
 
@@ -15,12 +17,19 @@ vi.mock('@/shared/api/shoppingListApi', () => ({
   },
 }))
 
+vi.mock('@/shared/printExport', () => ({
+  printShoppingList: vi.fn(),
+  printPantry: vi.fn(),
+}))
+
 describe('ShoppingListView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     sessionStorage.clear()
     setLocale('de')
-    config.global.plugins = [i18n]
+    const pinia = createPinia()
+    setActivePinia(pinia)
+    config.global.plugins = [i18n, pinia]
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
   })
 
@@ -600,6 +609,89 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية قائمة التسوق الخاصة بك.')
     expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
+  })
+
+  // ─── PDF export tests ─────────────────────────────────────────────────────
+
+  it('shows the PDF export button when items are loaded', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomaten', 2, 'kg', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))
+    expect(pdfBtn).toBeTruthy()
+  })
+
+  it('calls printShoppingList with all items when PDF button is clicked', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomaten', 2, 'kg', '', false),
+      item('Milch', 1, 'l', '', true),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+    await pdfBtn.trigger('click')
+
+    expect(printShoppingList).toHaveBeenCalledTimes(1)
+    const [items] = vi.mocked(printShoppingList).mock.calls[0]!
+    expect(items).toHaveLength(2)
+    expect(items.some(i => i.name === 'Tomaten' && !i.checked)).toBe(true)
+    expect(items.some(i => i.name === 'Milch' && i.checked)).toBe(true)
+  })
+
+  it('open and done items are correctly flagged in the PDF call', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Brot', 0, '', '', false),
+      item('Käse', 200, 'g', '', true),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+    await pdfBtn.trigger('click')
+
+    const [items] = vi.mocked(printShoppingList).mock.calls[0]!
+    const open = items.filter(i => !i.checked)
+    const done = items.filter(i => i.checked)
+    expect(open).toHaveLength(1)
+    expect(done).toHaveLength(1)
+    expect(open[0]!.name).toBe('Brot')
+    expect(done[0]!.name).toBe('Käse')
+  })
+
+  it('shows PDF button even when shopping list is empty', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))
+    expect(pdfBtn).toBeTruthy()
+  })
+
+  it('clicking PDF button with empty list calls printShoppingList with empty array', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))!
+    await pdfBtn.trigger('click')
+
+    expect(printShoppingList).toHaveBeenCalledTimes(1)
+    const [items] = vi.mocked(printShoppingList).mock.calls[0]!
+    expect(items).toHaveLength(0)
   })
 })
 

@@ -7,6 +7,7 @@ import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType, type Result } from '@zxing/library'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { pantryApi } from '@/shared/api/pantryApi'
+import { printPantry } from '@/shared/printExport'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import SuggestInput from '@/components/SuggestInput.vue'
@@ -434,6 +435,27 @@ async function findRecipesWithPantryItems() {
 function openRecipe(match: ExternalRecipeMatchResponse) {
   router.push(`/recipe/external/${match.externalId ?? match.id}`)
 }
+
+function exportPantryAsPdf() {
+  if (items.value.length === 0) {
+    toastStore.addToast(t('notifications.pdfEmptyList'), 'error')
+    return
+  }
+  const now = new Date()
+  const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  printPantry(
+    items.value.map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit })),
+    {
+      appTitle: t('print.appTitle'),
+      listTitle: t('print.pantryTitle'),
+      createdAt: `${t('print.createdAt')}: ${dateStr}`,
+      quantityHeader: t('print.quantityHeader'),
+      unitHeader: t('print.unitHeader'),
+      emptyMessage: t('print.emptyList'),
+    },
+  )
+  toastStore.addToast(t('notifications.pantryPdfReady'), 'success')
+}
 </script>
 
 <template>
@@ -505,6 +527,14 @@ function openRecipe(match: ExternalRecipeMatchResponse) {
             {{ recipeMatchLoading ? t('pantry.recipeSearch.loading') : t('pantry.recipeSearch.action') }}
           </button>
           <p v-if="recipeMatchError" class="form-error">{{ recipeMatchError }}</p>
+        </div>
+
+        <div class="tool-card">
+          <h2>{{ t('print.pantryTitle') }}</h2>
+          <p>{{ t('pantry.actions.exportPdf') }}</p>
+          <button type="button" class="submit-btn" @click="exportPantryAsPdf">
+            {{ t('pantry.actions.exportPdf') }}
+          </button>
         </div>
       </section>
 

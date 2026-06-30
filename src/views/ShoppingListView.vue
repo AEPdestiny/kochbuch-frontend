@@ -3,11 +3,14 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import { printShoppingList } from '@/shared/printExport'
+import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import SuggestInput from '@/components/SuggestInput.vue'
 import type { ShoppingListItem, ShoppingListItemRequest } from '@/types/shoppingList'
 
 const { t } = useI18n()
+const toastStore = useToastStore()
 
 const items = ref<ShoppingListItem[]>([])
 const loading = ref(true)
@@ -426,6 +429,25 @@ function formatRawQuantity(item: ShoppingListItem) {
   }
   return unit || 'ohne Mengenangabe'
 }
+
+function exportShoppingListAsPdf() {
+  const now = new Date()
+  const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  printShoppingList(
+    items.value.map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit, checked: i.checked })),
+    {
+      appTitle: t('print.appTitle'),
+      listTitle: t('print.shoppingListTitle'),
+      createdAt: `${t('print.createdAt')}: ${dateStr}`,
+      openSection: t('print.openSection'),
+      doneSection: t('print.doneSection'),
+      quantityHeader: t('print.quantityHeader'),
+      unitHeader: t('print.unitHeader'),
+      emptyMessage: t('print.emptyList'),
+    },
+  )
+  toastStore.addToast(t('notifications.shoppingListPdfReady'), 'success')
+}
 </script>
 
 <template>
@@ -464,6 +486,10 @@ function formatRawQuantity(item: ShoppingListItem) {
 
       <p v-if="formError" class="form-error">{{ formError }}</p>
       <p v-if="actionMessage" class="form-success">{{ actionMessage }}</p>
+
+      <div class="shopping-actions-bar">
+        <button type="button" class="pdf-btn" @click="exportShoppingListAsPdf">{{ t('shoppingList.actions.exportPdf') }}</button>
+      </div>
 
       <p v-if="items.length === 0" class="status-text">
         {{ t('shoppingList.empty') }}
@@ -699,6 +725,25 @@ function formatRawQuantity(item: ShoppingListItem) {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.shopping-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.pdf-btn {
+  border: 1px solid #c3e7e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #2f6f62;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
 }
 
 .bulk-btn {

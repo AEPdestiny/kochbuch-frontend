@@ -71,7 +71,8 @@
       "edit": "Düzenle",
       "delete": "Sil",
       "update": "Kaydet",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "exportPdf": "PDF olarak kaydet"
     },
     "errors": {
       "loginRequired": "Kilerini görmek için lütfen giriş yap.",
@@ -143,7 +144,8 @@
       "edit": "Düzenle",
       "delete": "Sil",
       "update": "Kaydet",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "exportPdf": "PDF olarak kaydet"
     },
     "errors": {
       "loginRequired": "Alışveriş listeni görmek için lütfen giriş yap.",
@@ -335,7 +337,21 @@
   "notifications": {
     "languageChanged": "Arayüz artık Türkçe.",
     "recipeExported": "Tarif dışa aktarıldı.",
-    "recipeImported": "Tarif başarıyla içe aktarıldı."
+    "recipeImported": "Tarif başarıyla içe aktarıldı.",
+    "shoppingListPdfReady": "Alışveriş listesi yazdırma için hazırlanıyor.",
+    "pantryPdfReady": "Kiler yazdırma için hazırlanıyor.",
+    "pdfEmptyList": "PDF için kayıt bulunamadı."
+  },
+  "print": {
+    "appTitle": "Dishly",
+    "createdAt": "Oluşturma tarihi",
+    "openSection": "Alınacaklar",
+    "doneSection": "Tamamlandı",
+    "quantityHeader": "Miktar",
+    "unitHeader": "Birim",
+    "emptyList": "Kayıt bulunamadı.",
+    "shoppingListTitle": "Alışveriş Listesi",
+    "pantryTitle": "Kiler"
   },
   "restaurants": {
     "actions": {
@@ -424,7 +440,8 @@
       "addAllToShoppingList": "T?m malzemeleri al??veri? listesine ekle",
       "addOne": "+ Ekle",
       "addToMealPlan": "Haftalık plana ekle",
-      "cancel": "İptal"
+      "cancel": "İptal",
+      "export": "Dışa aktar"
     },
     "meta": {
       "calories": "{calories} kcal",
