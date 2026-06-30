@@ -30,6 +30,8 @@ export type MealPlanWeekResponse = {
   weekStart: string
   weekEnd: string
   entries: MealPlanEntryResponse[]
+  caloriesByDate?: Record<string, number> | null
+  totalCalories?: number | null
 }
 
 export type MealPlanMoveRequest = {

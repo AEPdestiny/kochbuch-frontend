@@ -442,7 +442,9 @@
       "recipe": "Rezept",
       "chooseRecipe": "Rezept auswählen",
       "targetDay": "Neuer Tag",
-      "targetSlot": "Neuer Slot"
+      "targetSlot": "Neuer Slot",
+      "calories": "Kalorien / kcal (optional)",
+      "caloriesPlaceholder": "z. B. 650"
     },
     "empty": {
       "day": "Noch kein Rezept geplant.",

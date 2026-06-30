@@ -280,6 +280,131 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Sushi frei')
   })
 
+  it('shows a kcal input for freetext slots and sends caloriesSnapshot when filled', async () => {
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 10,
+      plannedDate: '2026-06-02',
+      mealSlot: 'breakfast',
+      recipe: null,
+      customTitle: 'Pasta',
+      caloriesSnapshot: 520,
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Dienstag'))!
+
+    // kcal input is visible for freetext (no recipe selected)
+    const caloriesInput = tuesdayCard.find('input[type="number"]')
+    expect(caloriesInput.exists()).toBe(true)
+    expect(caloriesInput.attributes('min')).toBe('0')
+
+    await tuesdayCard.find('input[type="text"]').setValue('Pasta')
+    await caloriesInput.setValue(520)
+    await tuesdayCard.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', expect.objectContaining({
+      customTitle: 'Pasta',
+      caloriesSnapshot: 520,
+    }))
+  })
+
+  it('sends caloriesSnapshot null when kcal field is left empty', async () => {
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 11, plannedDate: '2026-06-02', mealSlot: 'breakfast', recipe: null, customTitle: 'Pizza',
+    })
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card').find(c => c.text().includes('Dienstag'))!
+    await tuesdayCard.find('input[type="text"]').setValue('Pizza')
+    // kcal field left empty — do NOT fill the number input
+    await tuesdayCard.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', expect.objectContaining({
+      customTitle: 'Pizza',
+      caloriesSnapshot: null,
+    }))
+  })
+
+  it('loads existing caloriesSnapshot into the kcal input when editing a freetext entry', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        {
+          id: 99, plannedDate: '2026-06-02', mealSlot: 'breakfast',
+          recipe: null, customTitle: 'Salat', caloriesSnapshot: 180,
+        },
+      ],
+    })
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card').find(c => c.text().includes('Dienstag'))!
+    // Click Bearbeiten to open edit form
+    await tuesdayCard.find('.secondary-button').trigger('click')
+    await flushPromises()
+
+    const caloriesInput = tuesdayCard.find('input[type="number"]')
+    expect(caloriesInput.exists()).toBe(true)
+    expect((caloriesInput.element as HTMLInputElement).value).toBe('180')
+  })
+
+  it('sends caloriesSnapshot null when editing a freetext entry and clearing kcal', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        {
+          id: 99, plannedDate: '2026-06-02', mealSlot: 'breakfast',
+          recipe: null, customTitle: 'Salat', caloriesSnapshot: 180,
+        },
+      ],
+    })
+    vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
+      id: 99, plannedDate: '2026-06-02', mealSlot: 'breakfast',
+      recipe: null, customTitle: 'Salat', caloriesSnapshot: null,
+    })
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card').find(c => c.text().includes('Dienstag'))!
+    await tuesdayCard.find('.secondary-button').trigger('click')
+    await flushPromises()
+
+    await tuesdayCard.find('input[type="number"]').setValue('')
+    await tuesdayCard.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', expect.objectContaining({
+      customTitle: 'Salat',
+      caloriesSnapshot: null,
+    }))
+  })
+
+  it('shows kcal in the planned slot display for freetext entries with caloriesSnapshot', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        {
+          id: 99, plannedDate: '2026-06-02', mealSlot: 'breakfast',
+          recipe: null, customTitle: 'Lasagne', caloriesSnapshot: 650,
+        },
+      ],
+    })
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    const tuesdayCard = wrapper.findAll('.day-card').find(c => c.text().includes('Dienstag'))!
+    expect(tuesdayCard.text()).toContain('650 kcal')
+  })
+
   it('sets custom titles for breakfast, lunch, dinner and snack', async () => {
     vi.mocked(mealPlanApi.setSlot).mockImplementation(async (date, slot, payload) => ({
       id: `${date}-${slot}`,

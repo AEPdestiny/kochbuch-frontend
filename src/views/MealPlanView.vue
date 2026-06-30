@@ -58,6 +58,7 @@ const planningMode = ref<'manual' | 'swipe'>('manual')
 const selectedRecipeBySlot = ref<Record<string, string>>({})
 const customTitleBySlot = ref<Record<string, string>>({})
 const customSnapshotBySlot = ref<Record<string, Partial<MealPlanEntryResponse>>>({})
+const customCaloriesBySlot = ref<Record<string, number | null>>({})
 const suggestionsBySlot = ref<Record<string, SlotSuggestion[]>>({})
 const suggestionLoadingBySlot = ref<Record<string, boolean>>({})
 const suggestionNoticeBySlot = ref<Record<string, string>>({})
@@ -204,6 +205,11 @@ async function loadPreferences() {
   }
 }
 
+function slotCaloriesToSend(key: string): number | null {
+  const v = customCaloriesBySlot.value[key]
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : null
+}
+
 async function saveDay(date: string, slot: MealSlot = 'dinner') {
   const key = slotKey(date, slot)
   const recipeId = selectedRecipeBySlot.value[key]
@@ -220,7 +226,7 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
       ? await mealPlanApi.setSlot(date, slot, Number(recipeId))
       : await mealPlanApi.setSlot(date, slot, {
         customTitle,
-        caloriesSnapshot: customSnapshotBySlot.value[key]?.caloriesSnapshot ?? null,
+        caloriesSnapshot: slotCaloriesToSend(key),
         proteinSnapshot: customSnapshotBySlot.value[key]?.proteinSnapshot ?? null,
         imageUrlSnapshot: customSnapshotBySlot.value[key]?.imageUrlSnapshot ?? null,
         externalRecipeId: customSnapshotBySlot.value[key]?.externalRecipeId ?? null,
@@ -254,6 +260,7 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
     selectedRecipeBySlot.value[slotKey(date, slot)] = ''
     customTitleBySlot.value[slotKey(date, slot)] = ''
     customSnapshotBySlot.value[slotKey(date, slot)] = {}
+    customCaloriesBySlot.value[slotKey(date, slot)] = null
     if (editingSlotKey.value === slotKey(date, slot)) {
       editingSlotKey.value = null
     }
@@ -287,6 +294,7 @@ async function clearWeek() {
     selectedRecipeBySlot.value = {}
     customTitleBySlot.value = {}
     customSnapshotBySlot.value = {}
+    customCaloriesBySlot.value = {}
     suggestionsBySlot.value = {}
     suggestionNoticeBySlot.value = {}
     editingSlotKey.value = null
@@ -365,6 +373,7 @@ function cancelEditSlot(date: string, slot: MealSlot) {
     selectedRecipeBySlot.value[key] = ''
     customTitleBySlot.value[key] = ''
     customSnapshotBySlot.value[key] = {}
+    customCaloriesBySlot.value[key] = null
   }
   suggestionsBySlot.value[key] = []
   suggestionNoticeBySlot.value[key] = ''
@@ -439,6 +448,7 @@ function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
   selectedRecipeBySlot.value = {}
   customTitleBySlot.value = {}
   customSnapshotBySlot.value = {}
+  customCaloriesBySlot.value = {}
   entries.forEach(syncSlotState)
 }
 
@@ -473,6 +483,10 @@ function syncSlotState(entry: MealPlanEntryResponse) {
     externalRecipeId: entry.externalRecipeId ?? entry.recipe?.externalId ?? null,
     externalSource: entry.externalSource ?? entry.recipe?.source ?? null,
   }
+  // Populate the user-facing kcal field only for freetext entries (no recipe)
+  customCaloriesBySlot.value[key] = !entry.recipe
+    ? (entry.caloriesSnapshot ?? null)
+    : null
 }
 
 function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
@@ -556,10 +570,12 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
   if (suggestion.planAsRecipe) {
     selectedRecipeBySlot.value[key] = String(suggestion.id)
     customSnapshotBySlot.value[key] = {}
+    customCaloriesBySlot.value[key] = null
     suggestionNoticeBySlot.value[key] = ''
     return
   }
   selectedRecipeBySlot.value[key] = ''
+  customCaloriesBySlot.value[key] = suggestion.calories ?? null
   customSnapshotBySlot.value[key] = {
     caloriesSnapshot: suggestion.calories ?? null,
     proteinSnapshot: suggestion.protein ?? null,
@@ -1073,6 +1089,18 @@ function formatDate(date: Date) {
                 type="text"
                 placeholder="z. B. Sushi"
                 @input="onSlotSearch(day.date, slot.key)"
+              />
+            </label>
+            <label
+              v-if="!selectedRecipeBySlot[slotKey(day.date, slot.key)]"
+              class="recipe-select slot-calories-input"
+            >
+              <span>{{ t('mealPlan.form.calories') }}</span>
+              <input
+                v-model.number="customCaloriesBySlot[slotKey(day.date, slot.key)]"
+                type="number"
+                min="0"
+                :placeholder="t('mealPlan.form.caloriesPlaceholder')"
               />
             </label>
             <p v-if="suggestionLoadingBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
