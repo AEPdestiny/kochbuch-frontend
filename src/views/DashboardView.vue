@@ -293,7 +293,6 @@ async function loadProfile() {
             {{ t('dashboard.previewShown', { shown: 3, total: recipes.length }) }}
           </p>
           <p v-else-if="!recipes.length" class="card-empty">{{ t('dashboard.recipesEmpty') }}</p>
-          <RouterLink to="/recipes/new" class="card-btn-secondary mt-sm">{{ t('dashboard.recipesCreate') }}</RouterLink>
         </template>
       </article>
 
@@ -326,7 +325,6 @@ async function loadProfile() {
         <RouterLink to="/shopping-list" class="quick-link">{{ t('navigation.shoppingList') }}</RouterLink>
         <RouterLink to="/my-recipes" class="quick-link">{{ t('navigation.myRecipes') }}</RouterLink>
         <RouterLink to="/pantry" class="quick-link">{{ t('navigation.pantry') }}</RouterLink>
-        <RouterLink to="/recipes/new" class="quick-link">{{ t('dashboard.recipesCreate') }}</RouterLink>
       </div>
     </section>
 

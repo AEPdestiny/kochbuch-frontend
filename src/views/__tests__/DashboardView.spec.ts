@@ -298,7 +298,13 @@ describe('DashboardView', () => {
     expect(hrefs).toContain('/pantry')
     expect(hrefs).toContain('/my-recipes')
     expect(hrefs).toContain('/profile')
-    expect(hrefs).toContain('/recipes/new')
+  })
+
+  it('does not link to /recipes/new in the dashboard', async () => {
+    const wrapper = mountDashboard()
+    await flushPromises()
+    const hrefs = wrapper.findAll('a').map(a => a.attributes('href'))
+    expect(hrefs).not.toContain('/recipes/new')
   })
 
   // ── English locale ────────────────────────────────────────────────────────
