@@ -56,8 +56,6 @@ const toastStore = useToastStore()
 const recipe = ref<DetailRecipe | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
-const shoppingMessage = ref<string | null>(null)
-const shoppingError = ref<string | null>(null)
 const restaurantLoading = ref(false)
 const restaurantError = ref<string | null>(null)
 const restaurants = ref<RestaurantResponse[]>([])
@@ -294,7 +292,7 @@ function goBack() {
 
 function editOwnRecipe() {
   if (!recipe.value?.ownedByCurrentUser) return
-  router.push({ path: '/my-recipes', query: { edit: String(recipe.value.id) } })
+  router.push(`/my-recipes/${recipe.value.id}/edit`)
 }
 
 async function deleteOwnRecipe() {
@@ -345,26 +343,22 @@ function exportCurrentRecipe() {
 async function addIngredientToShoppingList(ingredient: DetailIngredient) {
   if (!recipe.value) return
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    shoppingError.value = t('recipeDetail.errors.loginRequiredShopping')
-    shoppingMessage.value = null
+    toastStore.addToast(t('recipeDetail.errors.loginRequiredShopping'), 'error')
     return
   }
 
   try {
     await shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient))
-    shoppingMessage.value = t('recipeDetail.shopping.addedOne')
-    shoppingError.value = null
+    toastStore.addToast(t('recipeDetail.shopping.addedOne'), 'success')
   } catch {
-    shoppingMessage.value = null
-    shoppingError.value = t('recipeDetail.errors.shopping')
+    toastStore.addToast(t('recipeDetail.errors.shopping'), 'error')
   }
 }
 
 async function addAllIngredientsToShoppingList() {
   if (!recipe.value) return
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
-    shoppingError.value = t('recipeDetail.errors.loginRequiredShopping')
-    shoppingMessage.value = null
+    toastStore.addToast(t('recipeDetail.errors.loginRequiredShopping'), 'error')
     return
   }
 
@@ -372,11 +366,9 @@ async function addAllIngredientsToShoppingList() {
     await Promise.all(recipe.value.ingredients.map(ingredient =>
       shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient)),
     ))
-    shoppingMessage.value = t('recipeDetail.shopping.addedAll')
-    shoppingError.value = null
+    toastStore.addToast(t('recipeDetail.shopping.addedAll'), 'success')
   } catch {
-    shoppingMessage.value = null
-    shoppingError.value = t('recipeDetail.errors.shopping')
+    toastStore.addToast(t('recipeDetail.errors.shopping'), 'error')
   }
 }
 
@@ -721,8 +713,6 @@ function formatDate(date: Date) {
           </button>
         </div>
 
-        <p v-if="shoppingMessage" class="status-text success">{{ shoppingMessage }}</p>
-        <p v-if="shoppingError" class="status-text error">{{ shoppingError }}</p>
         <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
         <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
         <p v-if="favoriteError" class="status-text error">{{ favoriteError }}</p>

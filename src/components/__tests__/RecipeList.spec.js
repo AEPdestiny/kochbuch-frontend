@@ -1,4 +1,5 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import RecipeList from '@/components/RecipeList.vue'
@@ -493,12 +494,9 @@ describe('RecipeList.vue', () => {
     const wrapper = mount(RecipeList)
     await flushPromises()
 
-    // Edit-Button des ersten Rezepts anklicken, um Edit-Panel zu öffnen
-    const editButton = wrapper
-      .findAll('button.link-btn')
-      .find(button => button.text().includes('Bearbeiten'))
-    expect(editButton).toBeDefined()
-    await editButton.trigger('click')
+    // Edit-Panel programmatisch öffnen (Bearbeiten-Button navigiert jetzt zur Edit-Route)
+    wrapper.vm.startEdit(initial[0])
+    await nextTick()
 
     // Update-Request liefert das aktualisierte Rezept zurück
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({
@@ -531,18 +529,17 @@ describe('RecipeList.vue', () => {
 
   it('loads existing calories into the kcal field when editing', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
-      {
-        id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
-        difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
-        favorite: false, published: false, calories: 320,
-      },
-    ])
+    const soupRecipe = {
+      id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0,
+      difficulty: '', category: '', rating: 0, ingredients: 'x', instructions: 'y',
+      favorite: false, published: false, calories: 320,
+    }
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([soupRecipe])
 
     const wrapper = mount(RecipeList)
     await flushPromises()
-    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
-    await editButton.trigger('click')
+    wrapper.vm.startEdit(soupRecipe)
+    await nextTick()
 
     const caloriesInput = wrapper.find('.edit-panel input[placeholder="z. B. 450"]')
     expect(caloriesInput.exists()).toBe(true)
@@ -562,8 +559,8 @@ describe('RecipeList.vue', () => {
 
     const wrapper = mount(RecipeList)
     await flushPromises()
-    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
-    await editButton.trigger('click')
+    wrapper.vm.startEdit(initial[0])
+    await nextTick()
 
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...initial[0], calories: 500 })
 
@@ -590,8 +587,8 @@ describe('RecipeList.vue', () => {
 
     const wrapper = mount(RecipeList)
     await flushPromises()
-    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
-    await editButton.trigger('click')
+    wrapper.vm.startEdit(initial[0])
+    await nextTick()
 
     vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...initial[0], calories: null })
 
@@ -607,14 +604,13 @@ describe('RecipeList.vue', () => {
 
   it('does not show a rating input field in the edit panel', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
-      { id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0, difficulty: '', category: '', rating: 4, ingredients: 'x', instructions: 'y', favorite: false, published: false },
-    ])
+    const ratingRecipe = { id: 1, title: 'Soup', imageUrl: '', prepTimeMinutes: 0, cookTimeMinutes: 0, servings: 0, difficulty: '', category: '', rating: 4, ingredients: 'x', instructions: 'y', favorite: false, published: false }
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([ratingRecipe])
 
     const wrapper = mount(RecipeList)
     await flushPromises()
-    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
-    await editButton.trigger('click')
+    wrapper.vm.startEdit(ratingRecipe)
+    await nextTick()
 
     expect(wrapper.find('.edit-panel input[min="0"][max="5"]').exists()).toBe(false)
   })
@@ -643,8 +639,8 @@ describe('RecipeList.vue', () => {
     const wrapper = mount(RecipeList)
     await flushPromises()
 
-    const editButton = wrapper.findAll('button.link-btn').find(b => b.text().includes('Bearbeiten'))
-    await editButton.trigger('click')
+    wrapper.vm.startEdit(initial[0])
+    await nextTick()
 
     const rows = wrapper.findAll('.edit-panel .ingredient-row')
     expect(rows).toHaveLength(2)
@@ -763,11 +759,8 @@ describe('RecipeList.vue', () => {
     await flushPromises()
     sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
 
-    const editButton = wrapper
-      .findAll('button.link-btn')
-      .find(button => button.text().includes('Bearbeiten'))
-    expect(editButton).toBeDefined()
-    await editButton.trigger('click')
+    wrapper.vm.startEdit(initial[0])
+    await nextTick()
     const titleInput = wrapper.find('.edit-panel input[type="text"]')
     await titleInput.setValue('Updated Title')
 

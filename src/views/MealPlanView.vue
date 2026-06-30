@@ -8,6 +8,7 @@ import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { displayCategory } from '@/shared/recipeDisplay'
+import { printMealPlan } from '@/shared/printExport'
 import type {
   MealPlanEntryResponse,
   MealPlanShoppingListItem,
@@ -472,6 +473,47 @@ function entryTitle(entry: MealPlanEntryResponse) {
   return entry.recipe?.title ?? entry.customTitle ?? ''
 }
 
+function exportMealPlanAsPdf() {
+  const now = new Date()
+  const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  const weekRange = week.value
+    ? `${week.value.weekStart} – ${week.value.weekEnd}`
+    : ''
+
+  const days = weekDays.value.map(day => {
+    const dayEntries = (week.value?.entries ?? []).filter(e => e.plannedDate === day.date)
+    const slots = dayEntries.map(entry => ({
+      slotLabel: t(`mealPlan.slots.${normalizedSlot(entry)}`),
+      title: entryTitle(entry),
+      calories: entryCalories(entry) || null,
+    }))
+    const dayCalories = caloriesForDay(day.date)
+    return {
+      label: t(day.labelKey),
+      date: day.date,
+      slots,
+      totalCalories: dayCalories > 0 ? dayCalories : null,
+    }
+  })
+
+  const totalCalories = week.value?.totalCalories ?? null
+
+  toastStore.addToast(t('notifications.mealPlanPdfReady'), 'success')
+
+  setTimeout(() => {
+    printMealPlan(days, totalCalories, {
+      appTitle: t('print.appTitle'),
+      listTitle: t('print.mealPlanTitle'),
+      createdAt: `${t('print.createdAt')}: ${dateStr}`,
+      weekRange,
+      totalCalories: t('print.totalCalories'),
+      emptyMessage: t('print.emptyList'),
+      kcalUnit: 'kcal',
+    })
+  }, 80)
+}
+
 function syncSlotState(entry: MealPlanEntryResponse) {
   const key = slotKey(entry.plannedDate, normalizedSlot(entry))
   selectedRecipeBySlot.value[key] = entry.recipe ? String(entry.recipe.id) : ''
@@ -851,6 +893,9 @@ function formatDate(date: Date) {
         </div>
         <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
           {{ t('mealPlan.actions.clearWeek') }}
+        </button>
+        <button type="button" class="secondary-button" @click="exportMealPlanAsPdf">
+          {{ t('mealPlan.actions.exportPdf') }}
         </button>
         <button
           type="button"

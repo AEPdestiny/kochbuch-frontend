@@ -48,6 +48,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/my-recipes/:id/edit',
+      name: 'edit-recipe',
+      component: () => import('../views/EditRecipeView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/pantry',
       name: 'pantry',
       component: () => import('../views/PantryView.vue'),

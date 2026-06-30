@@ -17,10 +17,14 @@ vi.mock('@/shared/api/shoppingListApi', () => ({
   },
 }))
 
-vi.mock('@/shared/printExport', () => ({
-  printShoppingList: vi.fn(),
-  printPantry: vi.fn(),
-}))
+vi.mock('@/shared/printExport', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/printExport')>()
+  return {
+    ...actual,
+    printShoppingList: vi.fn(),
+    printPantry: vi.fn(),
+  }
+})
 
 describe('ShoppingListView', () => {
   beforeEach(() => {

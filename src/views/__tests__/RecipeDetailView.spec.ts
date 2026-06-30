@@ -352,7 +352,7 @@ describe('RecipeDetailView', () => {
     expect(wrapper.find('.owner-delete-button').exists()).toBe(true)
 
     await wrapper.find('.owner-edit-button').trigger('click')
-    expect(push).toHaveBeenCalledWith({ path: '/my-recipes', query: { edit: '1' } })
+    expect(push).toHaveBeenCalledWith('/my-recipes/1/edit')
 
     await wrapper.find('.owner-delete-button').trigger('click')
     await flushPromises()

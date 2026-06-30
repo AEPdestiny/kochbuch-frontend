@@ -104,9 +104,20 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await action()
       token.value = response.accessToken
-      user.value = response.user
       sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, response.accessToken)
-      sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(response.user))
+      // Populate user from response; if backend omits it, fetch from /me so the
+      // router guard never needs to call loadCurrentUser() right after login.
+      user.value = response.user ?? null
+      if (user.value) {
+        sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user.value))
+      } else {
+        try {
+          user.value = await authApi.me()
+          sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user.value))
+        } catch {
+          // /me failed — router guard will retry and handle session expiry if needed
+        }
+      }
       clearSessionExpired()
       resetUnauthorizedHandling()
       return response

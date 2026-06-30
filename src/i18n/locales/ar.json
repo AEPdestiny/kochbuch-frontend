@@ -340,7 +340,8 @@
     "recipeImported": "تم استيراد الوصفة بنجاح.",
     "shoppingListPdfReady": "يتم تحضير قائمة التسوق للطباعة.",
     "pantryPdfReady": "يتم تحضير المخزون للطباعة.",
-    "pdfEmptyList": "لا توجد عناصر لإنشاء PDF."
+    "pdfEmptyList": "لا توجد عناصر لإنشاء PDF.",
+    "mealPlanPdfReady": "يتم تحضير خطة الوجبات للطباعة."
   },
   "print": {
     "appTitle": "Dishly",
@@ -351,7 +352,9 @@
     "unitHeader": "الوحدة",
     "emptyList": "لا توجد عناصر.",
     "shoppingListTitle": "قائمة التسوق",
-    "pantryTitle": "المخزون"
+    "pantryTitle": "المخزون",
+    "mealPlanTitle": "خطة الوجبات",
+    "totalCalories": "إجمالي السعرات"
   },
   "restaurants": {
     "actions": {
@@ -409,7 +412,8 @@
       "add": "إضافة وصفة",
       "remove": "إزالة",
       "save": "حفظ",
-      "clearWeek": "??? ???????"
+      "clearWeek": "??? ???????",
+      "exportPdf": "حفظ كـ PDF"
     },
     "errors": {
       "load": "تعذر تحميل خطة الوجبات.",

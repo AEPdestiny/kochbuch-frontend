@@ -340,7 +340,8 @@
     "recipeImported": "レシピを正常にインポートしました。",
     "shoppingListPdfReady": "買い物リストを印刷用に準備しています。",
     "pantryPdfReady": "在庫を印刷用に準備しています。",
-    "pdfEmptyList": "PDF用のアイテムがありません。"
+    "pdfEmptyList": "PDF用のアイテムがありません。",
+    "mealPlanPdfReady": "食事プランを印刷用に準備しています。"
   },
   "print": {
     "appTitle": "Dishly",
@@ -351,7 +352,9 @@
     "unitHeader": "単位",
     "emptyList": "アイテムがありません。",
     "shoppingListTitle": "買い物リスト",
-    "pantryTitle": "在庫"
+    "pantryTitle": "在庫",
+    "mealPlanTitle": "食事プラン",
+    "totalCalories": "総カロリー"
   },
   "restaurants": {
     "actions": {
@@ -409,7 +412,8 @@
       "add": "レシピを計画",
       "remove": "削除",
       "save": "保存",
-      "clearWeek": "週を空にする"
+      "clearWeek": "週を空にする",
+      "exportPdf": "PDFとして保存"
     },
     "errors": {
       "load": "週間プランを読み込めませんでした。",

@@ -443,6 +443,7 @@ function exportPantryAsPdf() {
   }
   const now = new Date()
   const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  toastStore.addToast(t('notifications.pantryPdfReady'), 'success')
   printPantry(
     items.value.map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit })),
     {
@@ -454,7 +455,6 @@ function exportPantryAsPdf() {
       emptyMessage: t('print.emptyList'),
     },
   )
-  toastStore.addToast(t('notifications.pantryPdfReady'), 'success')
 }
 </script>
 
@@ -768,16 +768,24 @@ function exportPantryAsPdf() {
 
 .barcode-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 10px;
+  align-items: center;
 }
 
 .barcode-row input {
   border: 1.5px solid #c3e7e1;
   border-radius: 10px;
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 0;
   font: inherit;
   padding: 8px 10px;
+}
+
+.barcode-row .submit-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .scanner-actions {

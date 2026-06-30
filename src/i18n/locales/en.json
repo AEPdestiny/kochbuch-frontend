@@ -407,6 +407,7 @@
     "recipeImported": "Recipe imported successfully.",
     "shoppingListPdfReady": "Shopping list is being prepared for printing.",
     "pantryPdfReady": "Pantry is being prepared for printing.",
+    "mealPlanPdfReady": "Meal plan is being prepared for printing.",
     "pdfEmptyList": "No items available for PDF."
   },
   "print": {
@@ -418,7 +419,9 @@
     "unitHeader": "Unit",
     "emptyList": "No items available.",
     "shoppingListTitle": "Shopping List",
-    "pantryTitle": "Pantry"
+    "pantryTitle": "Pantry",
+    "mealPlanTitle": "Meal Plan",
+    "totalCalories": "Total calories"
   },
   "restaurants": {
     "actions": {
@@ -484,7 +487,8 @@
       "viewRecipe": "View recipe",
       "move": "Move",
       "moveSave": "Save move",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "exportPdf": "Save as PDF"
     },
     "errors": {
       "load": "The meal plan could not be loaded.",

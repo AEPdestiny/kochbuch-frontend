@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
-import { printShoppingList } from '@/shared/printExport'
+import { parseShoppingItemForPrint, printShoppingList } from '@/shared/printExport'
 import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import SuggestInput from '@/components/SuggestInput.vue'
@@ -433,8 +433,12 @@ function formatRawQuantity(item: ShoppingListItem) {
 function exportShoppingListAsPdf() {
   const now = new Date()
   const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  toastStore.addToast(t('notifications.shoppingListPdfReady'), 'success')
   printShoppingList(
-    items.value.map(i => ({ name: i.name, quantity: i.quantity, unit: i.unit, checked: i.checked })),
+    items.value.map(i => {
+      const parsed = parseShoppingItemForPrint(i)
+      return { name: parsed.name, quantity: parsed.quantity, unit: parsed.unit, checked: i.checked }
+    }),
     {
       appTitle: t('print.appTitle'),
       listTitle: t('print.shoppingListTitle'),
@@ -446,7 +450,6 @@ function exportShoppingListAsPdf() {
       emptyMessage: t('print.emptyList'),
     },
   )
-  toastStore.addToast(t('notifications.shoppingListPdfReady'), 'success')
 }
 </script>
 

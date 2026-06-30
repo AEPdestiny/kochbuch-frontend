@@ -340,7 +340,8 @@
     "recipeImported": "食谱已成功导入。",
     "shoppingListPdfReady": "购物清单正在准备打印。",
     "pantryPdfReady": "储藏正在准备打印。",
-    "pdfEmptyList": "没有条目可用于PDF。"
+    "pdfEmptyList": "没有条目可用于PDF。",
+    "mealPlanPdfReady": "饮食计划正在准备打印。"
   },
   "print": {
     "appTitle": "Dishly",
@@ -351,7 +352,9 @@
     "unitHeader": "单位",
     "emptyList": "没有条目。",
     "shoppingListTitle": "购物清单",
-    "pantryTitle": "储藏"
+    "pantryTitle": "储藏",
+    "mealPlanTitle": "饮食计划",
+    "totalCalories": "总卡路里"
   },
   "restaurants": {
     "actions": {
@@ -409,7 +412,8 @@
       "add": "计划食谱",
       "remove": "移除",
       "save": "保存",
-      "clearWeek": "清空本周"
+      "clearWeek": "清空本周",
+      "exportPdf": "保存为PDF"
     },
     "errors": {
       "load": "无法加载周计划。",

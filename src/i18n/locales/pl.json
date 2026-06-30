@@ -340,7 +340,8 @@
     "recipeImported": "Przepis został zaimportowany.",
     "shoppingListPdfReady": "Lista zakupów jest przygotowywana do druku.",
     "pantryPdfReady": "Spiżarnia jest przygotowywana do druku.",
-    "pdfEmptyList": "Brak pozycji do PDF."
+    "pdfEmptyList": "Brak pozycji do PDF.",
+    "mealPlanPdfReady": "Plan tygodniowy jest przygotowywany do druku."
   },
   "print": {
     "appTitle": "Dishly",
@@ -351,7 +352,9 @@
     "unitHeader": "Jednostka",
     "emptyList": "Brak pozycji.",
     "shoppingListTitle": "Lista zakupów",
-    "pantryTitle": "Spiżarnia"
+    "pantryTitle": "Spiżarnia",
+    "mealPlanTitle": "Plan tygodniowy",
+    "totalCalories": "Łączne kalorie"
   },
   "restaurants": {
     "actions": {
@@ -409,7 +412,8 @@
       "add": "Zaplanuj przepis",
       "remove": "Usuń",
       "save": "Zapisz",
-      "clearWeek": "Wyczyść tydzień"
+      "clearWeek": "Wyczyść tydzień",
+      "exportPdf": "Zapisz jako PDF"
     },
     "errors": {
       "load": "Nie udało się załadować planu tygodnia.",

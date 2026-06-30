@@ -340,7 +340,8 @@
     "recipeImported": "Tarif başarıyla içe aktarıldı.",
     "shoppingListPdfReady": "Alışveriş listesi yazdırma için hazırlanıyor.",
     "pantryPdfReady": "Kiler yazdırma için hazırlanıyor.",
-    "pdfEmptyList": "PDF için kayıt bulunamadı."
+    "pdfEmptyList": "PDF için kayıt bulunamadı.",
+    "mealPlanPdfReady": "Haftalık plan yazdırma için hazırlanıyor."
   },
   "print": {
     "appTitle": "Dishly",
@@ -351,7 +352,9 @@
     "unitHeader": "Birim",
     "emptyList": "Kayıt bulunamadı.",
     "shoppingListTitle": "Alışveriş Listesi",
-    "pantryTitle": "Kiler"
+    "pantryTitle": "Kiler",
+    "mealPlanTitle": "Haftalık Plan",
+    "totalCalories": "Toplam kalori"
   },
   "restaurants": {
     "actions": {
@@ -409,7 +412,8 @@
       "add": "Tarif planla",
       "remove": "Kaldır",
       "save": "Kaydet",
-      "clearWeek": "Haftayı temizle"
+      "clearWeek": "Haftayı temizle",
+      "exportPdf": "PDF olarak kaydet"
     },
     "errors": {
       "load": "Haftalık plan yüklenemedi.",

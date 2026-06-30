@@ -705,6 +705,8 @@ const removeFavorite = async (r: Recipe) => {
       : 'Favorit konnte nicht entfernt werden.'
   }
 }
+
+defineExpose({ startEdit })
 </script>
 
 <template>
@@ -928,7 +930,7 @@ const removeFavorite = async (r: Recipe) => {
             </div>
 
             <div class="recipe-main">
-              <div class="recipe-header" @click="startEdit(r)">
+              <div class="recipe-header">
                 <div>
                   <h4 class="name">
                     {{ r.title }}
@@ -960,7 +962,7 @@ const removeFavorite = async (r: Recipe) => {
                 <RouterLink class="link-btn detail-link" :to="`/recipe/${r.id}`">
                   {{ t('recipes.actions.view') }}
                 </RouterLink>
-                <button class="link-btn" @click.stop="startEdit(r)">{{ t('recipes.actions.edit') }}</button>
+                <RouterLink class="link-btn" :to="`/my-recipes/${r.id}/edit`">{{ t('recipes.actions.edit') }}</RouterLink>
                 <button class="link-btn" @click.stop="handleExportRecipe(r)">{{ t('recipes.actions.export') }}</button>
                 <button class="link-btn danger" @click.stop="deleteRecipe(r.id)">{{ t('recipes.actions.delete') }}</button>
                 <label class="publish-toggle" @click.stop>

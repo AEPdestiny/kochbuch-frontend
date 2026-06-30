@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { printShoppingList, printPantry, openPrintWindow } from '@/shared/printExport'
 
 const mockPrint = vi.fn()
@@ -24,13 +24,22 @@ describe('printExport', () => {
   })
 
   describe('openPrintWindow', () => {
-    it('opens a new window, writes html, and calls print', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('opens a new window, writes html, and calls print after a short delay', () => {
+      vi.useFakeTimers()
       openPrintWindow('<html>test</html>')
 
       expect(window.open).toHaveBeenCalledWith('', '_blank', expect.any(String))
       expect(mockWrite).toHaveBeenCalledWith('<html>test</html>')
       expect(mockClose).toHaveBeenCalled()
       expect(mockFocus).toHaveBeenCalled()
+      // print is deferred — not called yet
+      expect(mockPrint).not.toHaveBeenCalled()
+      // advance timers — print fires
+      vi.runAllTimers()
       expect(mockPrint).toHaveBeenCalled()
     })
 
