@@ -145,7 +145,12 @@
       "delete": "删除",
       "update": "保存",
       "cancel": "取消",
-      "exportPdf": "保存为PDF"
+      "exportPdf": "保存为PDF",
+      "markAllDone": "全部标为完成",
+      "deleteDone": "删除已完成",
+      "clearList": "清空列表",
+      "confirmDeleteDone": "删除所有已完成的项目？",
+      "confirmClearList": "清空整个购物清单？"
     },
     "errors": {
       "loginRequired": "请登录以查看你的购物清单。",
@@ -164,6 +169,19 @@
     },
     "groups": {
       "manual": "??"
+    },
+    "allItems": { "title": "所有购物项目" },
+    "recipeGroups": {
+      "title": "使用这些食材的食谱",
+      "empty": "没有可用的食谱分配。"
+    },
+    "messages": {
+      "allAlreadyDone": "所有项目已完成。",
+      "allMarkedDone": "所有未完成的项目已标记为完成。",
+      "noDoneItems": "没有已完成的项目可删除。",
+      "doneDeleted": "已完成的项目已删除。",
+      "listAlreadyEmpty": "购物清单已经是空的。",
+      "listCleared": "购物清单已清空。"
     }
   },
   "recipes": {

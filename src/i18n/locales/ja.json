@@ -145,7 +145,12 @@
       "delete": "削除",
       "update": "保存",
       "cancel": "キャンセル",
-      "exportPdf": "PDFとして保存"
+      "exportPdf": "PDFとして保存",
+      "markAllDone": "すべて完了にする",
+      "deleteDone": "完了済みを削除",
+      "clearList": "リストを消去",
+      "confirmDeleteDone": "完了済みのアイテムをすべて削除しますか？",
+      "confirmClearList": "買い物リスト全体を消去しますか？"
     },
     "errors": {
       "loginRequired": "買い物リストを見るにはログインしてください。",
@@ -164,6 +169,19 @@
     },
     "groups": {
       "manual": "??"
+    },
+    "allItems": { "title": "すべての買い物アイテム" },
+    "recipeGroups": {
+      "title": "これらの食材を使うレシピ",
+      "empty": "レシピの割り当てはありません。"
+    },
+    "messages": {
+      "allAlreadyDone": "すべてのアイテムは既に完了しています。",
+      "allMarkedDone": "未完了のアイテムをすべて完了にしました。",
+      "noDoneItems": "削除する完了済みアイテムがありません。",
+      "doneDeleted": "完了済みアイテムを削除しました。",
+      "listAlreadyEmpty": "買い物リストはすでに空です。",
+      "listCleared": "買い物リストを消去しました。"
     }
   },
   "recipes": {

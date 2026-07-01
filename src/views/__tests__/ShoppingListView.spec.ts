@@ -6,6 +6,7 @@ import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { printShoppingList } from '@/shared/printExport'
 import { i18n, setLocale } from '@/i18n'
+import { useToastStore } from '@/stores/toastStore'
 import type { ShoppingListItemResponse } from '@/types/shoppingList'
 
 vi.mock('@/shared/api/shoppingListApi', () => ({
@@ -133,9 +134,11 @@ describe('ShoppingListView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Pasta with Garlic')
-    expect(wrapper.text()).toContain('Manuell')
+    expect(wrapper.text()).not.toContain('Manuell')
     expect(wrapper.text()).toContain('Pasta')
     expect(wrapper.text()).toContain('Milk')
+    // Milk has no recipeTitle → appears only in flat list, not in recipe groups
+    expect(wrapper.find('.recipe-groups-section').text()).not.toContain('Milk')
   })
 
   it('keeps recipe groups and shows a combined total shopping list', async () => {
@@ -152,9 +155,10 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.text()).toContain('Rezept A')
     expect(wrapper.text()).toContain('Rezept B')
-    expect(wrapper.text()).toContain('Gesamte Einkaufsliste')
-    expect(wrapper.text()).toContain('10 Stück')
-    expect(wrapper.text()).toContain('200 g')
+    expect(wrapper.text()).toContain('Gesamt-Einkaufsliste')
+    // Items appear individually, not aggregated
+    expect(wrapper.text()).not.toContain('10 Stück')
+    expect(wrapper.text()).toContain('200')
     expect(wrapper.text()).not.toContain('500 g')
   })
 
@@ -168,8 +172,9 @@ describe('ShoppingListView', () => {
     const wrapper = mount(ShoppingListView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('2 Stück')
-    expect(wrapper.text()).toContain('1 Dose')
+    // Items with different units appear individually, not aggregated
+    expect(wrapper.text()).toContain('Stück')
+    expect(wrapper.text()).toContain('Dose')
   })
 
   it('shows item checkbox and no status text', async () => {
@@ -182,10 +187,12 @@ describe('ShoppingListView', () => {
     const wrapper = mount(ShoppingListView)
     await flushPromises()
 
+    // Flat list has 2 checkboxes (no recipeTitle on items → no recipe group checkboxes)
     expect(wrapper.findAll('.item-check input[type="checkbox"]')).toHaveLength(2)
-    const itemGroups = wrapper.findAll('.shopping-group').filter((group) => !group.classes().includes('total-shopping-list'))
-    expect(itemGroups.map((group) => group.text()).join(' ')).not.toContain('Offen')
-    expect(itemGroups.map((group) => group.text()).join(' ')).not.toContain('Erledigt')
+    // Old view had "Offen: 1" / "Erledigt: 1" status counts — these should not appear
+    expect(wrapper.text()).not.toContain('Offen:')
+    expect(wrapper.text()).not.toContain('Erledigt:')
+    // sortedItems: unchecked (Tomatoes) first, checked (Milk) second
     expect(wrapper.findAll('.shopping-item').at(1)!.classes()).toContain('checked')
   })
 
@@ -245,7 +252,8 @@ describe('ShoppingListView', () => {
       recipeTitle: null,
     })
     expect(wrapper.findAll('.shopping-item.checked').length).toBeGreaterThanOrEqual(2)
-    expect(wrapper.text()).toContain('Alle offenen')
+    const toastStore = useToastStore()
+    expect(toastStore.toasts.some(t => t.message.includes('Alle offenen'))).toBe(true)
   })
 
   it('deletes all done shopping list items after confirmation', async () => {
@@ -593,6 +601,62 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben für das Shopping List Item.')
   })
+  it('shows Gesamt-Einkaufsliste section with all items when list is not empty', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Milch', 1, 'l', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Gesamt-Einkaufsliste')
+    expect(wrapper.find('.shopping-section').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Milch')
+  })
+
+  it('shows recipe groups section with empty message when no items have recipe titles', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Milch', 1, 'l', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.find('.recipe-groups-section').exists()).toBe(true)
+    expect(wrapper.find('.recipe-groups-section').text()).toContain('Keine Rezeptzuordnung')
+  })
+
+  it('shows collapsible recipe group for items with recipe titles', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('Pasta', 2, 'cups', '', false), recipeId: '1', recipeTitle: 'Pasta Bolognese' },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const details = wrapper.find('.recipe-groups-section details.recipe-group')
+    expect(details.exists()).toBe(true)
+    expect(details.find('summary').text()).toBe('Pasta Bolognese')
+  })
+
+  it('recipe group items have a checkbox but no edit or delete buttons', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('Pasta', 2, 'cups', '', false), recipeId: '1', recipeTitle: 'Pasta Bolognese' },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const recipeSection = wrapper.find('.recipe-groups-section')
+    expect(recipeSection.find('input[type="checkbox"]').exists()).toBe(true)
+    expect(recipeSection.find('button.edit-btn').exists()).toBe(false)
+    expect(recipeSection.find('button.delete-btn').exists()).toBe(false)
+  })
+
   it('shows English shopping list texts after locale switch', async () => {
     setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')

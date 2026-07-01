@@ -145,7 +145,12 @@
       "delete": "Sil",
       "update": "Kaydet",
       "cancel": "İptal",
-      "exportPdf": "PDF olarak kaydet"
+      "exportPdf": "PDF olarak kaydet",
+      "markAllDone": "Tümünü tamamlandı işaretle",
+      "deleteDone": "Tamamlananları sil",
+      "clearList": "Listeyi temizle",
+      "confirmDeleteDone": "Tüm tamamlanan öğeler silinsin mi?",
+      "confirmClearList": "Tüm alışveriş listesi temizlensin mi?"
     },
     "errors": {
       "loginRequired": "Alışveriş listeni görmek için lütfen giriş yap.",
@@ -164,6 +169,19 @@
     },
     "groups": {
       "manual": "Manuel"
+    },
+    "allItems": { "title": "Tüm Alışveriş Öğeleri" },
+    "recipeGroups": {
+      "title": "Bu malzemeleri kullanan tarifler",
+      "empty": "Tarif ataması mevcut değil."
+    },
+    "messages": {
+      "allAlreadyDone": "Tüm öğeler zaten tamamlandı.",
+      "allMarkedDone": "Tüm açık öğeler tamamlandı olarak işaretlendi.",
+      "noDoneItems": "Silinecek tamamlanmış öğe yok.",
+      "doneDeleted": "Tamamlanan öğeler silindi.",
+      "listAlreadyEmpty": "Alışveriş listesi zaten boş.",
+      "listCleared": "Alışveriş listesi temizlendi."
     }
   },
   "recipes": {

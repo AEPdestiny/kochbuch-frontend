@@ -145,7 +145,12 @@
       "delete": "Usuń",
       "update": "Zapisz",
       "cancel": "Anuluj",
-      "exportPdf": "Zapisz jako PDF"
+      "exportPdf": "Zapisz jako PDF",
+      "markAllDone": "Zaznacz wszystko jako gotowe",
+      "deleteDone": "Usuń gotowe",
+      "clearList": "Wyczyść listę",
+      "confirmDeleteDone": "Usunąć wszystkie gotowe pozycje?",
+      "confirmClearList": "Wyczyścić całą listę zakupów?"
     },
     "errors": {
       "loginRequired": "Zaloguj się, aby zobaczyć swoją listę zakupów.",
@@ -164,6 +169,19 @@
     },
     "groups": {
       "manual": "R?cznie"
+    },
+    "allItems": { "title": "Wszystkie artykuły" },
+    "recipeGroups": {
+      "title": "Przepisy używające tych składników",
+      "empty": "Brak przypisania przepisu."
+    },
+    "messages": {
+      "allAlreadyDone": "Wszystkie pozycje są już gotowe.",
+      "allMarkedDone": "Wszystkie otwarte pozycje zostały oznaczone jako gotowe.",
+      "noDoneItems": "Brak gotowych pozycji do usunięcia.",
+      "doneDeleted": "Gotowe pozycje zostały usunięte.",
+      "listAlreadyEmpty": "Lista zakupów jest już pusta.",
+      "listCleared": "Lista zakupów została wyczyszczona."
     }
   },
   "recipes": {

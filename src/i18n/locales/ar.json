@@ -145,7 +145,12 @@
       "delete": "حذف",
       "update": "حفظ",
       "cancel": "إلغاء",
-      "exportPdf": "حفظ كـ PDF"
+      "exportPdf": "حفظ كـ PDF",
+      "markAllDone": "تحديد الكل كمنجز",
+      "deleteDone": "حذف المنجز",
+      "clearList": "مسح القائمة",
+      "confirmDeleteDone": "حذف كل العناصر المنجزة؟",
+      "confirmClearList": "مسح قائمة التسوق بأكملها؟"
     },
     "errors": {
       "loginRequired": "يرجى تسجيل الدخول لرؤية قائمة التسوق الخاصة بك.",
@@ -164,6 +169,19 @@
     },
     "groups": {
       "manual": "????"
+    },
+    "allItems": { "title": "كل عناصر التسوق" },
+    "recipeGroups": {
+      "title": "وصفات تستخدم هذه المكونات",
+      "empty": "لا يوجد تعيين للوصفة."
+    },
+    "messages": {
+      "allAlreadyDone": "جميع العناصر منجزة بالفعل.",
+      "allMarkedDone": "تم تحديد جميع العناصر المفتوحة كمنجزة.",
+      "noDoneItems": "لا توجد عناصر منجزة للحذف.",
+      "doneDeleted": "تم حذف العناصر المنجزة.",
+      "listAlreadyEmpty": "قائمة التسوق فارغة بالفعل.",
+      "listCleared": "تم مسح قائمة التسوق."
     }
   },
   "recipes": {

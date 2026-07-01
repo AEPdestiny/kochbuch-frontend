@@ -28,30 +28,21 @@ const editUnit = ref('')
 const editCategory = ref('')  // not shown in UI — preserved on update so existing data is not lost
 const editChecked = ref(false)
 const editError = ref<string | null>(null)
-const actionMessage = ref<string | null>(null)
 
-const groupedItems = computed(() => {
-  const groups = new Map<string, ShoppingListItem[]>()
-  for (const item of items.value) {
-    const groupName = item.recipeTitle?.trim() || t('shoppingList.groups.manual')
-    groups.set(groupName, [...(groups.get(groupName) ?? []), item])
-  }
-  return Array.from(groups.entries()).map(([title, groupItems]) => ({ title, items: groupItems }))
+const sortedItems = computed(() => {
+  const unchecked = items.value.filter(i => !i.checked)
+  const checked = items.value.filter(i => i.checked)
+  return [...unchecked, ...checked]
 })
 
-const totalShoppingItems = computed(() => {
+const recipeGroups = computed(() => {
   const groups = new Map<string, ShoppingListItem[]>()
-  for (const item of items.value.filter(item => !item.checked)) {
-    const key = normalizeIngredientName(item.name)
-    groups.set(key, [...(groups.get(key) ?? []), item])
+  for (const item of items.value) {
+    const title = item.recipeTitle?.trim()
+    if (!title) continue
+    groups.set(title, [...(groups.get(title) ?? []), item])
   }
-
-  return Array.from(groups.values()).map(groupItems => ({
-    name: displayIngredientName(groupItems[0]?.name ?? ''),
-    quantity: summarizeQuantity(groupItems),
-    openCount: groupItems.filter(item => !item.checked).length,
-    doneCount: groupItems.filter(item => item.checked).length,
-  }))
+  return Array.from(groups.entries()).map(([title, groupItems]) => ({ title, items: groupItems }))
 })
 
 onMounted(() => {
@@ -119,7 +110,6 @@ async function createShoppingListItem() {
     newChecked.value = false
     formError.value = null
     error.value = null
-    actionMessage.value = null
   } catch (e: unknown) {
     formError.value = toCreateErrorMessage(e)
     if (e instanceof ApiClientError && e.status === 401) {
@@ -156,7 +146,6 @@ async function deleteShoppingListItem(id: number | string) {
     await shoppingListApi.deleteShoppingListItem(id)
     items.value = items.value.filter(item => item.id !== id)
     error.value = null
-    actionMessage.value = null
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -173,7 +162,6 @@ async function toggleChecked(item: ShoppingListItem) {
   try {
     const updated = await shoppingListApi.updateShoppingListItem(item.id, requestFromItem(item, !item.checked))
     items.value = items.value.map(existing => (existing.id === item.id ? updated : existing))
-    actionMessage.value = null
   } catch (e: unknown) {
     error.value = toUpdateErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -183,17 +171,16 @@ async function toggleChecked(item: ShoppingListItem) {
 async function markAllDone() {
   const openItems = items.value.filter(item => !item.checked)
   if (!openItems.length) {
-    actionMessage.value = 'Alle Einträge sind bereits markiert.'
+    toastStore.addToast(t('shoppingList.messages.allAlreadyDone'), 'info')
     return
   }
 
   try {
-    actionMessage.value = null
     const updatedItems = await Promise.all(
       openItems.map(item => shoppingListApi.updateShoppingListItem(item.id, requestFromItem(item, true))),
     )
     items.value = items.value.map(item => updatedItems.find(updated => updated.id === item.id) ?? item)
-    actionMessage.value = 'Alle offenen Einträge wurden markiert.'
+    toastStore.addToast(t('shoppingList.messages.allMarkedDone'), 'success')
   } catch (e: unknown) {
     error.value = toUpdateErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -203,19 +190,18 @@ async function markAllDone() {
 async function deleteDoneItems() {
   const doneItems = items.value.filter(item => item.checked)
   if (!doneItems.length) {
-    actionMessage.value = 'Es gibt keine erledigten Einträge zum Löschen.'
+    toastStore.addToast(t('shoppingList.messages.noDoneItems'), 'info')
     return
   }
-  if (!window.confirm('Erledigte Einträge wirklich löschen?')) {
+  if (!window.confirm(t('shoppingList.actions.confirmDeleteDone'))) {
     return
   }
 
   try {
-    actionMessage.value = null
     await Promise.all(doneItems.map(item => shoppingListApi.deleteShoppingListItem(item.id)))
     const doneIds = new Set(doneItems.map(item => item.id))
     items.value = items.value.filter(item => !doneIds.has(item.id))
-    actionMessage.value = 'Erledigte Einträge wurden gelöscht.'
+    toastStore.addToast(t('shoppingList.messages.doneDeleted'), 'success')
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -224,18 +210,17 @@ async function deleteDoneItems() {
 
 async function clearShoppingList() {
   if (!items.value.length) {
-    actionMessage.value = 'Die Einkaufsliste ist bereits leer.'
+    toastStore.addToast(t('shoppingList.messages.listAlreadyEmpty'), 'info')
     return
   }
-  if (!window.confirm('Wirklich die gesamte Einkaufsliste löschen?')) {
+  if (!window.confirm(t('shoppingList.actions.confirmClearList'))) {
     return
   }
 
   try {
-    actionMessage.value = null
     await Promise.all(items.value.map(item => shoppingListApi.deleteShoppingListItem(item.id)))
     items.value = []
-    actionMessage.value = 'Die Einkaufsliste wurde geleert.'
+    toastStore.addToast(t('shoppingList.messages.listCleared'), 'success')
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -356,80 +341,6 @@ function toUpdateErrorMessage(e: unknown) {
   return t('shoppingList.errors.update')
 }
 
-function normalizeIngredientName(name: string) {
-  return name.trim().replace(/\s+/g, ' ').toLowerCase()
-}
-
-function displayIngredientName(name: string) {
-  return name.trim().replace(/\s+/g, ' ')
-}
-
-function summarizeQuantity(groupItems: ShoppingListItem[]) {
-  const quantityGroups = new Map<string, { amount: number; unit: string; displayUnit: string }>()
-  const fallbackParts: string[] = []
-
-  for (const item of groupItems) {
-    const quantity = item.quantity
-    const unit = normalizeUnit(item.unit ?? '')
-    if (typeof quantity === 'number' && Number.isFinite(quantity) && unit.canAdd) {
-      const existing = quantityGroups.get(unit.key) ?? {
-        amount: 0,
-        unit: unit.outputUnit,
-        displayUnit: unit.displayUnit,
-      }
-      existing.amount += quantity * unit.factor
-      quantityGroups.set(unit.key, existing)
-      continue
-    }
-
-    fallbackParts.push(formatRawQuantity(item))
-  }
-
-  const summedParts = Array.from(quantityGroups.values()).map(group => (
-    `${formatAmount(group.amount, group.unit)} ${group.displayUnit}`.trim()
-  ))
-
-  return [...summedParts, ...fallbackParts].filter(Boolean).join(' + ') || 'ohne Mengenangabe'
-}
-
-function normalizeUnit(unit: string) {
-  const normalized = unit.trim().toLowerCase()
-  if (!normalized) {
-    return { canAdd: true, key: 'count', factor: 1, outputUnit: '', displayUnit: '' }
-  }
-  if (['g', 'gramm', 'gram'].includes(normalized)) {
-    return { canAdd: true, key: 'weight-g', factor: 1, outputUnit: 'g', displayUnit: 'g' }
-  }
-  if (['kg', 'kilogramm', 'kilogram'].includes(normalized)) {
-    return { canAdd: true, key: 'weight-g', factor: 1000, outputUnit: 'g', displayUnit: 'g' }
-  }
-  if (['ml', 'milliliter'].includes(normalized)) {
-    return { canAdd: true, key: 'volume-ml', factor: 1, outputUnit: 'ml', displayUnit: 'ml' }
-  }
-  if (['l', 'liter'].includes(normalized)) {
-    return { canAdd: true, key: 'volume-ml', factor: 1000, outputUnit: 'ml', displayUnit: 'ml' }
-  }
-  return { canAdd: true, key: normalized, factor: 1, outputUnit: normalized, displayUnit: unit.trim() }
-}
-
-function formatAmount(amount: number, unit: string) {
-  return Number.isInteger(amount)
-    ? String(amount)
-    : amount.toLocaleString('de-DE', { maximumFractionDigits: 2 })
-}
-
-function formatRawQuantity(item: ShoppingListItem) {
-  const quantity = item.quantity
-  const unit = item.unit?.trim()
-  if (typeof quantity === 'number' && Number.isFinite(quantity) && unit) {
-    return `${quantity} ${unit}`
-  }
-  if (typeof quantity === 'number' && Number.isFinite(quantity)) {
-    return String(quantity)
-  }
-  return unit || 'ohne Mengenangabe'
-}
-
 function exportShoppingListAsPdf() {
   const now = new Date()
   const dateStr = now.toLocaleDateString() + ' ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -488,7 +399,6 @@ function exportShoppingListAsPdf() {
       </form>
 
       <p v-if="formError" class="form-error">{{ formError }}</p>
-      <p v-if="actionMessage" class="form-success">{{ actionMessage }}</p>
 
       <div class="shopping-actions-bar">
         <button type="button" class="pdf-btn" @click="exportShoppingListAsPdf">{{ t('shoppingList.actions.exportPdf') }}</button>
@@ -498,19 +408,20 @@ function exportShoppingListAsPdf() {
         {{ t('shoppingList.empty') }}
       </p>
 
-      <div v-else class="shopping-groups">
-        <div class="shopping-actions">
-          <button type="button" class="bulk-btn" @click="markAllDone">Alle markieren</button>
-          <button type="button" class="bulk-btn danger" @click="deleteDoneItems">Erledigte löschen</button>
-          <button type="button" class="bulk-btn danger" @click="clearShoppingList">Liste leeren</button>
+      <div v-else class="shopping-content">
+        <div class="shopping-bulk-actions">
+          <button type="button" class="bulk-btn" @click="markAllDone">{{ t('shoppingList.actions.markAllDone') }}</button>
+          <button type="button" class="bulk-btn danger" @click="deleteDoneItems">{{ t('shoppingList.actions.deleteDone') }}</button>
+          <button type="button" class="bulk-btn danger" @click="clearShoppingList">{{ t('shoppingList.actions.clearList') }}</button>
         </div>
 
-        <section v-for="group in groupedItems" :key="group.title" class="shopping-group">
-          <h2 class="group-title">{{ group.title }}</h2>
+        <!-- Gesamt-Einkaufsliste: flat list of all items with full CRUD -->
+        <section class="shopping-section">
+          <h2 class="section-title">{{ t('shoppingList.allItems.title') }}</h2>
 
           <ul class="shopping-list">
             <li
-              v-for="item in group.items"
+              v-for="item in sortedItems"
               :key="item.id"
               class="shopping-item"
               :class="{ checked: item.checked }"
@@ -523,7 +434,7 @@ function exportShoppingListAsPdf() {
                   @change="toggleChecked(item)"
                 />
               </label>
-              <div>
+              <div class="item-main">
                 <h3>{{ item.name }}</h3>
               </div>
               <div class="item-side">
@@ -577,21 +488,45 @@ function exportShoppingListAsPdf() {
           </ul>
         </section>
 
-        <section class="shopping-group total-shopping-list">
-          <h2 class="group-title">Gesamte Einkaufsliste</h2>
-          <ul class="shopping-list">
-            <li v-for="item in totalShoppingItems" :key="item.name" class="shopping-item">
-              <div>
-                <h3>{{ item.name }}</h3>
-                <p class="item-meta">
-                  Offen: {{ item.openCount }} · Erledigt: {{ item.doneCount }}
-                </p>
-              </div>
-              <div class="item-side">
-                <p class="item-quantity">{{ item.quantity }}</p>
-              </div>
-            </li>
-          </ul>
+        <!-- Rezepte mit diesen Zutaten: collapsible recipe groups, read-only view -->
+        <section class="shopping-section recipe-groups-section">
+          <h2 class="section-title">{{ t('shoppingList.recipeGroups.title') }}</h2>
+
+          <p v-if="recipeGroups.length === 0" class="status-text recipe-groups-empty">
+            {{ t('shoppingList.recipeGroups.empty') }}
+          </p>
+
+          <div v-else class="recipe-groups">
+            <details
+              v-for="group in recipeGroups"
+              :key="group.title"
+              class="recipe-group"
+            >
+              <summary class="recipe-group-summary">{{ group.title }}</summary>
+              <ul class="recipe-item-list">
+                <li
+                  v-for="groupItem in group.items"
+                  :key="groupItem.id"
+                  class="recipe-item"
+                  :class="{ checked: groupItem.checked }"
+                >
+                  <label class="item-check">
+                    <input
+                      type="checkbox"
+                      :checked="groupItem.checked"
+                      aria-label="Zutat erledigt"
+                      @change="toggleChecked(groupItem)"
+                    />
+                  </label>
+                  <span class="recipe-item-name">{{ groupItem.name }}</span>
+                  <span class="recipe-item-quantity">
+                    <span v-if="groupItem.quantity !== null && groupItem.quantity !== undefined">{{ groupItem.quantity }}</span>
+                    <span v-if="groupItem.unit"> {{ groupItem.unit }}</span>
+                  </span>
+                </li>
+              </ul>
+            </details>
+          </div>
         </section>
       </div>
     </template>
@@ -703,13 +638,6 @@ function exportShoppingListAsPdf() {
   margin-bottom: 14px;
 }
 
-.form-success {
-  color: #1d8e90;
-  font-size: 0.95rem;
-  font-weight: 700;
-  margin-bottom: 14px;
-}
-
 .shopping-list {
   list-style: none;
   padding: 0;
@@ -719,12 +647,12 @@ function exportShoppingListAsPdf() {
   gap: 12px;
 }
 
-.shopping-groups {
+.shopping-content {
   display: grid;
-  gap: 18px;
+  gap: 24px;
 }
 
-.shopping-actions {
+.shopping-bulk-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -766,12 +694,12 @@ function exportShoppingListAsPdf() {
   color: #a14c2b;
 }
 
-.shopping-group {
+.shopping-section {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
-.group-title {
+.section-title {
   color: #cc7da9;
   font-size: 1.2rem;
   font-weight: 900;
@@ -812,26 +740,22 @@ function exportShoppingListAsPdf() {
   color: #2b1b23;
   font-size: 1.1rem;
   font-weight: 800;
-  margin: 0 0 4px 0;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
-.item-meta,
 .item-quantity {
   color: #486b68;
   font-size: 0.95rem;
+  display: inline-flex;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .item-side {
   display: inline-flex;
   align-items: center;
   gap: 12px;
-}
-
-.item-quantity {
-  display: inline-flex;
-  gap: 4px;
-  white-space: nowrap;
 }
 
 .edit-btn,
@@ -892,6 +816,97 @@ function exportShoppingListAsPdf() {
   margin: 0;
 }
 
+/* Recipe groups section */
+.recipe-groups-section {
+  background: #f9fcfb;
+  border: 1px solid #d6eee9;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.recipe-groups-empty {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.recipe-groups {
+  display: grid;
+  gap: 8px;
+}
+
+.recipe-group {
+  background: #ffffff;
+  border: 1px solid #c3e7e1;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.recipe-group-summary {
+  align-items: center;
+  color: #2b1b23;
+  cursor: pointer;
+  display: flex;
+  font-size: 1rem;
+  font-weight: 800;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+.recipe-group-summary::-webkit-details-marker {
+  display: none;
+}
+
+.recipe-group[open] .recipe-group-summary {
+  border-bottom: 1px solid #edf6f4;
+}
+
+.recipe-group-summary::after {
+  content: '▾';
+  color: #486b68;
+  font-size: 0.9rem;
+}
+
+.recipe-group[open] .recipe-group-summary::after {
+  content: '▴';
+}
+
+.recipe-item-list {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 10px 14px 12px;
+}
+
+.recipe-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 6px 2px;
+}
+
+.recipe-item.checked .recipe-item-name {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+.recipe-item-name {
+  color: #2b1b23;
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.recipe-item-quantity {
+  color: #486b68;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
 @media (max-width: 760px) {
   .shopping-list-page {
     padding: 22px 12px 32px;
@@ -917,7 +932,7 @@ function exportShoppingListAsPdf() {
     flex-wrap: wrap;
   }
 
-  .shopping-actions,
+  .shopping-bulk-actions,
   .edit-buttons {
     display: grid;
     grid-template-columns: 1fr;

@@ -145,7 +145,12 @@
       "delete": "Delete",
       "update": "Save",
       "cancel": "Cancel",
-      "exportPdf": "Save as PDF"
+      "exportPdf": "Save as PDF",
+      "markAllDone": "Mark all done",
+      "deleteDone": "Delete done",
+      "clearList": "Clear list",
+      "confirmDeleteDone": "Delete all done items?",
+      "confirmClearList": "Clear the entire shopping list?"
     },
     "errors": {
       "loginRequired": "Please log in to see your shopping list.",
@@ -164,6 +169,19 @@
     },
     "groups": {
       "manual": "Manual"
+    },
+    "allItems": { "title": "All Shopping Items" },
+    "recipeGroups": {
+      "title": "Recipes using these items",
+      "empty": "No recipe assignment available."
+    },
+    "messages": {
+      "allAlreadyDone": "All items are already done.",
+      "allMarkedDone": "All open items have been marked as done.",
+      "noDoneItems": "No done items to delete.",
+      "doneDeleted": "Done items deleted.",
+      "listAlreadyEmpty": "The shopping list is already empty.",
+      "listCleared": "Shopping list cleared."
     }
   },
   "recipes": {

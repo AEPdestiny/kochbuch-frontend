@@ -145,7 +145,12 @@
       "delete": "Löschen",
       "update": "Speichern",
       "cancel": "Abbrechen",
-      "exportPdf": "Als PDF speichern"
+      "exportPdf": "Als PDF speichern",
+      "markAllDone": "Alle markieren",
+      "deleteDone": "Erledigte löschen",
+      "clearList": "Liste leeren",
+      "confirmDeleteDone": "Erledigte Einträge wirklich löschen?",
+      "confirmClearList": "Wirklich die gesamte Einkaufsliste löschen?"
     },
     "errors": {
       "loginRequired": "Bitte melde dich an, um deine Einkaufsliste zu sehen.",
@@ -164,6 +169,21 @@
     },
     "groups": {
       "manual": "Manuell"
+    },
+    "allItems": {
+      "title": "Gesamt-Einkaufsliste"
+    },
+    "recipeGroups": {
+      "title": "Rezepte mit diesen Zutaten",
+      "empty": "Keine Rezeptzuordnung verfügbar."
+    },
+    "messages": {
+      "allAlreadyDone": "Alle Einträge sind bereits markiert.",
+      "allMarkedDone": "Alle offenen Einträge wurden markiert.",
+      "noDoneItems": "Keine erledigten Einträge zum Löschen vorhanden.",
+      "doneDeleted": "Erledigte Einträge wurden gelöscht.",
+      "listAlreadyEmpty": "Die Einkaufsliste ist bereits leer.",
+      "listCleared": "Die Einkaufsliste wurde geleert."
     }
   },
   "recipes": {
