@@ -59,8 +59,9 @@ const error = ref<string | null>(null)
 const restaurantLoading = ref(false)
 const restaurantError = ref<string | null>(null)
 const restaurantUnavailable = ref(false)
+const restaurantNoResults = ref(false)
+const restaurantLocationTooBroad = ref(false)
 const restaurants = ref<RestaurantResponse[]>([])
-const restaurantSearched = ref(false)
 const restaurantLocation = ref('')
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
@@ -389,21 +390,51 @@ function buildShoppingListRequest(ingredient: DetailIngredient) {
   }
 }
 
+const BROAD_LOCATION_TERMS = new Set([
+  'deutschland', 'germany', 'österreich', 'oesterreich', 'austria',
+  'türkei', 'turkei', 'turkey', 'frankreich', 'france', 'spanien', 'spain',
+  'italien', 'italy', 'schweiz', 'switzerland', 'niederlande', 'netherlands',
+  'belgien', 'belgium', 'griechenland', 'greece', 'schweden', 'sweden',
+  'norwegen', 'norway', 'dänemark', 'daenemark', 'denmark', 'finnland', 'finland',
+  'portugal', 'polen', 'poland', 'tschechien', 'czechia', 'ungarn', 'hungary',
+  'rumänien', 'romania', 'bulgarien', 'bulgaria', 'kroatien', 'croatia',
+  'usa', 'united states', 'united kingdom', 'england', 'china', 'japan',
+  'indien', 'india', 'russland', 'russia', 'kanada', 'canada',
+  'australien', 'australia', 'brasilien', 'brazil', 'mexiko', 'mexico',
+  'argentinien', 'argentina', 'europa', 'europe', 'asien', 'asia',
+])
+
+function isBroadLocation(location: string): boolean {
+  return BROAD_LOCATION_TERMS.has(location.toLowerCase().trim())
+}
+
 async function findRestaurantsByText() {
   if (!recipe.value) return
   const location = restaurantLocation.value.trim()
   if (!location) return
 
+  if (isBroadLocation(location)) {
+    restaurantLocationTooBroad.value = true
+    restaurantNoResults.value = false
+    restaurantUnavailable.value = false
+    restaurantError.value = null
+    restaurants.value = []
+    return
+  }
+
   restaurantLoading.value = true
   restaurantError.value = null
   restaurantUnavailable.value = false
+  restaurantNoResults.value = false
+  restaurantLocationTooBroad.value = false
   restaurants.value = []
-  restaurantSearched.value = true
 
   try {
     const response: TavilyRestaurantSearchResponse = await restaurantApi.searchByText(recipe.value.title, location)
     if (response.status === 'unavailable') {
       restaurantUnavailable.value = true
+    } else if (response.status === 'no_results') {
+      restaurantNoResults.value = true
     } else {
       restaurants.value = response.results
     }
@@ -771,7 +802,9 @@ function formatDate(date: Date) {
         <h2>{{ t('recipeDetail.restaurants.title') }}</h2>
         <p class="hint">{{ t('restaurants.disclaimer') }}</p>
         <div class="restaurant-search-form">
+          <label class="location-label" for="restaurant-location">{{ t('restaurants.cityLabel') }}</label>
           <input
+            id="restaurant-location"
             v-model="restaurantLocation"
             type="text"
             class="location-input"
@@ -779,6 +812,7 @@ function formatDate(date: Date) {
             :disabled="restaurantLoading"
             @keyup.enter="findRestaurantsByText"
           />
+          <p class="location-help">{{ t('restaurants.cityHelp') }}</p>
           <button
             type="button"
             class="secondary-button restaurant-search-button"
@@ -788,15 +822,18 @@ function formatDate(date: Date) {
             {{ restaurantLoading ? t('restaurants.loading.search') : t('restaurants.actions.search') }}
           </button>
         </div>
-        <p v-if="restaurantError" class="status-text error">{{ restaurantError }}</p>
-        <p v-else-if="restaurantUnavailable" class="status-text">{{ t('restaurants.unavailable') }}</p>
-        <p v-else-if="restaurantSearched && restaurants.length === 0" class="status-text">{{ t('restaurants.noExactResults') }}</p>
-        <ul v-if="restaurants.length" class="restaurant-list">
+        <template v-if="!restaurantLoading">
+          <p v-if="restaurantError" class="status-text error">{{ restaurantError }}</p>
+          <p v-else-if="restaurantLocationTooBroad" class="status-text">{{ t('restaurants.locationTooBroad') }}</p>
+          <p v-else-if="restaurantUnavailable" class="status-text">{{ t('restaurants.unavailable') }}</p>
+          <p v-else-if="restaurantNoResults" class="status-text">{{ t('restaurants.noExactResults') }}</p>
+        </template>
+        <ul v-if="!restaurantLoading && restaurants.length" class="restaurant-list">
           <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.googleMapsUrl}`">
-            <strong>{{ restaurant.name }}</strong>
+            <strong class="restaurant-name">{{ restaurant.name }}</strong>
             <span v-if="restaurant.address">{{ restaurant.address }}</span>
             <span v-if="restaurant.distanceMeters != null">{{ t('restaurants.distanceMeters', { distance: restaurant.distanceMeters }) }}</span>
-            <a :href="restaurant.googleMapsUrl" target="_blank" rel="noopener noreferrer">
+            <a :href="restaurant.googleMapsUrl" target="_blank" rel="noopener noreferrer" class="maps-link">
               {{ t('restaurants.openInMaps') }}
             </a>
           </li>
@@ -1060,16 +1097,68 @@ function formatDate(date: Date) {
   margin: 4px 0 0 0;
 }
 
+.restaurant-search-form {
+  display: grid;
+  gap: 8px;
+  max-width: 480px;
+  margin: 14px 0;
+}
+
+.location-label {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #2b1b23;
+}
+
+.location-input {
+  border: 1.5px solid #c3e7e1;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.location-input:focus {
+  border-color: #1d8e90;
+}
+
+.location-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.location-help {
+  font-size: 0.8rem;
+  color: #486b68;
+  margin: 0;
+  padding: 0 4px;
+}
+
 .restaurant-list li {
   display: grid;
   gap: 5px;
   overflow-wrap: anywhere;
 }
 
-.restaurant-list a {
+.restaurant-name {
+  font-size: 1rem;
+  color: #2b1b23;
+}
+
+.restaurant-list a,
+.maps-link {
   color: #cc7da9;
   font-weight: 800;
   overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.maps-link:hover {
+  text-decoration: underline;
 }
 
 .modal-backdrop {

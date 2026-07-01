@@ -262,6 +262,74 @@ describe('RecipeDetailView', () => {
     expect((button.element as HTMLButtonElement).disabled).toBe(true)
   })
 
+  it('does not show status messages while loading', async () => {
+    vi.mocked(restaurantApi.searchByText).mockReturnValue(new Promise(() => {}))
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+
+    expect(wrapper.text()).not.toContain('Keine zuverlässigen Restauranttreffer')
+    expect(wrapper.text()).not.toContain('Restaurant-Suche ist aktuell nicht verfügbar')
+    expect(wrapper.text()).not.toContain('Restaurants konnten nicht geladen werden')
+    expect(wrapper.text()).not.toContain('Bitte gib eine Stadt ein, z. B. Berlin.')
+  })
+
+  it('shows button loading text while searching', async () => {
+    vi.mocked(restaurantApi.searchByText).mockReturnValue(new Promise(() => {}))
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+
+    expect(wrapper.find('.restaurant-search-button').text()).toContain('Restaurants werden gesucht')
+  })
+
+  it('shows city hint and does not call API when user enters "Deutschland"', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Deutschland')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchByText).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte gib eine Stadt ein, z. B. Berlin.')
+  })
+
+  it('shows city hint and does not call API when user enters "Germany"', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Germany')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchByText).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Bitte gib eine Stadt ein, z. B. Berlin.')
+  })
+
+  it('calls API when user enters a city like "Berlin"', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin')
+  })
+
+  it('disclaimer mentions exact dish check, not restaurant type', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('Restauranttyp und Umgebung')
+    expect(wrapper.text()).toContain('genau dieses Gericht')
+  })
+
   it('loads local Dishly recipes from /recipes/{id}', async () => {
     routeName = 'recipe-detail'
     const wrapper = mount(RecipeDetailView)

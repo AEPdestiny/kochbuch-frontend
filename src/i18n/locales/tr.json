@@ -427,7 +427,10 @@
       "findNearby": "Uygun restoranları bul",
       "search": "Ara"
     },
-    "locationPlaceholder": "ör. Berlin Mitte",
+    "cityLabel": "Şehir",
+    "locationPlaceholder": "Şehir girin, ör. Berlin",
+    "cityHelp": "Lütfen bir şehir girin. Almanya gibi ülkeler çok genel.",
+    "locationTooBroad": "Lütfen bir şehir girin, ör. Berlin.",
     "loading": {
       "location": "Konum isteniyor...",
       "search": "Restoranlar aranıyor..."
@@ -435,7 +438,7 @@
     "empty": "Restoran bulunamadı.",
     "unavailable": "Restoran araması şu anda kullanılamıyor.",
     "noExactResults": "Bu yemek için güvenilir restoran sonucu bulunamadı.",
-    "disclaimer": "Sonuçlar restoran türüne ve konuma dayanır, menüdeki yemekler garanti edilmez.",
+    "disclaimer": "Arama, tam olarak bu yemeği web ve menü sonuçlarında kontrol eder. Benzer yemekler gösterilmez.",
     "errors": {
       "geolocationUnsupported": "Tarayıcınız konum erişimini desteklemiyor.",
       "locationDenied": "Konum erişimi reddedildi.",

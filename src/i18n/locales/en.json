@@ -494,7 +494,10 @@
       "findNearby": "Find matching restaurants",
       "search": "Search"
     },
-    "locationPlaceholder": "e.g. Berlin Mitte",
+    "cityLabel": "City",
+    "locationPlaceholder": "Enter a city, e.g. Berlin",
+    "cityHelp": "Please enter a city. Countries like Germany are too broad.",
+    "locationTooBroad": "Please enter a city, e.g. Berlin.",
     "loading": {
       "location": "Requesting your location...",
       "search": "Searching restaurants..."
@@ -502,7 +505,7 @@
     "empty": "No restaurants found.",
     "unavailable": "Restaurant search is currently unavailable.",
     "noExactResults": "No reliable restaurant matches found for this exact dish.",
-    "disclaimer": "Results are based on restaurant type and location, not guaranteed menu items.",
+    "disclaimer": "The search checks web and menu results for this exact dish. Similar dishes are not shown.",
     "errors": {
       "geolocationUnsupported": "Your browser does not support location access.",
       "locationDenied": "Location access was denied.",
