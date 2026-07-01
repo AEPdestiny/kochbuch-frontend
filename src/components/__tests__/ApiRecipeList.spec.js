@@ -1177,6 +1177,115 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Profil aktiv')
   })
 
+  it('sorts by protein descending when only highProtein checkbox is active', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Low Protein Recipe', 'salad', 'lunch', { protein: 15 }),
+      recipe(11, 'High Protein Recipe', 'beans', 'lunch', { protein: 30 }),
+      recipe(12, 'No Protein Recipe', 'rice', 'lunch', { protein: null }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const proteinCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Proteinreich'))?.find('input')
+    expect(proteinCheckbox?.exists()).toBe(true)
+    if (!proteinCheckbox) throw new Error('Protein checkbox not found')
+    await proteinCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('High Protein Recipe')
+    expect(cards[1]).toContain('Low Protein Recipe')
+    expect(cards[2]).toContain('No Protein Recipe')
+  })
+
+  it('sorts by protein density descending when both calorieConscious and highProtein are active', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      // density 0.05 — more absolute protein but lower density
+      recipe(10, 'Absolute Protein Recipe', 'beef', 'dinner', { protein: 30, calories: 600 }),
+      // density 0.083 — less absolute protein but higher density
+      recipe(11, 'Dense Protein Recipe', 'chicken', 'lunch', { protein: 25, calories: 300 }),
+      recipe(12, 'No Data Recipe', 'rice', 'lunch', { protein: null, calories: null }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const calorieCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Kalorienarm'))?.find('input')
+    const proteinCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Proteinreich'))?.find('input')
+    expect(calorieCheckbox?.exists()).toBe(true)
+    expect(proteinCheckbox?.exists()).toBe(true)
+    if (!calorieCheckbox || !proteinCheckbox) throw new Error('Checkboxes not found')
+
+    await calorieCheckbox.setValue(true)
+    await proteinCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('Dense Protein Recipe')   // 25/300 = 0.083
+    expect(cards[1]).toContain('Absolute Protein Recipe') // 30/600 = 0.05
+    expect(cards[2]).toContain('No Data Recipe')          // no density → last
+  })
+
+  it('handles missing calories gracefully in protein density sort', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'No Calories Recipe', 'rice', 'lunch', { protein: 20, calories: null }),
+      recipe(11, 'Complete Recipe', 'beans', 'lunch', { protein: 25, calories: 300 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const calorieCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Kalorienarm'))?.find('input')
+    const proteinCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Proteinreich'))?.find('input')
+    if (!calorieCheckbox || !proteinCheckbox) throw new Error('Checkboxes not found')
+
+    await calorieCheckbox.setValue(true)
+    await proteinCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('Complete Recipe')
+    expect(cards[1]).toContain('No Calories Recipe')
+  })
+
+  it('handles missing protein gracefully in protein density sort', async () => {
+    vi.useFakeTimers()
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'No Protein Recipe', 'rice', 'lunch', { protein: null, calories: 300 }),
+      recipe(11, 'Complete Recipe', 'beans', 'lunch', { protein: 25, calories: 300 }),
+    ])
+
+    const wrapper = mount(ApiRecipeList)
+    await flushPromises()
+
+    const calorieCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Kalorienarm'))?.find('input')
+    const proteinCheckbox = wrapper.findAll('label')
+      .find(label => label.text().includes('Proteinreich'))?.find('input')
+    if (!calorieCheckbox || !proteinCheckbox) throw new Error('Checkboxes not found')
+
+    await calorieCheckbox.setValue(true)
+    await proteinCheckbox.setValue(true)
+    await vi.advanceTimersByTimeAsync(400)
+    await flushPromises()
+
+    const cards = wrapper.findAll('.recipe-card').map(card => card.text())
+    expect(cards[0]).toContain('Complete Recipe')
+    expect(cards[1]).toContain('No Protein Recipe')
+  })
+
   it('shows alcohol badge only when alcohol values are present', async () => {
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(10, 'Wine Sauce', 'wine', 'dinner', { alcohol: 1.2, alcoholPercent: 0.4 }),

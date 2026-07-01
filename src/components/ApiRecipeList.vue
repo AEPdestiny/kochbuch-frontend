@@ -760,8 +760,31 @@ function applyPreferenceBoost(items: DisplayRecipe[]) {
   return shuffleDisplayRecipes([...balanced, ...remaining].slice(0, items.length))
 }
 
+function getRecipeCalories(recipe: Recipe): number | null {
+  const v = recipe.calories
+  return typeof v === 'number' && v > 0 ? v : null
+}
+
+function getRecipeProtein(recipe: Recipe): number | null {
+  const v = recipe.protein
+  return typeof v === 'number' && v > 0 ? v : null
+}
+
+function getProteinDensity(recipe: Recipe): number | null {
+  const protein = getRecipeProtein(recipe)
+  const calories = getRecipeCalories(recipe)
+  if (protein === null || calories === null) return null
+  return protein / calories
+}
+
 function sortRecipes(items: DisplayRecipe[]) {
   const sorted = [...items]
+
+  // Both active: sort by protein density (protein g / kcal) descending — highest density first
+  if (calorieConscious.value && highProtein.value) {
+    return sorted.sort((a, b) => compareOptionalNumbers(getProteinDensity(a), getProteinDensity(b), 'desc'))
+  }
+
   if (sortOrder.value === 'caloriesAsc') {
     return sorted.sort((a, b) => compareOptionalNumbers(a.calories, b.calories, 'asc'))
   }
