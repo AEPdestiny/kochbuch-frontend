@@ -450,7 +450,9 @@
     "distanceInMaps": "在 Google 地图中查看距离",
     "openRouteInMaps": "在 Google 地图中查看路线",
     "useMyLocation": "使用我的位置",
-    "locationActive": "位置已保存",
+    "locationActive": "位置已激活",
+    "gpsNoCityHint": "位置已保存。请另外输入城市以搜索餐厅。",
+    "resolvedLocation": "在 {city} 中搜索",
     "locationDeniedHint": "位置权限已被拒绝。您仍然可以输入城市。"
   },
   "about": {

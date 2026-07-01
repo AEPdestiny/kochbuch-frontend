@@ -67,6 +67,8 @@ const userLatitude = ref<number | null>(null)
 const userLongitude = ref<number | null>(null)
 const geoLocating = ref(false)
 const geoLocationDenied = ref(false)
+const gpsNoCityHint = ref(false)
+const resolvedLocation = ref<string | null>(null)
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
@@ -426,6 +428,8 @@ function useMyLocation() {
       geoLocating.value = false
       if (restaurantLocation.value.trim() && recipe.value) {
         findRestaurantsByText()
+      } else if (recipe.value) {
+        findRestaurantsByGps()
       }
     },
     () => {
@@ -440,6 +444,44 @@ function formatDistance(meters: number): string {
   return t('restaurants.distanceKm', { distance: (meters / 1000).toFixed(1) })
 }
 
+async function findRestaurantsByGps() {
+  if (!recipe.value || userLatitude.value === null || userLongitude.value === null) return
+
+  restaurantLoading.value = true
+  restaurantError.value = null
+  restaurantUnavailable.value = false
+  restaurantNoResults.value = false
+  restaurantLocationTooBroad.value = false
+  gpsNoCityHint.value = false
+  resolvedLocation.value = null
+  restaurants.value = []
+
+  try {
+    const response: TavilyRestaurantSearchResponse = await restaurantApi.searchByText(
+      recipe.value.title,
+      '',
+      userLatitude.value,
+      userLongitude.value,
+    )
+    if (response.resolvedLocation) {
+      resolvedLocation.value = response.resolvedLocation
+    }
+    if (response.status === 'unavailable') {
+      restaurantUnavailable.value = true
+    } else if (response.status === 'no_location') {
+      gpsNoCityHint.value = true
+    } else if (response.status === 'no_results') {
+      restaurantNoResults.value = true
+    } else {
+      restaurants.value = response.results
+    }
+  } catch {
+    restaurantError.value = t('restaurants.errors.searchFailed')
+  } finally {
+    restaurantLoading.value = false
+  }
+}
+
 async function findRestaurantsByText() {
   if (!recipe.value) return
   const location = restaurantLocation.value.trim()
@@ -450,6 +492,8 @@ async function findRestaurantsByText() {
     restaurantNoResults.value = false
     restaurantUnavailable.value = false
     restaurantError.value = null
+    gpsNoCityHint.value = false
+    resolvedLocation.value = null
     restaurants.value = []
     return
   }
@@ -459,6 +503,8 @@ async function findRestaurantsByText() {
   restaurantUnavailable.value = false
   restaurantNoResults.value = false
   restaurantLocationTooBroad.value = false
+  gpsNoCityHint.value = false
+  resolvedLocation.value = null
   restaurants.value = []
 
   try {
@@ -874,7 +920,9 @@ function formatDate(date: Date) {
           <p v-if="restaurantError" class="status-text error">{{ restaurantError }}</p>
           <p v-else-if="restaurantLocationTooBroad" class="status-text">{{ t('restaurants.locationTooBroad') }}</p>
           <p v-else-if="restaurantUnavailable" class="status-text">{{ t('restaurants.unavailable') }}</p>
+          <p v-else-if="gpsNoCityHint" class="status-text">{{ t('restaurants.gpsNoCityHint') }}</p>
           <p v-else-if="restaurantNoResults" class="status-text">{{ t('restaurants.noExactResults') }}</p>
+          <p v-if="resolvedLocation" class="status-text">{{ t('restaurants.resolvedLocation', { city: resolvedLocation }) }}</p>
         </template>
         <ul v-if="!restaurantLoading && restaurants.length" class="restaurant-list">
           <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.googleMapsUrl}`">

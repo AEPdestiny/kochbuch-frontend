@@ -450,7 +450,9 @@
     "distanceInMaps": "Google マップで距離を確認",
     "openRouteInMaps": "Google マップでルートを開く",
     "useMyLocation": "現在地を使用",
-    "locationActive": "場所を保存しました",
+    "locationActive": "位置が有効",
+    "gpsNoCityHint": "位置を保存しました。レストランを検索するには都市も入力してください。",
+    "resolvedLocation": "{city}で検索中",
     "locationDeniedHint": "位置情報の許可が拒否されました。引き続き都市名を入力できます。"
   },
   "about": {

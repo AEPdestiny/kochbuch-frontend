@@ -519,7 +519,9 @@
     "distanceInMaps": "Entfernung in Google Maps prüfen",
     "openRouteInMaps": "Route in Google Maps öffnen",
     "useMyLocation": "Meinen Standort verwenden",
-    "locationActive": "Standort gespeichert",
+    "locationActive": "Standort aktiv",
+    "gpsNoCityHint": "Standort gespeichert. Gib zusätzlich eine Stadt ein, um Restaurants zu suchen.",
+    "resolvedLocation": "Suche in {city}",
     "locationDeniedHint": "Standortfreigabe abgelehnt. Du kannst weiterhin eine Stadt eingeben."
   },
   "about": {

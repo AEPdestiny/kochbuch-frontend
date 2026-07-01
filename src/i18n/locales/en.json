@@ -517,7 +517,9 @@
     "distanceInMaps": "Check distance in Google Maps",
     "openRouteInMaps": "Open route in Google Maps",
     "useMyLocation": "Use my location",
-    "locationActive": "Location saved",
+    "locationActive": "Location active",
+    "gpsNoCityHint": "Location saved. Additionally enter a city to search for restaurants.",
+    "resolvedLocation": "Searching in {city}",
     "locationDeniedHint": "Location permission denied. You can still enter a city."
   },
   "about": {

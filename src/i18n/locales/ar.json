@@ -450,7 +450,9 @@
     "distanceInMaps": "تحقق من المسافة في خرائط Google",
     "openRouteInMaps": "افتح المسار في خرائط Google",
     "useMyLocation": "استخدام موقعي",
-    "locationActive": "تم حفظ الموقع",
+    "locationActive": "الموقع نشط",
+    "gpsNoCityHint": "تم حفظ الموقع. أدخل أيضاً مدينة للبحث عن المطاعم.",
+    "resolvedLocation": "البحث في {city}",
     "locationDeniedHint": "تم رفض إذن الموقع. لا يزال بإمكانك إدخال مدينة."
   },
   "about": {

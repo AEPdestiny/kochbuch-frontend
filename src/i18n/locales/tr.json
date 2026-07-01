@@ -450,7 +450,9 @@
     "distanceInMaps": "Google Maps'te mesafeyi kontrol et",
     "openRouteInMaps": "Google Maps'te rotayı aç",
     "useMyLocation": "Konumumu kullan",
-    "locationActive": "Konum kaydedildi",
+    "locationActive": "Konum aktif",
+    "gpsNoCityHint": "Konum kaydedildi. Restoran aramak için ek olarak bir şehir girin.",
+    "resolvedLocation": "{city} içinde aranıyor",
     "locationDeniedHint": "Konum izni reddedildi. Yine de bir şehir girebilirsin."
   },
   "about": {

@@ -450,7 +450,9 @@
     "distanceInMaps": "Sprawdź odległość w Google Maps",
     "openRouteInMaps": "Otwórz trasę w Google Maps",
     "useMyLocation": "Użyj mojej lokalizacji",
-    "locationActive": "Lokalizacja zapisana",
+    "locationActive": "Lokalizacja aktywna",
+    "gpsNoCityHint": "Lokalizacja zapisana. Wpisz dodatkowo miasto, aby wyszukać restauracje.",
+    "resolvedLocation": "Szukam w {city}",
     "locationDeniedHint": "Odmówiono dostępu do lokalizacji. Możesz nadal wpisać miasto."
   },
   "about": {

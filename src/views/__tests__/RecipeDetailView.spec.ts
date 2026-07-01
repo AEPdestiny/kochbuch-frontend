@@ -346,6 +346,52 @@ describe('RecipeDetailView', () => {
     expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', 52.52, 13.405)
   })
 
+  it('GPS success without city triggers GPS-only search via searchByText with empty location', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405 } } as GeolocationPosition)
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', '', 52.52, 13.405)
+  })
+
+  it('GPS-only search: no_location status shows gpsNoCityHint', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405 } } as GeolocationPosition)
+    })
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({ status: 'no_location', results: [] })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Standort gespeichert. Gib zusätzlich eine Stadt ein')
+  })
+
+  it('GPS-only search: ok with resolvedLocation shows resolved city', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405 } } as GeolocationPosition)
+    })
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{ name: 'Pasta Palace Berlin', address: null, distanceMeters: null, googleMapsUrl: 'https://maps.google.com', latitude: null, longitude: null }],
+      resolvedLocation: 'Berlin',
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Suche in Berlin')
+    expect(wrapper.text()).toContain('Pasta Palace Berlin')
+  })
+
   it('GPS denied shows friendly hint message', async () => {
     vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation(
       (_success: PositionCallback, error?: PositionErrorCallback | null) => {
