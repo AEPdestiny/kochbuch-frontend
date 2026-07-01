@@ -568,7 +568,7 @@ function exportPantryAsPdf() {
 
         <div class="form-field small">
           <label>{{ t('pantry.form.quantity') }}</label>
-          <input v-model.number="newQuantity" type="number" min="0" step="0.1" :placeholder="t('pantry.form.quantityPlaceholder')" />
+          <input v-model.number="newQuantity" type="number" min="0" step="any" inputmode="decimal" :placeholder="t('pantry.form.quantityPlaceholder')" />
         </div>
 
         <div class="form-field small">
@@ -615,7 +615,7 @@ function exportPantryAsPdf() {
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.quantity') }}</label>
-              <input v-model.number="editQuantity" type="number" min="0" step="0.1" :placeholder="t('pantry.form.quantityPlaceholder')" />
+              <input v-model.number="editQuantity" type="number" min="0" step="any" inputmode="decimal" :placeholder="t('pantry.form.quantityPlaceholder')" />
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.unit') }}</label>

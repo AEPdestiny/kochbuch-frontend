@@ -754,6 +754,48 @@ describe('ShoppingListView', () => {
     expect(inputValue(wrapper, 'form.edit-form input[placeholder="3"]')).toBe('57')
   })
 
+  it('create form quantity input has step="any" to allow decimals like 0.75', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const qty = wrapper.find('form.shopping-list-form input[type="number"]')
+    expect(qty.attributes('step')).toBe('any')
+  })
+
+  it('edit form quantity input has step="any" to allow decimals like 0.75', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Milch', 1, 'l', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('button.edit-btn').trigger('click')
+
+    const qty = wrapper.find('form.edit-form input[type="number"]')
+    expect(qty.attributes('step')).toBe('any')
+  })
+
+  it('edit form shows 0.75 quantity without browser blocking it (step=any)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Wasser', 0.75, 'Tasse', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('button.edit-btn').trigger('click')
+
+    const qty = wrapper.find('form.edit-form input[type="number"]')
+    expect(qty.attributes('step')).toBe('any')
+    expect(inputValue(wrapper, 'form.edit-form input[type="number"]')).toBe('0.75')
+  })
+
   // ─── PDF export tests ─────────────────────────────────────────────────────
 
   it('shows the PDF export button when items are loaded', async () => {

@@ -393,7 +393,7 @@ function exportShoppingListAsPdf() {
 
         <div class="form-field small">
           <label>{{ t('shoppingList.form.quantity') }}</label>
-          <input v-model.number="newQuantity" type="number" min="0" step="0.1" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
+          <input v-model.number="newQuantity" type="number" min="0" step="any" inputmode="decimal" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
         </div>
 
         <div class="form-field small">
@@ -468,7 +468,7 @@ function exportShoppingListAsPdf() {
 
                 <div class="form-field small">
                   <label>{{ t('shoppingList.form.quantity') }}</label>
-                  <input v-model.number="editQuantity" type="number" min="0" step="0.1" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
+                  <input v-model.number="editQuantity" type="number" min="0" step="any" inputmode="decimal" :placeholder="t('shoppingList.form.quantityPlaceholder')" />
                 </div>
 
                 <div class="form-field small">
