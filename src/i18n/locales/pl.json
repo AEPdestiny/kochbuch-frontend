@@ -362,13 +362,16 @@
       "contextPlaceholder": "stressed, cheap, date night"
     },
     "reasons": {
-      "vegan": "Vegan match for your profile",
-      "vegetarian": "Vegetarian match for your profile",
-      "glutenFree": "Gluten-free match for your profile",
-      "calorieConscious": "Matches your goal: calorie conscious",
-      "highProtein": "Matches your goal: high protein",
-      "time": "Fits your preferred cooking time",
-      "pantry": "Uses ingredients from your pantry: {ingredient}"
+      "vegan": "Wegański",
+      "vegetarian": "Wegetariański",
+      "glutenFree": "Bezglutenowy",
+      "calorieConscious": "Świadomy kalorii",
+      "highProtein": "Wysokobiałkowe",
+      "time": "Szybkie danie",
+      "pantry": "Pasuje do spiżarni",
+      "likes": "Lubisz: {value}",
+      "underCalorieGoal": "Poniżej celu kalorycznego",
+      "quickCook": "Szybkie danie"
     },
     "pagination": {
       "label": "Nawigacja stron",

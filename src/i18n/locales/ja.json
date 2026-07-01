@@ -362,13 +362,16 @@
       "contextPlaceholder": "stressed, cheap, date night"
     },
     "reasons": {
-      "vegan": "Vegan match for your profile",
-      "vegetarian": "Vegetarian match for your profile",
-      "glutenFree": "Gluten-free match for your profile",
-      "calorieConscious": "Matches your goal: calorie conscious",
-      "highProtein": "Matches your goal: high protein",
-      "time": "Fits your preferred cooking time",
-      "pantry": "Uses ingredients from your pantry: {ingredient}"
+      "vegan": "ヴィーガン",
+      "vegetarian": "ベジタリアン",
+      "glutenFree": "グルテンフリー",
+      "calorieConscious": "カロリー意識",
+      "highProtein": "高タンパク",
+      "time": "時短レシピ",
+      "pantry": "食材庫にマッチ",
+      "likes": "お好み：{value}",
+      "underCalorieGoal": "カロリー目標以下",
+      "quickCook": "時短レシピ"
     },
     "pagination": {
       "label": "ページナビゲーション",

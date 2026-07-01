@@ -577,7 +577,7 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    const raw = sessionStorage.getItem('dishly.recipe.snapshot')
+    const raw = sessionStorage.getItem('dishly.recipe.snapshot.v2')
     expect(raw).not.toBeNull()
     const snap = JSON.parse(raw)
     expect(snap.baseRecipes).toHaveLength(35)
@@ -600,7 +600,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
     expect(wrapper1.findAll('.recipe-card')).toHaveLength(5)
     // Snapshot must include page 2
-    const snapBefore = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot'))
+    const snapBefore = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot.v2'))
     expect(snapBefore.page).toBe(2)
 
     // Record which titles are visible on page 2
@@ -627,7 +627,7 @@ describe('ApiRecipeList.vue', () => {
     const wrapper1 = mount(ApiRecipeList)
     await flushPromises()
 
-    const snapshotAfterFirstLoad = sessionStorage.getItem('dishly.recipe.snapshot')
+    const snapshotAfterFirstLoad = sessionStorage.getItem('dishly.recipe.snapshot.v2')
     expect(snapshotAfterFirstLoad).not.toBeNull()
 
     wrapper1.unmount()
@@ -637,7 +637,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     // Snapshot not overwritten by fresh load
-    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBe(snapshotAfterFirstLoad)
+    expect(sessionStorage.getItem('dishly.recipe.snapshot.v2')).toBe(snapshotAfterFirstLoad)
     wrapper2.unmount()
   })
 
@@ -655,14 +655,14 @@ describe('ApiRecipeList.vue', () => {
     await nextBtn.trigger('click')
     await flushPromises()
 
-    const snapBefore = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot'))
+    const snapBefore = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot.v2'))
     expect(snapBefore.page).toBe(2)
 
     await wrapper.find('.shuffle-btn').trigger('click')
     await flushPromises()
 
     // New snapshot with page 1
-    const snapAfter = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot'))
+    const snapAfter = JSON.parse(sessionStorage.getItem('dishly.recipe.snapshot.v2'))
     expect(snapAfter.page).toBe(1)
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
@@ -715,7 +715,7 @@ describe('ApiRecipeList.vue', () => {
 
     expect(wrapper1.findAll('.recipe-card')).toHaveLength(30)
     const titles1 = wrapper1.findAll('.recipe-card').map(c => c.find('.card-title').text())
-    const snap1 = sessionStorage.getItem('dishly.recipe.snapshot')
+    const snap1 = sessionStorage.getItem('dishly.recipe.snapshot.v2')
     expect(snap1).not.toBeNull()
 
     wrapper1.unmount()
@@ -727,7 +727,7 @@ describe('ApiRecipeList.vue', () => {
     const titles2 = wrapper2.findAll('.recipe-card').map(c => c.find('.card-title').text())
     expect(titles2).toEqual(titles1)
     // Snapshot must not have been overwritten
-    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBe(snap1)
+    expect(sessionStorage.getItem('dishly.recipe.snapshot.v2')).toBe(snap1)
     wrapper2.unmount()
   })
 
@@ -758,7 +758,7 @@ describe('ApiRecipeList.vue', () => {
     const wrapper1 = mount(ApiRecipeList)
     await flushPromises()
 
-    const savedSnap = sessionStorage.getItem('dishly.recipe.snapshot')
+    const savedSnap = sessionStorage.getItem('dishly.recipe.snapshot.v2')
     expect(savedSnap).not.toBeNull()
 
     wrapper1.unmount()
@@ -769,7 +769,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     // Snapshot must be intact — same value as after first load
-    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBe(savedSnap)
+    expect(sessionStorage.getItem('dishly.recipe.snapshot.v2')).toBe(savedSnap)
     wrapper2.unmount()
   })
 
@@ -783,14 +783,14 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
-    expect(sessionStorage.getItem('dishly.recipe.snapshot')).not.toBeNull()
+    expect(sessionStorage.getItem('dishly.recipe.snapshot.v2')).not.toBeNull()
 
     // Simulate logout
     sessionStorage.removeItem('dishly.auth.token')
     useAuthStore().token = null
     await flushPromises()
 
-    expect(sessionStorage.getItem('dishly.recipe.snapshot')).toBeNull()
+    expect(sessionStorage.getItem('dishly.recipe.snapshot.v2')).toBeNull()
     wrapper.unmount()
   })
 

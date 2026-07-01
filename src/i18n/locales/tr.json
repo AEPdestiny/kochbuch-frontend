@@ -362,13 +362,16 @@
       "contextPlaceholder": "stressed, cheap, date night"
     },
     "reasons": {
-      "vegan": "Vegan match for your profile",
-      "vegetarian": "Vegetarian match for your profile",
-      "glutenFree": "Gluten-free match for your profile",
-      "calorieConscious": "Matches your goal: calorie conscious",
-      "highProtein": "Matches your goal: high protein",
-      "time": "Fits your preferred cooking time",
-      "pantry": "Uses ingredients from your pantry: {ingredient}"
+      "vegan": "Vegan",
+      "vegetarian": "Vejetaryen",
+      "glutenFree": "Glutensiz",
+      "calorieConscious": "Kalori bilinçli",
+      "highProtein": "Yüksek protein",
+      "time": "Hızlı pişirilir",
+      "pantry": "Dolabınıza uygun",
+      "likes": "Seversiniz: {value}",
+      "underCalorieGoal": "Kalori hedefinizin altında",
+      "quickCook": "Hızlı pişirilir"
     },
     "pagination": {
       "label": "Sayfa gezintisi",

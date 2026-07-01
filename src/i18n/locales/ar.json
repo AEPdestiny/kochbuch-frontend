@@ -362,13 +362,16 @@
       "contextPlaceholder": "stressed, cheap, date night"
     },
     "reasons": {
-      "vegan": "Vegan match for your profile",
-      "vegetarian": "Vegetarian match for your profile",
-      "glutenFree": "Gluten-free match for your profile",
-      "calorieConscious": "Matches your goal: calorie conscious",
-      "highProtein": "Matches your goal: high protein",
-      "time": "Fits your preferred cooking time",
-      "pantry": "Uses ingredients from your pantry: {ingredient}"
+      "vegan": "نباتي صرف",
+      "vegetarian": "نباتي",
+      "glutenFree": "خالٍ من الغلوتين",
+      "calorieConscious": "واعٍ بالسعرات",
+      "highProtein": "غني بالبروتين",
+      "time": "طبخ سريع",
+      "pantry": "يناسب مخزنك",
+      "likes": "تحب: {value}",
+      "underCalorieGoal": "دون هدف السعرات",
+      "quickCook": "طبخ سريع"
     },
     "pagination": {
       "label": "التنقل بين الصفحات",

@@ -11,6 +11,8 @@ import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import { ALLERGEN_ENTRIES, DISLIKES_ENTRIES, LIKES_ENTRIES, getMatchTerms } from '@/shared/profileSuggestions'
+import { getRecommendationBadges } from '@/shared/recommendationBadges'
+import type { RecommendationBadge } from '@/shared/recommendationBadges'
 import { useAuthStore } from '@/stores/authStore'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 import type { UserPreferencesResponse } from '@/types/profile'
@@ -19,7 +21,7 @@ import type { Recipe, RecipeSearchFilters } from '@/types/recipe'
 type RecipeSource = 'external' | 'dishly'
 type DisplayRecipe = Recipe & {
   source: RecipeSource
-  recommendationReasons: string[]
+  recommendationReasons: RecommendationBadge[]
 }
 
 const search = ref('')
@@ -61,7 +63,7 @@ const isLoggedIn = computed(() => authStore.isAuthenticated)
 const EXTERNAL_CHUNK = 20
 const SEARCH_DEBOUNCE_MS = 400
 const PAGE_SIZE = 30
-const SNAPSHOT_KEY = 'dishly.recipe.snapshot'
+const SNAPSHOT_KEY = 'dishly.recipe.snapshot.v2'
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 let externalRequestCounter = 0
 let calorieSortWasAutomatic = false
@@ -804,20 +806,17 @@ function compareOptionalNumbers(
   return direction === 'asc' ? a - b : b - a
 }
 
-function recommendationReasons(recipe: Recipe, source: RecipeSource) {
-  const reasons: string[] = []
-  const text = `${recipe.title} ${recipe.ingredients} ${recipe.category} ${recipe.dishTypes ?? ''} ${recipe.diets ?? ''}`.toLowerCase()
-  if (profilePersonalizationEnabled.value) {
-    if ((source === 'external' || recipe.vegan) && vegan.value) reasons.push(t('home.reasons.vegan'))
-    if ((source === 'external' || recipe.vegetarian) && vegetarian.value) reasons.push(t('home.reasons.vegetarian'))
-    if ((source === 'external' || recipe.glutenFree) && glutenFree.value) reasons.push(t('home.reasons.glutenFree'))
-    if (calorieConscious.value && recipe.calories && recipe.calories <= 650) reasons.push(t('home.reasons.calorieConscious'))
-    if (maxPrepTime.value && (recipe.prepTimeMinutes + recipe.cookTimeMinutes) <= maxPrepTime.value) reasons.push(t('home.reasons.time'))
-    if (highProtein.value && /(protein|chicken|egg|fish|tofu|beans)/.test(text)) reasons.push(t('home.reasons.highProtein'))
-  }
-  const pantryHit = pantryIngredients.value.find(ingredient => text.includes(ingredient))
-  if (pantryHit) reasons.push(t('home.reasons.pantry', { ingredient: pantryHit }))
-  return reasons.slice(0, 3)
+function recommendationReasons(recipe: Recipe, source: RecipeSource): RecommendationBadge[] {
+  const profile = profilePersonalizationEnabled.value ? loadedPreferences.value : null
+  return getRecommendationBadges(
+    recipe,
+    profile,
+    pantryIngredients.value,
+    {
+      matchTermsFn: (term: string) => getMatchTerms(term, LIKES_ENTRIES),
+      isExternal: source === 'external',
+    },
+  )
 }
 
 function favoriteId(recipe: DisplayRecipe) {
@@ -1041,9 +1040,14 @@ function formatDate(date: Date) {
               {{ t('recipeDetail.actions.addToMealPlan') }}
             </button>
 
-            <ul v-if="r.recommendationReasons.length" class="reason-list">
-              <li v-for="reason in r.recommendationReasons" :key="reason">{{ reason }}</li>
-            </ul>
+            <div v-if="r.recommendationReasons.length" class="reason-badges">
+              <span
+                v-for="badge in r.recommendationReasons"
+                :key="badge.key"
+                class="reason-badge"
+                :class="`reason-badge--${badge.type}`"
+              >{{ t(badge.labelKey, badge.labelParams ?? {}) }}</span>
+            </div>
           </div>
         </article>
 
@@ -1405,12 +1409,30 @@ function formatDate(date: Date) {
   background: #e0f5f2;
 }
 
-.reason-list {
-  margin: 10px 0 0;
-  padding-left: 18px;
-  color: #2f6f62;
-  font-size: 0.9rem;
+.reason-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
 }
+
+.reason-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #e3f6f1;
+  color: #2f8f7b;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.reason-badge--pantry  { background: #fce8f3; color: #cc7da9; }
+.reason-badge--likes   { background: #fff3e6; color: #c4742e; }
+.reason-badge--diet    { background: #e3f6f1; color: #2f8f7b; }
+.reason-badge--calorie { background: #f0f8ff; color: #2a6fa8; }
+.reason-badge--time    { background: #f4fbfa; color: #26b6b8; }
 
 .modal-backdrop {
   position: fixed;

@@ -407,13 +407,16 @@
       "chooseSlot": "Wähle Tag und Slot für:"
     },
     "reasons": {
-      "vegan": "Vegan passend zu deinem Profil",
-      "vegetarian": "Vegetarisch passend zu deinem Profil",
-      "glutenFree": "Glutenfrei passend zu deinem Profil",
-      "calorieConscious": "Passt zu deinem Ziel: kalorienbewusst",
-      "highProtein": "Passt zu deinem Ziel: proteinreich",
-      "time": "Passt zu deiner gewünschten Kochzeit",
-      "pantry": "Verwendet Zutaten aus deinem Vorrat: {ingredient}"
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarisch",
+      "glutenFree": "Glutenfrei",
+      "calorieConscious": "Kalorienbewusst",
+      "highProtein": "Proteinreich",
+      "time": "Schnell gekocht",
+      "pantry": "Passt zu deinem Vorrat",
+      "likes": "Magst du: {value}",
+      "underCalorieGoal": "Unter deinem kcal-Ziel",
+      "quickCook": "Schnell gekocht"
     },
     "pagination": {
       "label": "Seitennavigation",

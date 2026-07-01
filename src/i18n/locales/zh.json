@@ -362,13 +362,16 @@
       "contextPlaceholder": "stressed, cheap, date night"
     },
     "reasons": {
-      "vegan": "Vegan match for your profile",
-      "vegetarian": "Vegetarian match for your profile",
-      "glutenFree": "Gluten-free match for your profile",
-      "calorieConscious": "Matches your goal: calorie conscious",
-      "highProtein": "Matches your goal: high protein",
-      "time": "Fits your preferred cooking time",
-      "pantry": "Uses ingredients from your pantry: {ingredient}"
+      "vegan": "纯素食",
+      "vegetarian": "素食",
+      "glutenFree": "无麸质",
+      "calorieConscious": "卡路里意识",
+      "highProtein": "高蛋白",
+      "time": "快速烹饪",
+      "pantry": "适合您的食材",
+      "likes": "您喜欢：{value}",
+      "underCalorieGoal": "低于卡路里目标",
+      "quickCook": "快速烹饪"
     },
     "pagination": {
       "label": "页面导航",
