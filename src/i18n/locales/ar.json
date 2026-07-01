@@ -489,6 +489,13 @@
     },
     "swipe": {
       "placeholder": "????? ????? ????? ??????."
+    },
+    "shoppingList": {
+      "toastAdded": "تمت إضافة {count} إلى قائمة التسوق",
+      "toastInPantry": "{count} مغطى من المخزن",
+      "toastExisting": "{count} موجود بالفعل في قائمة التسوق",
+      "toastReview": "{count} يحتاج إلى مراجعة",
+      "toastNone": "لا توجد مكونات جديدة مطلوبة"
     }
   },
   "recipeDetail": {

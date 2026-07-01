@@ -483,6 +483,13 @@
     },
     "swipe": {
       "placeholder": "Kaydırmalı planlama daha sonra gelecek."
+    },
+    "shoppingList": {
+      "toastAdded": "{count} alışveriş listesine eklendi",
+      "toastInPantry": "{count} kiler tarafından karşılandı",
+      "toastExisting": "{count} zaten alışveriş listesinde",
+      "toastReview": "{count} incelenmeli",
+      "toastNone": "Yeni malzeme gerekmiyor"
     }
   },
   "recipeDetail": {

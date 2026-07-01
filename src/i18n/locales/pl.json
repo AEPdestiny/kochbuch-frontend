@@ -483,6 +483,13 @@
     },
     "swipe": {
       "placeholder": "Planowanie gestem pojawi się później."
+    },
+    "shoppingList": {
+      "toastAdded": "{count} dodano do listy zakupów",
+      "toastInPantry": "{count} pokryte przez spiżarnię",
+      "toastExisting": "{count} już na liście zakupów",
+      "toastReview": "{count} do sprawdzenia",
+      "toastNone": "Nie potrzebujesz nowych składników"
     }
   },
   "recipeDetail": {

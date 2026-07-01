@@ -996,7 +996,7 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).not.toContain('Pasta')
   })
 
-  it('creates a shopping list from the current week and shows the transparent result', async () => {
+  it('creates a shopping list from the current week and shows a detailed toast', async () => {
     vi.mocked(mealPlanApi.createShoppingListFromWeek).mockResolvedValue({
       added: [{ name: 'Tomaten', quantity: 200, unit: 'g', recipeTitle: 'Pasta' }],
       skippedBecauseInPantry: [{ name: 'Eier', quantity: 2, unit: 'Stück', recipeTitle: 'Omelett' }],
@@ -1014,22 +1014,17 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(mealPlanApi.createShoppingListFromWeek).toHaveBeenCalledWith('2026-06-01')
-    expect(useToastStore().toasts.some(t => t.type === 'success')).toBe(true)
-    expect(wrapper.find('.shopping-summary-chips').exists()).toBe(true)
-    expect(wrapper.findAll('.shopping-result-section')).toHaveLength(4)
-    expect(wrapper.text()).toContain('Hinzugefügt (1)')
-    expect(wrapper.text()).toContain('Schon im Vorrat (1)')
-    expect(wrapper.text()).toContain('Bereits auf Einkaufsliste (1)')
-    expect(wrapper.text()).toContain('Menge prüfen (1)')
-    expect(wrapper.find('.shopping-list-result-header a').attributes('href')).toBe('/shopping-list')
-    expect(wrapper.text()).toContain('200 g Tomaten')
-    expect(wrapper.text()).toContain('2 Stück Eier')
-    expect(wrapper.text()).toContain('1 EL Butter')
-    expect(wrapper.text()).toContain('200 g Reis')
-    expect(wrapper.text()).toContain('Einheiten sind nicht sicher vergleichbar.')
+    const toasts = useToastStore().toasts
+    expect(toasts.some(t => t.type === 'success')).toBe(true)
+    const successToast = toasts.find(t => t.type === 'success')!
+    expect(successToast.message).toContain('1 zur Einkaufsliste hinzugefügt')
+    expect(successToast.message).toContain('1 durch Vorrat abgedeckt')
+    expect(successToast.message).toContain('1 bereits auf der Einkaufsliste')
+    expect(successToast.message).toContain('1 zum Prüfen')
+    expect(wrapper.find('.shopping-list-result').exists()).toBe(false)
   })
 
-  it('keeps empty shopping list result categories compact', async () => {
+  it('shows a toast with only added count when other categories are empty', async () => {
     vi.mocked(mealPlanApi.createShoppingListFromWeek).mockResolvedValue({
       added: [{ name: 'Tomaten', quantity: 200, unit: 'g', recipeTitle: 'Pasta' }],
       skippedBecauseInPantry: [],
@@ -1046,16 +1041,13 @@ describe('MealPlanView', () => {
     await createButton.trigger('click')
     await flushPromises()
 
-    const sections = wrapper.findAll('.shopping-result-section')
-    expect(sections).toHaveLength(4)
-    expect(sections[0]!.attributes('open')).toBeDefined()
-    expect(sections[1]!.attributes('open')).toBeUndefined()
-    expect(wrapper.text()).toContain('Hinzugefügt (1)')
-    expect(wrapper.text()).toContain('Schon im Vorrat (0)')
-    expect(wrapper.text()).toContain('Bereits auf Einkaufsliste (0)')
-    expect(wrapper.text()).toContain('Menge prüfen (0)')
-    expect(wrapper.text()).toContain('Keine Einträge.')
-    expect(wrapper.text()).toContain('200 g Tomaten')
+    const toasts = useToastStore().toasts
+    const successToast = toasts.find(t => t.type === 'success')!
+    expect(successToast.message).toContain('1 zur Einkaufsliste hinzugefügt')
+    expect(successToast.message).not.toContain('durch Vorrat abgedeckt')
+    expect(successToast.message).not.toContain('bereits auf der Einkaufsliste')
+    expect(successToast.message).not.toContain('zum Prüfen')
+    expect(wrapper.find('.shopping-list-result').exists()).toBe(false)
   })
 
   it('treats 404 while clearing already empty slots as success when the reloaded week is empty', async () => {

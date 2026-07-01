@@ -561,7 +561,12 @@
       "inPantry": "Already in pantry",
       "alreadyOnList": "Already on shopping list",
       "needsReview": "Review quantity",
-      "none": "No entries."
+      "none": "No entries.",
+      "toastAdded": "{count} added to shopping list",
+      "toastInPantry": "{count} covered by pantry",
+      "toastExisting": "{count} already on shopping list",
+      "toastReview": "{count} need review",
+      "toastNone": "No new ingredients needed"
     },
     "days": {
       "monday": "Monday",

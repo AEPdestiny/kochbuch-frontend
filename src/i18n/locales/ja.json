@@ -489,6 +489,13 @@
     },
     "swipe": {
       "placeholder": "スワイプ計画は後で追加されます。"
+    },
+    "shoppingList": {
+      "toastAdded": "{count}件を買い物リストに追加しました",
+      "toastInPantry": "{count}件は食料庫でカバーされています",
+      "toastExisting": "{count}件はすでに買い物リストにあります",
+      "toastReview": "{count}件を確認してください",
+      "toastNone": "新しい食材は不要です"
     }
   },
   "recipeDetail": {

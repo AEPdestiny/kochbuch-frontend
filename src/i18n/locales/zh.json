@@ -489,6 +489,13 @@
     },
     "swipe": {
       "placeholder": "滑动计划功能稍后推出。"
+    },
+    "shoppingList": {
+      "toastAdded": "{count}项已添加到购物清单",
+      "toastInPantry": "{count}项已由储藏室覆盖",
+      "toastExisting": "{count}项已在购物清单中",
+      "toastReview": "{count}项需要确认",
+      "toastNone": "无需新食材"
     }
   },
   "recipeDetail": {

@@ -561,7 +561,12 @@
       "inPantry": "Schon im Vorrat",
       "alreadyOnList": "Bereits auf Einkaufsliste",
       "needsReview": "Menge prüfen",
-      "none": "Keine Einträge."
+      "none": "Keine Einträge.",
+      "toastAdded": "{count} zur Einkaufsliste hinzugefügt",
+      "toastInPantry": "{count} durch Vorrat abgedeckt",
+      "toastExisting": "{count} bereits auf der Einkaufsliste",
+      "toastReview": "{count} zum Prüfen",
+      "toastNone": "Keine neuen Zutaten nötig"
     },
     "days": {
       "monday": "Montag",

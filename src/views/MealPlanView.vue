@@ -11,7 +11,6 @@ import { displayCategory } from '@/shared/recipeDisplay'
 import { printMealPlan } from '@/shared/printExport'
 import type {
   MealPlanEntryResponse,
-  MealPlanShoppingListItem,
   MealPlanShoppingListResponse,
   MealPlanWeekResponse,
   MealSlot,
@@ -35,15 +34,6 @@ type SlotSuggestion = {
   imageUrl?: string | null
   externalRecipeId?: string | null
   externalSource?: string | null
-}
-
-type ShoppingResultTone = 'added' | 'pantry' | 'existing' | 'review'
-
-type ShoppingResultSection = {
-  key: string
-  label: string
-  tone: ShoppingResultTone
-  items: MealPlanShoppingListItem[]
 }
 
 const { t, locale } = useI18n()
@@ -71,13 +61,11 @@ const swipeIndex = ref(0)
 const swipeLoading = ref(false)
 const swipeError = ref<string | null>(null)
 const swipeMessage = ref<string | null>(null)
-const actionMessage = ref<string | null>(null)  // kept for template; only errors use it
 const activeBucket = ref<MealSlot | null>(null)
 const editingSlotKey = ref<string | null>(null)
 const moveEditorKey = ref<string | null>(null)
 const moveTargetBySlot = ref<Record<string, { date: string; slot: MealSlot }>>({})
 const shoppingListLoading = ref(false)
-const shoppingListResult = ref<MealPlanShoppingListResponse | null>(null)
 
 const dayKeys = [
   'monday',
@@ -137,41 +125,6 @@ const weeklyRecommendation = computed(() => {
   return 'Deine Woche passt gut zu deinem Kalorienziel.'
 })
 
-const shoppingResultSections = computed<ShoppingResultSection[]>(() => {
-  locale.value
-  const result = shoppingListResult.value
-  if (!result) {
-    return []
-  }
-
-  return [
-    {
-      key: 'added',
-      label: t('mealPlan.shoppingList.added'),
-      tone: 'added',
-      items: result.added,
-    },
-    {
-      key: 'skippedBecauseInPantry',
-      label: t('mealPlan.shoppingList.inPantry'),
-      tone: 'pantry',
-      items: result.skippedBecauseInPantry,
-    },
-    {
-      key: 'alreadyOnShoppingList',
-      label: t('mealPlan.shoppingList.alreadyOnList'),
-      tone: 'existing',
-      items: result.alreadyOnShoppingList,
-    },
-    {
-      key: 'needsReview',
-      label: t('mealPlan.shoppingList.needsReview'),
-      tone: 'review',
-      items: result.needsReview,
-    },
-  ]
-})
-
 onMounted(() => {
   loadData()
 })
@@ -222,7 +175,6 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
 
   try {
     actionError.value = null
-    actionMessage.value = null
     const saved = recipeId
       ? await mealPlanApi.setSlot(date, slot, Number(recipeId))
       : await mealPlanApi.setSlot(date, slot, {
@@ -253,7 +205,6 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
 async function removeDay(date: string, slot: MealSlot = 'dinner') {
   try {
     actionError.value = null
-    actionMessage.value = null
     await mealPlanApi.deleteSlot(date, slot)
     if (week.value) {
       week.value.entries = week.value.entries.filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
@@ -307,13 +258,22 @@ async function clearWeek() {
   }
 }
 
+function buildShoppingToast(result: MealPlanShoppingListResponse): string {
+  const parts: string[] = []
+  if (result.added.length > 0) parts.push(t('mealPlan.shoppingList.toastAdded', { count: result.added.length }))
+  if (result.skippedBecauseInPantry.length > 0) parts.push(t('mealPlan.shoppingList.toastInPantry', { count: result.skippedBecauseInPantry.length }))
+  if (result.alreadyOnShoppingList.length > 0) parts.push(t('mealPlan.shoppingList.toastExisting', { count: result.alreadyOnShoppingList.length }))
+  if (result.needsReview.length > 0) parts.push(t('mealPlan.shoppingList.toastReview', { count: result.needsReview.length }))
+  if (parts.length === 0) return t('mealPlan.shoppingList.toastNone')
+  return parts.join(', ') + '.'
+}
+
 async function createShoppingListFromWeek() {
   try {
     actionError.value = null
-    actionMessage.value = null
     shoppingListLoading.value = true
-    shoppingListResult.value = await mealPlanApi.createShoppingListFromWeek(week.value?.weekStart)
-    toastStore.addToast(t('notifications.shoppingListCreated'), 'success')
+    const result = await mealPlanApi.createShoppingListFromWeek(week.value?.weekStart)
+    toastStore.addToast(buildShoppingToast(result), 'success')
   } catch {
     actionError.value = t('mealPlan.shoppingList.error')
   } finally {
@@ -422,7 +382,6 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
 
   try {
     actionError.value = null
-    actionMessage.value = null
     const updatedWeek = await mealPlanApi.moveEntry(entry.id, {
       targetDate: target.date,
       targetSlot: target.slot,
@@ -791,23 +750,6 @@ function formatProtein(value: number | null | undefined) {
   return typeof value === 'number' ? `${Math.round(value)} g Protein` : ''
 }
 
-function formatShoppingItem(item: MealPlanShoppingListItem) {
-  const quantity = item.quantity === null || item.quantity === undefined ? '' : `${item.quantity}`.trim()
-  const unit = item.unit?.trim() ?? ''
-  return [quantity, unit, item.name].filter(Boolean).join(' ')
-}
-
-function shoppingItemKey(sectionKey: string, item: MealPlanShoppingListItem, index: number) {
-  return [
-    sectionKey,
-    item.name,
-    item.quantity ?? '',
-    item.unit ?? '',
-    item.recipeTitle ?? '',
-    item.reason ?? '',
-    index,
-  ].join('-')
-}
 
 function firstFreeDateForSlot(slot: MealSlot) {
   if (bucketCounts.value[slot] >= BUCKET_LIMIT) {
@@ -923,57 +865,6 @@ function formatDate(date: Date) {
         </button>
       </div>
 
-      <section v-if="shoppingListResult" class="shopping-list-result full-width" aria-live="polite">
-        <div class="shopping-list-result-header">
-          <div>
-            <h2>{{ t('mealPlan.shoppingList.title') }}</h2>
-            <p>{{ t('mealPlan.shoppingList.subtitle') }}</p>
-          </div>
-          <RouterLink to="/shopping-list" class="secondary-button planned-link">
-            {{ t('mealPlan.shoppingList.open') }}
-          </RouterLink>
-        </div>
-
-        <div class="shopping-summary-chips" aria-label="Einkaufslisten-Zusammenfassung">
-          <span
-            v-for="section in shoppingResultSections"
-            :key="`${section.key}-summary`"
-            class="shopping-summary-chip"
-            :class="`tone-${section.tone}`"
-          >
-            <strong>{{ section.items.length }}</strong>
-            {{ section.label }}
-          </span>
-        </div>
-
-        <div class="shopping-result-sections">
-          <details
-            v-for="section in shoppingResultSections"
-            :key="section.key"
-            class="shopping-result-section"
-            :class="`tone-${section.tone}`"
-            :open="section.items.length > 0"
-          >
-            <summary>
-              <span>{{ section.label }} ({{ section.items.length }})</span>
-              <span aria-hidden="true">▾</span>
-            </summary>
-            <p v-if="section.items.length === 0" class="shopping-empty">
-              {{ t('mealPlan.shoppingList.none') }}
-            </p>
-            <ul v-else class="shopping-item-list">
-              <li
-                v-for="(item, index) in section.items"
-                :key="shoppingItemKey(section.key, item, index)"
-              >
-                <span>{{ formatShoppingItem(item) }}</span>
-                <small v-if="item.recipeTitle">{{ item.recipeTitle }}</small>
-                <small v-if="item.reason">{{ item.reason }}</small>
-              </li>
-            </ul>
-          </details>
-        </div>
-      </section>
 
       <section v-if="planningMode === 'swipe'" class="swipe-planner full-width" aria-label="Swipe-Planung">
         <div class="swipe-controls">
@@ -1542,157 +1433,6 @@ function formatDate(date: Date) {
   margin: 4px 0 0;
 }
 
-.shopping-list-result {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fcfb 100%);
-  border: 1px solid #c3e7e1;
-  border-radius: 16px;
-  box-shadow: 0 1px 10px rgba(79, 127, 120, 0.08);
-  display: grid;
-  gap: 16px;
-  padding: 16px;
-}
-
-.shopping-list-result-header {
-  align-items: start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.shopping-list-result h2,
-.shopping-list-result h3 {
-  color: #cc7da9;
-  margin: 0 0 6px;
-}
-
-.shopping-list-result p {
-  color: #486b68;
-  margin: 0;
-}
-
-.shopping-summary-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.shopping-summary-chip {
-  align-items: center;
-  background: #f4fbfa;
-  border: 1px solid #d6eee9;
-  border-radius: 999px;
-  color: #486b68;
-  display: inline-flex;
-  gap: 6px;
-  min-height: 36px;
-  padding: 6px 12px;
-}
-
-.shopping-summary-chip strong {
-  color: #2b1b23;
-}
-
-.shopping-summary-chip.tone-added {
-  background: #edf9f2;
-  border-color: #bfe8cf;
-  color: #247a4f;
-}
-
-.shopping-summary-chip.tone-pantry {
-  background: #f1fbfb;
-  border-color: #bde8e4;
-  color: #1d8e90;
-}
-
-.shopping-summary-chip.tone-existing {
-  background: #f6f4ff;
-  border-color: #d9d1f0;
-  color: #5b4b92;
-}
-
-.shopping-summary-chip.tone-review {
-  background: #fff8ed;
-  border-color: #f0d2a4;
-  color: #a7611d;
-}
-
-.shopping-result-sections {
-  display: grid;
-  gap: 10px;
-}
-
-.shopping-result-section {
-  background: #ffffff;
-  border: 1px solid #d6eee9;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.shopping-result-section.tone-added {
-  border-color: #bfe8cf;
-}
-
-.shopping-result-section.tone-pantry {
-  border-color: #bde8e4;
-}
-
-.shopping-result-section.tone-existing {
-  border-color: #d9d1f0;
-}
-
-.shopping-result-section.tone-review {
-  border-color: #f0d2a4;
-}
-
-.shopping-result-section summary {
-  align-items: center;
-  color: #2b1b23;
-  cursor: pointer;
-  display: flex;
-  font-weight: 800;
-  justify-content: space-between;
-  list-style: none;
-  min-height: 46px;
-  padding: 10px 12px;
-}
-
-.shopping-result-section summary::-webkit-details-marker {
-  display: none;
-}
-
-.shopping-result-section[open] summary {
-  border-bottom: 1px solid #edf6f4;
-}
-
-.shopping-item-list {
-  display: grid;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  max-height: 320px;
-  overflow: auto;
-  padding: 10px 12px 12px;
-}
-
-.shopping-item-list li {
-  background: #f7fcfb;
-  border: 1px solid #edf6f4;
-  border-radius: 10px;
-  color: #2b1b23;
-  display: grid;
-  gap: 3px;
-  overflow-wrap: anywhere;
-  padding: 9px 10px;
-}
-
-.shopping-item-list small {
-  color: #486b68;
-  font-size: 0.82rem;
-}
-
-.shopping-empty {
-  padding: 12px;
-}
 
 .swipe-planner {
   background: #ffffff;
@@ -1934,21 +1674,7 @@ function formatDate(date: Date) {
     width: 100%;
   }
 
-  .shopping-list-result-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .shopping-summary-chips {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .shopping-item-list {
-    max-height: 260px;
-  }
-
-  .swipe-controls,
+.swipe-controls,
   .swipe-card {
     grid-template-columns: 1fr;
   }
