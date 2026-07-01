@@ -214,7 +214,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin')
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', undefined, undefined)
     expect(wrapper.text()).toContain('Pasta Place')
   })
 
@@ -319,7 +319,113 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin')
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', undefined, undefined)
+  })
+
+  it('GPS button is rendered in restaurant section', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    expect(wrapper.find('.gps-button').exists()).toBe(true)
+  })
+
+  it('GPS success stores coordinates and passes them to API on next search', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405 } } as GeolocationPosition)
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', 52.52, 13.405)
+  })
+
+  it('GPS denied shows friendly hint message', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation(
+      (_success: PositionCallback, error?: PositionErrorCallback | null) => {
+        error?.({ code: 1, message: 'Permission denied' } as GeolocationPositionError)
+      },
+    )
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Standortfreigabe abgelehnt')
+  })
+
+  it('shows formatted distance in meters when distanceMeters < 1000', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{
+        name: 'Pasta Place',
+        address: 'Musterstraße 1, Berlin',
+        distanceMeters: 850,
+        googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=52.52,13.405&destination=52.521,13.406',
+        latitude: 52.521,
+        longitude: 13.406,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('850 m entfernt')
+    expect(wrapper.find('.maps-link').text()).toContain('Route in Google Maps öffnen')
+  })
+
+  it('shows formatted distance in km when distanceMeters >= 1000', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{
+        name: 'Pasta Place',
+        address: null,
+        distanceMeters: 2400,
+        googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=52.52,13.405&destination=52.54,13.43',
+        latitude: 52.54,
+        longitude: 13.43,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('2.4 km entfernt')
+  })
+
+  it('shows distance hint when distanceMeters is null', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{
+        name: 'Pasta Place',
+        address: null,
+        distanceMeters: null,
+        googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Pasta+Place+Berlin',
+        latitude: null,
+        longitude: null,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Entfernung in Google Maps prüfen')
   })
 
   it('disclaimer mentions exact dish check, not restaurant type', async () => {

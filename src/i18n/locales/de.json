@@ -514,7 +514,13 @@
       "searchFailed": "Restaurants konnten nicht geladen werden."
     },
     "openInMaps": "In Google Maps öffnen",
-    "distanceMeters": "{distance} m entfernt"
+    "distanceMeters": "{distance} m entfernt",
+    "distanceKm": "ca. {distance} km entfernt",
+    "distanceInMaps": "Entfernung in Google Maps prüfen",
+    "openRouteInMaps": "Route in Google Maps öffnen",
+    "useMyLocation": "Meinen Standort verwenden",
+    "locationActive": "Standort gespeichert",
+    "locationDeniedHint": "Standortfreigabe abgelehnt. Du kannst weiterhin eine Stadt eingeben."
   },
   "about": {
     "hello": "Hi, ich bin Salma.",

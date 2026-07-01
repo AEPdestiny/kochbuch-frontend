@@ -445,7 +445,13 @@
       "searchFailed": "تعذر تحميل المطاعم."
     },
     "openInMaps": "افتح في خرائط Google",
-    "distanceMeters": "يبعد {distance} م"
+    "distanceMeters": "يبعد {distance} م",
+    "distanceKm": "حوالي {distance} كم",
+    "distanceInMaps": "تحقق من المسافة في خرائط Google",
+    "openRouteInMaps": "افتح المسار في خرائط Google",
+    "useMyLocation": "استخدام موقعي",
+    "locationActive": "تم حفظ الموقع",
+    "locationDeniedHint": "تم رفض إذن الموقع. لا يزال بإمكانك إدخال مدينة."
   },
   "about": {
     "hello": "مرحبا، أنا سلمى.",

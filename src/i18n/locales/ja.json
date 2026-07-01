@@ -445,7 +445,13 @@
       "searchFailed": "レストランを読み込めませんでした。"
     },
     "openInMaps": "Google マップで開く",
-    "distanceMeters": "{distance} m 先"
+    "distanceMeters": "{distance} m 先",
+    "distanceKm": "約 {distance} km",
+    "distanceInMaps": "Google マップで距離を確認",
+    "openRouteInMaps": "Google マップでルートを開く",
+    "useMyLocation": "現在地を使用",
+    "locationActive": "場所を保存しました",
+    "locationDeniedHint": "位置情報の許可が拒否されました。引き続き都市名を入力できます。"
   },
   "about": {
     "hello": "こんにちは、Salma です。",

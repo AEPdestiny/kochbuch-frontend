@@ -3,6 +3,14 @@ import type { UserPreferencesResponse } from '@/types/profile'
 
 export type BadgeType = 'pantry' | 'likes' | 'diet' | 'calorie' | 'time'
 
+const HIGH_PROTEIN_TERMS = [
+  'protein', 'chicken', 'egg', 'fish', 'tofu', 'beans',
+  'hähnchen', 'hähnchenbrust', 'hühnerbrust', 'huhn', 'pute', 'truthahn',
+  'rind', 'steak', 'lachs', 'thunfisch', 'garnele',
+  'ei', 'quark', 'skyr', 'joghurt', 'käse',
+  'linsen', 'bohnen', 'kichererbsen', 'tempeh',
+]
+
 export type RecommendationBadge = {
   key: string
   labelKey: string
@@ -156,8 +164,8 @@ export function getRecommendationBadges(
       badges.push({ key: 'calorieConscious', labelKey: 'home.reasons.calorieConscious', type: 'calorie' })
     }
 
-    // 5. High protein (keyword-based heuristic)
-    if (profile.highProtein && /(protein|chicken|egg|fish|tofu|beans)/.test(text)) {
+    // 5. High protein (keyword-based heuristic — English + German terms, safeTermMatch avoids "ei" in "wein")
+    if (profile.highProtein && HIGH_PROTEIN_TERMS.some(term => safeTermMatch(term, text))) {
       badges.push({ key: 'highProtein', labelKey: 'home.reasons.highProtein', type: 'calorie' })
     }
   }

@@ -313,6 +313,60 @@ describe('getRecommendationBadges', () => {
     expect(badges.find(b => b.key === 'quickCook')).toBeUndefined()
   })
 
+  // ── High protein badge ──────────────────────────────────────────────────
+
+  it('highProtein badge matches German term "Hähnchenbrust"', () => {
+    const badges = getRecommendationBadges(
+      recipe({ ingredients: '200g Hähnchenbrust, Salz, Pfeffer' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badges.find(b => b.key === 'highProtein')).toBeDefined()
+  })
+
+  it('highProtein badge matches German term "Lachs"', () => {
+    const badges = getRecommendationBadges(
+      recipe({ title: 'Gegrillter Lachs mit Zitrone' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badges.find(b => b.key === 'highProtein')).toBeDefined()
+  })
+
+  it('highProtein badge matches German term "Kichererbsen"', () => {
+    const badges = getRecommendationBadges(
+      recipe({ ingredients: '300g Kichererbsen, Gewürze' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badges.find(b => b.key === 'highProtein')).toBeDefined()
+  })
+
+  it('highProtein badge matches standalone "Ei" without false-positive on "Wein"', () => {
+    const badgesWithWein = getRecommendationBadges(
+      recipe({ ingredients: '200ml Weißwein, Butter' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badgesWithWein.find(b => b.key === 'highProtein')).toBeUndefined()
+
+    const badgesWithEi = getRecommendationBadges(
+      recipe({ ingredients: '2 Ei, Mehl, Milch' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badgesWithEi.find(b => b.key === 'highProtein')).toBeDefined()
+  })
+
+  it('highProtein badge not shown when profile.highProtein is false', () => {
+    const badges = getRecommendationBadges(
+      recipe({ ingredients: 'Hähnchen, Lachs, Quark' }),
+      profile({ highProtein: false }),
+      [],
+    )
+    expect(badges.find(b => b.key === 'highProtein')).toBeUndefined()
+  })
+
   // ── Max badges ──────────────────────────────────────────────────────────
 
   it('returns at most 4 badges by default', () => {

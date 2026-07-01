@@ -445,7 +445,13 @@
       "searchFailed": "Nie udało się załadować restauracji."
     },
     "openInMaps": "Otwórz w Google Maps",
-    "distanceMeters": "{distance} m stąd"
+    "distanceMeters": "{distance} m stąd",
+    "distanceKm": "ok. {distance} km stąd",
+    "distanceInMaps": "Sprawdź odległość w Google Maps",
+    "openRouteInMaps": "Otwórz trasę w Google Maps",
+    "useMyLocation": "Użyj mojej lokalizacji",
+    "locationActive": "Lokalizacja zapisana",
+    "locationDeniedHint": "Odmówiono dostępu do lokalizacji. Możesz nadal wpisać miasto."
   },
   "about": {
     "hello": "Cześć, jestem Salma.",

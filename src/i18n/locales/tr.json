@@ -445,7 +445,13 @@
       "searchFailed": "Restoranlar yüklenemedi."
     },
     "openInMaps": "Google Maps'te aç",
-    "distanceMeters": "{distance} m uzakta"
+    "distanceMeters": "{distance} m uzakta",
+    "distanceKm": "yaklaşık {distance} km uzakta",
+    "distanceInMaps": "Google Maps'te mesafeyi kontrol et",
+    "openRouteInMaps": "Google Maps'te rotayı aç",
+    "useMyLocation": "Konumumu kullan",
+    "locationActive": "Konum kaydedildi",
+    "locationDeniedHint": "Konum izni reddedildi. Yine de bir şehir girebilirsin."
   },
   "about": {
     "hello": "Merhaba, ben Salma.",

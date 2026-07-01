@@ -63,6 +63,10 @@ const restaurantNoResults = ref(false)
 const restaurantLocationTooBroad = ref(false)
 const restaurants = ref<RestaurantResponse[]>([])
 const restaurantLocation = ref('')
+const userLatitude = ref<number | null>(null)
+const userLongitude = ref<number | null>(null)
+const geoLocating = ref(false)
+const geoLocationDenied = ref(false)
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
@@ -408,6 +412,34 @@ function isBroadLocation(location: string): boolean {
   return BROAD_LOCATION_TERMS.has(location.toLowerCase().trim())
 }
 
+function useMyLocation() {
+  if (!navigator.geolocation) {
+    geoLocationDenied.value = true
+    return
+  }
+  geoLocating.value = true
+  geoLocationDenied.value = false
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userLatitude.value = pos.coords.latitude
+      userLongitude.value = pos.coords.longitude
+      geoLocating.value = false
+      if (restaurantLocation.value.trim() && recipe.value) {
+        findRestaurantsByText()
+      }
+    },
+    () => {
+      geoLocating.value = false
+      geoLocationDenied.value = true
+    },
+  )
+}
+
+function formatDistance(meters: number): string {
+  if (meters < 1000) return t('restaurants.distanceMeters', { distance: meters })
+  return t('restaurants.distanceKm', { distance: (meters / 1000).toFixed(1) })
+}
+
 async function findRestaurantsByText() {
   if (!recipe.value) return
   const location = restaurantLocation.value.trim()
@@ -430,7 +462,12 @@ async function findRestaurantsByText() {
   restaurants.value = []
 
   try {
-    const response: TavilyRestaurantSearchResponse = await restaurantApi.searchByText(recipe.value.title, location)
+    const response: TavilyRestaurantSearchResponse = await restaurantApi.searchByText(
+      recipe.value.title,
+      location,
+      userLatitude.value ?? undefined,
+      userLongitude.value ?? undefined,
+    )
     if (response.status === 'unavailable') {
       restaurantUnavailable.value = true
     } else if (response.status === 'no_results') {
@@ -813,14 +850,25 @@ function formatDate(date: Date) {
             @keyup.enter="findRestaurantsByText"
           />
           <p class="location-help">{{ t('restaurants.cityHelp') }}</p>
-          <button
-            type="button"
-            class="secondary-button restaurant-search-button"
-            :disabled="restaurantLoading || !restaurantLocation.trim()"
-            @click="findRestaurantsByText"
-          >
-            {{ restaurantLoading ? t('restaurants.loading.search') : t('restaurants.actions.search') }}
-          </button>
+          <div class="restaurant-search-actions">
+            <button
+              type="button"
+              class="secondary-button restaurant-search-button"
+              :disabled="restaurantLoading || !restaurantLocation.trim()"
+              @click="findRestaurantsByText"
+            >
+              {{ restaurantLoading ? t('restaurants.loading.search') : t('restaurants.actions.search') }}
+            </button>
+            <button
+              type="button"
+              class="secondary-button gps-button"
+              :disabled="restaurantLoading || geoLocating"
+              @click="useMyLocation"
+            >
+              {{ geoLocating ? t('restaurants.loading.location') : (userLatitude !== null ? t('restaurants.locationActive') : t('restaurants.useMyLocation')) }}
+            </button>
+          </div>
+          <p v-if="geoLocationDenied" class="status-text">{{ t('restaurants.locationDeniedHint') }}</p>
         </div>
         <template v-if="!restaurantLoading">
           <p v-if="restaurantError" class="status-text error">{{ restaurantError }}</p>
@@ -831,10 +879,11 @@ function formatDate(date: Date) {
         <ul v-if="!restaurantLoading && restaurants.length" class="restaurant-list">
           <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.googleMapsUrl}`">
             <strong class="restaurant-name">{{ restaurant.name }}</strong>
-            <span v-if="restaurant.address">{{ restaurant.address }}</span>
-            <span v-if="restaurant.distanceMeters != null">{{ t('restaurants.distanceMeters', { distance: restaurant.distanceMeters }) }}</span>
+            <span v-if="restaurant.address" class="restaurant-address">{{ restaurant.address }}</span>
+            <span v-if="restaurant.distanceMeters != null" class="restaurant-distance">{{ formatDistance(restaurant.distanceMeters) }}</span>
+            <span v-else class="restaurant-distance-hint">{{ t('restaurants.distanceInMaps') }}</span>
             <a :href="restaurant.googleMapsUrl" target="_blank" rel="noopener noreferrer" class="maps-link">
-              {{ t('restaurants.openInMaps') }}
+              {{ t('restaurants.openRouteInMaps') }}
             </a>
           </li>
         </ul>

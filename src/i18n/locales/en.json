@@ -512,7 +512,13 @@
       "searchFailed": "Restaurants could not be loaded."
     },
     "openInMaps": "Open in Google Maps",
-    "distanceMeters": "{distance} m away"
+    "distanceMeters": "{distance} m away",
+    "distanceKm": "approx. {distance} km away",
+    "distanceInMaps": "Check distance in Google Maps",
+    "openRouteInMaps": "Open route in Google Maps",
+    "useMyLocation": "Use my location",
+    "locationActive": "Location saved",
+    "locationDeniedHint": "Location permission denied. You can still enter a city."
   },
   "about": {
     "hello": "Hi, I am Salma.",
