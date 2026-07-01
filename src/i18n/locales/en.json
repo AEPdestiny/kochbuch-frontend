@@ -491,13 +491,17 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "Find matching restaurants"
+      "findNearby": "Find matching restaurants",
+      "search": "Search"
     },
+    "locationPlaceholder": "e.g. Berlin Mitte",
     "loading": {
       "location": "Requesting your location...",
       "search": "Searching restaurants..."
     },
     "empty": "No restaurants found.",
+    "unavailable": "Restaurant search is currently unavailable.",
+    "noExactResults": "No reliable restaurant matches found for this exact dish.",
     "disclaimer": "Results are based on restaurant type and location, not guaranteed menu items.",
     "errors": {
       "geolocationUnsupported": "Your browser does not support location access.",

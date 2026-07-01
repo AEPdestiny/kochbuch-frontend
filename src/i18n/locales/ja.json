@@ -424,13 +424,17 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "関連するレストランを探す"
+      "findNearby": "関連するレストランを探す",
+      "search": "検索"
     },
+    "locationPlaceholder": "例：ベルリン・ミッテ",
     "loading": {
       "location": "位置情報を取得しています...",
       "search": "レストランを検索しています..."
     },
     "empty": "レストランが見つかりませんでした。",
+    "unavailable": "レストラン検索は現在利用できません。",
+    "noExactResults": "このメニューに対応する信頼できるレストランは見つかりませんでした。",
     "disclaimer": "結果はレストランの種類と周辺情報に基づいており、メニュー掲載を保証するものではありません。",
     "errors": {
       "geolocationUnsupported": "このブラウザは位置情報に対応していません。",

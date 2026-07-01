@@ -6,9 +6,14 @@ export interface RestaurantSearchRequest {
 
 export interface RestaurantResponse {
   name: string
-  address: string
-  distanceMeters: number
+  address: string | null
+  distanceMeters: number | null
   googleMapsUrl: string
-  latitude: number
-  longitude: number
+  latitude: number | null
+  longitude: number | null
+}
+
+export interface TavilyRestaurantSearchResponse {
+  status: 'ok' | 'unavailable' | 'no_results'
+  results: RestaurantResponse[]
 }

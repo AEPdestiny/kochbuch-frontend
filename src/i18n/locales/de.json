@@ -493,13 +493,17 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "Passende Restaurants finden"
+      "findNearby": "Passende Restaurants finden",
+      "search": "Suchen"
     },
+    "locationPlaceholder": "z. B. Berlin Mitte",
     "loading": {
       "location": "Standort wird abgefragt...",
       "search": "Restaurants werden gesucht..."
     },
     "empty": "Keine Restaurants gefunden.",
+    "unavailable": "Restaurant-Suche ist aktuell nicht verfügbar.",
+    "noExactResults": "Keine zuverlässigen Restauranttreffer für genau dieses Gericht gefunden.",
     "disclaimer": "Die Ergebnisse basieren auf Restauranttyp und Umgebung, nicht auf garantierten Speisekarten.",
     "errors": {
       "geolocationUnsupported": "Dein Browser unterstützt keine Standortabfrage.",

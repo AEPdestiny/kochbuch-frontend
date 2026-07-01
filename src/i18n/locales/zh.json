@@ -424,13 +424,17 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "查找匹配的餐厅"
+      "findNearby": "查找匹配的餐厅",
+      "search": "搜索"
     },
+    "locationPlaceholder": "例如：柏林米特",
     "loading": {
       "location": "正在请求你的位置...",
       "search": "正在搜索餐厅..."
     },
     "empty": "未找到餐厅。",
+    "unavailable": "餐厅搜索目前不可用。",
+    "noExactResults": "未找到与该菜肴完全匹配的可靠餐厅结果。",
     "disclaimer": "结果基于餐厅类型和位置，不保证菜单中一定有该菜品。",
     "errors": {
       "geolocationUnsupported": "你的浏览器不支持位置访问。",

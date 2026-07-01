@@ -17,7 +17,7 @@ import type {
   RecipeInstructionSuggestion,
   RecipeResponse,
 } from '@/types/recipe'
-import type { RestaurantResponse } from '@/types/restaurant'
+import type { RestaurantResponse, TavilyRestaurantSearchResponse } from '@/types/restaurant'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
 
 type DetailIngredient = {
@@ -58,8 +58,10 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const restaurantLoading = ref(false)
 const restaurantError = ref<string | null>(null)
+const restaurantUnavailable = ref(false)
 const restaurants = ref<RestaurantResponse[]>([])
 const restaurantSearched = ref(false)
+const restaurantLocation = ref('')
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
@@ -387,31 +389,26 @@ function buildShoppingListRequest(ingredient: DetailIngredient) {
   }
 }
 
-async function findNearbyRestaurants() {
+async function findRestaurantsByText() {
   if (!recipe.value) return
-  if (!navigator.geolocation) {
-    restaurantError.value = t('restaurants.errors.geolocationUnsupported')
-    restaurants.value = []
-    return
-  }
+  const location = restaurantLocation.value.trim()
+  if (!location) return
 
   restaurantLoading.value = true
   restaurantError.value = null
+  restaurantUnavailable.value = false
   restaurants.value = []
   restaurantSearched.value = true
 
   try {
-    const position = await currentPosition()
-    restaurants.value = await restaurantApi.searchRestaurants({
-      query: recipe.value.title,
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-    })
-  } catch (e: unknown) {
-    restaurants.value = []
-    restaurantError.value = geolocationDenied(e)
-      ? t('restaurants.errors.locationDenied')
-      : t('restaurants.errors.searchFailed')
+    const response: TavilyRestaurantSearchResponse = await restaurantApi.searchByText(recipe.value.title, location)
+    if (response.status === 'unavailable') {
+      restaurantUnavailable.value = true
+    } else {
+      restaurants.value = response.results
+    }
+  } catch {
+    restaurantError.value = t('restaurants.errors.searchFailed')
   } finally {
     restaurantLoading.value = false
   }
@@ -515,16 +512,6 @@ function resetInstructionSearch() {
 function isInstructionSuggestionError(value: unknown): value is { message?: string | null } {
   return typeof value === 'object' && value !== null && 'message' in value
 }
-
-const currentPosition = (): Promise<GeolocationPosition> => new Promise((resolve, reject) => {
-  navigator.geolocation.getCurrentPosition(resolve, reject)
-})
-
-const geolocationDenied = (error: unknown) =>
-  typeof error === 'object'
-  && error !== null
-  && 'code' in error
-  && Number((error as GeolocationPositionError).code) === 1
 
 async function openMealPlanModal() {
   mealPlanMessage.value = null
@@ -674,9 +661,6 @@ function formatDate(date: Date) {
           <button type="button" class="primary-button" @click="addAllIngredientsToShoppingList">
             {{ t('recipeDetail.actions.addAllToShoppingList') }}
           </button>
-          <button type="button" class="secondary-button" @click="findNearbyRestaurants">
-            {{ t('restaurants.actions.findNearby') }}
-          </button>
           <button type="button" class="secondary-button" @click="openMealPlanModal">
             {{ t('recipeDetail.actions.addToMealPlan') }}
           </button>
@@ -786,14 +770,32 @@ function formatDate(date: Date) {
       <section class="detail-section">
         <h2>{{ t('recipeDetail.restaurants.title') }}</h2>
         <p class="hint">{{ t('restaurants.disclaimer') }}</p>
-        <p v-if="restaurantLoading" class="status-text">{{ t('restaurants.loading.search') }}</p>
-        <p v-else-if="restaurantError" class="status-text error">{{ restaurantError }}</p>
-        <p v-else-if="restaurantSearched && restaurants.length === 0" class="status-text">{{ t('restaurants.empty') }}</p>
+        <div class="restaurant-search-form">
+          <input
+            v-model="restaurantLocation"
+            type="text"
+            class="location-input"
+            :placeholder="t('restaurants.locationPlaceholder')"
+            :disabled="restaurantLoading"
+            @keyup.enter="findRestaurantsByText"
+          />
+          <button
+            type="button"
+            class="secondary-button restaurant-search-button"
+            :disabled="restaurantLoading || !restaurantLocation.trim()"
+            @click="findRestaurantsByText"
+          >
+            {{ restaurantLoading ? t('restaurants.loading.search') : t('restaurants.actions.search') }}
+          </button>
+        </div>
+        <p v-if="restaurantError" class="status-text error">{{ restaurantError }}</p>
+        <p v-else-if="restaurantUnavailable" class="status-text">{{ t('restaurants.unavailable') }}</p>
+        <p v-else-if="restaurantSearched && restaurants.length === 0" class="status-text">{{ t('restaurants.noExactResults') }}</p>
         <ul v-if="restaurants.length" class="restaurant-list">
-          <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.latitude}-${restaurant.longitude}`">
+          <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.googleMapsUrl}`">
             <strong>{{ restaurant.name }}</strong>
             <span v-if="restaurant.address">{{ restaurant.address }}</span>
-            <span>{{ t('restaurants.distanceMeters', { distance: restaurant.distanceMeters }) }}</span>
+            <span v-if="restaurant.distanceMeters != null">{{ t('restaurants.distanceMeters', { distance: restaurant.distanceMeters }) }}</span>
             <a :href="restaurant.googleMapsUrl" target="_blank" rel="noopener noreferrer">
               {{ t('restaurants.openInMaps') }}
             </a>

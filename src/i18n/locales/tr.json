@@ -424,13 +424,17 @@
   },
   "restaurants": {
     "actions": {
-      "findNearby": "Uygun restoranları bul"
+      "findNearby": "Uygun restoranları bul",
+      "search": "Ara"
     },
+    "locationPlaceholder": "ör. Berlin Mitte",
     "loading": {
       "location": "Konum isteniyor...",
       "search": "Restoranlar aranıyor..."
     },
     "empty": "Restoran bulunamadı.",
+    "unavailable": "Restoran araması şu anda kullanılamıyor.",
+    "noExactResults": "Bu yemek için güvenilir restoran sonucu bulunamadı.",
     "disclaimer": "Sonuçlar restoran türüne ve konuma dayanır, menüdeki yemekler garanti edilmez.",
     "errors": {
       "geolocationUnsupported": "Tarayıcınız konum erişimini desteklemiyor.",

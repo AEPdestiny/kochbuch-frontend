@@ -40,6 +40,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
 vi.mock('@/shared/api/restaurantApi', () => ({
   restaurantApi: {
     searchRestaurants: vi.fn(),
+    searchByText: vi.fn(),
   },
 }))
 
@@ -91,6 +92,7 @@ describe('RecipeDetailView', () => {
       suggestions: [],
     })
     vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([])
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({ status: 'no_results', results: [] })
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
     vi.mocked(favoriteApi.addExternalFavorite).mockResolvedValue({
       id: 1,
@@ -193,45 +195,71 @@ describe('RecipeDetailView', () => {
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(1)
   })
 
-  it('searches restaurants with recipe title and coordinates', async () => {
-    vi.mocked(restaurantApi.searchRestaurants).mockResolvedValue([
-      {
+  it('searches restaurants with recipe title and text location', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{
         name: 'Pasta Place',
-        address: 'Pasta Street 1',
-        distanceMeters: 850,
-        googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=52.5201,13.4052',
-        latitude: 52.5201,
-        longitude: 13.4052,
-      },
-    ])
-    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
-      success({ coords: { latitude: 52.52, longitude: 13.405 } } as GeolocationPosition)
+        address: null,
+        distanceMeters: null,
+        googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Pasta+Place+Berlin',
+        latitude: null,
+        longitude: null,
+      }],
     })
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    await wrapper.findAll('.secondary-button').at(0)!.trigger('click')
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchRestaurants).toHaveBeenCalledWith({
-      query: 'Pasta with Garlic',
-      latitude: 52.52,
-      longitude: 13.405,
-    })
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin')
     expect(wrapper.text()).toContain('Pasta Place')
   })
 
-  it('shows location denied errors', async () => {
-    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((_success: PositionCallback, error?: PositionErrorCallback | null) => {
-      error?.({ code: 1 } as GeolocationPositionError)
-    })
+  it('shows error message when restaurant search fails', async () => {
+    vi.mocked(restaurantApi.searchByText).mockRejectedValue(new Error('Network error'))
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    await wrapper.findAll('.secondary-button').at(0)!.trigger('click')
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Standortzugriff wurde verweigert.')
+    expect(wrapper.text()).toContain('Restaurants konnten nicht geladen werden.')
+  })
+
+  it('shows no-results message when status is no_results', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({ status: 'no_results', results: [] })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Keine zuverlässigen Restauranttreffer für genau dieses Gericht gefunden.')
+  })
+
+  it('shows unavailable message when Tavily is not configured', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({ status: 'unavailable', results: [] })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Restaurant-Suche ist aktuell nicht verfügbar.')
+  })
+
+  it('restaurant search button is disabled when location input is empty', async () => {
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    const button = wrapper.find('.restaurant-search-button')
+    expect((button.element as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('loads local Dishly recipes from /recipes/{id}', async () => {
@@ -468,7 +496,7 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
+    await wrapper.findAll('.secondary-button').at(0)!.trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.getWeek).toHaveBeenCalledWith(weekStart)
@@ -498,7 +526,7 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
+    await wrapper.findAll('.secondary-button').at(0)!.trigger('click')
     await flushPromises()
     await wrapper.find('.day-button').trigger('click')
     await flushPromises()
@@ -520,7 +548,7 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    await wrapper.findAll('.secondary-button').at(2)!.trigger('click')
+    await wrapper.findAll('.secondary-button').at(1)!.trigger('click')
     await flushPromises()
 
     expect(favoriteApi.addExternalFavorite).toHaveBeenCalledWith({
