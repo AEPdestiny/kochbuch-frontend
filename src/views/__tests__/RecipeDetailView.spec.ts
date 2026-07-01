@@ -392,6 +392,71 @@ describe('RecipeDetailView', () => {
     expect(wrapper.text()).toContain('Pasta Palace Berlin')
   })
 
+  it('client-side filter: "r/sushi" is not rendered and shows no_results', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{
+        name: 'r/sushi',
+        address: null,
+        distanceMeters: null,
+        googleMapsUrl: 'https://maps.google.com/x',
+        latitude: null,
+        longitude: null,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('r/sushi')
+    expect(wrapper.text()).toContain('Keine zuverlässigen Restauranttreffer')
+  })
+
+  it('client-side filter: "The top 11 sushi restaurants in Berlin" is not rendered', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [{
+        name: 'The top 11 sushi restaurants in Berlin',
+        address: null,
+        distanceMeters: null,
+        googleMapsUrl: 'https://maps.google.com/x',
+        latitude: null,
+        longitude: null,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).not.toContain('The top 11 sushi restaurants in Berlin')
+    expect(wrapper.text()).toContain('Keine zuverlässigen Restauranttreffer')
+  })
+
+  it('client-side filter: mix of bad + good results renders only the good one', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      results: [
+        { name: 'r/sushi', address: null, distanceMeters: null, googleMapsUrl: 'https://x', latitude: null, longitude: null },
+        { name: 'Sushi Circle', address: 'Sushistraße 1, Berlin', distanceMeters: 500, googleMapsUrl: 'https://y', latitude: 52.52, longitude: 13.4 },
+      ],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Sushi Circle')
+    expect(wrapper.text()).not.toContain('r/sushi')
+  })
+
   it('GPS denied shows friendly hint message', async () => {
     vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation(
       (_success: PositionCallback, error?: PositionErrorCallback | null) => {

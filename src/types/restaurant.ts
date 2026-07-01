@@ -14,6 +14,7 @@ export interface RestaurantResponse {
 }
 
 export interface TavilyRestaurantSearchResponse {
-  status: 'ok' | 'unavailable' | 'no_results'
+  status: 'ok' | 'unavailable' | 'no_results' | 'no_location'
   results: RestaurantResponse[]
+  resolvedLocation?: string | null
 }

@@ -444,6 +444,23 @@ function formatDistance(meters: number): string {
   return t('restaurants.distanceKm', { distance: (meters / 1000).toFixed(1) })
 }
 
+// Defensive client-side filter: reject clearly non-restaurant names even if backend missed them.
+// Blocks subreddit prefixes (r/…), platform names, recipe/how-to titles, and article/listicle titles.
+function isDisplayableRestaurantName(name: string): boolean {
+  if (!name) return false
+  const lower = name.toLowerCase().trim()
+  if (lower.startsWith('r/')) return false
+  if (lower.includes('reddit')) return false
+  if (lower.startsWith('the top ') || lower.startsWith('top ') || lower.startsWith('best ') || lower.startsWith('the best ')) return false
+  if (lower.startsWith('the ultimate ') || lower.startsWith('where to ') || lower.startsWith('how to ')) return false
+  if (lower.includes('restaurants in') || lower.includes('where to eat') || lower.includes('guide to')) return false
+  if (lower.includes('best restaurants') || lower.includes('top restaurants')) return false
+  if (lower.includes('recipe') || lower.includes('rezept')) return false
+  if (lower.includes('how to make') || lower.includes('how to cook')) return false
+  if (/\b\d+\s+\w*\s*(restaurants|spots|places)/.test(lower)) return false
+  return true
+}
+
 async function findRestaurantsByGps() {
   if (!recipe.value || userLatitude.value === null || userLongitude.value === null) return
 
@@ -473,7 +490,12 @@ async function findRestaurantsByGps() {
     } else if (response.status === 'no_results') {
       restaurantNoResults.value = true
     } else {
-      restaurants.value = response.results
+      const filtered = response.results.filter(r => isDisplayableRestaurantName(r.name))
+      if (filtered.length === 0) {
+        restaurantNoResults.value = true
+      } else {
+        restaurants.value = filtered
+      }
     }
   } catch {
     restaurantError.value = t('restaurants.errors.searchFailed')
@@ -519,7 +541,12 @@ async function findRestaurantsByText() {
     } else if (response.status === 'no_results') {
       restaurantNoResults.value = true
     } else {
-      restaurants.value = response.results
+      const filtered = response.results.filter(r => isDisplayableRestaurantName(r.name))
+      if (filtered.length === 0) {
+        restaurantNoResults.value = true
+      } else {
+        restaurants.value = filtered
+      }
     }
   } catch {
     restaurantError.value = t('restaurants.errors.searchFailed')
