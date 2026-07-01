@@ -371,7 +371,10 @@
       "pantry": "يناسب مخزنك",
       "likes": "تحب: {value}",
       "underCalorieGoal": "دون هدف السعرات",
-      "quickCook": "طبخ سريع"
+      "quickCook": "طبخ سريع",
+      "pantryRatio": "{matched}/{total} مكونات في مخزنك",
+      "pantryCount": "{count} مكونات من المخزن",
+      "pantryCountOne": "مكون واحد من المخزن"
     },
     "pagination": {
       "label": "التنقل بين الصفحات",

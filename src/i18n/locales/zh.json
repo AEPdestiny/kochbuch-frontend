@@ -371,7 +371,10 @@
       "pantry": "适合您的食材",
       "likes": "您喜欢：{value}",
       "underCalorieGoal": "低于卡路里目标",
-      "quickCook": "快速烹饪"
+      "quickCook": "快速烹饪",
+      "pantryRatio": "储藏室有{matched}/{total}种食材",
+      "pantryCount": "{count}种储藏室食材",
+      "pantryCountOne": "1种储藏室食材"
     },
     "pagination": {
       "label": "页面导航",

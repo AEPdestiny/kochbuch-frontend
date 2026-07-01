@@ -371,7 +371,10 @@
       "pantry": "Dolabınıza uygun",
       "likes": "Seversiniz: {value}",
       "underCalorieGoal": "Kalori hedefinizin altında",
-      "quickCook": "Hızlı pişirilir"
+      "quickCook": "Hızlı pişirilir",
+      "pantryRatio": "{matched}/{total} malzeme dolabınızda",
+      "pantryCount": "{count} dolap malzemesi",
+      "pantryCountOne": "1 dolap malzemesi"
     },
     "pagination": {
       "label": "Sayfa gezintisi",

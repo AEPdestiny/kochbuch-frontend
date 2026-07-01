@@ -371,7 +371,10 @@
       "pantry": "Pasuje do spiżarni",
       "likes": "Lubisz: {value}",
       "underCalorieGoal": "Poniżej celu kalorycznego",
-      "quickCook": "Szybkie danie"
+      "quickCook": "Szybkie danie",
+      "pantryRatio": "{matched}/{total} składników w spiżarni",
+      "pantryCount": "{count} składniki z spiżarni",
+      "pantryCountOne": "1 składnik z spiżarni"
     },
     "pagination": {
       "label": "Nawigacja stron",

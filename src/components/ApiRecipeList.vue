@@ -1432,7 +1432,7 @@ function formatDate(date: Date) {
 .reason-badge--likes   { background: #fff3e6; color: #c4742e; }
 .reason-badge--diet    { background: #e3f6f1; color: #2f8f7b; }
 .reason-badge--calorie { background: #f0f8ff; color: #2a6fa8; }
-.reason-badge--time    { background: #f4fbfa; color: #26b6b8; }
+.reason-badge--time    { background: #cef3f4; color: #0e8b8d; }
 
 .modal-backdrop {
   position: fixed;

@@ -53,6 +53,12 @@ export function safeTermMatch(term: string, text: string): boolean {
   })
 }
 
+function countIngredients(ingredients: string | null | undefined): number | null {
+  if (!ingredients?.trim()) return null
+  const parts = ingredients.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean)
+  return parts.length > 0 ? parts.length : null
+}
+
 /**
  * Checks whether a recipe's diet metadata (boolean flags + diets text field)
  * confirms a specific diet type. Used to avoid showing Vegan/Vegetarian/
@@ -96,10 +102,26 @@ export function getRecommendationBadges(
     recipe.diets ?? '',
   ].join(' ').toLowerCase()
 
-  // 1. Pantry match (most specific, shown first)
-  const pantryHit = pantryIngredients.find(ing => safeTermMatch(ing, text))
-  if (pantryHit) {
-    badges.push({ key: 'pantry', labelKey: 'home.reasons.pantry', type: 'pantry' })
+  // 1. Pantry — ratio badge showing how many ingredients are covered
+  const matchedPantryItems = [...new Set(pantryIngredients.filter(ing => safeTermMatch(ing, text)))]
+  const matchedCount = matchedPantryItems.length
+  if (matchedCount > 0) {
+    const total = countIngredients(recipe.ingredients)
+    if (total && matchedCount <= total) {
+      badges.push({
+        key: 'pantry',
+        labelKey: 'home.reasons.pantryRatio',
+        labelParams: { matched: String(matchedCount), total: String(total) },
+        type: 'pantry',
+      })
+    } else {
+      badges.push({
+        key: 'pantry',
+        labelKey: matchedCount === 1 ? 'home.reasons.pantryCountOne' : 'home.reasons.pantryCount',
+        labelParams: { count: String(matchedCount) },
+        type: 'pantry',
+      })
+    }
   }
 
   if (profile) {
@@ -129,11 +151,8 @@ export function getRecommendationBadges(
       badges.push({ key: 'glutenFree', labelKey: 'home.reasons.glutenFree', type: 'diet' })
     }
 
-    // 4. Calorie badges (at most one: underCalorieGoal takes precedence)
-    const calGoal = profile.dailyCalorieTarget ?? profile.calorieGoal ?? null
-    if (calGoal && recipe.calories && recipe.calories <= calGoal * 0.4) {
-      badges.push({ key: 'underCalorieGoal', labelKey: 'home.reasons.underCalorieGoal', type: 'calorie' })
-    } else if (profile.calorieConscious && recipe.calories && recipe.calories <= 650) {
+    // 4. Calorie badge
+    if (profile.calorieConscious && recipe.calories && recipe.calories <= 650) {
       badges.push({ key: 'calorieConscious', labelKey: 'home.reasons.calorieConscious', type: 'calorie' })
     }
 

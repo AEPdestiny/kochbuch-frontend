@@ -416,7 +416,10 @@
       "pantry": "Matches your pantry",
       "likes": "You like: {value}",
       "underCalorieGoal": "Under your kcal goal",
-      "quickCook": "Quick cook"
+      "quickCook": "Quick cook",
+      "pantryRatio": "{matched}/{total} ingredients in stock",
+      "pantryCount": "{count} pantry ingredients",
+      "pantryCountOne": "1 pantry ingredient"
     },
     "pagination": {
       "label": "Page navigation",

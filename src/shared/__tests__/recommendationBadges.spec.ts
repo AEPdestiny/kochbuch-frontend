@@ -61,7 +61,7 @@ describe('getRecommendationBadges', () => {
 
   // ── Pantry ──────────────────────────────────────────────────────────────
 
-  it('returns pantry badge when pantry ingredient appears in recipe text', () => {
+  it('returns pantryRatio badge with matched/total when ingredients are parseable', () => {
     const badges = getRecommendationBadges(
       recipe({ title: 'Pasta Carbonara', ingredients: 'pasta, egg, guanciale' }),
       null,
@@ -69,8 +69,42 @@ describe('getRecommendationBadges', () => {
     )
     const pantryBadge = badges.find(b => b.key === 'pantry')
     expect(pantryBadge).toBeDefined()
-    expect(pantryBadge?.labelKey).toBe('home.reasons.pantry')
+    expect(pantryBadge?.labelKey).toBe('home.reasons.pantryRatio')
+    expect(pantryBadge?.labelParams).toEqual({ matched: '1', total: '3' })
     expect(pantryBadge?.type).toBe('pantry')
+  })
+
+  it('returns pantryRatio with correct ratio when multiple pantry items match', () => {
+    const badges = getRecommendationBadges(
+      recipe({ ingredients: 'pasta, egg, guanciale, pecorino, pepper, garlic, olive oil, salt' }),
+      null,
+      ['pasta', 'egg', 'garlic'],
+    )
+    const pantryBadge = badges.find(b => b.key === 'pantry')
+    expect(pantryBadge?.labelKey).toBe('home.reasons.pantryRatio')
+    expect(pantryBadge?.labelParams).toEqual({ matched: '3', total: '8' })
+  })
+
+  it('returns pantryCountOne fallback when ingredients field is empty and 1 pantry match via title', () => {
+    const badges = getRecommendationBadges(
+      recipe({ title: 'Pasta Dish', ingredients: '' }),
+      null,
+      ['pasta'],
+    )
+    const pantryBadge = badges.find(b => b.key === 'pantry')
+    expect(pantryBadge).toBeDefined()
+    expect(pantryBadge?.labelKey).toBe('home.reasons.pantryCountOne')
+  })
+
+  it('returns pantryCount fallback when ingredients field is empty and multiple pantry matches via title', () => {
+    const badges = getRecommendationBadges(
+      recipe({ title: 'Pasta Egg Dish', ingredients: '' }),
+      null,
+      ['pasta', 'egg'],
+    )
+    const pantryBadge = badges.find(b => b.key === 'pantry')
+    expect(pantryBadge?.labelKey).toBe('home.reasons.pantryCount')
+    expect(pantryBadge?.labelParams?.count).toBe('2')
   })
 
   it('does not return pantry badge when no pantry match', () => {
@@ -211,18 +245,9 @@ describe('getRecommendationBadges', () => {
 
   // ── Calorie goal ────────────────────────────────────────────────────────
 
-  it('returns underCalorieGoal badge when recipe calories <= 40% of daily target', () => {
+  it('does not return underCalorieGoal badge (badge removed)', () => {
     const badges = getRecommendationBadges(
       recipe({ calories: 700 }),
-      profile({ dailyCalorieTarget: 2000 }),
-      [],
-    )
-    expect(badges.find(b => b.key === 'underCalorieGoal')).toBeDefined()
-  })
-
-  it('does not return underCalorieGoal badge when recipe calories > 40% of target', () => {
-    const badges = getRecommendationBadges(
-      recipe({ calories: 900 }),
       profile({ dailyCalorieTarget: 2000 }),
       [],
     )
@@ -238,14 +263,14 @@ describe('getRecommendationBadges', () => {
     expect(badges.find(b => b.key === 'calorieConscious')).toBeDefined()
   })
 
-  it('underCalorieGoal takes precedence over calorieConscious', () => {
+  it('returns calorieConscious badge even when dailyCalorieTarget is set', () => {
     const badges = getRecommendationBadges(
       recipe({ calories: 500 }),
       profile({ calorieConscious: true, dailyCalorieTarget: 2000 }),
       [],
     )
-    expect(badges.find(b => b.key === 'underCalorieGoal')).toBeDefined()
-    expect(badges.find(b => b.key === 'calorieConscious')).toBeUndefined()
+    expect(badges.find(b => b.key === 'calorieConscious')).toBeDefined()
+    expect(badges.find(b => b.key === 'underCalorieGoal')).toBeUndefined()
   })
 
   // ── Quick cook ──────────────────────────────────────────────────────────
@@ -256,7 +281,9 @@ describe('getRecommendationBadges', () => {
       null,
       [],
     )
-    expect(badges.find(b => b.key === 'quickCook')).toBeDefined()
+    const quickCook = badges.find(b => b.key === 'quickCook')
+    expect(quickCook).toBeDefined()
+    expect(quickCook?.type).toBe('time')
   })
 
   it('returns quickCook badge without any profile set', () => {

@@ -416,7 +416,10 @@
       "pantry": "Passt zu deinem Vorrat",
       "likes": "Magst du: {value}",
       "underCalorieGoal": "Unter deinem kcal-Ziel",
-      "quickCook": "Schnell gekocht"
+      "quickCook": "Schnell gekocht",
+      "pantryRatio": "{matched}/{total} Zutaten vorhanden",
+      "pantryCount": "{count} Vorratszutaten",
+      "pantryCountOne": "1 Vorratszutat"
     },
     "pagination": {
       "label": "Seitennavigation",

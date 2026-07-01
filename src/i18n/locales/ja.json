@@ -371,7 +371,10 @@
       "pantry": "食材庫にマッチ",
       "likes": "お好み：{value}",
       "underCalorieGoal": "カロリー目標以下",
-      "quickCook": "時短レシピ"
+      "quickCook": "時短レシピ",
+      "pantryRatio": "{matched}/{total}個の食材が冷蔵庫にあります",
+      "pantryCount": "{count}個の食材が冷蔵庫にあります",
+      "pantryCountOne": "食材が1個冷蔵庫にあります"
     },
     "pagination": {
       "label": "ページナビゲーション",
