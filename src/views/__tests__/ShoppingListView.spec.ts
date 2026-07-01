@@ -679,6 +679,81 @@ describe('ShoppingListView', () => {
     expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
   })
 
+  // ─── Display normalization tests ──────────────────────────────────────────
+
+  it('strips embedded "quantity unit" prefix from item name when quantity field is also set', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('57 g Spargelstangen', 57, 'g', '', false) },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.find('.item-main h3').text()).toBe('Spargelstangen')
+    // quantity shown right, not repeated in name
+    expect(wrapper.find('.item-quantity').text()).toContain('57')
+    expect(wrapper.find('.item-quantity').text()).toContain('g')
+    expect(wrapper.find('.item-main h3').text()).not.toContain('57')
+  })
+
+  it('parses embedded "quantity unit name" from name when fields are null (legacy item)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('41 g Butter', 0, '', '', false), quantity: null, unit: null },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.find('.item-main h3').text()).toBe('Butter')
+    expect(wrapper.find('.item-quantity').text()).toContain('41')
+    expect(wrapper.find('.item-quantity').text()).toContain('g')
+  })
+
+  it('handles fractional "1/3 EL Zucker" as a legacy item', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('1/3 EL Zucker', 0, '', '', false), quantity: null, unit: null },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.find('.item-main h3').text()).toBe('Zucker')
+    expect(wrapper.find('.item-quantity').text()).toContain('1/3')
+    expect(wrapper.find('.item-quantity').text()).toContain('EL')
+  })
+
+  it('leaves a clean manual item unchanged', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Tomaten', 3, 'piece', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    expect(wrapper.find('.item-main h3').text()).toBe('Tomaten')
+    expect(wrapper.find('.item-quantity').text()).toContain('3')
+    expect(wrapper.find('.item-quantity').text()).toContain('piece')
+  })
+
+  it('opens edit form with cleaned name and parsed quantity when item name has embedded prefix', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      { ...item('57 g Spargelstangen', 57, 'g', '', false) },
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('button.edit-btn').trigger('click')
+
+    expect(inputValue(wrapper, 'form.edit-form input[placeholder="z.B. Tomaten"]')).toBe('Spargelstangen')
+    expect(inputValue(wrapper, 'form.edit-form input[placeholder="3"]')).toBe('57')
+  })
+
   // ─── PDF export tests ─────────────────────────────────────────────────────
 
   it('shows the PDF export button when items are loaded', async () => {

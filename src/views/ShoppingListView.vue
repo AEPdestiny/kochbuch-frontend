@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
-import { parseShoppingItemForPrint, printShoppingList } from '@/shared/printExport'
+import { printShoppingList } from '@/shared/printExport'
+import { normalizeShoppingListItemDisplay, normalizeShoppingListItemForEdit } from '@/shared/normalizeShoppingItem'
 import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import SuggestInput from '@/components/SuggestInput.vue'
@@ -44,6 +45,10 @@ const recipeGroups = computed(() => {
   }
   return Array.from(groups.entries()).map(([title, groupItems]) => ({ title, items: groupItems }))
 })
+
+const displayItems = computed(() =>
+  sortedItems.value.map(item => ({ item, display: normalizeShoppingListItemDisplay(item) }))
+)
 
 onMounted(() => {
   loadShoppingListItems()
@@ -259,10 +264,11 @@ function toDeleteErrorMessage(e: unknown) {
 }
 
 function startEdit(item: ShoppingListItem) {
+  const normalized = normalizeShoppingListItemForEdit(item)
   editingId.value = item.id
-  editName.value = item.name
-  editQuantity.value = item.quantity ?? null
-  editUnit.value = item.unit ?? ''
+  editName.value = normalized.name
+  editQuantity.value = normalized.quantity
+  editUnit.value = normalized.unit
   editCategory.value = item.category ?? ''
   editChecked.value = item.checked
   editError.value = null
@@ -347,8 +353,8 @@ function exportShoppingListAsPdf() {
   toastStore.addToast(t('notifications.shoppingListPdfReady'), 'success')
   printShoppingList(
     items.value.map(i => {
-      const parsed = parseShoppingItemForPrint(i)
-      return { name: parsed.name, quantity: parsed.quantity, unit: parsed.unit, checked: i.checked }
+      const d = normalizeShoppingListItemDisplay(i)
+      return { name: d.displayName, quantity: d.displayQuantity || null, unit: d.displayUnit, checked: i.checked }
     }),
     {
       appTitle: t('print.appTitle'),
@@ -421,7 +427,7 @@ function exportShoppingListAsPdf() {
 
           <ul class="shopping-list">
             <li
-              v-for="item in sortedItems"
+              v-for="{ item, display } in displayItems"
               :key="item.id"
               class="shopping-item"
               :class="{ checked: item.checked }"
@@ -435,14 +441,12 @@ function exportShoppingListAsPdf() {
                 />
               </label>
               <div class="item-main">
-                <h3>{{ item.name }}</h3>
+                <h3>{{ display.displayName }}</h3>
               </div>
               <div class="item-side">
                 <p class="item-quantity">
-                  <span v-if="item.quantity !== null && item.quantity !== undefined">
-                    {{ item.quantity }}
-                  </span>
-                  <span v-if="item.unit">{{ item.unit }}</span>
+                  <span v-if="display.displayQuantity">{{ display.displayQuantity }}</span>
+                  <span v-if="display.displayUnit">{{ display.displayUnit }}</span>
                 </p>
                 <button type="button" class="edit-btn" @click="startEdit(item)">
                   {{ t('shoppingList.actions.edit') }}
