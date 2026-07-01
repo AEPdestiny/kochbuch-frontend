@@ -438,6 +438,11 @@
     "empty": "未找到餐厅。",
     "unavailable": "餐厅搜索目前不可用。",
     "noExactResults": "未找到与该菜肴完全匹配的可靠餐厅结果。",
+    "noResults": "我们未能找到合适的餐厅。",
+    "exactMatchesHeading": "该菜肴的精确匹配结果",
+    "suggestionsHeading": "未找到精确匹配。以下是您附近的一般餐厅推荐。",
+    "exactCardNote": "已核对此确切菜肴",
+    "suggestionCardNote": "一般餐厅推荐",
     "disclaimer": "搜索会检查网络和菜单结果中是否有此菜肴。不显示类似菜肴。",
     "errors": {
       "geolocationUnsupported": "你的浏览器不支持位置访问。",

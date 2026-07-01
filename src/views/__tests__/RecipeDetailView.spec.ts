@@ -239,7 +239,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Keine zuverlässigen Restauranttreffer für genau dieses Gericht gefunden.')
+    expect(wrapper.text()).toContain('Wir haben keine passenden Restaurants gefunden.')
   })
 
   it('shows unavailable message when Tavily is not configured', async () => {
@@ -270,7 +270,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.location-input').setValue('Berlin')
     await wrapper.find('.restaurant-search-button').trigger('click')
 
-    expect(wrapper.text()).not.toContain('Keine zuverlässigen Restauranttreffer')
+    expect(wrapper.text()).not.toContain('Wir haben keine passenden Restaurants gefunden')
     expect(wrapper.text()).not.toContain('Restaurant-Suche ist aktuell nicht verfügbar')
     expect(wrapper.text()).not.toContain('Restaurants konnten nicht geladen werden')
     expect(wrapper.text()).not.toContain('Bitte gib eine Stadt ein, z. B. Berlin.')
@@ -412,7 +412,7 @@ describe('RecipeDetailView', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('r/sushi')
-    expect(wrapper.text()).toContain('Keine zuverlässigen Restauranttreffer')
+    expect(wrapper.text()).toContain('Wir haben keine passenden Restaurants gefunden.')
   })
 
   it('client-side filter: "The top 11 sushi restaurants in Berlin" is not rendered', async () => {
@@ -435,7 +435,7 @@ describe('RecipeDetailView', () => {
     await flushPromises()
 
     expect(wrapper.text()).not.toContain('The top 11 sushi restaurants in Berlin')
-    expect(wrapper.text()).toContain('Keine zuverlässigen Restauranttreffer')
+    expect(wrapper.text()).toContain('Wir haben keine passenden Restaurants gefunden.')
   })
 
   it('client-side filter: mix of bad + good results renders only the good one', async () => {
@@ -455,6 +455,58 @@ describe('RecipeDetailView', () => {
 
     expect(wrapper.text()).toContain('Sushi Circle')
     expect(wrapper.text()).not.toContain('r/sushi')
+  })
+
+  it('searchMode "exact" shows exact heading and exact card note', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      searchMode: 'exact',
+      results: [{
+        name: 'Trattoria Mario',
+        address: 'Hauptstraße 1, Berlin',
+        distanceMeters: 700,
+        googleMapsUrl: 'https://maps.google.com/x',
+        latitude: 52.52,
+        longitude: 13.4,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Exakte Treffer für dieses Gericht')
+    expect(wrapper.text()).toContain('Treffer für genau dieses Gericht geprüft')
+    expect(wrapper.text()).toContain('Trattoria Mario')
+    expect(wrapper.text()).not.toContain('Allgemeiner Restaurantvorschlag')
+  })
+
+  it('searchMode "suggestions" shows suggestions heading and suggestion card note, not exact note', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      searchMode: 'suggestions',
+      results: [{
+        name: 'Sushi Circle',
+        address: 'Sushistraße 1, Berlin',
+        distanceMeters: 500,
+        googleMapsUrl: 'https://maps.google.com/x',
+        latitude: 52.52,
+        longitude: 13.4,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Keine exakten Treffer gefunden.')
+    expect(wrapper.text()).toContain('Allgemeiner Restaurantvorschlag')
+    expect(wrapper.text()).toContain('Sushi Circle')
+    expect(wrapper.text()).not.toContain('Treffer für genau dieses Gericht geprüft')
   })
 
   it('GPS denied shows friendly hint message', async () => {

@@ -438,6 +438,11 @@
     "empty": "Nie znaleziono restauracji.",
     "unavailable": "Wyszukiwanie restauracji jest obecnie niedostępne.",
     "noExactResults": "Nie znaleziono wiarygodnych wyników restauracji dla tego dania.",
+    "noResults": "Nie znaleźliśmy pasujących restauracji.",
+    "exactMatchesHeading": "Dokładne wyniki dla tego dania",
+    "suggestionsHeading": "Nie znaleziono dokładnych wyników. Oto ogólne propozycje restauracji w pobliżu.",
+    "exactCardNote": "Sprawdzono dokładnie to danie",
+    "suggestionCardNote": "Ogólna propozycja restauracji",
     "disclaimer": "Wyszukiwanie sprawdza wyniki w sieci i menu dokładnie dla tego dania. Podobne dania nie są pokazywane.",
     "errors": {
       "geolocationUnsupported": "Twoja przeglądarka nie obsługuje dostępu do lokalizacji.",

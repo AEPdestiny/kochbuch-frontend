@@ -507,6 +507,11 @@
     "empty": "Keine Restaurants gefunden.",
     "unavailable": "Restaurant-Suche ist aktuell nicht verfügbar.",
     "noExactResults": "Keine zuverlässigen Restauranttreffer für genau dieses Gericht gefunden.",
+    "noResults": "Wir haben keine passenden Restaurants gefunden.",
+    "exactMatchesHeading": "Exakte Treffer für dieses Gericht",
+    "suggestionsHeading": "Keine exakten Treffer gefunden. Hier sind allgemeine Restaurantvorschläge in deiner Nähe.",
+    "exactCardNote": "Treffer für genau dieses Gericht geprüft",
+    "suggestionCardNote": "Allgemeiner Restaurantvorschlag",
     "disclaimer": "Die Suche prüft Web- und Menütreffer auf genau dieses Gericht. Es werden keine ähnlichen Gerichte angezeigt.",
     "errors": {
       "geolocationUnsupported": "Dein Browser unterstützt keine Standortabfrage.",

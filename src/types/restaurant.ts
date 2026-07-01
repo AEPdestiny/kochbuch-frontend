@@ -17,4 +17,5 @@ export interface TavilyRestaurantSearchResponse {
   status: 'ok' | 'unavailable' | 'no_results' | 'no_location'
   results: RestaurantResponse[]
   resolvedLocation?: string | null
+  searchMode?: 'exact' | 'suggestions' | null
 }

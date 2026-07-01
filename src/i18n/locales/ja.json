@@ -438,6 +438,11 @@
     "empty": "レストランが見つかりませんでした。",
     "unavailable": "レストラン検索は現在利用できません。",
     "noExactResults": "このメニューに対応する信頼できるレストランは見つかりませんでした。",
+    "noResults": "該当するレストランが見つかりませんでした。",
+    "exactMatchesHeading": "この料理に一致する結果",
+    "suggestionsHeading": "完全一致は見つかりませんでした。近くの一般的なレストラン候補です。",
+    "exactCardNote": "この料理そのものを確認済み",
+    "suggestionCardNote": "一般的なレストラン候補",
     "disclaimer": "このメニューのウェブ・メニュー結果を正確に検索します。類似料理は表示されません。",
     "errors": {
       "geolocationUnsupported": "このブラウザは位置情報に対応していません。",

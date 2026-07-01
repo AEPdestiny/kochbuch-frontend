@@ -69,6 +69,7 @@ const geoLocating = ref(false)
 const geoLocationDenied = ref(false)
 const gpsNoCityHint = ref(false)
 const resolvedLocation = ref<string | null>(null)
+const restaurantSearchMode = ref<'exact' | 'suggestions' | null>(null)
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
@@ -471,6 +472,7 @@ async function findRestaurantsByGps() {
   restaurantLocationTooBroad.value = false
   gpsNoCityHint.value = false
   resolvedLocation.value = null
+  restaurantSearchMode.value = null
   restaurants.value = []
 
   try {
@@ -490,17 +492,24 @@ async function findRestaurantsByGps() {
     } else if (response.status === 'no_results') {
       restaurantNoResults.value = true
     } else {
-      const filtered = response.results.filter(r => isDisplayableRestaurantName(r.name))
-      if (filtered.length === 0) {
-        restaurantNoResults.value = true
-      } else {
-        restaurants.value = filtered
-      }
+      applyResults(response)
     }
   } catch {
     restaurantError.value = t('restaurants.errors.searchFailed')
   } finally {
     restaurantLoading.value = false
+  }
+}
+
+// Applies the client-side safety filter and records the exact/suggestions mode for the UI.
+function applyResults(response: TavilyRestaurantSearchResponse) {
+  const filtered = response.results.filter(r => isDisplayableRestaurantName(r.name))
+  if (filtered.length === 0) {
+    restaurantNoResults.value = true
+    restaurantSearchMode.value = null
+  } else {
+    restaurants.value = filtered
+    restaurantSearchMode.value = response.searchMode ?? 'exact'
   }
 }
 
@@ -516,6 +525,7 @@ async function findRestaurantsByText() {
     restaurantError.value = null
     gpsNoCityHint.value = false
     resolvedLocation.value = null
+    restaurantSearchMode.value = null
     restaurants.value = []
     return
   }
@@ -527,6 +537,7 @@ async function findRestaurantsByText() {
   restaurantLocationTooBroad.value = false
   gpsNoCityHint.value = false
   resolvedLocation.value = null
+  restaurantSearchMode.value = null
   restaurants.value = []
 
   try {
@@ -541,12 +552,7 @@ async function findRestaurantsByText() {
     } else if (response.status === 'no_results') {
       restaurantNoResults.value = true
     } else {
-      const filtered = response.results.filter(r => isDisplayableRestaurantName(r.name))
-      if (filtered.length === 0) {
-        restaurantNoResults.value = true
-      } else {
-        restaurants.value = filtered
-      }
+      applyResults(response)
     }
   } catch {
     restaurantError.value = t('restaurants.errors.searchFailed')
@@ -948,20 +954,26 @@ function formatDate(date: Date) {
           <p v-else-if="restaurantLocationTooBroad" class="status-text">{{ t('restaurants.locationTooBroad') }}</p>
           <p v-else-if="restaurantUnavailable" class="status-text">{{ t('restaurants.unavailable') }}</p>
           <p v-else-if="gpsNoCityHint" class="status-text">{{ t('restaurants.gpsNoCityHint') }}</p>
-          <p v-else-if="restaurantNoResults" class="status-text">{{ t('restaurants.noExactResults') }}</p>
+          <p v-else-if="restaurantNoResults" class="status-text">{{ t('restaurants.noResults') }}</p>
           <p v-if="resolvedLocation" class="status-text">{{ t('restaurants.resolvedLocation', { city: resolvedLocation }) }}</p>
         </template>
-        <ul v-if="!restaurantLoading && restaurants.length" class="restaurant-list">
-          <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.googleMapsUrl}`">
-            <strong class="restaurant-name">{{ restaurant.name }}</strong>
-            <span v-if="restaurant.address" class="restaurant-address">{{ restaurant.address }}</span>
-            <span v-if="restaurant.distanceMeters != null" class="restaurant-distance">{{ formatDistance(restaurant.distanceMeters) }}</span>
-            <span v-else class="restaurant-distance-hint">{{ t('restaurants.distanceInMaps') }}</span>
-            <a :href="restaurant.googleMapsUrl" target="_blank" rel="noopener noreferrer" class="maps-link">
-              {{ t('restaurants.openRouteInMaps') }}
-            </a>
-          </li>
-        </ul>
+        <template v-if="!restaurantLoading && restaurants.length">
+          <p v-if="restaurantSearchMode === 'exact'" class="restaurant-mode-heading">{{ t('restaurants.exactMatchesHeading') }}</p>
+          <p v-else-if="restaurantSearchMode === 'suggestions'" class="restaurant-mode-heading">{{ t('restaurants.suggestionsHeading') }}</p>
+          <ul class="restaurant-list">
+            <li v-for="restaurant in restaurants" :key="`${restaurant.name}-${restaurant.googleMapsUrl}`">
+              <strong class="restaurant-name">{{ restaurant.name }}</strong>
+              <span v-if="restaurant.address" class="restaurant-address">{{ restaurant.address }}</span>
+              <span v-if="restaurant.distanceMeters != null" class="restaurant-distance">{{ formatDistance(restaurant.distanceMeters) }}</span>
+              <span v-else class="restaurant-distance-hint">{{ t('restaurants.distanceInMaps') }}</span>
+              <span v-if="restaurantSearchMode === 'exact'" class="restaurant-match-note">{{ t('restaurants.exactCardNote') }}</span>
+              <span v-else-if="restaurantSearchMode === 'suggestions'" class="restaurant-match-note suggestion">{{ t('restaurants.suggestionCardNote') }}</span>
+              <a :href="restaurant.googleMapsUrl" target="_blank" rel="noopener noreferrer" class="maps-link">
+                {{ t('restaurants.openRouteInMaps') }}
+              </a>
+            </li>
+          </ul>
+        </template>
       </section>
     </article>
 
@@ -1136,6 +1148,21 @@ function formatDate(date: Date) {
 }
 
 .ingredient-list,
+.restaurant-mode-heading {
+  margin: 4px 0 8px;
+  font-weight: 600;
+  color: #23514c;
+}
+
+.restaurant-match-note {
+  font-size: 0.82rem;
+  color: #3a7d74;
+}
+
+.restaurant-match-note.suggestion {
+  color: #9a6a1c;
+}
+
 .restaurant-list {
   list-style: none;
   padding: 0;

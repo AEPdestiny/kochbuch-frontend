@@ -505,6 +505,11 @@
     "empty": "No restaurants found.",
     "unavailable": "Restaurant search is currently unavailable.",
     "noExactResults": "No reliable restaurant matches found for this exact dish.",
+    "noResults": "We could not find any matching restaurants.",
+    "exactMatchesHeading": "Exact matches for this dish",
+    "suggestionsHeading": "No exact matches found. Here are general restaurant suggestions near you.",
+    "exactCardNote": "Checked for this exact dish",
+    "suggestionCardNote": "General restaurant suggestion",
     "disclaimer": "The search checks web and menu results for this exact dish. Similar dishes are not shown.",
     "errors": {
       "geolocationUnsupported": "Your browser does not support location access.",

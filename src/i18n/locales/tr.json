@@ -438,6 +438,11 @@
     "empty": "Restoran bulunamadı.",
     "unavailable": "Restoran araması şu anda kullanılamıyor.",
     "noExactResults": "Bu yemek için güvenilir restoran sonucu bulunamadı.",
+    "noResults": "Uygun restoran bulamadık.",
+    "exactMatchesHeading": "Bu yemek için birebir sonuçlar",
+    "suggestionsHeading": "Birebir sonuç bulunamadı. Yakınında genel restoran önerileri:",
+    "exactCardNote": "Tam olarak bu yemek için kontrol edildi",
+    "suggestionCardNote": "Genel restoran önerisi",
     "disclaimer": "Arama, tam olarak bu yemeği web ve menü sonuçlarında kontrol eder. Benzer yemekler gösterilmez.",
     "errors": {
       "geolocationUnsupported": "Tarayıcınız konum erişimini desteklemiyor.",
