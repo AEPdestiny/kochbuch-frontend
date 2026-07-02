@@ -479,6 +479,41 @@ describe('PantryView', () => {
     expect(dropdown.text()).not.toContain('ml')
   })
 
+  it('locale de: dropdown never mixes English fallback names with German names (live bug regression)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
+    // "reis" matches all 10 rice suggestions once fully localized.
+    await nameInput.setValue('reis')
+    await nameInput.trigger('focus')
+
+    const dropdownText = wrapper.find('.suggest-dropdown').text()
+    expect(dropdownText).not.toContain('Milk rice')
+    expect(dropdownText).not.toContain('Long grain rice')
+    expect(dropdownText).not.toContain('Short grain rice')
+    expect(dropdownText).toContain('Milchreis')
+    expect(dropdownText).toContain('Langkornreis')
+    expect(dropdownText).toContain('Rundkornreis')
+  })
+
+  it('locale de: bean suggestions are fully German, not a mix of translated and English', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
+    await nameInput.setValue('bohnen')
+    await nameInput.trigger('focus')
+
+    const dropdownText = wrapper.find('.suggest-dropdown').text()
+    expect(dropdownText).not.toContain('Kidney beans')
+    expect(dropdownText).not.toContain('Black beans')
+    expect(dropdownText).toContain('Kidneybohnen')
+    expect(dropdownText).toContain('Schwarze Bohnen')
+  })
+
   it('shows English suggestions when locale is not German', async () => {
     setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')

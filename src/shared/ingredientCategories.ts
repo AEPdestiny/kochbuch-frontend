@@ -109,8 +109,44 @@ export function categorySearchTerms(query: string): string[] {
 /**
  * English NAME_SUGGESTIONS entry → German display label. Only used when the
  * active locale is "de"; every other locale keeps the original English text.
+ * Covers every entry in NAME_SUGGESTIONS (see ingredientConstants.ts) — German
+ * locale must never fall back to an untranslated English suggestion.
  */
 export const INGREDIENT_LABELS_DE: Record<string, string> = {
+  // Rice
+  'Basmati rice': 'Basmatireis',
+  'Jasmine rice': 'Jasminreis',
+  'Long grain rice': 'Langkornreis',
+  'Short grain rice': 'Rundkornreis',
+  'Brown rice': 'Naturreis',
+  'Wild rice': 'Wildreis',
+  'Risotto rice': 'Risottoreis',
+  'Milk rice': 'Milchreis',
+  'Sushi rice': 'Sushireis',
+  'Parboiled rice': 'Parboiled-Reis',
+  // Pasta & noodles
+  'Spaghetti': 'Spaghetti',
+  'Penne': 'Penne',
+  'Fusilli': 'Fusilli',
+  'Farfalle': 'Farfalle',
+  'Tagliatelle': 'Tagliatelle',
+  'Macaroni': 'Makkaroni',
+  'Lasagna sheets': 'Lasagneblätter',
+  'Udon': 'Udon-Nudeln',
+  'Rice noodles': 'Reisnudeln',
+  'Glass noodles': 'Glasnudeln',
+  'Tortellini': 'Tortellini',
+  'Gnocchi': 'Gnocchi',
+  // Sugar
+  'Brown sugar': 'Brauner Zucker',
+  'Powdered sugar': 'Puderzucker',
+  'Table sugar': 'Haushaltszucker',
+  // Beans
+  'White beans': 'Weiße Bohnen',
+  'Kidney beans': 'Kidneybohnen',
+  'Black beans': 'Schwarze Bohnen',
+  'Soybeans': 'Sojabohnen',
+  // Meat
   'Chicken breast': 'Hähnchenbrust',
   'Chicken thighs': 'Hähnchenschenkel',
   'Turkey breast': 'Putenbrust',
@@ -121,6 +157,7 @@ export const INGREDIENT_LABELS_DE: Record<string, string> = {
   'Bacon': 'Speck',
   'Salami': 'Salami',
   'Cooked ham': 'Kochschinken',
+  // Fish & seafood
   'Salmon fillet': 'Lachsfilet',
   'Tuna': 'Thunfisch',
   'Cod': 'Kabeljau',
@@ -131,20 +168,29 @@ export const INGREDIENT_LABELS_DE: Record<string, string> = {
   'Sardines': 'Sardinen',
   'Mackerel': 'Makrele',
   'Mussels': 'Miesmuscheln',
+  // Milk
+  'Oat milk': 'Hafermilch',
+  'Almond milk': 'Mandelmilch',
+  'Soy milk': 'Sojamilch',
+  // Yogurt
   'Greek yogurt': 'Griechischer Joghurt',
   'Quark': 'Quark',
+  // Dairy
   'Cream cheese': 'Frischkäse',
   'Cream': 'Sahne',
   'Butter': 'Butter',
   'Margarine': 'Margarine',
+  // Cheese
   'Mozzarella': 'Mozzarella',
   'Parmesan': 'Parmesan',
   'Feta': 'Feta',
   'Gouda': 'Gouda',
-  'Basmati rice': 'Basmatireis',
-  'Jasmine rice': 'Jasminreis',
-  'Brown rice': 'Naturreis',
-  'Sushi rice': 'Sushireis',
+  // Oil
+  'Olive oil': 'Olivenöl',
+  'Sunflower oil': 'Sonnenblumenöl',
+  'Rapeseed oil': 'Rapsöl',
+  'Sesame oil': 'Sesamöl',
+  'Coconut oil': 'Kokosöl',
 }
 
 /** STANDARD_UNITS code → German display label. */

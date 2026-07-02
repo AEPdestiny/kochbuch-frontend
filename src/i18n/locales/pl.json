@@ -305,6 +305,8 @@
     "caloriesProgress": "{planned} / {goal} kcal",
     "caloriesNoGoal": "Brak dziennego celu.",
     "caloriesNoCalories": "Brak zaplanowanych kalorii na dziś.",
+    "caloriesUnknownHint": "{count} posiłki bez podanych kcal nie są uwzględnione w sumie.",
+    "caloriesUnknownHintOne": "{count} posiłek bez podanych kcal nie jest uwzględniony w sumie.",
     "caloriesSetGoal": "Ustaw cel w profilu",
     "caloriesOver": "Powyżej celu dziennego",
     "shoppingTitle": "Lista zakupów",
@@ -490,6 +492,8 @@
     "caloriesUnknownOnly": "{count} posiłki bez podanych kcal",
     "caloriesUnknownOnlyOne": "{count} posiłek bez podanych kcal",
     "unknownCaloriesHint": "Niektóre posiłki nie mają podanej wartości kcal i nie są uwzględnione w sumie.",
+    "weekUnknownCaloriesHint": "{count} posiłki bez podanych kcal nie są uwzględnione w sumie.",
+    "weekUnknownCaloriesHintOne": "{count} posiłek bez podanych kcal nie jest uwzględniony w sumie.",
     "week": {
       "current": "Bieżący tydzień"
     },

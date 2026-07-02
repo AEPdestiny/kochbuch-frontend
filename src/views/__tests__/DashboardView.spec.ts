@@ -114,6 +114,35 @@ describe('DashboardView', () => {
     expect(wrapper.text()).toContain('Kein Tagesziel gesetzt.')
   })
 
+  it('shows an unknown-kcal hint when a freetext meal today has no kcal value', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({ ...defaultPreferences(), dailyCalorieTarget: 2200 })
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: todayStr, weekEnd: todayStr,
+      entries: [
+        { id: '1', plannedDate: todayStr, mealSlot: 'dinner', calories: 1200 },
+        { id: '2', plannedDate: todayStr, mealSlot: 'lunch', recipe: null, customTitle: 'Salat', calories: null, caloriesSnapshot: null },
+      ],
+    })
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).toContain('1200 / 2200 kcal')
+    expect(wrapper.text()).toContain('1 Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.')
+  })
+
+  it('does not show the misleading "no calories" message when a freetext meal today has no kcal value', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({ ...defaultPreferences(), dailyCalorieTarget: 2200 })
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: todayStr, weekEnd: todayStr,
+      entries: [
+        { id: '1', plannedDate: todayStr, mealSlot: 'lunch', recipe: null, customTitle: 'Salat', calories: null, caloriesSnapshot: null },
+      ],
+    })
+    const wrapper = mountDashboard()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('Heute noch keine kcal geplant.')
+    expect(wrapper.text()).toContain('1 Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.')
+  })
+
   it('renders progress bar element', async () => {
     vi.mocked(profileApi.getPreferences).mockResolvedValue({ ...defaultPreferences(), dailyCalorieTarget: 2000 })
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue({

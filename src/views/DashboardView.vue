@@ -56,6 +56,10 @@ function entryCalories(entry: MealPlanEntryResponse) {
   return entry.calories ?? entry.recipe?.calories ?? entry.caloriesSnapshot ?? 0
 }
 
+function hasUnknownCalories(entry: MealPlanEntryResponse) {
+  return entry.calories == null && entry.recipe?.calories == null && entry.caloriesSnapshot == null
+}
+
 // ── Computed ───────────────────────────────────────────────────────
 const todayEntries = computed(() =>
   (week.value?.entries ?? []).filter(e => e.plannedDate === todayDate),
@@ -72,6 +76,10 @@ const todayEntriesBySlot = computed(() => {
 
 const todayCalories = computed(() =>
   todayEntries.value.reduce((sum, e) => sum + entryCalories(e), 0),
+)
+
+const todayUnknownCaloriesCount = computed(() =>
+  todayEntries.value.filter(hasUnknownCalories).length,
 )
 
 const dailyCalorieGoal = computed(() =>
@@ -206,7 +214,10 @@ async function loadProfile() {
             <div class="cal-bar-fill" :class="{ 'bar-over': calorieIsOver }" :style="{ width: caloriePercent + '%' }"></div>
           </div>
           <p v-if="calorieIsOver" class="cal-over-label">{{ t('dashboard.caloriesOver') }}</p>
-          <p v-else-if="todayCalories === 0" class="card-empty">{{ t('dashboard.caloriesNoCalories') }}</p>
+          <p v-else-if="todayUnknownCaloriesCount === 0 && todayCalories === 0" class="card-empty">{{ t('dashboard.caloriesNoCalories') }}</p>
+          <p v-if="todayUnknownCaloriesCount > 0" class="hint cal-unknown-hint">
+            {{ todayUnknownCaloriesCount === 1 ? t('dashboard.caloriesUnknownHintOne', { count: todayUnknownCaloriesCount }) : t('dashboard.caloriesUnknownHint', { count: todayUnknownCaloriesCount }) }}
+          </p>
         </template>
 
         <template v-else>
@@ -570,7 +581,9 @@ async function loadProfile() {
 .profile-hint { font-size: 0.85rem; color: #486b68; margin: 0; }
 
 /* ── Preview hint ─────────────────────────────────────────────── */
-.preview-hint { font-size: 0.8rem; color: #8aada9; margin: 0; font-style: italic; }
+/* Anchored to the bottom of the (flex-column) card so it lines up at the same
+   position across cards, regardless of how many list items are shown above it. */
+.preview-hint { font-size: 0.8rem; color: #8aada9; margin: 0; margin-top: auto; font-style: italic; }
 
 /* ── Chips ────────────────────────────────────────────────────── */
 .chip {

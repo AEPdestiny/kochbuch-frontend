@@ -315,6 +315,8 @@
     "caloriesProgress": "{planned} / {goal} kcal",
     "caloriesNoGoal": "Kein Tagesziel gesetzt.",
     "caloriesNoCalories": "Heute noch keine kcal geplant.",
+    "caloriesUnknownHint": "{count} Mahlzeiten ohne kcal-Angabe sind nicht in der Summe enthalten.",
+    "caloriesUnknownHintOne": "{count} Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.",
     "caloriesSetGoal": "Im Profil festlegen",
     "caloriesOver": "Über dem Tagesziel",
     "shoppingTitle": "Einkaufsliste",
@@ -559,6 +561,8 @@
     "caloriesUnknownOnly": "{count} Mahlzeiten ohne kcal-Angabe",
     "caloriesUnknownOnlyOne": "{count} Mahlzeit ohne kcal-Angabe",
     "unknownCaloriesHint": "Einige Mahlzeiten haben keine kcal-Angabe und sind nicht in der Summe enthalten.",
+    "weekUnknownCaloriesHint": "{count} Mahlzeiten ohne kcal-Angabe sind nicht in der Summe enthalten.",
+    "weekUnknownCaloriesHintOne": "{count} Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.",
     "week": {
       "current": "Aktuelle Woche"
     },

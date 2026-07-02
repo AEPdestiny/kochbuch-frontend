@@ -667,22 +667,22 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
-  it('scrolls to top of page when switching pages', async () => {
-    const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
-
+  it('smooth-scrolls to the results list (not the whole page) when switching pages', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
     )
 
-    const wrapper = mount(ApiRecipeList)
+    const wrapper = mount(ApiRecipeList, { attachTo: document.body })
     await flushPromises()
+    const scrollSpy = vi.fn()
+    wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
 
     const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
     await nextBtn.trigger('click')
     await flushPromises()
 
-    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'auto' })
+    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
     wrapper.unmount()
   })
 

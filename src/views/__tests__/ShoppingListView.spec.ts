@@ -557,6 +557,23 @@ describe('ShoppingListView', () => {
     expect(dropdown.findAll('li').length).toBeLessThanOrEqual(8)
   })
 
+  it('locale de: dropdown never mixes English fallback names with German names (live bug regression)', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="z.B. Tomaten"]')
+    await nameInput.setValue('reis')
+    await nameInput.trigger('focus')
+
+    const dropdownText = wrapper.find('.suggest-dropdown').text()
+    expect(dropdownText).not.toContain('Milk rice')
+    expect(dropdownText).not.toContain('Short grain rice')
+    expect(dropdownText).toContain('Milchreis')
+    expect(dropdownText).toContain('Rundkornreis')
+  })
+
   it('shows English suggestions when locale is not German', async () => {
     setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')

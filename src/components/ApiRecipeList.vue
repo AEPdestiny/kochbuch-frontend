@@ -79,6 +79,7 @@ let isInitializingProfile = false
 
 const filtered = computed(() => recipes.value)
 const currentPage = ref(1)
+const listWrapRef = ref<HTMLElement | null>(null)
 const totalPages = computed(() => Math.max(1, Math.ceil(recipes.value.length / PAGE_SIZE)))
 const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1))
 const paginatedRecipes = computed(() => {
@@ -252,10 +253,29 @@ const buildSearchView = () => {
   ])
 }
 
+// Visible for tests. Defensive: window.matchMedia is absent in some test/legacy
+// environments, so treat that as "no preference" rather than throwing.
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// Scrolls to the start of the results list/card instead of jumping to the top of
+// the whole page, and respects prefers-reduced-motion instead of always animating.
+// scrollIntoView is guarded because it's not implemented in some environments (e.g. jsdom).
+function scrollToListStart() {
+  const el = listWrapRef.value
+  if (!el || typeof el.scrollIntoView !== 'function') return
+  el.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  })
+}
+
 function goToPage(page: number) {
   currentPage.value = page
   updateSnapshotPage(page)
-  window.scrollTo({ top: 0, behavior: 'auto' })
+  scrollToListStart()
 }
 
 const loadRecipes = async () => {
@@ -1036,7 +1056,7 @@ function formatDate(date: Date) {
       </button>
     </div>
 
-    <section class="list-wrap">
+    <section class="list-wrap" ref="listWrapRef">
       <p v-if="loading" class="status-text">{{ t('home.loading') }}</p>
       <p v-else-if="error && filtered.length === 0" class="status-text error">
         {{ t('home.errors.prefix') }} {{ error }}

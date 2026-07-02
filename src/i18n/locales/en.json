@@ -313,6 +313,8 @@
     "caloriesProgress": "{planned} / {goal} kcal",
     "caloriesNoGoal": "No daily goal set.",
     "caloriesNoCalories": "No calories planned today.",
+    "caloriesUnknownHint": "{count} meals without a kcal value are not included in the total.",
+    "caloriesUnknownHintOne": "{count} meal without a kcal value is not included in the total.",
     "caloriesSetGoal": "Set goal in profile",
     "caloriesOver": "Over daily goal",
     "shoppingTitle": "Shopping list",
@@ -557,6 +559,8 @@
     "caloriesUnknownOnly": "{count} meals without a kcal value",
     "caloriesUnknownOnlyOne": "{count} meal without a kcal value",
     "unknownCaloriesHint": "Some meals have no kcal value and are not included in the total.",
+    "weekUnknownCaloriesHint": "{count} meals without a kcal value are not included in the total.",
+    "weekUnknownCaloriesHintOne": "{count} meal without a kcal value is not included in the total.",
     "week": {
       "current": "Current week"
     },

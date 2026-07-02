@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   categorySearchTerms,
+  INGREDIENT_LABELS_DE,
   isRecognizedCategoryAlias,
   localizedNameSuggestions,
   localizedUnitOptions,
@@ -131,6 +132,35 @@ describe('ingredientCategories', () => {
       for (const locale of ['en', 'tr', 'pl', 'ar', 'zh', 'ja']) {
         expect(localizedNameSuggestions(NAME_SUGGESTIONS, locale)).toEqual(NAME_SUGGESTIONS)
       }
+    })
+
+    it('locale de contains no untranslated English suggestion (no fallback to the raw NAME_SUGGESTIONS entry)', () => {
+      // Every NAME_SUGGESTIONS entry must have its own German label — a "translation"
+      // that is identical to the English source (e.g. pasta shape names that are the
+      // same word in German) is fine, but silently falling back because a label is
+      // simply missing from INGREDIENT_LABELS_DE is the exact bug this test guards against.
+      const englishOnlyExamples = ['Milk rice', 'Kidney beans', 'Black beans', 'Chicken breast', 'Long grain rice', 'Short grain rice']
+      const suggestions = localizedNameSuggestions(NAME_SUGGESTIONS, 'de')
+      for (const example of englishOnlyExamples) {
+        expect(suggestions).not.toContain(example)
+      }
+    })
+
+    it('every NAME_SUGGESTIONS entry has an explicit German label', () => {
+      const missing = NAME_SUGGESTIONS.filter(name => !(name in INGREDIENT_LABELS_DE))
+      expect(missing).toEqual([])
+    })
+
+    it('locale de shows expected German translations (Milchreis, Schwarze Bohnen, Hähnchenbrust, ...)', () => {
+      const suggestions = localizedNameSuggestions(NAME_SUGGESTIONS, 'de')
+      expect(suggestions).toContain('Milchreis')
+      expect(suggestions).toContain('Kidneybohnen')
+      expect(suggestions).toContain('Schwarze Bohnen')
+      expect(suggestions).toContain('Langkornreis')
+      expect(suggestions).toContain('Rundkornreis')
+      expect(suggestions).toContain('Hähnchenbrust')
+      expect(suggestions).toContain('Sonnenblumenöl')
+      expect(suggestions).toContain('Sojamilch')
     })
   })
 

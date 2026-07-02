@@ -305,6 +305,8 @@
     "caloriesProgress": "{planned} / {goal} سعرة",
     "caloriesNoGoal": "لم يتم تحديد هدف يومي.",
     "caloriesNoCalories": "لا توجد سعرات مخططة اليوم.",
+    "caloriesUnknownHint": "{count} وجبات بدون بيانات سعرات حرارية غير مُدرجة في المجموع.",
+    "caloriesUnknownHintOne": "وجبة واحدة بدون بيانات سعرات حرارية غير مُدرجة في المجموع.",
     "caloriesSetGoal": "تحديد الهدف في الملف",
     "caloriesOver": "فوق الهدف اليومي",
     "shoppingTitle": "قائمة التسوق",
@@ -490,6 +492,8 @@
     "caloriesUnknownOnly": "{count} وجبات بدون بيانات السعرات",
     "caloriesUnknownOnlyOne": "وجبة واحدة بدون بيانات السعرات",
     "unknownCaloriesHint": "بعض الوجبات لا تحتوي على بيانات سعرات حرارية ولم تُدرج في المجموع.",
+    "weekUnknownCaloriesHint": "{count} وجبات بدون بيانات سعرات حرارية غير مُدرجة في المجموع.",
+    "weekUnknownCaloriesHintOne": "وجبة واحدة بدون بيانات سعرات حرارية غير مُدرجة في المجموع.",
     "week": {
       "current": "الأسبوع الحالي"
     },

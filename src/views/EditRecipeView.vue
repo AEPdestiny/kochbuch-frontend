@@ -337,6 +337,10 @@ function removeIngredientRow(index: number) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 1rem;
+  /* Without this, grid's default stretch makes a short field (e.g. title) match
+     the height of a much taller sibling (e.g. the image upload column with its
+     dropzone/preview), leaving a huge empty area around a single-line input. */
+  align-items: start;
 }
 
 .form-field {

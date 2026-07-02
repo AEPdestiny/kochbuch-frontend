@@ -305,6 +305,8 @@
     "caloriesProgress": "{planned} / {goal} kcal",
     "caloriesNoGoal": "Günlük hedef belirlenmedi.",
     "caloriesNoCalories": "Bugün kalori planlanmadı.",
+    "caloriesUnknownHint": "{count} öğünün kcal bilgisi yok ve toplama dahil edilmemiştir.",
+    "caloriesUnknownHintOne": "{count} öğünün kcal bilgisi yok ve toplama dahil edilmemiştir.",
     "caloriesSetGoal": "Profilde hedef belirle",
     "caloriesOver": "Günlük hedefin üzerinde",
     "shoppingTitle": "Alışveriş listesi",
@@ -490,6 +492,8 @@
     "caloriesUnknownOnly": "{count} öğün kcal bilgisi yok",
     "caloriesUnknownOnlyOne": "{count} öğün kcal bilgisi yok",
     "unknownCaloriesHint": "Bazı öğünlerin kcal bilgisi yok ve toplama dahil edilmemiştir.",
+    "weekUnknownCaloriesHint": "{count} öğünün kcal bilgisi yok ve toplama dahil edilmemiştir.",
+    "weekUnknownCaloriesHintOne": "{count} öğünün kcal bilgisi yok ve toplama dahil edilmemiştir.",
     "week": {
       "current": "Güncel hafta"
     },

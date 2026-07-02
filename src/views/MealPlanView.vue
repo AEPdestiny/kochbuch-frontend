@@ -111,6 +111,9 @@ const bucketCounts = computed<Record<MealSlot, number>>(() => ({
 const allBucketsFull = computed(() => mealSlots.every(slot => bucketCounts.value[slot.key] >= BUCKET_LIMIT))
 const dailyCalorieTarget = computed(() => preferences.value?.dailyCalorieTarget ?? preferences.value?.calorieGoal ?? 2200)
 const averageCaloriesPerDay = computed(() => Math.round(weekDays.value.reduce((sum, day) => sum + caloriesForDay(day.date), 0) / 7))
+// Count of planned entries across the whole week that have no resolvable calorie value,
+// so the week header can disclose that the average above doesn't include them.
+const weekUnknownCaloriesCount = computed(() => (week.value?.entries ?? []).filter(hasUnknownCalories).length)
 const calorieDelta = computed(() => averageCaloriesPerDay.value - dailyCalorieTarget.value)
 const weeklyRecommendation = computed(() => {
   const freeSlots = 28 - (week.value?.entries.length ?? 0)
@@ -901,6 +904,9 @@ function formatDate(date: Date) {
             Schnitt: {{ averageCaloriesPerDay }} / {{ dailyCalorieTarget }} kcal pro Tag
             <span v-if="calorieDelta > 0">(+{{ calorieDelta }} kcal)</span>
             <span v-else-if="calorieDelta < 0">({{ calorieDelta }} kcal)</span>
+          </p>
+          <p v-if="weekUnknownCaloriesCount > 0" class="hint calorie-unknown-hint">
+            {{ weekUnknownCaloriesCount === 1 ? t('mealPlan.weekUnknownCaloriesHintOne', { count: weekUnknownCaloriesCount }) : t('mealPlan.weekUnknownCaloriesHint', { count: weekUnknownCaloriesCount }) }}
           </p>
           <p>{{ weeklyRecommendation }}</p>
         </div>

@@ -305,6 +305,8 @@
     "caloriesProgress": "{planned} / {goal} kcal",
     "caloriesNoGoal": "1日の目標が設定されていません。",
     "caloriesNoCalories": "今日はカロリーが計画されていません。",
+    "caloriesUnknownHint": "kcal未入力の食事{count}件は合計に含まれていません。",
+    "caloriesUnknownHintOne": "kcal未入力の食事{count}件は合計に含まれていません。",
     "caloriesSetGoal": "プロフィールで目標を設定",
     "caloriesOver": "1日の目標を超えています",
     "shoppingTitle": "買い物リスト",
@@ -490,6 +492,8 @@
     "caloriesUnknownOnly": "{count} 件のkcal未入力の食事",
     "caloriesUnknownOnlyOne": "{count} 件のkcal未入力の食事",
     "unknownCaloriesHint": "一部の食事にはkcalの入力がなく、合計に含まれていません。",
+    "weekUnknownCaloriesHint": "kcal未入力の食事{count}件は合計に含まれていません。",
+    "weekUnknownCaloriesHintOne": "kcal未入力の食事{count}件は合計に含まれていません。",
     "week": {
       "current": "今週"
     },

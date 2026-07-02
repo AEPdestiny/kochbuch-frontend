@@ -189,4 +189,62 @@ describe('ApiRecipeList', () => {
       }
     })
   })
+
+  describe('pagination scroll behavior', () => {
+    function manyRecipes(count: number) {
+      return Array.from({ length: count }, (_, i) => recipe({ id: i + 1, title: `Recipe ${i + 1}` }))
+    }
+
+    it('does not scroll on initial load', async () => {
+      vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
+
+      const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
+      await flushPromises()
+      const scrollSpy = vi.fn()
+      wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+
+      // The spy was attached after mount, so this only proves no further scroll
+      // happens without a page change — combined with the "smooth scroll" test
+      // below (which proves the spy DOES fire on an actual page click), this
+      // shows scrolling is tied to goToPage(), not to the initial render.
+      expect(scrollSpy).not.toHaveBeenCalled()
+    })
+
+    it('smooth-scrolls the results list (not window) to its start when the page changes', async () => {
+      vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
+
+      const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
+      await flushPromises()
+      const scrollSpy = vi.fn()
+      wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+
+      const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
+      await nextBtn.trigger('click')
+      await flushPromises()
+
+      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+    })
+
+    it('uses instant scroll (behavior: auto) when the user prefers reduced motion', async () => {
+      const matchMediaMock = vi.fn().mockReturnValue({ matches: true })
+      vi.stubGlobal('matchMedia', matchMediaMock)
+      vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
+
+      try {
+        const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
+        await flushPromises()
+        const scrollSpy = vi.fn()
+        wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+
+        const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
+        await nextBtn.trigger('click')
+        await flushPromises()
+
+        expect(matchMediaMock).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)')
+        expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' })
+      } finally {
+        vi.unstubAllGlobals()
+      }
+    })
+  })
 })

@@ -1276,6 +1276,10 @@ defineExpose({ startEdit })
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+  /* Without this, flex's default stretch makes a short field (e.g. title) match
+     the height of a much taller sibling (e.g. the image upload column with its
+     dropzone/preview), leaving a huge empty area around a single-line input. */
+  align-items: flex-start;
 }
 
 .form-field {
