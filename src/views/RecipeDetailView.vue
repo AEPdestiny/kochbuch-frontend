@@ -65,11 +65,13 @@ const restaurants = ref<RestaurantResponse[]>([])
 const restaurantLocation = ref('')
 const userLatitude = ref<number | null>(null)
 const userLongitude = ref<number | null>(null)
+const userAccuracyMeters = ref<number | null>(null)
 const geoLocating = ref(false)
 const geoLocationDenied = ref(false)
 const gpsNoCityHint = ref(false)
 const resolvedLocation = ref<string | null>(null)
 const restaurantSearchMode = ref<'exact' | 'suggestions' | null>(null)
+const locationMismatch = ref(false)
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
 const mealPlanMessage = ref<string | null>(null)
@@ -426,6 +428,7 @@ function useMyLocation() {
     (pos) => {
       userLatitude.value = pos.coords.latitude
       userLongitude.value = pos.coords.longitude
+      userAccuracyMeters.value = Number.isFinite(pos.coords.accuracy) ? Math.round(pos.coords.accuracy) : null
       geoLocating.value = false
       if (restaurantLocation.value.trim() && recipe.value) {
         findRestaurantsByText()
@@ -473,6 +476,7 @@ async function findRestaurantsByGps() {
   gpsNoCityHint.value = false
   resolvedLocation.value = null
   restaurantSearchMode.value = null
+  locationMismatch.value = false
   restaurants.value = []
 
   try {
@@ -481,10 +485,12 @@ async function findRestaurantsByGps() {
       '',
       userLatitude.value,
       userLongitude.value,
+      userAccuracyMeters.value ?? undefined,
     )
     if (response.resolvedLocation) {
       resolvedLocation.value = response.resolvedLocation
     }
+    locationMismatch.value = response.locationMismatch === true
     if (response.status === 'unavailable') {
       restaurantUnavailable.value = true
     } else if (response.status === 'no_location') {
@@ -526,6 +532,7 @@ async function findRestaurantsByText() {
     gpsNoCityHint.value = false
     resolvedLocation.value = null
     restaurantSearchMode.value = null
+    locationMismatch.value = false
     restaurants.value = []
     return
   }
@@ -538,6 +545,7 @@ async function findRestaurantsByText() {
   gpsNoCityHint.value = false
   resolvedLocation.value = null
   restaurantSearchMode.value = null
+  locationMismatch.value = false
   restaurants.value = []
 
   try {
@@ -546,7 +554,12 @@ async function findRestaurantsByText() {
       location,
       userLatitude.value ?? undefined,
       userLongitude.value ?? undefined,
+      userAccuracyMeters.value ?? undefined,
     )
+    if (response.resolvedLocation) {
+      resolvedLocation.value = response.resolvedLocation
+    }
+    locationMismatch.value = response.locationMismatch === true
     if (response.status === 'unavailable') {
       restaurantUnavailable.value = true
     } else if (response.status === 'no_results') {
@@ -955,7 +968,9 @@ function formatDate(date: Date) {
           <p v-else-if="restaurantUnavailable" class="status-text">{{ t('restaurants.unavailable') }}</p>
           <p v-else-if="gpsNoCityHint" class="status-text">{{ t('restaurants.gpsNoCityHint') }}</p>
           <p v-else-if="restaurantNoResults" class="status-text">{{ t('restaurants.noResults') }}</p>
+          <p v-if="locationMismatch" class="status-text location-mismatch">{{ t('restaurants.locationMismatch') }}</p>
           <p v-if="resolvedLocation" class="status-text">{{ t('restaurants.resolvedLocation', { city: resolvedLocation }) }}</p>
+          <p v-if="userLatitude !== null && userAccuracyMeters !== null" class="status-text location-accuracy">{{ t('restaurants.locationAccuracy', { accuracy: userAccuracyMeters }) }}</p>
         </template>
         <template v-if="!restaurantLoading && restaurants.length">
           <p v-if="restaurantSearchMode === 'exact'" class="restaurant-mode-heading">{{ t('restaurants.exactMatchesHeading') }}</p>
@@ -1152,6 +1167,16 @@ function formatDate(date: Date) {
   margin: 4px 0 8px;
   font-weight: 600;
   color: #23514c;
+}
+
+.location-mismatch {
+  color: #9a6a1c;
+  font-weight: 600;
+}
+
+.location-accuracy {
+  font-size: 0.82rem;
+  color: #6b7c79;
 }
 
 .restaurant-match-note {

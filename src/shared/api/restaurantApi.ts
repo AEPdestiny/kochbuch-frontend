@@ -7,9 +7,9 @@ export const restaurantApi = {
     return response.data
   },
 
-  async searchByText(recipeTitle: string, location: string, latitude?: number, longitude?: number): Promise<TavilyRestaurantSearchResponse> {
+  async searchByText(recipeTitle: string, location: string, latitude?: number, longitude?: number, accuracyMeters?: number): Promise<TavilyRestaurantSearchResponse> {
     const response = await apiClient.get<TavilyRestaurantSearchResponse>('/restaurants/search', {
-      params: { recipeTitle, location, latitude, longitude },
+      params: { recipeTitle, location, latitude, longitude, accuracyMeters },
     })
     return response.data
   },

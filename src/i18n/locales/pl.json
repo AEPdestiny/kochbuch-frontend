@@ -458,6 +458,8 @@
     "locationActive": "Lokalizacja aktywna",
     "gpsNoCityHint": "Lokalizacja zapisana. Wpisz dodatkowo miasto, aby wyszukać restauracje.",
     "resolvedLocation": "Szukam w {city}",
+    "locationMismatch": "Twoja lokalizacja nie pasuje do wpisanego miasta. Używamy Twojej bieżącej lokalizacji, aby zaproponować odpowiednie miejsca.",
+    "locationAccuracy": "Dokładność lokalizacji ok. {accuracy} m",
     "locationDeniedHint": "Odmówiono dostępu do lokalizacji. Możesz nadal wpisać miasto."
   },
   "about": {

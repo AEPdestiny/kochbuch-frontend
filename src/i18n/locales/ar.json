@@ -458,6 +458,8 @@
     "locationActive": "الموقع نشط",
     "gpsNoCityHint": "تم حفظ الموقع. أدخل أيضاً مدينة للبحث عن المطاعم.",
     "resolvedLocation": "البحث في {city}",
+    "locationMismatch": "موقعك لا يطابق المدينة المُدخلة. نستخدم موقعك الحالي لتقديم اقتراحات مناسبة.",
+    "locationAccuracy": "دقة الموقع حوالي {accuracy} م",
     "locationDeniedHint": "تم رفض إذن الموقع. لا يزال بإمكانك إدخال مدينة."
   },
   "about": {

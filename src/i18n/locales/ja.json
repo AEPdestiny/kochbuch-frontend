@@ -458,6 +458,8 @@
     "locationActive": "位置が有効",
     "gpsNoCityHint": "位置を保存しました。レストランを検索するには都市も入力してください。",
     "resolvedLocation": "{city}で検索中",
+    "locationMismatch": "現在地が入力された都市と一致しません。最適な候補のため現在地を使用します。",
+    "locationAccuracy": "位置精度 約 {accuracy} m",
     "locationDeniedHint": "位置情報の許可が拒否されました。引き続き都市名を入力できます。"
   },
   "about": {

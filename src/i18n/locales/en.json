@@ -525,6 +525,8 @@
     "locationActive": "Location active",
     "gpsNoCityHint": "Location saved. Additionally enter a city to search for restaurants.",
     "resolvedLocation": "Searching in {city}",
+    "locationMismatch": "Your location does not match the entered city. We are using your current location for suitable suggestions.",
+    "locationAccuracy": "Location accuracy approx. {accuracy} m",
     "locationDeniedHint": "Location permission denied. You can still enter a city."
   },
   "about": {

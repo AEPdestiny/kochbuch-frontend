@@ -458,6 +458,8 @@
     "locationActive": "位置已激活",
     "gpsNoCityHint": "位置已保存。请另外输入城市以搜索餐厅。",
     "resolvedLocation": "在 {city} 中搜索",
+    "locationMismatch": "你的位置与输入的城市不匹配。我们将使用你的当前位置来提供合适的推荐。",
+    "locationAccuracy": "定位精度约 {accuracy} 米",
     "locationDeniedHint": "位置权限已被拒绝。您仍然可以输入城市。"
   },
   "about": {

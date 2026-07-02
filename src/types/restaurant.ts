@@ -18,4 +18,5 @@ export interface TavilyRestaurantSearchResponse {
   results: RestaurantResponse[]
   resolvedLocation?: string | null
   searchMode?: 'exact' | 'suggestions' | null
+  locationMismatch?: boolean
 }

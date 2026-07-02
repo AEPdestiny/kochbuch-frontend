@@ -458,6 +458,8 @@
     "locationActive": "Konum aktif",
     "gpsNoCityHint": "Konum kaydedildi. Restoran aramak için ek olarak bir şehir girin.",
     "resolvedLocation": "{city} içinde aranıyor",
+    "locationMismatch": "Konumun girdiğin şehirle eşleşmiyor. Uygun öneriler için mevcut konumunu kullanıyoruz.",
+    "locationAccuracy": "Konum doğruluğu yaklaşık {accuracy} m",
     "locationDeniedHint": "Konum izni reddedildi. Yine de bir şehir girebilirsin."
   },
   "about": {

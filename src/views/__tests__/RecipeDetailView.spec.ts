@@ -214,7 +214,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', undefined, undefined)
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', undefined, undefined, undefined)
     expect(wrapper.text()).toContain('Pasta Place')
   })
 
@@ -319,7 +319,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', undefined, undefined)
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', undefined, undefined, undefined)
   })
 
   it('GPS button is rendered in restaurant section', async () => {
@@ -343,7 +343,7 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.restaurant-search-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', 52.52, 13.405)
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', 'Berlin', 52.52, 13.405, undefined)
   })
 
   it('GPS success without city triggers GPS-only search via searchByText with empty location', async () => {
@@ -356,7 +356,61 @@ describe('RecipeDetailView', () => {
     await wrapper.find('.gps-button').trigger('click')
     await flushPromises()
 
-    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', '', 52.52, 13.405)
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', '', 52.52, 13.405, undefined)
+  })
+
+  it('GPS success captures accuracy and forwards it to the API', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405, accuracy: 35 } } as GeolocationPosition)
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(restaurantApi.searchByText).toHaveBeenCalledWith('Pasta with Garlic', '', 52.52, 13.405, 35)
+  })
+
+  it('shows location accuracy hint after GPS success', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 52.52, longitude: 13.405, accuracy: 35 } } as GeolocationPosition)
+    })
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      searchMode: 'exact',
+      resolvedLocation: 'Berlin, Germany',
+      results: [{ name: 'Sushi Circle', address: null, distanceMeters: 400, googleMapsUrl: 'https://x', latitude: 52.5, longitude: 13.4 }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Suche in Berlin, Germany')
+    expect(wrapper.text()).toContain('Standortgenauigkeit ca. 35 m')
+  })
+
+  it('shows location mismatch message when backend reports locationMismatch', async () => {
+    vi.mocked(navigator.geolocation.getCurrentPosition).mockImplementation((success: PositionCallback) => {
+      success({ coords: { latitude: 41.8781, longitude: -87.6298, accuracy: 20 } } as GeolocationPosition)
+    })
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      searchMode: 'exact',
+      resolvedLocation: 'Chicago, United States',
+      locationMismatch: true,
+      results: [{ name: 'Lou Malnatis', address: null, distanceMeters: 300, googleMapsUrl: 'https://x', latitude: 41.9, longitude: -87.6 }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.gps-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Dein Standort passt nicht zur eingegebenen Stadt')
   })
 
   it('GPS-only search: no_location status shows gpsNoCityHint', async () => {
@@ -507,6 +561,31 @@ describe('RecipeDetailView', () => {
     expect(wrapper.text()).toContain('Allgemeiner Restaurantvorschlag')
     expect(wrapper.text()).toContain('Sushi Circle')
     expect(wrapper.text()).not.toContain('Treffer für genau dieses Gericht geprüft')
+  })
+
+  it('typed search with resolvedLocation "Berlin, Germany" shows the disambiguated city', async () => {
+    vi.mocked(restaurantApi.searchByText).mockResolvedValue({
+      status: 'ok',
+      searchMode: 'exact',
+      resolvedLocation: 'Berlin, Germany',
+      results: [{
+        name: 'Trattoria Mario',
+        address: 'Hauptstraße 1, Berlin',
+        distanceMeters: 700,
+        googleMapsUrl: 'https://www.google.com/maps/dir/?api=1&origin=52.52,13.4&destination=Trattoria+Mario+Berlin+Germany',
+        latitude: null,
+        longitude: null,
+      }],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.location-input').setValue('Berlin')
+    await wrapper.find('.restaurant-search-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Suche in Berlin, Germany')
+    expect(wrapper.find('.maps-link').attributes('href')).toContain('Germany')
   })
 
   it('GPS denied shows friendly hint message', async () => {

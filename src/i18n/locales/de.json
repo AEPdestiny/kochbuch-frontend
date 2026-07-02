@@ -527,6 +527,8 @@
     "locationActive": "Standort aktiv",
     "gpsNoCityHint": "Standort gespeichert. Gib zusätzlich eine Stadt ein, um Restaurants zu suchen.",
     "resolvedLocation": "Suche in {city}",
+    "locationMismatch": "Dein Standort passt nicht zur eingegebenen Stadt. Wir nutzen deinen aktuellen Standort für passende Vorschläge.",
+    "locationAccuracy": "Standortgenauigkeit ca. {accuracy} m",
     "locationDeniedHint": "Standortfreigabe abgelehnt. Du kannst weiterhin eine Stadt eingeben."
   },
   "about": {
