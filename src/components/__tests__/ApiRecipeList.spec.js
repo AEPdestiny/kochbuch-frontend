@@ -667,7 +667,7 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
-  it('smooth-scrolls to the results list (not the whole page) when switching pages', async () => {
+  it('smooth-scrolls to the start of the recipe section (search/filters, not just the card list) when switching pages', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
@@ -676,7 +676,7 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList, { attachTo: document.body })
     await flushPromises()
     const scrollSpy = vi.fn()
-    wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+    wrapper.find('.home-wrap').element.scrollIntoView = scrollSpy
 
     const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
     await nextBtn.trigger('click')

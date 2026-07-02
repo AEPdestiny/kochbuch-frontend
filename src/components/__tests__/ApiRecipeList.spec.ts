@@ -201,7 +201,7 @@ describe('ApiRecipeList', () => {
       const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
       await flushPromises()
       const scrollSpy = vi.fn()
-      wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+      wrapper.find('.home-wrap').element.scrollIntoView = scrollSpy
 
       // The spy was attached after mount, so this only proves no further scroll
       // happens without a page change — combined with the "smooth scroll" test
@@ -210,19 +210,24 @@ describe('ApiRecipeList', () => {
       expect(scrollSpy).not.toHaveBeenCalled()
     })
 
-    it('smooth-scrolls the results list (not window) to its start when the page changes', async () => {
+    it('smooth-scrolls the whole recipe section (search/filters + cards, not just the card grid) to its start when the page changes', async () => {
       vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
 
       const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
       await flushPromises()
-      const scrollSpy = vi.fn()
-      wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+      const sectionScrollSpy = vi.fn()
+      const cardGridScrollSpy = vi.fn()
+      wrapper.find('.home-wrap').element.scrollIntoView = sectionScrollSpy
+      // The card grid also gets a spy so we can prove the higher section target is used
+      // instead — not the narrower card-list-only target from the previous implementation.
+      wrapper.find('.list-wrap').element.scrollIntoView = cardGridScrollSpy
 
       const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
       await nextBtn.trigger('click')
       await flushPromises()
 
-      expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+      expect(sectionScrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
+      expect(cardGridScrollSpy).not.toHaveBeenCalled()
     })
 
     it('uses instant scroll (behavior: auto) when the user prefers reduced motion', async () => {
@@ -234,7 +239,7 @@ describe('ApiRecipeList', () => {
         const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
         await flushPromises()
         const scrollSpy = vi.fn()
-        wrapper.find('.list-wrap').element.scrollIntoView = scrollSpy
+        wrapper.find('.home-wrap').element.scrollIntoView = scrollSpy
 
         const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
         await nextBtn.trigger('click')

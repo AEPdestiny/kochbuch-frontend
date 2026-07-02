@@ -79,7 +79,9 @@ let isInitializingProfile = false
 
 const filtered = computed(() => recipes.value)
 const currentPage = ref(1)
-const listWrapRef = ref<HTMLElement | null>(null)
+// Anchored to the component's root section (not the card grid) so a page change
+// scrolls up to the search/filter area too, not just to the top of the cards.
+const recipeSectionRef = ref<HTMLElement | null>(null)
 const totalPages = computed(() => Math.max(1, Math.ceil(recipes.value.length / PAGE_SIZE)))
 const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1))
 const paginatedRecipes = computed(() => {
@@ -260,11 +262,12 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-// Scrolls to the start of the results list/card instead of jumping to the top of
-// the whole page, and respects prefers-reduced-motion instead of always animating.
-// scrollIntoView is guarded because it's not implemented in some environments (e.g. jsdom).
-function scrollToListStart() {
-  const el = listWrapRef.value
+// Scrolls to the start of the whole recipe section (search/filters/heading), not just
+// the card grid, so the user lands above the filters instead of straight at the cards.
+// Respects prefers-reduced-motion instead of always animating. scrollIntoView is guarded
+// because it's not implemented in some environments (e.g. jsdom).
+function scrollToRecipeSectionStart() {
+  const el = recipeSectionRef.value
   if (!el || typeof el.scrollIntoView !== 'function') return
   el.scrollIntoView({
     behavior: prefersReducedMotion() ? 'auto' : 'smooth',
@@ -275,7 +278,7 @@ function scrollToListStart() {
 function goToPage(page: number) {
   currentPage.value = page
   updateSnapshotPage(page)
-  scrollToListStart()
+  scrollToRecipeSectionStart()
 }
 
 const loadRecipes = async () => {
@@ -982,7 +985,7 @@ function formatDate(date: Date) {
 </script>
 
 <template>
-  <section class="home-wrap">
+  <section class="home-wrap" ref="recipeSectionRef">
     <section class="hero">
       <p class="hero-desc">
         {{ t('home.description') }}
@@ -1056,7 +1059,7 @@ function formatDate(date: Date) {
       </button>
     </div>
 
-    <section class="list-wrap" ref="listWrapRef">
+    <section class="list-wrap">
       <p v-if="loading" class="status-text">{{ t('home.loading') }}</p>
       <p v-else-if="error && filtered.length === 0" class="status-text error">
         {{ t('home.errors.prefix') }} {{ error }}
