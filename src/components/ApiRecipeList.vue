@@ -315,8 +315,8 @@ const loadRecipes = async () => {
         ? t('home.notices.localRecipesLoaded', { count: ownPublished.value.length })
         : null
     }
-  } catch (e: any) {
-    error.value = e.message ?? t('home.errors.initialLoad')
+  } catch (e: unknown) {
+    error.value = e instanceof ApiClientError && e.message ? e.message : t('home.errors.initialLoad')
   } finally {
     isInitializingProfile = false
     loading.value = false
@@ -351,8 +351,8 @@ const loadExternalRecipes = async (query: string) => {
 
   try {
     ownPublished.value = await fetchPublishedForQuery(normalizedQuery)
-  } catch (e: any) {
-    error.value = e.message ?? t('home.errors.initialLoad')
+  } catch (e: unknown) {
+    error.value = e instanceof ApiClientError && e.message ? e.message : t('home.errors.initialLoad')
     return
   }
 
@@ -519,8 +519,8 @@ const shuffleRecipes = async () => {
     updateDisplayFromBase()
     saveSnapshot(baseRecipes.value, 1)
     toastStore.addToast(t('notifications.shuffled'), 'info')
-  } catch (e: any) {
-    error.value = e.message ?? t('home.errors.initialLoad')
+  } catch (e: unknown) {
+    error.value = e instanceof ApiClientError && e.message ? e.message : t('home.errors.initialLoad')
   } finally {
     loading.value = false
   }

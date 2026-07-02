@@ -140,17 +140,6 @@ function onVegetarianChanged() {
   }
 }
 
-function parseList(value: string) {
-  return value
-    .split(',')
-    .map(entry => entry.trim())
-    .filter(Boolean)
-}
-
-function formatList(values: string[] | null | undefined) {
-  return values?.join(', ') ?? ''
-}
-
 function normalizeOptionalPositiveNumber(value: number | null | undefined) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }

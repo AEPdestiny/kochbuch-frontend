@@ -1442,7 +1442,6 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     // maxCalories input must be empty — dailyCalorieTarget must NOT be applied
-    const maxCalInput = wrapper.find('input[type="number"][min="1"]').element
     // The last number input in the filter panel is maxCalories
     const numberInputs = wrapper.findAll('input[type="number"]')
     const calInput = numberInputs[numberInputs.length - 1]

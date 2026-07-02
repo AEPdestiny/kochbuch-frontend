@@ -1,4 +1,4 @@
-import type { Recipe, RecipeRequest } from '@/types/recipe'
+import type { RecipeRequest } from '@/types/recipe'
 
 export type ExportableRecipeData = {
   title: string
@@ -35,6 +35,10 @@ export type DishlyExportRecipe = {
   calories: number | null
 }
 
+/**
+ * Wraps a recipe in the versioned Dishly export envelope (sourceApp/exportVersion/
+ * exportedAt) that validateDishlyImport() below expects on the way back in.
+ */
 export function buildExportPayload(recipe: ExportableRecipeData, now: string): DishlyExportFile {
   return {
     sourceApp: 'Dishly',
@@ -76,6 +80,14 @@ type ValidationFailure = { ok: false; reason: string }
 type ValidationSuccess = { ok: true; request: RecipeRequest }
 type ValidationResult = ValidationFailure | ValidationSuccess
 
+/**
+ * Validates a parsed JSON file as a Dishly recipe export before importing it.
+ * Returns a `{ ok: false, reason }` result instead of throwing, so the caller can map
+ * `reason` to a translated error message per failure case (invalid JSON, wrong app,
+ * unsupported version, missing recipe/title, negative calories, ...). On success,
+ * missing optional fields are defaulted (e.g. empty ingredients/instructions) rather
+ * than rejected, so older or hand-edited export files still import.
+ */
 export function validateDishlyImport(raw: unknown): ValidationResult {
   if (typeof raw !== 'object' || raw === null) {
     return { ok: false, reason: 'invalidJson' }

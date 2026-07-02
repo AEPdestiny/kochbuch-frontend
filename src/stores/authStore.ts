@@ -19,6 +19,12 @@ import type {
   UserResponse,
 } from '@/types/auth'
 
+/**
+ * Central authentication state: token, current user, and session-expiry handling.
+ * Backed by sessionStorage (via apiClient's AUTH_TOKEN_STORAGE_KEY/AUTH_USER_STORAGE_KEY)
+ * so a page reload survives without a re-login; initFromStorage() must be called once
+ * on app start to hydrate this store from that storage.
+ */
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(null)
   const user = ref<UserResponse | null>(null)
@@ -78,6 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // User-initiated sign-out: clears everything, including any stale "session expired" flag.
   function logout() {
     token.value = null
     user.value = null
@@ -88,6 +95,9 @@ export const useAuthStore = defineStore('auth', () => {
     resetUnauthorizedHandling()
   }
 
+  // Called when the backend rejects the token (e.g. 401 on an authenticated request).
+  // Unlike logout(), this sets sessionExpired so the UI can show a "please log in again"
+  // notice instead of silently treating it like a normal, user-initiated logout.
   function handleSessionExpired() {
     token.value = null
     user.value = null

@@ -796,6 +796,10 @@ function totalCaloriesForBucket(slot: MealSlot) {
   return entriesForBucket(slot).reduce((sum, item) => sum + entryCalories(item.entry), 0)
 }
 
+// Resolves an entry's calories from whichever source is available (manual override,
+// linked recipe, or the snapshot taken when it was planned), defaulting to 0 so sums
+// stay numeric. That default silently hides "no kcal known" as "0 kcal" — callers that
+// need to distinguish the two (e.g. day/week summaries) must also check hasUnknownCalories().
 function entryCalories(entry: MealPlanEntryResponse | null | undefined) {
   return entry?.calories ?? entry?.recipe?.calories ?? entry?.caloriesSnapshot ?? 0
 }

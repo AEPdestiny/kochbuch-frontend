@@ -7,14 +7,12 @@ import { pantryApi } from '@/shared/api/pantryApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { profileApi } from '@/shared/api/profileApi'
-import { useAuthStore } from '@/stores/authStore'
 import type { Recipe } from '@/types/recipe'
 import type { PantryItem } from '@/types/pantry'
 import type { ShoppingListItem } from '@/types/shoppingList'
 import type { MealPlanEntryResponse, MealPlanWeekResponse, MealSlot } from '@/types/mealPlan'
 import type { UserPreferencesResponse } from '@/types/profile'
 
-const authStore = useAuthStore()
 const { t } = useI18n()
 
 // ── Data ──────────────────────────────────────────────────────────
@@ -52,6 +50,11 @@ function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
   return 'dinner'
 }
 
+// Same fallback chain (and same "defaults to 0" caveat) as MealPlanView.vue's
+// entryCalories()/hasUnknownCalories() — kept duplicated rather than shared since the
+// two views' calorie logic isn't otherwise coupled. Sums default missing kcal to 0;
+// hasUnknownCalories() is the companion check for callers that must not silently treat
+// "no kcal known" as "0 kcal" (e.g. the "Mahlzeiten ohne kcal-Angabe" hint below).
 function entryCalories(entry: MealPlanEntryResponse) {
   return entry.calories ?? entry.recipe?.calories ?? entry.caloriesSnapshot ?? 0
 }

@@ -22,7 +22,17 @@ export default defineConfigWithVueTs(
 
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
-  
+
+  {
+    name: 'app/unused-vars',
+    files: ['**/*.{ts,mts,tsx,vue}'],
+    rules: {
+      // Allows the common "const { field: _, ...rest } = obj" pattern for intentionally
+      // discarding a field via destructuring, without disabling the check entirely.
+      '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^_' }],
+    },
+  },
+
   {
     ...pluginVitest.configs.recommended,
     files: ['src/**/__tests__/*'],
