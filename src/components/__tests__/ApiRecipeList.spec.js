@@ -667,23 +667,27 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.findAll('.recipe-card')).toHaveLength(30)
   })
 
-  it('smooth-scrolls to the start of the recipe section (search/filters, not just the card list) when switching pages', async () => {
+  it('smooth-scrolls to the top of the page (not just this component) when switching pages', async () => {
     setLocale('en')
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(
       Array.from({ length: 35 }, (_, i) => recipe(i + 1, `Recipe ${i + 1}`, 'ingredient', 'lunch')),
     )
-
-    const wrapper = mount(ApiRecipeList, { attachTo: document.body })
-    await flushPromises()
     const scrollSpy = vi.fn()
-    wrapper.find('.home-wrap').element.scrollIntoView = scrollSpy
+    vi.stubGlobal('scrollTo', scrollSpy)
 
-    const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
-    await nextBtn.trigger('click')
-    await flushPromises()
+    try {
+      const wrapper = mount(ApiRecipeList, { attachTo: document.body })
+      await flushPromises()
 
-    expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
-    wrapper.unmount()
+      const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Next')
+      await nextBtn.trigger('click')
+      await flushPromises()
+
+      expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+      wrapper.unmount()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('restores personalized list from snapshot after remount when logged in (F5 with personalization)', async () => {

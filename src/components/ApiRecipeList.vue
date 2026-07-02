@@ -79,9 +79,6 @@ let isInitializingProfile = false
 
 const filtered = computed(() => recipes.value)
 const currentPage = ref(1)
-// Anchored to the component's root section (not the card grid) so a page change
-// scrolls up to the search/filter area too, not just to the top of the cards.
-const recipeSectionRef = ref<HTMLElement | null>(null)
 const totalPages = computed(() => Math.max(1, Math.ceil(recipes.value.length / PAGE_SIZE)))
 const pageNumbers = computed(() => Array.from({ length: totalPages.value }, (_, i) => i + 1))
 const paginatedRecipes = computed(() => {
@@ -262,23 +259,21 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-// Scrolls to the start of the whole recipe section (search/filters/heading), not just
-// the card grid, so the user lands above the filters instead of straight at the cards.
-// Respects prefers-reduced-motion instead of always animating. scrollIntoView is guarded
-// because it's not implemented in some environments (e.g. jsdom).
-function scrollToRecipeSectionStart() {
-  const el = recipeSectionRef.value
-  if (!el || typeof el.scrollIntoView !== 'function') return
-  el.scrollIntoView({
+// Scrolls all the way to the top of the page on pagination, not just to the start of
+// this component. Respects prefers-reduced-motion instead of always animating.
+// Guarded because window.scrollTo isn't implemented in some environments (e.g. jsdom).
+function scrollToPageStart() {
+  if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') return
+  window.scrollTo({
+    top: 0,
     behavior: prefersReducedMotion() ? 'auto' : 'smooth',
-    block: 'start',
   })
 }
 
 function goToPage(page: number) {
   currentPage.value = page
   updateSnapshotPage(page)
-  scrollToRecipeSectionStart()
+  scrollToPageStart()
 }
 
 const loadRecipes = async () => {
@@ -985,7 +980,7 @@ function formatDate(date: Date) {
 </script>
 
 <template>
-  <section class="home-wrap" ref="recipeSectionRef">
+  <section class="home-wrap">
     <section class="hero">
       <p class="hero-desc">
         {{ t('home.description') }}

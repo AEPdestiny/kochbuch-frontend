@@ -197,56 +197,59 @@ describe('ApiRecipeList', () => {
 
     it('does not scroll on initial load', async () => {
       vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
-
-      const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
-      await flushPromises()
       const scrollSpy = vi.fn()
-      wrapper.find('.home-wrap').element.scrollIntoView = scrollSpy
+      vi.stubGlobal('scrollTo', scrollSpy)
 
-      // The spy was attached after mount, so this only proves no further scroll
-      // happens without a page change — combined with the "smooth scroll" test
-      // below (which proves the spy DOES fire on an actual page click), this
-      // shows scrolling is tied to goToPage(), not to the initial render.
-      expect(scrollSpy).not.toHaveBeenCalled()
+      try {
+        mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
+        await flushPromises()
+
+        // scrollTo is stubbed for the whole mount, so this proves no scroll happens
+        // on initial render — combined with the "smooth scroll" test below (which
+        // proves the spy DOES fire on an actual page click), this shows scrolling
+        // is tied to goToPage(), not to the initial render.
+        expect(scrollSpy).not.toHaveBeenCalled()
+      } finally {
+        vi.unstubAllGlobals()
+      }
     })
 
-    it('smooth-scrolls the whole recipe section (search/filters + cards, not just the card grid) to its start when the page changes', async () => {
+    it('smooth-scrolls all the way to the top of the page (not just this component) when the page changes', async () => {
       vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
+      const scrollSpy = vi.fn()
+      vi.stubGlobal('scrollTo', scrollSpy)
 
-      const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
-      await flushPromises()
-      const sectionScrollSpy = vi.fn()
-      const cardGridScrollSpy = vi.fn()
-      wrapper.find('.home-wrap').element.scrollIntoView = sectionScrollSpy
-      // The card grid also gets a spy so we can prove the higher section target is used
-      // instead — not the narrower card-list-only target from the previous implementation.
-      wrapper.find('.list-wrap').element.scrollIntoView = cardGridScrollSpy
+      try {
+        const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
+        await flushPromises()
 
-      const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
-      await nextBtn.trigger('click')
-      await flushPromises()
+        const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
+        await nextBtn.trigger('click')
+        await flushPromises()
 
-      expect(sectionScrollSpy).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' })
-      expect(cardGridScrollSpy).not.toHaveBeenCalled()
+        expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+      } finally {
+        vi.unstubAllGlobals()
+      }
     })
 
     it('uses instant scroll (behavior: auto) when the user prefers reduced motion', async () => {
       const matchMediaMock = vi.fn().mockReturnValue({ matches: true })
       vi.stubGlobal('matchMedia', matchMediaMock)
+      const scrollSpy = vi.fn()
+      vi.stubGlobal('scrollTo', scrollSpy)
       vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue(manyRecipes(35))
 
       try {
         const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
         await flushPromises()
-        const scrollSpy = vi.fn()
-        wrapper.find('.home-wrap').element.scrollIntoView = scrollSpy
 
         const nextBtn = wrapper.findAll('.pagination-btn').find(b => b.text() === 'Weiter')!
         await nextBtn.trigger('click')
         await flushPromises()
 
         expect(matchMediaMock).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)')
-        expect(scrollSpy).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' })
+        expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'auto' })
       } finally {
         vi.unstubAllGlobals()
       }
