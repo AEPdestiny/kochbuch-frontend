@@ -554,6 +554,11 @@
     "subtitle": "Plane deine eigenen Rezepte für die aktuelle Woche.",
     "loading": "Wochenplan wird geladen...",
     "plannedRecipe": "Geplantes Rezept",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} Mahlzeiten ohne kcal-Angabe",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} Mahlzeit ohne kcal-Angabe",
+    "caloriesUnknownOnly": "{count} Mahlzeiten ohne kcal-Angabe",
+    "caloriesUnknownOnlyOne": "{count} Mahlzeit ohne kcal-Angabe",
+    "unknownCaloriesHint": "Einige Mahlzeiten haben keine kcal-Angabe und sind nicht in der Summe enthalten.",
     "week": {
       "current": "Aktuelle Woche"
     },

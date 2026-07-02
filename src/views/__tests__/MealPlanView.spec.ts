@@ -122,6 +122,85 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('600 / 2000 kcal')
   })
 
+  it('shows "{sum} kcal + 1 Mahlzeit ohne kcal-Angabe" for one known + one unknown meal', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        entry('2026-06-01', recipe(1, 'Pasta', { calories: 600 }), 'dinner'),
+        { id: '2', plannedDate: '2026-06-01', mealSlot: 'lunch', recipe: null, customTitle: 'Salat', calories: null, caloriesSnapshot: null },
+      ],
+    })
+
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('600 kcal + 1 Mahlzeit ohne kcal-Angabe')
+    expect(wrapper.text()).toContain('Einige Mahlzeiten haben keine kcal-Angabe')
+  })
+
+  it('shows plural "Mahlzeiten ohne kcal-Angabe" for multiple unknown-calorie meals', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        entry('2026-06-01', recipe(1, 'Pasta', { calories: 600 }), 'dinner'),
+        { id: '2', plannedDate: '2026-06-01', mealSlot: 'lunch', recipe: null, customTitle: 'Salat', calories: null, caloriesSnapshot: null },
+        { id: '3', plannedDate: '2026-06-01', mealSlot: 'breakfast', recipe: null, customTitle: 'Müsli', calories: null, caloriesSnapshot: null },
+      ],
+    })
+
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('600 kcal + 2 Mahlzeiten ohne kcal-Angabe')
+  })
+
+  it('shows "{n} Mahlzeit(en) ohne kcal-Angabe" without a misleading "0 kcal +" prefix when no meal has known calories', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        { id: '1', plannedDate: '2026-06-01', mealSlot: 'lunch', recipe: null, customTitle: 'Salat', calories: null, caloriesSnapshot: null },
+        { id: '2', plannedDate: '2026-06-01', mealSlot: 'breakfast', recipe: null, customTitle: 'Müsli', calories: null, caloriesSnapshot: null },
+      ],
+    })
+
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('2 Mahlzeiten ohne kcal-Angabe')
+    expect(wrapper.text()).not.toContain('0 kcal +')
+  })
+
+  it('shows unchanged current behavior for a day with zero planned meals (no hint text)', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue(emptyWeekResponse())
+
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('0 / 2000 kcal')
+    expect(wrapper.text()).not.toContain('ohne kcal-Angabe')
+    expect(wrapper.text()).not.toContain('Einige Mahlzeiten haben keine kcal-Angabe')
+  })
+
+  it('does not crash for a freetext entry lacking nutrition data and keeps the kcal sum correct', async () => {
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        entry('2026-06-01', recipe(1, 'Pasta', { calories: 400 }), 'dinner'),
+        { id: '2', plannedDate: '2026-06-01', mealSlot: 'lunch', recipe: null, customTitle: 'Freitext ohne Angabe', calories: null, caloriesSnapshot: null },
+      ],
+    })
+
+    expect(() => mount(MealPlanView, { global: { plugins: [i18n] } })).not.toThrow()
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('400 kcal + 1 Mahlzeit ohne kcal-Angabe')
+  })
+
   it('switches between manual and swipe planning', async () => {
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },

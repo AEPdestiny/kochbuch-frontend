@@ -69,6 +69,63 @@ describe('LoginView', () => {
     expect(router.currentRoute.value.path).toBe('/pantry')
   })
 
+  it('redirects to /dashboard after successful login when no redirect query is present', async () => {
+    vi.mocked(authApi.login).mockResolvedValue(authResponse)
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/login', component: LoginView },
+        { path: '/dashboard', component: { template: '<div>Dashboard</div>' } },
+      ],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+
+    await wrapper.find('input[type="email"]').setValue('salma@example.com')
+    await wrapper.find('input[type="password"]').setValue('secret123')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/dashboard')
+  })
+
+  it('stays on /login and shows an error when login fails', async () => {
+    vi.mocked(authApi.login).mockRejectedValue(new ApiClientError('Unauthorized', 401))
+
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/login', component: LoginView },
+        { path: '/dashboard', component: { template: '<div>Dashboard</div>' } },
+      ],
+    })
+
+    await router.push('/login')
+    await router.isReady()
+
+    const wrapper = mount(LoginView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+
+    await wrapper.find('input[type="email"]').setValue('salma@example.com')
+    await wrapper.find('input[type="password"]').setValue('wrong-password')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(wrapper.text()).toContain('E-Mail oder Passwort ist falsch.')
+  })
+
   it('shows German login texts by default', async () => {
     const router = createRouter({
       history: createMemoryHistory(),

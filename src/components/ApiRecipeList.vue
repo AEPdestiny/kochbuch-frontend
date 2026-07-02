@@ -2,8 +2,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { useToastStore } from '@/stores/toastStore'
+import { useSearchStore } from '@/stores/searchStore'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { pantryApi } from '@/shared/api/pantryApi'
@@ -11,6 +13,7 @@ import { profileApi } from '@/shared/api/profileApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import { ALLERGEN_ENTRIES, DISLIKES_ENTRIES, LIKES_ENTRIES, getMatchTerms } from '@/shared/profileSuggestions'
+import { categorySearchTerms, matchesCategoryAwareText } from '@/shared/ingredientCategories'
 import { getRecommendationBadges } from '@/shared/recommendationBadges'
 import type { RecommendationBadge } from '@/shared/recommendationBadges'
 import { useAuthStore } from '@/stores/authStore'
@@ -24,17 +27,21 @@ type DisplayRecipe = Recipe & {
   recommendationReasons: RecommendationBadge[]
 }
 
-const search = ref('')
-const vegan = ref(false)
-const vegetarian = ref(false)
-const glutenFree = ref(false)
-const lactoseFree = ref(false)
-const calorieConscious = ref(false)
-const highProtein = ref(false)
-const maxPrepTime = ref<number | null>(null)
-const maxCalories = ref<number | null>(null)
-const mealType = ref('')
-const sortOrder = ref('')
+// Search text + soft filters live in a Pinia store (not a local ref) so logout can
+// reset them even when the route doesn't change (component stays mounted on "/").
+const {
+  query: search,
+  vegan,
+  vegetarian,
+  glutenFree,
+  lactoseFree,
+  calorieConscious,
+  highProtein,
+  maxPrepTime,
+  maxCalories,
+  mealType,
+  sortOrder,
+} = storeToRefs(useSearchStore())
 const profilePersonalizationEnabled = ref(true)
 const recipes = ref<DisplayRecipe[]>([])
 const baseRecipes = ref<DisplayRecipe[]>([])
@@ -298,12 +305,34 @@ const loadRecipes = async () => {
   }
 }
 
+// For a recognized category alias (e.g. "Pasta"), queries the backend once per real
+// match term ("pasta", "nudeln", "spaghetti", ...) in parallel and merges+dedupes the
+// results. This finds every matching recipe via the backend's own substring search
+// instead of fetching one broadened/random sample that could miss items. For a normal
+// (non-category) query, behavior is unchanged: a single literal-query fetch.
+async function fetchPublishedForQuery(query: string): Promise<Recipe[]> {
+  const categoryTerms = categorySearchTerms(query)
+  if (categoryTerms.length === 0) {
+    return recipeApi.getPublishedRecipes(currentLanguage.value, query || undefined)
+  }
+  const resultSets = await Promise.all(
+    categoryTerms.map(term => recipeApi.getPublishedRecipes(currentLanguage.value, term)),
+  )
+  const merged = new Map<string, Recipe>()
+  for (const set of resultSets) {
+    for (const r of set) {
+      merged.set(`${r.source ?? 'dishly'}-${r.id}`, r)
+    }
+  }
+  return [...merged.values()]
+}
+
 const loadExternalRecipes = async (query: string) => {
   const requestId = ++externalRequestCounter
   const normalizedQuery = query.toLowerCase().trim()
 
   try {
-    ownPublished.value = await recipeApi.getPublishedRecipes(currentLanguage.value, normalizedQuery || undefined)
+    ownPublished.value = await fetchPublishedForQuery(normalizedQuery)
   } catch (e: any) {
     error.value = e.message ?? t('home.errors.initialLoad')
     return
@@ -544,6 +573,12 @@ watch(() => authStore.isAuthenticated, (authenticated) => {
     pantryIngredients.value = []
     externalFavoriteIds.value = new Set()
     clearSoftProfilePersonalization()
+    // Search text and the two remaining soft filters aren't covered by
+    // clearSoftProfilePersonalization() — clear them too so a stale search
+    // never survives logout, even if the component itself stays mounted.
+    search.value = ''
+    mealType.value = ''
+    sortOrder.value = ''
     profilePersonalizationEnabled.value = true
     clearSnapshot()
     currentPage.value = 1
@@ -699,7 +734,7 @@ function isSpecificSearch(query: string) {
 function matchesText(recipe: Recipe, query: string) {
   if (!query) return true
   const haystack = `${recipe.title} ${recipe.ingredients} ${recipe.category}`.toLowerCase()
-  return haystack.includes(query)
+  return matchesCategoryAwareText(haystack, query)
 }
 
 function matchesLocalFilters(recipe: Recipe) {

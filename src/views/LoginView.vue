@@ -34,6 +34,8 @@ async function submitLogin() {
   }
 }
 
+// After login, land on the dashboard by default; a pending protected-route
+// redirect (set by the router guard) still takes priority when present.
 function getSafeRedirectPath() {
   const redirect = route.query.redirect
   if (
@@ -45,7 +47,7 @@ function getSafeRedirectPath() {
     return redirect
   }
 
-  return '/'
+  return '/dashboard'
 }
 </script>
 

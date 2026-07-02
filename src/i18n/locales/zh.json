@@ -485,6 +485,11 @@
     "subtitle": "为本周规划你自己的食谱。",
     "loading": "正在加载周计划...",
     "plannedRecipe": "已计划的食谱",
+    "caloriesWithUnknown": "{knownSum} 千卡 + {count} 餐无卡路里数据",
+    "caloriesWithUnknownOne": "{knownSum} 千卡 + {count} 餐无卡路里数据",
+    "caloriesUnknownOnly": "{count} 餐无卡路里数据",
+    "caloriesUnknownOnlyOne": "{count} 餐无卡路里数据",
+    "unknownCaloriesHint": "部分餐食没有卡路里数据，未计入总和。",
     "week": {
       "current": "当前周"
     },

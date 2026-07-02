@@ -399,14 +399,15 @@ describe('PantryView', () => {
     expect(wrapper.find('.suggest-dropdown').exists()).toBe(false)
 
     // Typing shows a small custom dropdown, capped at 8 items
-    await nameInput.setValue('rice')
+    // German locale is active by default, so suggestions show localized German labels.
+    await nameInput.setValue('reis')
     await nameInput.trigger('focus')
     const dropdown = wrapper.find('.suggest-dropdown')
     expect(dropdown.exists()).toBe(true)
     const options = dropdown.findAll('li')
     expect(options.length).toBeGreaterThan(0)
     expect(options.length).toBeLessThanOrEqual(8)
-    expect(dropdown.text()).toContain('Basmati rice')
+    expect(dropdown.text()).toContain('Basmatireis')
   })
 
   it('selecting a name suggestion sets the value and closes the dropdown', async () => {
@@ -417,11 +418,11 @@ describe('PantryView', () => {
     const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
     await nameInput.setValue('basmati')
 
-    const option = wrapper.findAll('.suggest-dropdown li').find(li => li.text() === 'Basmati rice')
+    const option = wrapper.findAll('.suggest-dropdown li').find(li => li.text() === 'Basmatireis')
     expect(option).toBeTruthy()
     await option!.trigger('mousedown')
 
-    expect((wrapper.find('input[placeholder="z.B. Reis"]').element as HTMLInputElement).value).toBe('Basmati rice')
+    expect((wrapper.find('input[placeholder="z.B. Reis"]').element as HTMLInputElement).value).toBe('Basmatireis')
     expect(wrapper.find('.suggest-dropdown').exists()).toBe(false)
   })
 
@@ -453,11 +454,12 @@ describe('PantryView', () => {
     await unitInput.trigger('focus')
 
     // Unit field opens immediately on focus, no typing required
+    // German locale is active by default, so units show localized German labels.
     const dropdown = wrapper.find('.suggest-dropdown')
     expect(dropdown.exists()).toBe(true)
     expect(dropdown.text()).toContain('g')
     expect(dropdown.text()).toContain('kg')
-    expect(dropdown.text()).toContain('piece')
+    expect(dropdown.text()).toContain('Stück')
   })
 
   it('filters unit suggestions when typing in the unit field', async () => {
@@ -471,10 +473,64 @@ describe('PantryView', () => {
 
     const dropdown = wrapper.find('.suggest-dropdown')
     expect(dropdown.exists()).toBe(true)
-    expect(dropdown.text()).toContain('piece')
-    expect(dropdown.text()).toContain('pack')
+    expect(dropdown.text()).toContain('Packung')
+    expect(dropdown.text()).toContain('Prise')
     // Other units not matching "p" are hidden
     expect(dropdown.text()).not.toContain('ml')
+  })
+
+  it('shows English suggestions when locale is not German', async () => {
+    setLocale('en')
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="e.g. rice"]')
+    await nameInput.setValue('rice')
+    await nameInput.trigger('focus')
+    expect(wrapper.find('.suggest-dropdown').text()).toContain('Basmati rice')
+
+    // Mount a fresh instance to check the unit field's dropdown without dealing with
+    // the name dropdown's async blur-close timing.
+    const unitWrapper = mount(PantryView)
+    await flushPromises()
+    const unitInput = unitWrapper.find('form.pantry-form input[placeholder="kg"]')
+    await unitInput.trigger('focus')
+    expect(unitWrapper.find('.suggest-dropdown').text()).toContain('piece')
+  })
+
+  it('typing category word "Fleisch" surfaces meat member ingredient suggestions', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="z.B. Reis"]')
+    await nameInput.setValue('Fleisch')
+    await nameInput.trigger('focus')
+
+    const dropdown = wrapper.find('.suggest-dropdown')
+    expect(dropdown.exists()).toBe(true)
+    expect(dropdown.text()).toContain('Hähnchenbrust')
+    expect(dropdown.text()).toContain('Rindersteak')
+  })
+
+  it('creates a pantry item with a German unit label and it is sent to the backend unchanged', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.createPantryItem).mockResolvedValue(item('Quark', 500, 'TL', ''))
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Quark')
+    await wrapper.find('input[placeholder="2"]').setValue(500)
+    await wrapper.find('form.pantry-form input[placeholder="kg"]').setValue('TL')
+    await wrapper.find('form.pantry-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(pantryApi.createPantryItem).toHaveBeenCalledWith({
+      name: 'Quark',
+      quantity: 500,
+      unit: 'TL',
+    })
   })
 
   it('does not show category field in add or edit form', async () => {

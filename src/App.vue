@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
+import { useSearchStore } from '@/stores/searchStore'
 import router from '@/router'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import AiChatPanel from '@/components/AiChatPanel.vue'
@@ -12,6 +13,7 @@ import AppToast from '@/components/AppToast.vue'
 
 const authStore = useAuthStore()
 const toastStore = useToastStore()
+const searchStore = useSearchStore()
 const { t } = useI18n()
 const aiDrawerOpen = ref(false)
 
@@ -24,6 +26,7 @@ onMounted(async () => {
 
 async function logout() {
   authStore.logout()
+  searchStore.resetAll()
   aiDrawerOpen.value = false
   toastStore.addToast(t('notifications.logoutSuccess'), 'info')
   await router.push('/')

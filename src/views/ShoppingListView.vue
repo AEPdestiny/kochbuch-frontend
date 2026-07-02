@@ -7,10 +7,11 @@ import { printShoppingList } from '@/shared/printExport'
 import { normalizeShoppingListItemDisplay, normalizeShoppingListItemForEdit } from '@/shared/normalizeShoppingItem'
 import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
+import { isRecognizedCategoryAlias, localizedUnitOptions, resolveIngredientSuggestions } from '@/shared/ingredientCategories'
 import SuggestInput from '@/components/SuggestInput.vue'
 import type { ShoppingListItem, ShoppingListItemRequest } from '@/types/shoppingList'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toastStore = useToastStore()
 
 const items = ref<ShoppingListItem[]>([])
@@ -19,11 +20,17 @@ const error = ref<string | null>(null)
 const formError = ref<string | null>(null)
 const loginRequired = ref(false)
 const newName = ref('')
+// Category-aware, locale-aware ingredient/unit suggestions (e.g. "Fleisch" → Hähnchenbrust, Rinderhack, ...).
+const newNameSuggestions = computed(() => resolveIngredientSuggestions(newName.value, NAME_SUGGESTIONS, locale.value))
+const newNameIsCategory = computed(() => isRecognizedCategoryAlias(newName.value))
+const unitSuggestions = computed(() => localizedUnitOptions(STANDARD_UNITS, locale.value))
 const newQuantity = ref<number | null>(null)
 const newUnit = ref('')
 const newChecked = ref(false)
 const editingId = ref<number | string | null>(null)
 const editName = ref('')
+const editNameSuggestions = computed(() => resolveIngredientSuggestions(editName.value, NAME_SUGGESTIONS, locale.value))
+const editNameIsCategory = computed(() => isRecognizedCategoryAlias(editName.value))
 const editQuantity = ref<number | null>(null)
 const editUnit = ref('')
 const editCategory = ref('')  // not shown in UI — preserved on update so existing data is not lost
@@ -388,7 +395,7 @@ function exportShoppingListAsPdf() {
       <form class="shopping-list-form" @submit.prevent="createShoppingListItem">
         <div class="form-field">
           <label>{{ t('shoppingList.form.name') }}</label>
-          <SuggestInput v-model="newName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('shoppingList.form.namePlaceholder')" />
+          <SuggestInput v-model="newName" :suggestions="newNameSuggestions" :disable-internal-filter="newNameIsCategory" :placeholder="t('shoppingList.form.namePlaceholder')" />
         </div>
 
         <div class="form-field small">
@@ -398,7 +405,7 @@ function exportShoppingListAsPdf() {
 
         <div class="form-field small">
           <label>{{ t('shoppingList.form.unit') }}</label>
-          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('shoppingList.form.unitPlaceholder')" />
+          <SuggestInput v-model="newUnit" :suggestions="unitSuggestions" show-suggestions-on-focus :placeholder="t('shoppingList.form.unitPlaceholder')" />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('shoppingList.actions.create') }}</button>
@@ -463,7 +470,7 @@ function exportShoppingListAsPdf() {
               >
                 <div class="form-field">
                   <label>{{ t('shoppingList.form.name') }}</label>
-                  <SuggestInput v-model="editName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('shoppingList.form.namePlaceholder')" />
+                  <SuggestInput v-model="editName" :suggestions="editNameSuggestions" :disable-internal-filter="editNameIsCategory" :placeholder="t('shoppingList.form.namePlaceholder')" />
                 </div>
 
                 <div class="form-field small">
@@ -473,7 +480,7 @@ function exportShoppingListAsPdf() {
 
                 <div class="form-field small">
                   <label>{{ t('shoppingList.form.unit') }}</label>
-                  <SuggestInput v-model="editUnit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('shoppingList.form.unitPlaceholder')" />
+                  <SuggestInput v-model="editUnit" :suggestions="unitSuggestions" show-suggestions-on-focus :placeholder="t('shoppingList.form.unitPlaceholder')" />
                 </div>
 
                 <label class="checkbox-field">

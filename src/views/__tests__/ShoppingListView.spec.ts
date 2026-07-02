@@ -520,16 +520,17 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.find('datalist').exists()).toBe(false)
 
+    // German locale is active by default, so suggestions show localized German labels.
     const nameInput = wrapper.find('input[placeholder="z.B. Tomaten"]')
-    await nameInput.setValue('rice')
+    await nameInput.setValue('reis')
     await nameInput.trigger('focus')
     expect(wrapper.find('.suggest-dropdown').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Basmati rice')
+    expect(wrapper.text()).toContain('Basmatireis')
 
     const unitInput = wrapper.find('form.shopping-list-form input[placeholder="Stück"]')
     await unitInput.setValue('p')
     await unitInput.trigger('focus')
-    expect(wrapper.text()).toContain('piece')
+    expect(wrapper.text()).toContain('Packung')
   })
 
   it('shows all standard units on focus without typing, name field stays empty', async () => {
@@ -546,13 +547,69 @@ describe('ShoppingListView', () => {
     // Unit field: focus alone shows all standard units
     const unitInput = wrapper.find('form.shopping-list-form input[placeholder="Stück"]')
     await unitInput.trigger('focus')
-    // Capped at 8 suggestions by default (full list has 13 standard units)
+    // Capped at 8 suggestions by default (full list has 13 standard units).
+    // German locale is active by default, so units show localized German labels.
     const dropdown = wrapper.find('.suggest-dropdown')
     expect(dropdown.exists()).toBe(true)
     expect(dropdown.text()).toContain('g')
     expect(dropdown.text()).toContain('kg')
-    expect(dropdown.text()).toContain('piece')
+    expect(dropdown.text()).toContain('Stück')
     expect(dropdown.findAll('li').length).toBeLessThanOrEqual(8)
+  })
+
+  it('shows English suggestions when locale is not German', async () => {
+    setLocale('en')
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="e.g. tomatoes"]')
+    await nameInput.setValue('rice')
+    await nameInput.trigger('focus')
+    expect(wrapper.find('.suggest-dropdown').text()).toContain('Basmati rice')
+
+    const unitWrapper = mount(ShoppingListView)
+    await flushPromises()
+    const unitInput = unitWrapper.find('form.shopping-list-form input[placeholder="pieces"]')
+    await unitInput.trigger('focus')
+    expect(unitWrapper.find('.suggest-dropdown').text()).toContain('piece')
+  })
+
+  it('typing category word "Fleisch" surfaces meat member ingredient suggestions', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const nameInput = wrapper.find('input[placeholder="z.B. Tomaten"]')
+    await nameInput.setValue('Fleisch')
+    await nameInput.trigger('focus')
+
+    const dropdown = wrapper.find('.suggest-dropdown')
+    expect(dropdown.exists()).toBe(true)
+    expect(dropdown.text()).toContain('Hähnchenbrust')
+    expect(dropdown.text()).toContain('Rindersteak')
+  })
+
+  it('creates a shopping list item with a German unit label and it is sent to the backend unchanged', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    vi.mocked(shoppingListApi.createShoppingListItem).mockResolvedValue(item('Quark', 500, 'TL', '', false))
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('Quark')
+    await wrapper.find('input[placeholder="3"]').setValue(500)
+    await wrapper.find('form.shopping-list-form input[placeholder="Stück"]').setValue('TL')
+    await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Quark',
+      quantity: 500,
+      unit: 'TL',
+    }))
   })
 
   it('creates a shopping list item and clears the form', async () => {

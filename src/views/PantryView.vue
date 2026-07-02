@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useToastStore } from '@/stores/toastStore'
@@ -10,6 +10,7 @@ import { pantryApi } from '@/shared/api/pantryApi'
 import { printPantry } from '@/shared/printExport'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
+import { isRecognizedCategoryAlias, localizedUnitOptions, resolveIngredientSuggestions } from '@/shared/ingredientCategories'
 import SuggestInput from '@/components/SuggestInput.vue'
 import type { PantryItem, PantryItemRequest } from '@/types/pantry'
 import type { ExternalRecipeMatchResponse } from '@/types/recipe'
@@ -22,7 +23,7 @@ type ScannedProduct = {
   category: string
 }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const toastStore = useToastStore()
 
@@ -32,10 +33,17 @@ const error = ref<string | null>(null)
 const formError = ref<string | null>(null)
 const loginRequired = ref(false)
 const newName = ref('')
+
+// Category-aware, locale-aware ingredient/unit suggestions (e.g. "Fleisch" → Hähnchenbrust, Rinderhack, ...).
+const newNameSuggestions = computed(() => resolveIngredientSuggestions(newName.value, NAME_SUGGESTIONS, locale.value))
+const newNameIsCategory = computed(() => isRecognizedCategoryAlias(newName.value))
+const unitSuggestions = computed(() => localizedUnitOptions(STANDARD_UNITS, locale.value))
 const newQuantity = ref<number | null>(null)
 const newUnit = ref('')
 const editingId = ref<number | string | null>(null)
 const editName = ref('')
+const editNameSuggestions = computed(() => resolveIngredientSuggestions(editName.value, NAME_SUGGESTIONS, locale.value))
+const editNameIsCategory = computed(() => isRecognizedCategoryAlias(editName.value))
 const editQuantity = ref<number | null>(null)
 const editUnit = ref('')
 const editCategory = ref('')  // not shown in UI — preserved on update so existing data is not lost
@@ -563,7 +571,7 @@ function exportPantryAsPdf() {
       <form class="pantry-form" @submit.prevent="createPantryItem">
         <div class="form-field">
           <label>{{ t('pantry.form.name') }}</label>
-          <SuggestInput v-model="newName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('pantry.form.namePlaceholder')" />
+          <SuggestInput v-model="newName" :suggestions="newNameSuggestions" :disable-internal-filter="newNameIsCategory" :placeholder="t('pantry.form.namePlaceholder')" />
         </div>
 
         <div class="form-field small">
@@ -573,7 +581,7 @@ function exportPantryAsPdf() {
 
         <div class="form-field small">
           <label>{{ t('pantry.form.unit') }}</label>
-          <SuggestInput v-model="newUnit" :suggestions="STANDARD_UNITS" show-suggestions-on-focus :placeholder="t('pantry.form.unitPlaceholder')" />
+          <SuggestInput v-model="newUnit" :suggestions="unitSuggestions" show-suggestions-on-focus :placeholder="t('pantry.form.unitPlaceholder')" />
         </div>
 
         <button type="submit" class="submit-btn">{{ t('pantry.actions.create') }}</button>
@@ -611,7 +619,7 @@ function exportPantryAsPdf() {
           >
             <div class="form-field">
               <label>{{ t('pantry.form.name') }}</label>
-              <SuggestInput v-model="editName" :suggestions="NAME_SUGGESTIONS" :placeholder="t('pantry.form.namePlaceholder')" />
+              <SuggestInput v-model="editName" :suggestions="editNameSuggestions" :disable-internal-filter="editNameIsCategory" :placeholder="t('pantry.form.namePlaceholder')" />
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.quantity') }}</label>
@@ -619,7 +627,7 @@ function exportPantryAsPdf() {
             </div>
             <div class="form-field small">
               <label>{{ t('pantry.form.unit') }}</label>
-              <SuggestInput v-model="editUnit" :suggestions="STANDARD_UNITS" :placeholder="t('pantry.form.unitPlaceholder')" />
+              <SuggestInput v-model="editUnit" :suggestions="unitSuggestions" :placeholder="t('pantry.form.unitPlaceholder')" />
             </div>
             <div class="edit-buttons">
               <button type="submit" class="submit-btn">{{ t('pantry.actions.update') }}</button>

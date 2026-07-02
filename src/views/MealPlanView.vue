@@ -8,6 +8,7 @@ import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { displayCategory } from '@/shared/recipeDisplay'
+import { categorySearchTerms, matchesCategoryAwareText } from '@/shared/ingredientCategories'
 import { printMealPlan } from '@/shared/printExport'
 import type {
   MealPlanEntryResponse,
@@ -404,6 +405,41 @@ function caloriesForDay(date: string) {
     .reduce((sum, entry) => sum + entryCalories(entry), 0)
 }
 
+/**
+ * True when none of an entry's calorie sources (calories, recipe.calories,
+ * caloriesSnapshot) are set — i.e. entryCalories() would resolve to 0 by default.
+ */
+function hasUnknownCalories(entry: MealPlanEntryResponse) {
+  return entry.calories == null && entry.recipe?.calories == null && entry.caloriesSnapshot == null
+}
+
+/**
+ * Splits a day's planned meals into known-calorie sum and unknown-calorie count,
+ * so the UI can show e.g. "1230 kcal + 1 Mahlzeit ohne kcal-Angabe" instead of
+ * silently treating missing nutrition data as 0 kcal.
+ */
+function caloriesSummaryForDay(date: string): { knownCalories: number; unknownCount: number } {
+  const dayEntries = (week.value?.entries ?? []).filter(entry => entry.plannedDate === date)
+  const unknownCount = dayEntries.filter(hasUnknownCalories).length
+  const knownCalories = dayEntries.reduce((sum, entry) => sum + (hasUnknownCalories(entry) ? 0 : entryCalories(entry)), 0)
+  return { knownCalories, unknownCount }
+}
+
+function caloriesSummaryText(date: string): string {
+  const { knownCalories, unknownCount } = caloriesSummaryForDay(date)
+  if (unknownCount === 0) {
+    return `${caloriesForDay(date)} / ${dailyCalorieTarget.value} kcal`
+  }
+  if (knownCalories > 0) {
+    return unknownCount === 1
+      ? t('mealPlan.caloriesWithUnknownOne', { knownSum: knownCalories, count: unknownCount })
+      : t('mealPlan.caloriesWithUnknown', { knownSum: knownCalories, count: unknownCount })
+  }
+  return unknownCount === 1
+    ? t('mealPlan.caloriesUnknownOnlyOne', { count: unknownCount })
+    : t('mealPlan.caloriesUnknownOnly', { count: unknownCount })
+}
+
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
   selectedRecipeBySlot.value = {}
   customTitleBySlot.value = {}
@@ -513,6 +549,25 @@ function normalizedSlot(entry: MealPlanEntryResponse): MealSlot {
   return 'dinner'
 }
 
+// For a recognized category alias (e.g. "Pasta"), queries the backend once per real
+// match term ("pasta", "nudeln", "spaghetti", ...) in parallel and merges+dedupes the
+// results, so the slot recipe search finds real category matches instead of only
+// recipes containing the literal typed word.
+async function fetchPublishedForSlotQuery(language: string, query: string): Promise<RecipeResponse[]> {
+  const categoryTerms = categorySearchTerms(query)
+  if (categoryTerms.length === 0) {
+    return recipeApi.getPublishedRecipes(language, query)
+  }
+  const resultSets = await Promise.all(categoryTerms.map(term => recipeApi.getPublishedRecipes(language, term)))
+  const merged = new Map<string, RecipeResponse>()
+  for (const set of resultSets) {
+    for (const r of set) {
+      merged.set(`${r.source ?? 'dishly'}-${r.id}`, r)
+    }
+  }
+  return [...merged.values()]
+}
+
 function onSlotSearch(date: string, slot: MealSlot) {
   const key = slotKey(date, slot)
   const requestId = (suggestionRequestIds[key] ?? 0) + 1
@@ -533,7 +588,7 @@ function onSlotSearch(date: string, slot: MealSlot) {
   suggestionTimers[key] = setTimeout(async () => {
     try {
       const language = currentLanguage.value
-      const publishedMatches = await recipeApi.getPublishedRecipes(language, query)
+      const publishedMatches = await fetchPublishedForSlotQuery(language, query)
       if (suggestionRequestIds[key] !== requestId) {
         return
       }
@@ -541,7 +596,7 @@ function onSlotSearch(date: string, slot: MealSlot) {
       const normalizedQuery = query.toLowerCase()
       const ownMatches = recipes.value.filter(recipe => (
         recipe.userCreated === true
-        && recipe.title.toLowerCase().includes(normalizedQuery)
+        && matchesCategoryAwareText(recipe.title.toLowerCase(), normalizedQuery)
       ))
       const suggestions = shuffleArray(mergeRecipes(ownMatches, publishedMatches))
         .slice(0, 5)
@@ -979,13 +1034,16 @@ function formatDate(date: Date) {
         <div class="day-card-header">
           <div>
             <h2>{{ t(day.labelKey) }}</h2>
-            <span>{{ caloriesForDay(day.date) }} / {{ dailyCalorieTarget }} kcal</span>
+            <span>{{ caloriesSummaryText(day.date) }}</span>
           </div>
           <span>{{ day.date }}</span>
         </div>
         <div class="calorie-meter" :class="caloriesStatusClass(day.date)">
           <span :style="{ width: `${calorieProgress(day.date)}%` }"></span>
         </div>
+        <p v-if="caloriesSummaryForDay(day.date).unknownCount > 0" class="hint calorie-unknown-hint">
+          {{ t('mealPlan.unknownCaloriesHint') }}
+        </p>
 
         <div v-for="slot in mealSlots" :key="slot.key" class="slot-block">
           <h3>{{ t(slot.labelKey) }}</h3>

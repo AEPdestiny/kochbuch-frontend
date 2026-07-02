@@ -552,6 +552,11 @@
     "subtitle": "Plan your own recipes for the current week.",
     "loading": "Loading meal plan...",
     "plannedRecipe": "Planned recipe",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} meals without a kcal value",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} meal without a kcal value",
+    "caloriesUnknownOnly": "{count} meals without a kcal value",
+    "caloriesUnknownOnlyOne": "{count} meal without a kcal value",
+    "unknownCaloriesHint": "Some meals have no kcal value and are not included in the total.",
     "week": {
       "current": "Current week"
     },

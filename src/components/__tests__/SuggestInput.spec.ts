@@ -122,6 +122,31 @@ describe('SuggestInput.vue', () => {
     })
   })
 
+  describe('disableInternalFilter prop', () => {
+    it('shows suggestions unfiltered when disableInternalFilter is true, even if modelValue does not match them', async () => {
+      const members = ['Spaghetti', 'Penne', 'Fusilli']
+      const wrapper = mount(SuggestInput, {
+        props: { modelValue: 'Pasta', suggestions: members, disableInternalFilter: true },
+      })
+      await wrapper.find('input').trigger('focus')
+      const dropdown = wrapper.find('.suggest-dropdown')
+      expect(dropdown.exists()).toBe(true)
+      expect(dropdown.text()).toContain('Spaghetti')
+      expect(dropdown.text()).toContain('Penne')
+      expect(dropdown.text()).toContain('Fusilli')
+    })
+
+    it('keeps existing substring filtering behavior when disableInternalFilter is false or omitted', async () => {
+      const wrapper = mount(SuggestInput, {
+        props: { modelValue: 'rice', suggestions: NAMES, disableInternalFilter: false },
+      })
+      await wrapper.find('input').trigger('focus')
+      const dropdown = wrapper.find('.suggest-dropdown')
+      expect(dropdown.text()).toContain('Basmati rice')
+      expect(dropdown.text()).not.toContain('Olive oil')
+    })
+  })
+
   describe('input styling', () => {
     it('renders a native input element', () => {
       const wrapper = mount(SuggestInput, { props: { modelValue: '', suggestions: NAMES } })

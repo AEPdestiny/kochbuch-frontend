@@ -485,6 +485,11 @@
     "subtitle": "خطط وصفاتك الخاصة لهذا الأسبوع.",
     "loading": "جارٍ التحميل...",
     "plannedRecipe": "الوصفة المخططة",
+    "caloriesWithUnknown": "{knownSum} سعرة حرارية + {count} وجبات بدون بيانات السعرات",
+    "caloriesWithUnknownOne": "{knownSum} سعرة حرارية + وجبة واحدة بدون بيانات السعرات",
+    "caloriesUnknownOnly": "{count} وجبات بدون بيانات السعرات",
+    "caloriesUnknownOnlyOne": "وجبة واحدة بدون بيانات السعرات",
+    "unknownCaloriesHint": "بعض الوجبات لا تحتوي على بيانات سعرات حرارية ولم تُدرج في المجموع.",
     "week": {
       "current": "الأسبوع الحالي"
     },

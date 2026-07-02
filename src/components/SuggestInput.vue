@@ -12,6 +12,8 @@ const props = defineProps<{
   minQueryLength?: number
   /** Maximum number of suggestions to show (default 8). */
   maxSuggestions?: number
+  /** Skip the internal substring filter — the parent already narrowed `suggestions` (e.g. to a category's members). */
+  disableInternalFilter?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -23,6 +25,11 @@ let blurTimer: ReturnType<typeof setTimeout> | null = null
 
 const filtered = computed(() => {
   const max = props.maxSuggestions ?? 8
+
+  if (props.disableInternalFilter) {
+    return props.suggestions.slice(0, max)
+  }
+
   const query = props.modelValue.trim().toLowerCase()
 
   if (!query) {

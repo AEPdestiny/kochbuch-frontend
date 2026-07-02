@@ -485,6 +485,11 @@
     "subtitle": "Kendi tariflerini güncel hafta için planla.",
     "loading": "Haftalık plan yükleniyor...",
     "plannedRecipe": "Planlanan tarif",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} öğün kcal bilgisi yok",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} öğün kcal bilgisi yok",
+    "caloriesUnknownOnly": "{count} öğün kcal bilgisi yok",
+    "caloriesUnknownOnlyOne": "{count} öğün kcal bilgisi yok",
+    "unknownCaloriesHint": "Bazı öğünlerin kcal bilgisi yok ve toplama dahil edilmemiştir.",
     "week": {
       "current": "Güncel hafta"
     },

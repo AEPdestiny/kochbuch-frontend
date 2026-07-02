@@ -485,6 +485,11 @@
     "subtitle": "Zaplanuj własne przepisy na bieżący tydzień.",
     "loading": "Ładowanie planu tygodnia...",
     "plannedRecipe": "Zaplanowany przepis",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} posiłki bez podanych kcal",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} posiłek bez podanych kcal",
+    "caloriesUnknownOnly": "{count} posiłki bez podanych kcal",
+    "caloriesUnknownOnlyOne": "{count} posiłek bez podanych kcal",
+    "unknownCaloriesHint": "Niektóre posiłki nie mają podanej wartości kcal i nie są uwzględnione w sumie.",
     "week": {
       "current": "Bieżący tydzień"
     },

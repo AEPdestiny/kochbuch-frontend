@@ -64,6 +64,28 @@ describe('RegisterView', () => {
     expect(router.currentRoute.value.path).toBe('/dashboard')
   })
 
+  it('redirects to /dashboard after successful registration when no redirect query is present', async () => {
+    vi.mocked(authApi.register).mockResolvedValue(authResponse)
+    const router = createRegisterRouter()
+
+    await router.push('/register')
+    await router.isReady()
+
+    const wrapper = mount(RegisterView, {
+      global: {
+        plugins: [router, i18n],
+      },
+    })
+
+    await wrapper.find('input[autocomplete="username"]').setValue('salma')
+    await wrapper.find('input[type="email"]').setValue('salma@example.com')
+    await wrapper.find('input[type="password"]').setValue('secret123')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/dashboard')
+  })
+
   it('shows German register texts by default', async () => {
     const router = createRegisterRouter()
 

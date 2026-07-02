@@ -1,9 +1,10 @@
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '@/App.vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useSearchStore } from '@/stores/searchStore'
 import { AUTH_TOKEN_STORAGE_KEY, AUTH_USER_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, LOCALE_STORAGE_KEY, setLocale } from '@/i18n'
 
@@ -118,6 +119,39 @@ describe('App navigation', () => {
 
     expect(wrapper.find('.ai-drawer').exists()).toBe(true)
     expect(wrapper.text()).toContain('Küchenassistent')
+  })
+
+  it('logout clears auth state and the search store, then navigates home', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
+    const authStore = useAuthStore()
+    authStore.initFromStorage()
+    const searchStore = useSearchStore()
+    searchStore.query = 'Pasta Carbonara'
+    searchStore.calorieConscious = true
+
+    const wrapper = mount(App, {
+      global: {
+        plugins: [i18n],
+        stubs: {
+          RouterLink: {
+            template: '<a><slot /></a>',
+          },
+          RouterView: true,
+        },
+      },
+    })
+    await flushPromises()
+
+    await wrapper.find('.nav-button').trigger('click')
+    await flushPromises()
+
+    expect(authStore.isAuthenticated).toBe(false)
+    expect(authStore.user).toBeNull()
+    expect(searchStore.query).toBe('')
+    expect(searchStore.calorieConscious).toBe(false)
+    expect(wrapper.text()).not.toContain('Dashboard')
+    expect(wrapper.text()).not.toContain('salma')
   })
 
   it('switches navigation to English and stores the locale', async () => {

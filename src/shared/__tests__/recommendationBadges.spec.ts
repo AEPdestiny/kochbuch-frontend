@@ -342,6 +342,24 @@ describe('getRecommendationBadges', () => {
     expect(badges.find(b => b.key === 'highProtein')).toBeDefined()
   })
 
+  it('highProtein badge matches "Tofu"', () => {
+    const badges = getRecommendationBadges(
+      recipe({ ingredients: '200g Tofu, Sojasauce, Ingwer' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badges.find(b => b.key === 'highProtein')).toBeDefined()
+  })
+
+  it('highProtein badge matches German term "Linsen"', () => {
+    const badges = getRecommendationBadges(
+      recipe({ ingredients: '250g rote Linsen, Zwiebel, Kreuzkümmel' }),
+      profile({ highProtein: true }),
+      [],
+    )
+    expect(badges.find(b => b.key === 'highProtein')).toBeDefined()
+  })
+
   it('highProtein badge matches standalone "Ei" without false-positive on "Wein"', () => {
     const badgesWithWein = getRecommendationBadges(
       recipe({ ingredients: '200ml Weißwein, Butter' }),

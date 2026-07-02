@@ -485,6 +485,11 @@
     "subtitle": "今週の自分のレシピを計画しましょう。",
     "loading": "週間プランを読み込み中...",
     "plannedRecipe": "予定されたレシピ",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} 件のkcal未入力の食事",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} 件のkcal未入力の食事",
+    "caloriesUnknownOnly": "{count} 件のkcal未入力の食事",
+    "caloriesUnknownOnlyOne": "{count} 件のkcal未入力の食事",
+    "unknownCaloriesHint": "一部の食事にはkcalの入力がなく、合計に含まれていません。",
     "week": {
       "current": "今週"
     },
