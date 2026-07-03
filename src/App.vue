@@ -119,7 +119,7 @@ async function logout() {
             <p>Dishly AI</p>
             <h2>{{ t('ai.drawerTitle') }}</h2>
           </div>
-          <button type="button" class="drawer-close" @click="aiDrawerOpen = false">{{ t('ai.close') }}</button>
+          <button type="button" class="drawer-close" :aria-label="t('ai.close')" @click="aiDrawerOpen = false">✕</button>
         </div>
         <AiChatPanel />
       </aside>
@@ -375,9 +375,11 @@ async function logout() {
   box-shadow: var(--shadow-pop, -10px 0 28px rgba(65, 30, 50, 0.18));
   border-radius: 22px 0 0 22px;
   color: var(--text-dark, #243b38);
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
   max-width: 480px;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 20px;
   width: min(100%, 480px);
@@ -389,6 +391,7 @@ async function logout() {
   border-radius: 22px 0 0 0;
   color: #ffffff;
   display: flex;
+  flex-shrink: 0;
   gap: 14px;
   justify-content: space-between;
   margin: -20px -20px 0;
@@ -410,16 +413,19 @@ async function logout() {
 }
 
 .drawer-close {
+  align-items: center;
   background: rgba(255, 255, 255, 0.2);
   border: none;
   border-radius: 50%;
   color: #ffffff;
   cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-  width: 26px;
-  height: 26px;
+  display: flex;
   flex-shrink: 0;
+  font-size: 14px;
+  height: 26px;
+  justify-content: center;
+  line-height: 1;
+  width: 26px;
 }
 
 @media (max-width: 900px) {
