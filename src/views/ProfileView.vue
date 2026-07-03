@@ -192,8 +192,11 @@ function toSaveError(e: unknown) {
     <form v-if="!loading" class="preferences-form" @submit.prevent="savePreferences">
       <section class="profile-card">
         <div class="section-heading">
-          <h2>{{ t('profile.sections.taste.title') }}</h2>
-          <p>{{ t('profile.sections.taste.description') }}</p>
+          <span class="icon-tile icon-tile-mint">😋</span>
+          <div>
+            <h2>{{ t('profile.sections.taste.title') }}</h2>
+            <p>{{ t('profile.sections.taste.description') }}</p>
+          </div>
         </div>
         <div class="field-grid">
           <label>
@@ -220,8 +223,11 @@ function toSaveError(e: unknown) {
 
       <section class="profile-card profile-card-safety">
         <div class="section-heading">
-          <h2>{{ t('profile.sections.safety.title') }}</h2>
-          <p>{{ t('profile.sections.safety.description') }}</p>
+          <span class="icon-tile icon-tile-pink">🛡️</span>
+          <div>
+            <h2>{{ t('profile.sections.safety.title') }}</h2>
+            <p>{{ t('profile.sections.safety.description') }}</p>
+          </div>
         </div>
         <label>
           {{ t('profile.form.allergies') }}
@@ -239,8 +245,11 @@ function toSaveError(e: unknown) {
 
       <section class="profile-card">
         <div class="section-heading">
-          <h2>{{ t('profile.sections.diet.title') }}</h2>
-          <p>{{ t('profile.sections.diet.description') }}</p>
+          <span class="icon-tile icon-tile-mint">🌱</span>
+          <div>
+            <h2>{{ t('profile.sections.diet.title') }}</h2>
+            <p>{{ t('profile.sections.diet.description') }}</p>
+          </div>
         </div>
         <fieldset class="option-grid">
           <legend class="sr-only">{{ t('profile.form.dietaryStyles') }}</legend>
@@ -253,8 +262,11 @@ function toSaveError(e: unknown) {
 
       <section class="profile-card">
         <div class="section-heading">
-          <h2>{{ t('profile.sections.goals.title') }}</h2>
-          <p>{{ t('profile.sections.goals.description') }}</p>
+          <span class="icon-tile icon-tile-gold">🎯</span>
+          <div>
+            <h2>{{ t('profile.sections.goals.title') }}</h2>
+            <p>{{ t('profile.sections.goals.description') }}</p>
+          </div>
         </div>
         <fieldset class="option-grid">
           <legend class="sr-only">{{ t('profile.form.goals') }}</legend>
@@ -291,32 +303,45 @@ function toSaveError(e: unknown) {
 
 <style scoped>
 .profile-page {
-  max-width: 980px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 2rem 1rem 3rem;
-  color: #243b38;
+  padding: 36px 24px 48px;
+  color: var(--text-dark, #2e3437);
   width: 100%;
+  box-sizing: border-box;
 }
 
 .profile-header {
-  margin-bottom: 1.5rem;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px 32px;
+  margin-bottom: 26px;
 }
 
 .eyebrow {
-  margin: 0 0 0.35rem;
-  color: #2f8f7b;
+  margin: 0 0 6px;
+  color: var(--pink, #e85a9b);
   font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .profile-header h1 {
-  margin: 0 0 0.5rem;
+  margin: 0 0 6px;
+  color: var(--pink-dark, #d44488);
   font-size: 2rem;
+}
+
+.profile-header p {
+  color: var(--text-gray, #6b7478);
+  margin: 0;
 }
 
 .preferences-form {
   display: grid;
-  gap: 1.1rem;
+  gap: 22px;
 }
 
 .preferences-form label {
@@ -326,30 +351,56 @@ function toSaveError(e: unknown) {
 }
 
 .profile-card {
-  border: 1px solid #d7e8e3;
-  border-radius: 8px;
+  border-radius: var(--radius-card, 18px);
   background: #ffffff;
-  padding: 1.25rem;
-  box-shadow: 0 5px 18px rgba(36, 59, 56, 0.06);
+  padding: 24px 26px;
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
 }
 
 .profile-card-safety {
-  border-left: 4px solid #d18a5d;
+  border-left: 4px solid var(--pink, #e85a9b);
 }
 
 .section-heading {
-  margin-bottom: 1rem;
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.icon-tile {
+  align-items: center;
+  border-radius: 12px;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 18px;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.icon-tile-mint {
+  background: var(--mint-bg, #ecfaf6);
+}
+
+.icon-tile-pink {
+  background: var(--pink-light, #fdeef5);
+}
+
+.icon-tile-gold {
+  background: var(--gold-bg, #fef6e4);
 }
 
 .section-heading h2 {
   margin: 0 0 0.3rem;
   font-size: 1.2rem;
+  color: var(--text-dark, #2e3437);
 }
 
 .section-heading p,
 .profile-guidance p {
   margin: 0;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   line-height: 1.5;
 }
 
@@ -363,14 +414,22 @@ function toSaveError(e: unknown) {
 .preferences-form input[type='number'],
 .preferences-form select {
   width: 100%;
-  border: 1px solid #c7ded8;
-  border-radius: 8px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: 10px;
   padding: 0.75rem;
   font: inherit;
+  outline: none;
+  transition: border-color 0.16s ease;
+}
+
+.preferences-form textarea:focus,
+.preferences-form input[type='number']:focus,
+.preferences-form select:focus {
+  border-color: var(--mint, #5ecbb5);
 }
 
 .helper-text {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.92rem;
   font-weight: 500;
   margin: 0;
@@ -384,20 +443,34 @@ function toSaveError(e: unknown) {
 .option-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
-  gap: 0.75rem;
+  gap: 10px;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
+/* Toggle-chip look for the diet/goal checkboxes — mint fill once checked. */
 .option-grid label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
-  border: 1px solid #d7e8e3;
-  border-radius: 8px;
-  padding: 0.7rem 0.8rem;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--text-gray, #6b7478);
+  padding: 0.7rem 1rem;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.option-grid label:hover {
+  border-color: var(--mint, #5ecbb5);
+}
+
+.option-grid label:has(input:checked) {
+  background: var(--mint, #5ecbb5);
+  border-color: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .calorie-field {
@@ -406,14 +479,15 @@ function toSaveError(e: unknown) {
 }
 
 .profile-guidance {
-  border-radius: 8px;
-  background: #eef8f4;
-  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: var(--mint-bg, #ecfaf6);
+  padding: 18px 20px;
 }
 
 .profile-guidance strong {
   display: block;
   margin-bottom: 0.25rem;
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .form-actions {
@@ -423,13 +497,19 @@ function toSaveError(e: unknown) {
 
 .save-button {
   border: 0;
-  border-radius: 8px;
-  background: #2f8f7b;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: white;
-  padding: 0.75rem 1.15rem;
+  padding: 0.75rem 1.4rem;
   font-weight: 700;
   min-height: 44px;
   cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.save-button:hover:not(:disabled) {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
 }
 
 .sr-only {
@@ -452,27 +532,32 @@ function toSaveError(e: unknown) {
 .status-message,
 .success-message,
 .error-message {
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 0.8rem 1rem;
 }
 
 .status-message {
-  background: #eef8f4;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--text-gray, #6b7478);
 }
 
 .success-message {
-  background: #e5f8ed;
-  color: #23633f;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .error-message {
-  background: #fff1f1;
-  color: #9b2226;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
 }
 
 @media (max-width: 640px) {
   .profile-page {
-    padding: 1.25rem 0.75rem 2rem;
+    padding: 22px 12px 32px;
+  }
+
+  .profile-header {
+    padding: 20px 18px;
   }
 
   .profile-header h1 {
@@ -481,7 +566,7 @@ function toSaveError(e: unknown) {
   }
 
   .profile-card {
-    padding: 1rem;
+    padding: 18px 16px;
   }
 
   .option-grid label {

@@ -122,6 +122,7 @@ async function createShoppingListItem() {
     newChecked.value = false
     formError.value = null
     error.value = null
+    toastStore.addToast(t('notifications.shoppingListItemAdded'), 'success')
   } catch (e: unknown) {
     formError.value = toCreateErrorMessage(e)
     if (e instanceof ApiClientError && e.status === 401) {
@@ -158,6 +159,7 @@ async function deleteShoppingListItem(id: number | string) {
     await shoppingListApi.deleteShoppingListItem(id)
     items.value = items.value.filter(item => item.id !== id)
     error.value = null
+    toastStore.addToast(t('notifications.shoppingListItemDeleted'), 'info')
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
@@ -547,18 +549,22 @@ function exportShoppingListAsPdf() {
 <style scoped>
 .shopping-list-page {
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto 40px auto;
-  padding: 34px 24px;
+  max-width: 1100px;
+  margin: 0 auto 48px auto;
+  padding: 36px 24px;
   box-sizing: border-box;
 }
 
 .shopping-list-header {
-  margin-bottom: 24px;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px 32px;
+  margin-bottom: 26px;
 }
 
 .shopping-list-header h1 {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-size: 2rem;
   font-weight: 800;
   margin-bottom: 8px;
@@ -566,12 +572,12 @@ function exportShoppingListAsPdf() {
 
 .shopping-list-header p,
 .status-text {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 1rem;
 }
 
 .status-text.error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-weight: 600;
 }
 
@@ -582,25 +588,30 @@ function exportShoppingListAsPdf() {
 .login-link {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  background: #cc7da9;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   padding: 8px 16px;
   font-size: 0.94rem;
   font-weight: 700;
   text-decoration: none;
+  transition: background 0.16s ease;
+}
+
+.login-link:hover {
+  background: var(--pink-dark, #d44488);
 }
 
 .shopping-list-form {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto;
-  gap: 12px;
+  gap: 14px;
   align-items: end;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
   background: #ffffff;
-  padding: 14px 16px;
-  margin-bottom: 18px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 22px 24px;
+  margin-bottom: 22px;
 }
 
 .form-field {
@@ -611,16 +622,22 @@ function exportShoppingListAsPdf() {
 
 .form-field label,
 .checkbox-field {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .form-field input {
-  border: 1.5px solid #c3e7e1;
+  border: 1.5px solid var(--line, #e6ecea);
   border-radius: 10px;
   font: inherit;
   padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.16s ease;
+}
+
+.form-field input:focus {
+  border-color: var(--mint, #5ecbb5);
 }
 
 .checkbox-field {
@@ -632,18 +649,24 @@ function exportShoppingListAsPdf() {
 
 .submit-btn {
   border: none;
-  border-radius: 999px;
-  background: #cc7da9;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
   font-weight: 700;
   min-height: 44px;
-  padding: 9px 16px;
+  padding: 11px 20px;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.submit-btn:hover {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
 }
 
 .form-error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 14px;
@@ -655,12 +678,12 @@ function exportShoppingListAsPdf() {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .shopping-content {
   display: grid;
-  gap: 24px;
+  gap: 26px;
 }
 
 .shopping-bulk-actions {
@@ -676,44 +699,62 @@ function exportShoppingListAsPdf() {
 }
 
 .pdf-btn {
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #2f6f62;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
   font-weight: 700;
   min-height: 36px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   font-size: 0.9rem;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.pdf-btn:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .bulk-btn {
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #2f6f62;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   min-height: 44px;
-  padding: 8px 14px;
+  padding: 8px 16px;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.bulk-btn:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .bulk-btn.danger {
-  border-color: #f0c5c5;
-  color: #a14c2b;
+  border-color: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
+}
+
+.bulk-btn.danger:hover {
+  background: var(--pink, #e85a9b);
+  border-color: var(--pink, #e85a9b);
+  color: #ffffff;
 }
 
 .shopping-section {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .section-title {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-size: 1.2rem;
-  font-weight: 900;
+  font-weight: 800;
   margin: 0;
 }
 
@@ -722,10 +763,10 @@ function exportShoppingListAsPdf() {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 16px;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
-  background: #f4fbfa;
-  padding: 14px 16px;
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 18px 20px;
   min-width: 0;
 }
 
@@ -745,18 +786,19 @@ function exportShoppingListAsPdf() {
 .item-check input {
   width: 18px;
   height: 18px;
+  accent-color: var(--mint, #5ecbb5);
 }
 
 .shopping-item h3 {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   font-size: 1.1rem;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
 .item-quantity {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.95rem;
   display: inline-flex;
   gap: 4px;
@@ -773,7 +815,7 @@ function exportShoppingListAsPdf() {
 .delete-btn,
 .cancel-btn {
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 999px);
   background: transparent;
   cursor: pointer;
   font: inherit;
@@ -781,27 +823,28 @@ function exportShoppingListAsPdf() {
   font-weight: 700;
   min-height: 40px;
   padding: 6px 10px;
+  transition: background 0.16s ease;
 }
 
 .edit-btn {
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .delete-btn,
 .cancel-btn {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
 }
 
 .edit-btn:hover {
-  background: #e0f5f2;
+  background: var(--mint-bg, #ecfaf6);
 }
 
 .delete-btn:hover {
-  background: #fff0eb;
+  background: var(--pink-light, #fdeef5);
 }
 
 .cancel-btn:hover {
-  background: #fff0eb;
+  background: var(--pink-light, #fdeef5);
 }
 
 .edit-form {
@@ -810,7 +853,7 @@ function exportShoppingListAsPdf() {
   grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto auto;
   gap: 12px;
   align-items: end;
-  border-top: 1px solid #c3e7e1;
+  border-top: 1px solid var(--line, #e6ecea);
   padding-top: 14px;
 }
 
@@ -821,7 +864,7 @@ function exportShoppingListAsPdf() {
 
 .edit-error {
   grid-column: 1 / -1;
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-size: 0.95rem;
   font-weight: 600;
   margin: 0;
@@ -829,10 +872,9 @@ function exportShoppingListAsPdf() {
 
 /* Recipe groups section */
 .recipe-groups-section {
-  background: #f9fcfb;
-  border: 1px solid #d6eee9;
-  border-radius: 14px;
-  padding: 16px;
+  background: var(--mint-bg, #ecfaf6);
+  border-radius: var(--radius-card, 18px);
+  padding: 22px 24px;
 }
 
 .recipe-groups-empty {
@@ -842,27 +884,27 @@ function exportShoppingListAsPdf() {
 
 .recipe-groups {
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .recipe-group {
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 10px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(61, 174, 155, 0.06));
   overflow: hidden;
 }
 
 .recipe-group-summary {
   align-items: center;
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   cursor: pointer;
   display: flex;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   justify-content: space-between;
   list-style: none;
   min-height: 44px;
-  padding: 10px 14px;
+  padding: 10px 16px;
 }
 
 .recipe-group-summary::-webkit-details-marker {
@@ -870,12 +912,12 @@ function exportShoppingListAsPdf() {
 }
 
 .recipe-group[open] .recipe-group-summary {
-  border-bottom: 1px solid #edf6f4;
+  border-bottom: 1px solid var(--line, #e6ecea);
 }
 
 .recipe-group-summary::after {
   content: '▾';
-  color: #486b68;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.9rem;
 }
 
@@ -888,7 +930,7 @@ function exportShoppingListAsPdf() {
   gap: 6px;
   list-style: none;
   margin: 0;
-  padding: 10px 14px 12px;
+  padding: 10px 16px 14px;
 }
 
 .recipe-item {
@@ -906,14 +948,14 @@ function exportShoppingListAsPdf() {
 }
 
 .recipe-item-name {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   font-size: 0.95rem;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .recipe-item-quantity {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.9rem;
   white-space: nowrap;
 }
@@ -921,6 +963,10 @@ function exportShoppingListAsPdf() {
 @media (max-width: 760px) {
   .shopping-list-page {
     padding: 22px 12px 32px;
+  }
+
+  .shopping-list-header {
+    padding: 20px 18px;
   }
 
   .shopping-list-header h1 {
@@ -931,7 +977,7 @@ function exportShoppingListAsPdf() {
   .shopping-list-form,
   .edit-form {
     grid-template-columns: 1fr;
-    padding: 14px;
+    padding: 16px;
   }
 
   .shopping-item {

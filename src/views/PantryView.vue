@@ -644,18 +644,22 @@ function exportPantryAsPdf() {
 <style scoped>
 .pantry-page {
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto 40px auto;
-  padding: 34px 24px;
+  max-width: 1200px;
+  margin: 0 auto 48px auto;
+  padding: 36px 24px;
   box-sizing: border-box;
 }
 
 .pantry-header {
-  margin-bottom: 24px;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px 32px;
+  margin-bottom: 26px;
 }
 
 .pantry-header h1 {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-size: 2rem;
   font-weight: 800;
   margin-bottom: 8px;
@@ -663,12 +667,12 @@ function exportPantryAsPdf() {
 
 .pantry-header p,
 .status-text {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 1rem;
 }
 
 .status-text.error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-weight: 600;
 }
 
@@ -679,25 +683,30 @@ function exportPantryAsPdf() {
 .login-link {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  background: #cc7da9;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   padding: 8px 16px;
   font-size: 0.94rem;
   font-weight: 700;
   text-decoration: none;
+  transition: background 0.16s ease;
+}
+
+.login-link:hover {
+  background: var(--pink-dark, #d44488);
 }
 
 .pantry-form {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto;
-  gap: 12px;
+  gap: 14px;
   align-items: end;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
   background: #ffffff;
-  padding: 14px 16px;
-  margin-bottom: 18px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 22px 24px;
+  margin-bottom: 22px;
 }
 
 .form-field {
@@ -707,40 +716,56 @@ function exportPantryAsPdf() {
 }
 
 .form-field label {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.9rem;
   font-weight: 700;
 }
 
 .form-field input {
-  border: 1.5px solid #c3e7e1;
+  border: 1.5px solid var(--line, #e6ecea);
   border-radius: 10px;
   font: inherit;
   padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.16s ease;
 }
 
+.form-field input:focus {
+  border-color: var(--mint, #5ecbb5);
+}
 
 .submit-btn {
   border: none;
-  border-radius: 999px;
-  background: #cc7da9;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
   font-weight: 700;
   min-height: 44px;
-  padding: 9px 16px;
+  padding: 11px 20px;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .form-error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 14px;
 }
 
 .form-success {
-  color: #1d8e90;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.95rem;
   font-weight: 700;
   margin-top: 10px;
@@ -748,29 +773,29 @@ function exportPantryAsPdf() {
 
 .pantry-toolbox {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .tool-card,
 .recipe-match {
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
   background: #ffffff;
-  padding: 14px 16px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 22px 24px;
 }
 
 .tool-card h2,
 .recipe-matches h2 {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-size: 1.1rem;
   margin-bottom: 6px;
 }
 
 .tool-card p,
 .recipe-match p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.95rem;
 }
 
@@ -783,12 +808,18 @@ function exportPantryAsPdf() {
 }
 
 .barcode-row input {
-  border: 1.5px solid #c3e7e1;
+  border: 1.5px solid var(--line, #e6ecea);
   border-radius: 10px;
   flex: 1 1 180px;
   min-width: 0;
   font: inherit;
   padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.16s ease;
+}
+
+.barcode-row input:focus {
+  border-color: var(--mint, #5ecbb5);
 }
 
 .barcode-row .submit-btn {
@@ -805,7 +836,7 @@ function exportPantryAsPdf() {
 
 .barcode-video {
   background: #16302f;
-  border-radius: 12px;
+  border-radius: var(--radius-card, 18px);
   margin-top: 12px;
   min-height: 220px;
   object-fit: cover;
@@ -814,13 +845,13 @@ function exportPantryAsPdf() {
 
 .scanned-product {
   align-items: center;
-  border: 1px solid #d6eee9;
-  border-radius: 12px;
+  background: var(--mint-bg, #ecfaf6);
+  border-radius: 14px;
   display: grid;
   gap: 12px;
   grid-template-columns: 86px 1fr;
   margin-top: 12px;
-  padding: 12px;
+  padding: 14px;
 }
 
 .scanned-product img {
@@ -831,14 +862,14 @@ function exportPantryAsPdf() {
 }
 
 .scanned-product h3 {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   margin: 0 0 4px 0;
 }
 
 .recipe-matches {
   display: grid;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
 .recipe-match {
@@ -856,7 +887,7 @@ function exportPantryAsPdf() {
 }
 
 .recipe-match h3 {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   margin-bottom: 4px;
 }
 
@@ -866,31 +897,31 @@ function exportPantryAsPdf() {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .pantry-item {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 16px;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
-  background: #f4fbfa;
-  padding: 14px 16px;
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 20px 22px;
   min-width: 0;
 }
 
 .pantry-item h2 {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   font-size: 1.1rem;
-  font-weight: 800;
+  font-weight: 700;
   margin: 0 0 4px 0;
   overflow-wrap: anywhere;
 }
 
 .item-meta,
 .item-quantity {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.95rem;
 }
 
@@ -908,36 +939,38 @@ function exportPantryAsPdf() {
 
 .edit-btn {
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 999px);
   background: transparent;
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
   min-height: 40px;
   padding: 6px 10px;
+  transition: background 0.16s ease;
 }
 
 .edit-btn:hover {
-  background: #e0f5f2;
+  background: var(--mint-bg, #ecfaf6);
 }
 
 .delete-btn {
   border: none;
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 999px);
   background: transparent;
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
   min-height: 40px;
   padding: 6px 10px;
+  transition: background 0.16s ease;
 }
 
 .delete-btn:hover {
-  background: #fff0eb;
+  background: var(--pink-light, #fdeef5);
 }
 
 .edit-form {
@@ -946,8 +979,8 @@ function exportPantryAsPdf() {
   grid-template-columns: minmax(180px, 1fr) 100px minmax(120px, 1fr) auto;
   gap: 12px;
   align-items: end;
-  border-top: 1px solid #c3e7e1;
-  padding-top: 12px;
+  border-top: 1px solid var(--line, #e6ecea);
+  padding-top: 14px;
 }
 
 .edit-buttons {
@@ -956,15 +989,21 @@ function exportPantryAsPdf() {
 }
 
 .cancel-btn {
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   cursor: pointer;
   font: inherit;
   font-weight: 700;
   min-height: 44px;
   padding: 9px 16px;
+  transition: border-color 0.16s ease, color 0.16s ease;
+}
+
+.cancel-btn:hover {
+  border-color: var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .edit-error {
@@ -972,14 +1011,33 @@ function exportPantryAsPdf() {
   margin-bottom: 0;
 }
 
+@media (max-width: 1000px) {
+  .pantry-toolbox {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
   .pantry-page {
     padding: 22px 12px 32px;
   }
 
+  .pantry-header {
+    padding: 20px 18px;
+  }
+
   .pantry-header h1 {
     font-size: 1.55rem;
     line-height: 1.2;
+  }
+
+  .pantry-toolbox {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .tool-card {
+    padding: 18px 16px;
   }
 
   .pantry-form,

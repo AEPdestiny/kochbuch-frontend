@@ -1219,43 +1219,43 @@ function formatDate(date: Date) {
 <style scoped>
 .meal-plan-page {
   width: 100%;
-  max-width: 1180px;
-  margin: 30px auto 44px auto;
-  padding: 0 6vw;
+  max-width: 1400px;
+  margin: 32px auto 48px auto;
+  padding: 0 24px;
   box-sizing: border-box;
 }
 
 .meal-plan-header {
-  background: #fff7fb;
-  border: 1px solid #f6d9ea;
-  border-radius: 22px;
-  box-shadow: 0 2px 18px rgba(191, 140, 167, 0.12);
-  padding: 24px 22px 20px 22px;
-  margin-bottom: 22px;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px 32px;
+  margin-bottom: 26px;
 }
 
 .eyebrow {
-  color: #26b6b8;
-  font-size: 0.85rem;
-  font-weight: 800;
+  color: var(--pink, #e85a9b);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   margin: 0 0 6px 0;
 }
 
 .meal-plan-header h1 {
   margin: 0 0 6px 0;
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-size: 2rem;
 }
 
 .meal-plan-header p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 .week-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 
 .mode-switch {
@@ -1266,31 +1266,36 @@ function formatDate(date: Date) {
 
 .mode-switch button {
   background: #ffffff;
-  border: 1.5px solid #c3e7e1;
-  border-radius: 16px;
-  color: #2f6f62;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--text-gray, #6b7478);
   cursor: pointer;
   font: inherit;
   font-size: 1rem;
-  font-weight: 900;
-  padding: 18px;
+  font-weight: 700;
+  padding: 16px;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.mode-switch button:hover:not(.active) {
+  border-color: var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .mode-switch button.active {
-  background: #cc7da9;
-  border-color: #cc7da9;
+  background: var(--pink, #e85a9b);
+  border-color: var(--pink, #e85a9b);
   color: #ffffff;
 }
 
 .day-card {
-  background: #f4fbfa;
-  border: 1px solid #c3e7e1;
-  border-radius: 16px;
-  box-shadow: 0 1px 7px rgba(79, 127, 120, 0.12);
-  padding: 16px;
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
@@ -1302,19 +1307,19 @@ function formatDate(date: Date) {
 }
 
 .day-card-header h2 {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   font-size: 1.15rem;
   margin: 0;
 }
 
 .day-card-header span {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.88rem;
 }
 
 .calorie-meter {
-  background: #e8f4f1;
-  border-radius: 999px;
+  background: var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
   height: 8px;
   overflow: hidden;
 }
@@ -1322,31 +1327,35 @@ function formatDate(date: Date) {
 .calorie-meter span {
   display: block;
   height: 100%;
+  transition: width 0.3s ease;
 }
 
 .calorie-meter.good span {
-  background: #2f8f7b;
+  background: var(--mint, #5ecbb5);
 }
 
 .calorie-meter.warning span {
-  background: #d89a2b;
+  background: var(--gold, #f0b73d);
 }
 
 .calorie-meter.over span {
-  background: #b94d4d;
+  background: var(--pink, #e85a9b);
 }
 
 .slot-block {
-  border-top: 1px solid #d6eee9;
+  border-top: 1px solid var(--line, #e6ecea);
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: 12px;
+  padding-top: 14px;
 }
 
 .slot-block h3 {
-  color: #2f6f62;
-  font-size: 0.98rem;
+  color: var(--pink, #e85a9b);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   margin: 0;
 }
 
@@ -1377,12 +1386,12 @@ function formatDate(date: Date) {
 }
 
 .planned-meta span {
-  background: #e0f5f2;
-  border-radius: 999px;
-  color: #1d8e90;
+  background: var(--mint-bg, #ecfaf6);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.78rem;
-  font-weight: 800;
-  padding: 4px 8px;
+  font-weight: 700;
+  padding: 4px 10px;
   width: fit-content;
 }
 
@@ -1391,7 +1400,7 @@ function formatDate(date: Date) {
 }
 
 .move-form {
-  border-top: 1px solid #d6eee9;
+  border-top: 1px solid var(--line, #e6ecea);
   display: grid;
   gap: 10px;
   margin-top: 10px;
@@ -1399,7 +1408,7 @@ function formatDate(date: Date) {
 }
 
 .move-form label {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   display: grid;
   gap: 5px;
   font-weight: 700;
@@ -1407,8 +1416,8 @@ function formatDate(date: Date) {
 
 .move-form select {
   background: #ffffff;
-  border: 1.5px solid #c3e7e1;
-  border-radius: 8px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: 10px;
   font: inherit;
   min-height: 40px;
   padding: 8px 10px;
@@ -1416,13 +1425,13 @@ function formatDate(date: Date) {
 }
 
 .planned-label {
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.8rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .empty-day {
-  color: #486b68;
+  color: var(--text-light, #9aa2a5);
   margin: 0;
 }
 
@@ -1430,19 +1439,26 @@ function formatDate(date: Date) {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   font-weight: 700;
 }
 
 .recipe-select select,
 .recipe-select input {
   min-height: 40px;
-  border: 1.5px solid #c3e7e1;
-  border-radius: 8px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: 10px;
   padding: 8px 10px;
   background: #ffffff;
   font: inherit;
   width: 100%;
+  outline: none;
+  transition: border-color 0.16s ease;
+}
+
+.recipe-select select:focus,
+.recipe-select input:focus {
+  border-color: var(--mint, #5ecbb5);
 }
 
 .suggestion-list {
@@ -1454,10 +1470,10 @@ function formatDate(date: Date) {
 }
 
 .suggestion-list button {
-  background: #ffffff;
-  border: 1px solid #d6eee9;
-  border-radius: 8px;
-  color: #2b1b23;
+  background: var(--mint-bg, #ecfaf6);
+  border: none;
+  border-radius: 10px;
+  color: var(--text-dark, #2e3437);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -1467,11 +1483,17 @@ function formatDate(date: Date) {
   text-align: left;
   width: 100%;
   overflow-wrap: anywhere;
+  transition: background 0.16s ease;
+}
+
+.suggestion-list button:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .suggestion-list small,
 .suggestion-state {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.82rem;
   margin: 0;
 }
@@ -1486,29 +1508,28 @@ function formatDate(date: Date) {
 .week-summary {
   align-items: center;
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 14px;
-  color: #486b68;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  color: var(--text-gray, #6b7478);
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 18px 22px;
 }
 
 .week-summary p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin: 4px 0 0;
 }
 
-
 .swipe-planner {
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 16px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 16px;
+  padding: 22px;
 }
 
 .swipe-controls {
@@ -1519,54 +1540,53 @@ function formatDate(date: Date) {
 }
 
 .swipe-controls h2 {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   margin: 0 0 4px 0;
 }
 
 .swipe-controls p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin: 0;
 }
 
 .bucket-grid {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
 }
 
 .bucket-card {
-  background: #f4fbfa;
-  border: 1px solid #c3e7e1;
+  background: var(--mint-bg, #ecfaf6);
+  border: none;
   border-radius: 14px;
-  color: #2f6f62;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   display: flex;
   font: inherit;
+  font-weight: 600;
   justify-content: space-between;
-  padding: 12px;
+  padding: 14px;
   text-align: left;
   min-height: 44px;
+  transition: box-shadow 0.16s ease;
 }
 
 .bucket-card.full {
-  background: #fff7fb;
-  border-color: #e7b6d0;
-  color: #b94d83;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
 }
 
 .bucket-card.active {
-  border-color: #cc7da9;
-  box-shadow: 0 0 0 3px rgba(204, 125, 169, 0.16);
+  box-shadow: 0 0 0 3px rgba(232, 90, 155, 0.25);
 }
 
 .bucket-panel,
 .completion-card {
-  background: #fff7fb;
-  border: 1px solid #f6d9ea;
+  background: var(--pink-bg, #fdf1f5);
   border-radius: 14px;
   display: grid;
   gap: 12px;
-  padding: 14px;
+  padding: 18px;
 }
 
 .bucket-panel-header,
@@ -1579,13 +1599,13 @@ function formatDate(date: Date) {
 
 .bucket-panel h3,
 .completion-card h3 {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   margin: 0 0 4px 0;
 }
 
 .bucket-panel p,
 .completion-card p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin: 0;
 }
 
@@ -1599,15 +1619,15 @@ function formatDate(date: Date) {
 
 .bucket-entry-list li {
   background: #ffffff;
-  border: 1px solid #d6eee9;
   border-radius: 12px;
-  padding: 10px 12px;
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(61, 174, 155, 0.06));
+  padding: 10px 14px;
   overflow-wrap: anywhere;
 }
 
 .swipe-card {
-  border: 1px solid #d6eee9;
-  border-radius: 14px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   display: grid;
   grid-template-columns: minmax(140px, 220px) 1fr;
   overflow: hidden;
@@ -1624,11 +1644,11 @@ function formatDate(date: Date) {
 .swipe-card-content {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  padding: 18px;
 }
 
 .swipe-card-content h3 {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   font-size: 1.25rem;
   margin: 0;
   overflow-wrap: anywhere;
@@ -1637,13 +1657,13 @@ function formatDate(date: Date) {
 .progress-pill,
 .swipe-meta span,
 .tag-list span {
-  background: #e0f5f2;
-  border-radius: 999px;
-  color: #1d8e90;
+  background: var(--mint-bg, #ecfaf6);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--mint-darker, #2b8c7b);
   display: inline-flex;
   font-size: 0.86rem;
-  font-weight: 800;
-  padding: 5px 10px;
+  font-weight: 700;
+  padding: 5px 12px;
   width: fit-content;
 }
 
@@ -1655,24 +1675,30 @@ function formatDate(date: Date) {
 }
 
 .tag-list span {
-  background: #fff7fb;
-  color: #b96593;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
 }
 
 .primary-button,
 .secondary-button,
 .clear-week-button {
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 999px);
   min-height: 44px;
-  padding: 8px 14px;
+  padding: 10px 18px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
 .primary-button {
-  background: #cc7da9;
+  background: var(--pink, #e85a9b);
   border: none;
   color: #ffffff;
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
 }
 
 .primary-button:disabled {
@@ -1683,23 +1709,34 @@ function formatDate(date: Date) {
 .secondary-button,
 .clear-week-button {
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  color: #486b68;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
+}
+
+.secondary-button:hover:not(:disabled),
+.clear-week-button:hover:not(:disabled) {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
+}
+
+.clear-week-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .status-text {
   text-align: center;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin: 20px 0;
 }
 
 .status-text.error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-weight: 700;
 }
 
 .status-text.success {
-  color: #1d8e90;
+  color: var(--mint-darker, #2b8c7b);
   font-weight: 700;
 }
 

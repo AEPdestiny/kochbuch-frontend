@@ -29,35 +29,34 @@ const { t } = useI18n()
 <style scoped>
 .my-recipes-page {
   width: 100%;
-  max-width: 1100px;
-  margin: 30px auto 40px auto;
-  padding: 0 10vw;
+  max-width: 1400px;
+  margin: 32px auto 48px auto;
+  padding: 0 24px;
   box-sizing: border-box;
 }
 
 .my-recipes-header {
   align-items: center;
-  background: #fff7fb;
-  border-radius: 22px;
-  border: 1px solid #f6d9ea;
-  box-shadow: 0 2px 18px rgba(191, 140, 167, 0.12);
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   display: flex;
   gap: 18px;
   justify-content: space-between;
-  padding: 24px 22px 20px 22px;
-  margin-bottom: 22px;
+  padding: 26px 32px;
+  margin-bottom: 24px;
 }
 
 .page-title {
   font-size: 2rem;
-  font-weight: 900;
-  color: #cc7da9;
+  font-weight: 800;
+  color: var(--pink-dark, #d44488);
   margin-bottom: 6px;
 }
 
 .page-subtitle {
   font-size: 0.98rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 .my-recipes-content {
@@ -66,15 +65,21 @@ const { t } = useI18n()
 
 .create-recipe-link {
   align-items: center;
-  background: #cc7da9;
-  border-radius: 999px;
+  background: var(--pink, #e85a9b);
+  border-radius: var(--radius-pill, 999px);
   color: #ffffff;
   display: inline-flex;
-  font-weight: 800;
+  font-weight: 700;
   min-height: 44px;
-  padding: 9px 18px;
+  padding: 12px 22px;
   text-decoration: none;
   white-space: nowrap;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.create-recipe-link:hover {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 640px) {

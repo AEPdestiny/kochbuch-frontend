@@ -101,6 +101,7 @@ function getSafeRedirectPath() {
   align-items: center;
   justify-content: center;
   padding: 48px 20px;
+  background: var(--page-bg, #fafcfb);
 }
 
 .auth-form {
@@ -108,16 +109,16 @@ function getSafeRedirectPath() {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  padding: 28px;
-  border: 1px solid #c3e7e1;
-  border-radius: 8px;
+  padding: 32px;
+  border-radius: var(--radius-card, 18px);
   background: #ffffff;
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   box-sizing: border-box;
 }
 
 .auth-form h1 {
   margin: 0;
-  color: #2b1b23;
+  color: var(--pink-dark, #d44488);
   font-size: 1.8rem;
 }
 
@@ -125,32 +126,40 @@ function getSafeRedirectPath() {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-weight: 600;
 }
 
 .field input {
   width: 100%;
-  min-height: 42px;
-  padding: 10px 12px;
-  border: 1px solid #c3e7e1;
-  border-radius: 6px;
-  color: #2b1b23;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: 12px;
+  color: var(--text-dark, #2e3437);
+  outline: none;
+  transition: border-color 0.16s ease;
 }
 
 .field input:focus {
-  outline: 2px solid #8fd5cc;
-  outline-offset: 2px;
+  border-color: var(--mint, #5ecbb5);
+  outline: none;
 }
 
 .submit-button {
   min-height: 44px;
   border: none;
-  border-radius: 6px;
-  background: #8fd5cc;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
 }
 
 .submit-button:disabled {
@@ -160,7 +169,10 @@ function getSafeRedirectPath() {
 
 .error-message {
   margin: 0;
-  color: #a83252;
+  background: var(--pink-light, #fdeef5);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--pink-dark, #d44488);
   font-weight: 600;
 }
 

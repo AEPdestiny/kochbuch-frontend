@@ -287,20 +287,25 @@ function removeIngredientRow(index: number) {
 
 <style scoped>
 .edit-recipe-page {
-  max-width: 980px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
-  color: #243b38;
+  padding: 36px 24px 48px;
+  color: var(--text-dark, #2e3437);
+  box-sizing: border-box;
 }
 
 /* ── Page header ──────────────────────────────────── */
 .page-header {
-  margin-bottom: 1.75rem;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px 32px;
+  margin-bottom: 26px;
 }
 
 .eyebrow {
   margin: 0 0 0.4rem;
-  color: #2f8f7b;
+  color: var(--pink, #e85a9b);
   font-weight: 700;
   font-size: 0.78rem;
   text-transform: uppercase;
@@ -311,14 +316,14 @@ function removeIngredientRow(index: number) {
   margin: 0 0 0.4rem;
   font-size: 1.9rem;
   font-weight: 800;
-  color: #1a2e2b;
+  color: var(--pink-dark, #d44488);
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
 .page-subtitle {
   margin: 0;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.97rem;
 }
 
@@ -327,10 +332,9 @@ function removeIngredientRow(index: number) {
   display: grid;
   gap: 1.25rem;
   background: #ffffff;
-  border: 1px solid #d7e8e3;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 16px rgba(36, 59, 56, 0.06);
+  border-radius: var(--radius-card, 18px);
+  padding: 26px 28px;
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
 }
 
 .form-row {
@@ -355,20 +359,19 @@ function removeIngredientRow(index: number) {
 .form-field input,
 .form-field textarea {
   width: 100%;
-  border: 1px solid #c7ded8;
-  border-radius: 8px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: 10px;
   padding: 0.7rem 0.85rem;
   font: inherit;
-  color: #1a2e2b;
-  background: #f9fdfc;
-  transition: border-color 0.15s;
+  color: var(--text-dark, #2e3437);
+  background: #ffffff;
+  transition: border-color 0.16s ease;
 }
 
 .form-field input:focus,
 .form-field textarea:focus {
-  outline: 2px solid #2f8f7b;
-  outline-offset: 1px;
-  border-color: #2f8f7b;
+  outline: none;
+  border-color: var(--mint, #5ecbb5);
 }
 
 .form-field textarea {
@@ -381,34 +384,35 @@ function removeIngredientRow(index: number) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px dashed #b8dbd6;
-  border-radius: 8px;
+  border: 1.5px dashed var(--mint, #5ecbb5);
+  border-radius: 10px;
   padding: 0.7rem;
   cursor: pointer;
   font-weight: 500;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.88rem;
   margin-top: 0.4rem;
-  transition: border-color 0.15s, background 0.15s;
+  background: var(--mint-bg, #ecfaf6);
+  transition: background 0.16s ease;
 }
 
 .image-upload-box:hover {
-  border-color: #2f8f7b;
-  background: #f0faf8;
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .image-upload-box input { display: none; }
 
 .image-preview {
   max-height: 140px;
-  border-radius: 8px;
+  border-radius: 10px;
   object-fit: cover;
   margin-top: 0.45rem;
-  border: 1px solid #d7e8e3;
+  border: 1px solid var(--line, #e6ecea);
 }
 
 .upload-note {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.83rem;
   font-weight: 500;
   margin-top: 0.25rem;
@@ -427,38 +431,50 @@ function removeIngredientRow(index: number) {
 
 .ingredient-row-header {
   font-size: 0.8rem;
-  color: #486b68;
+  color: var(--text-light, #9aa2a5);
   font-weight: 600;
 }
 
 .ingredient-quantity { min-width: 0; }
 
 .ingredient-remove-btn {
-  width: 30px;
-  height: 30px;
-  border: 1px solid #d7e8e3;
-  border-radius: 6px;
-  background: #fff;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--pink-light, #fdeef5);
+  border-radius: 50%;
+  background: var(--pink-light, #fdeef5);
   cursor: pointer;
   font-size: 1.1rem;
-  color: #9b2226;
+  color: var(--pink-dark, #d44488);
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.ingredient-remove-btn:hover:not(:disabled) {
+  background: var(--pink, #e85a9b);
+  color: #ffffff;
 }
 
 .ingredient-remove-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .ingredient-add-btn {
   margin-top: 8px;
-  background: none;
-  border: 1px dashed #b8dbd6;
-  border-radius: 8px;
-  padding: 6px 14px;
+  background: #ffffff;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  padding: 8px 16px;
   cursor: pointer;
-  color: #2f8f7b;
-  font-weight: 600;
+  color: var(--mint-darker, #2b8c7b);
+  font-weight: 700;
   font-size: 0.88rem;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.ingredient-add-btn:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 /* ── Toggles ──────────────────────────────────────── */
@@ -472,12 +488,18 @@ function removeIngredientRow(index: number) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.9rem;
-  border: 1px solid #d7e8e3;
-  border-radius: 8px;
-  padding: 0.65rem 0.85rem;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
+  padding: 0.65rem 1rem;
   cursor: pointer;
+  color: var(--text-gray, #6b7478);
+  transition: border-color 0.16s ease;
+}
+
+.toggle-item:hover {
+  border-color: var(--mint, #5ecbb5);
 }
 
 /* ── Form footer ──────────────────────────────────── */
@@ -486,59 +508,68 @@ function removeIngredientRow(index: number) {
   gap: 0.75rem;
   flex-wrap: wrap;
   padding-top: 0.5rem;
-  border-top: 1px solid #eef5f3;
+  border-top: 1px solid var(--line, #e6ecea);
 }
 
 .submit-btn {
   border: 0;
-  border-radius: 8px;
-  background: #2f8f7b;
-  color: #fff;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
+  color: #ffffff;
   padding: 0.75rem 1.4rem;
   font-weight: 700;
   min-height: 44px;
   cursor: pointer;
   font-size: 0.95rem;
+  transition: background 0.16s ease, transform 0.16s ease;
 }
 
-.submit-btn:hover { background: #267a69; }
+.submit-btn:hover:not(:disabled) {
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
+}
 .submit-btn:disabled { cursor: wait; opacity: 0.7; }
 
 .cancel-btn {
-  border: 1px solid #c7ded8;
-  border-radius: 8px;
-  background: #fff;
-  color: #486b68;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  color: var(--text-gray, #6b7478);
   padding: 0.75rem 1.15rem;
   font-weight: 600;
   min-height: 44px;
   cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease;
 }
 
-.cancel-btn:hover { background: #f0faf8; }
+.cancel-btn:hover {
+  border-color: var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
+}
 
 /* ── Misc ─────────────────────────────────────────── */
-.required-star { color: #d9534f; }
+.required-star { color: var(--pink, #e85a9b); }
 
 .status-text {
   padding: 1rem;
-  background: #eef8f4;
-  border-radius: 8px;
-  color: #486b68;
+  background: var(--mint-bg, #ecfaf6);
+  border-radius: 12px;
+  color: var(--text-gray, #6b7478);
 }
 
 .error-text {
   padding: 0.8rem 1rem;
-  background: #fff1f1;
-  color: #9b2226;
-  border-radius: 8px;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
+  border-radius: 12px;
   margin: 0;
 }
 
 @media (max-width: 640px) {
-  .edit-recipe-page { padding: 1.25rem 0.75rem 3rem; }
+  .edit-recipe-page { padding: 22px 12px 32px; }
+  .page-header { padding: 20px 18px; }
   .page-title { font-size: 1.5rem; }
-  .edit-form { padding: 1.1rem; }
+  .edit-form { padding: 18px 16px; }
   .form-actions { justify-content: stretch; }
   .submit-btn, .cancel-btn { flex: 1; text-align: center; justify-content: center; }
 }

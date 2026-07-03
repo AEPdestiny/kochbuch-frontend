@@ -463,6 +463,8 @@
     "pantryItemAdded": "Zutat wurde zum Vorrat hinzugefügt.",
     "pantryItemUpdated": "Zutat wurde gespeichert.",
     "pantryItemDeleted": "Zutat wurde aus dem Vorrat entfernt.",
+    "shoppingListItemAdded": "Zutat wurde zur Einkaufsliste hinzugefügt.",
+    "shoppingListItemDeleted": "Zutat wurde von der Einkaufsliste entfernt.",
     "publishedOn": "Dein Rezept \"{title}\" ist nun auf der Startseite sichtbar.",
     "publishedOff": "Dein Rezept \"{title}\" wird nicht mehr auf der Startseite angezeigt.",
     "favoriteAdded": "Rezept wurde zu den Favoriten hinzugefügt.",

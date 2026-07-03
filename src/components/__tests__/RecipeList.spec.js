@@ -301,7 +301,7 @@ describe('RecipeList.vue', () => {
         language: 'de',
       })
     )
-    expect(push).toHaveBeenCalledWith('/recipe/1')
+    expect(push).toHaveBeenCalledWith({ path: '/recipe/1', query: { from: 'my-recipes' } })
   })
 
   it('does not create a recipe without login', async () => {

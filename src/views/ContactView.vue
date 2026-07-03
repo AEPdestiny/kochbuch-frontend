@@ -28,69 +28,59 @@ const { t } = useI18n()
 
 <style scoped>
 .contact {
-  max-width: 800px;
-  margin: 40px auto 60px auto;
-  padding: 0 10vw;
+  max-width: 600px;
+  margin: 48px auto 64px auto;
+  padding: 0 24px;
   width: 100%;
   box-sizing: border-box;
 }
 
 .page-title {
   font-size: 2.4rem;
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   margin-bottom: 24px;
+  text-align: center;
 }
 
 .contact-card {
-  background: radial-gradient(circle at top left, #fff7fb, #f4fbfa);
-  border-radius: 24px;
-  border: 1px solid #f6d9ea;
-  box-shadow: 0 4px 22px rgba(191, 140, 167, 0.18);
-  padding: 26px 24px 20px 24px;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-}
-
-.contact-card::after {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border-radius: 18px;
-  border: 1px dashed rgba(204, 125, 169, 0.35);
-  pointer-events: none;
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  border: 1.5px dashed var(--pink, #e85a9b);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 40px 32px;
+  text-align: center;
 }
 
 .icon-circle {
-  width: 54px;
-  height: 54px;
-  border-radius: 999px;
-  background: #ffffff;
-  border: 2px solid #8fd5cc;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--mint-bg, #ecfaf6);
+  border: 1.5px solid var(--mint, #5ecbb5);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.7rem;
-  color: #26b6b8;
-  margin-bottom: 10px;
+  color: var(--mint-darker, #2b8c7b);
+  margin: 0 auto 20px;
 }
 
 .section-title {
   font-size: 1.6rem;
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   margin-top: 4px;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 p {
   font-size: 1.05rem;
-  line-height: 1.6;
-  color: #2b1b23;
+  line-height: 1.7;
+  color: var(--text-gray, #6b7478);
 }
 
 .email-link {
-  color: #26b6b8;
-  font-weight: 600;
+  color: var(--mint-darker, #2b8c7b);
+  font-weight: 700;
   text-decoration: none;
   overflow-wrap: anywhere;
 }
@@ -112,8 +102,8 @@ p {
   }
 
   .contact-card {
-    border-radius: 18px;
-    padding: 22px 16px 18px;
+    border-radius: 16px;
+    padding: 28px 20px;
   }
 
   .section-title {

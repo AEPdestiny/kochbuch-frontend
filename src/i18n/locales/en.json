@@ -461,6 +461,8 @@
     "pantryItemAdded": "Item added to your pantry.",
     "pantryItemUpdated": "Item saved.",
     "pantryItemDeleted": "Item removed from your pantry.",
+    "shoppingListItemAdded": "Item added to your shopping list.",
+    "shoppingListItemDeleted": "Item removed from your shopping list.",
     "publishedOn": "Your recipe \"{title}\" is now visible on the home page.",
     "publishedOff": "Your recipe \"{title}\" is no longer shown on the home page.",
     "favoriteAdded": "Recipe added to your favorites.",

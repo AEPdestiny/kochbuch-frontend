@@ -295,6 +295,13 @@ function formatIngredient(ingredient: ExternalRecipeIngredient) {
 }
 
 function goBack() {
+  // When arriving here right after creating a recipe, the previous history entry
+  // is the "Neues Rezept erstellen" form — going back should return to the recipe
+  // list instead of re-opening that now-empty form.
+  if (route.query?.from === 'my-recipes') {
+    router.push('/my-recipes')
+    return
+  }
   if (window.history.length > 1) {
     router.back()
     return

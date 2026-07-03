@@ -29,53 +29,58 @@ const { t } = useI18n()
 <style scoped>
 .new-recipe-page {
   box-sizing: border-box;
-  margin: 30px auto 44px;
-  max-width: 980px;
-  padding: 0 6vw;
+  margin: 32px auto 48px;
+  max-width: 1200px;
+  padding: 0 24px;
   width: 100%;
 }
 
 .new-recipe-header {
   align-items: center;
-  background: #fff7fb;
-  border: 1px solid #f6d9ea;
-  border-radius: 22px;
-  box-shadow: 0 2px 18px rgba(191, 140, 167, 0.12);
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   display: flex;
   gap: 18px;
   justify-content: space-between;
-  margin-bottom: 22px;
-  padding: 24px 22px 20px;
+  margin-bottom: 24px;
+  padding: 26px 32px;
 }
 
 .new-recipe-header h1 {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-size: 2rem;
   margin: 0 0 6px;
 }
 
 .new-recipe-header p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin: 0;
 }
 
 .required-star {
-  color: #cc7da9;
-  font-weight: 800;
+  color: var(--pink, #e85a9b);
+  font-weight: 700;
 }
 
 .back-link {
   align-items: center;
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
-  color: #486b68;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--text-gray, #6b7478);
   display: inline-flex;
-  font-weight: 800;
+  font-weight: 700;
   min-height: 44px;
-  padding: 9px 16px;
+  padding: 9px 18px;
   text-decoration: none;
   white-space: nowrap;
+  transition: border-color 0.16s ease, color 0.16s ease;
+}
+
+.back-link:hover {
+  border-color: var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 @media (max-width: 640px) {

@@ -33,8 +33,8 @@ const toastStore = useToastStore()
 <style scoped>
 .toast-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
+  top: 90px;
+  right: 28px;
   z-index: 9999;
   pointer-events: none;
 }
@@ -52,29 +52,26 @@ const toastStore = useToastStore()
   gap: 12px;
   min-width: 260px;
   max-width: 380px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border-left: 4px solid transparent;
-  background: #ffffff;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--text-dark, #2e3437);
+  color: #ffffff;
+  box-shadow: var(--shadow-pop, 0 16px 48px rgba(46, 52, 55, 0.16));
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   pointer-events: all;
 }
 
 .toast--success {
-  border-left-color: #26b6b8;
-  color: #1d5c5d;
+  background: var(--mint-darker, #2b8c7b);
 }
 
 .toast--error {
-  border-left-color: #a14c2b;
-  color: #7a2e12;
+  background: var(--pink-dark, #d44488);
 }
 
 .toast--info {
-  border-left-color: #8fd5cc;
-  color: #486b68;
+  background: var(--text-dark, #2e3437);
 }
 
 .toast-message {
@@ -89,7 +86,7 @@ const toastStore = useToastStore()
   cursor: pointer;
   font-size: 1.2rem;
   line-height: 1;
-  opacity: 0.6;
+  opacity: 0.75;
   padding: 0 2px;
   flex-shrink: 0;
 }

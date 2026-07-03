@@ -47,16 +47,16 @@ const { t } = useI18n()
 <style scoped>
 .about {
   width: 100%;
-  max-width: 1200px;
-  margin: 40px auto 60px auto;
-  padding: 0 6vw;
+  max-width: 1300px;
+  margin: 44px auto 64px auto;
+  padding: 0 24px;
   box-sizing: border-box;
 }
 
 .about-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
-  gap: 24px;
+  gap: 28px;
   align-items: center;
 }
 
@@ -65,15 +65,15 @@ const { t } = useI18n()
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 170px;
-  gap: 10px;
+  gap: 12px;
 }
 
 .food-grid img {
   width: 100%;
   height: 100%;
-  border-radius: 18px;
+  border-radius: var(--radius-card, 18px);
   object-fit: cover;
-  box-shadow: 0 4px 18px rgba(79, 127, 120, 0.18);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
 }
 
 .food-grid img:nth-child(3) {
@@ -86,11 +86,10 @@ const { t } = useI18n()
 }
 
 .intro-card {
-  background: #ffeef6;
-  border-radius: 26px;
-  padding: 26px 24px 22px 24px;
-  box-shadow: 0 6px 24px rgba(191, 140, 167, 0.25);
-  border: 1px solid #f6d9ea;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  padding: 28px 26px;
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   position: relative;
   z-index: 1;
 }
@@ -99,21 +98,21 @@ const { t } = useI18n()
   font-family: 'Pacifico', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
   sans-serif;
   font-size: 2.2rem;
-  color: #cc7da9;
+  color: var(--pink, #e85a9b);
   font-style: italic;
   margin: 0 0 10px 0;
 }
 
 .headline {
   font-size: 1.4rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin: 4px 0 14px 0;
   font-weight: 700;
 }
 
 .section-title {
   font-size: 1.05rem;
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
   margin-top: 12px;
   margin-bottom: 4px;
 }
@@ -121,7 +120,7 @@ const { t } = useI18n()
 .intro-body {
   font-size: 1.02rem;
   line-height: 1.7;
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   margin-bottom: 10px;
 }
 
@@ -139,9 +138,9 @@ const { t } = useI18n()
 .portrait-img {
   width: 100%;
   max-height: 520px;
-  border-radius: 30px;
+  border-radius: 24px;
   object-fit: cover;
-  box-shadow: 0 12px 32px rgba(79, 127, 120, 0.45);
+  box-shadow: var(--shadow-card-hover, 0 12px 32px rgba(61, 174, 155, 0.18));
   border: 3px solid #ffffff;
 }
 
@@ -166,7 +165,7 @@ const { t } = useI18n()
   }
 
   .intro-card {
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 20px 16px;
   }
 
@@ -180,7 +179,7 @@ const { t } = useI18n()
   }
 
   .portrait-img {
-    border-radius: 20px;
+    border-radius: 18px;
     max-height: 360px;
   }
 }

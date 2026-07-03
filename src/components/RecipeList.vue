@@ -228,7 +228,9 @@ const createRecipe = async () => {
     error.value = null
     toastStore.addToast(t('notifications.recipeCreated'), 'success')
     if (isCreateMode.value) {
-      await router.push(`/recipe/${saved.id}`)
+      // from=my-recipes lets the detail page's back button return to the recipe
+      // list instead of back to this now-empty creation form.
+      await router.push({ path: `/recipe/${saved.id}`, query: { from: 'my-recipes' } })
     }
   } catch (e: unknown) {
     formError.value = toCreateRecipeErrorMessage(e)
@@ -1204,7 +1206,7 @@ defineExpose({ startEdit })
 <style scoped>
 .recipe-manager {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto 40px auto;
   display: flex;
   flex-direction: column;
@@ -1215,16 +1217,15 @@ defineExpose({ startEdit })
 .form-card,
 .list-card {
   background: #ffffff;
-  border-radius: 20px;
-  border: 1px solid #f6d9ea;
-  box-shadow: 0 2px 18px rgba(191, 140, 167, 0.12);
-  padding: 22px 24px 20px 24px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px 28px;
 }
 
 .recipe-tabs {
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
   display: flex;
   gap: 6px;
   padding: 6px;
@@ -1234,35 +1235,41 @@ defineExpose({ startEdit })
 .recipe-tabs button {
   background: transparent;
   border: none;
-  border-radius: 999px;
-  color: #486b68;
+  border-radius: var(--radius-pill, 999px);
+  color: var(--text-gray, #6b7478);
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   min-height: 42px;
   padding: 8px 18px;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.recipe-tabs button:hover:not(.active) {
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .recipe-tabs button.active {
-  background: #cc7da9;
+  background: var(--pink, #e85a9b);
   color: #ffffff;
 }
 
 .form-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   margin-bottom: 4px;
 }
 
 .form-subtitle {
   font-size: 0.95rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin-bottom: 16px;
 }
 
 .required-star {
-  color: #cc7da9;
+  color: var(--pink, #e85a9b);
   font-weight: 700;
 }
 
@@ -1312,7 +1319,7 @@ defineExpose({ startEdit })
 .ingredient-row-header span {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #9ab3b0;
+  color: var(--text-light, #9aa2a5);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 0 2px;
@@ -1330,10 +1337,10 @@ defineExpose({ startEdit })
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1.5px solid #f0c8d6;
+  border: 1.5px solid var(--pink-light, #fdeef5);
   border-radius: 50%;
-  background: #fff5f8;
-  color: #c0546a;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
   cursor: pointer;
   font-size: 1.2rem;
   font-weight: 800;
@@ -1347,28 +1354,30 @@ defineExpose({ startEdit })
 }
 
 .ingredient-remove-btn:hover:not(:disabled) {
-  background: #fde8ef;
-  border-color: #e0a0b8;
+  background: var(--pink, #e85a9b);
+  border-color: var(--pink, #e85a9b);
+  color: #ffffff;
 }
 
 .ingredient-add-btn {
   align-self: flex-start;
   margin-top: 8px;
-  border: 1.5px solid #8fd5cc;
-  border-radius: 999px;
-  background: #f4fbfa;
-  color: #1d8e90;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
   font-size: 0.92rem;
   font-weight: 700;
   padding: 8px 16px;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
   min-height: 38px;
 }
 
 .ingredient-add-btn:hover {
-  background: #e0f5f2;
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 @media (max-width: 640px) {
@@ -1380,8 +1389,8 @@ defineExpose({ startEdit })
     grid-template-columns: 1fr 70px 1fr 40px;
     gap: 6px;
     padding: 10px;
-    background: #f9fffe;
-    border: 1px solid #d6eee9;
+    background: var(--mint-bg, #ecfaf6);
+    border: 1px solid var(--line, #e6ecea);
     border-radius: 10px;
   }
 
@@ -1393,13 +1402,13 @@ defineExpose({ startEdit })
 
 label {
   font-size: 0.9rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 input,
 textarea {
   border-radius: 10px;
-  border: 1.5px solid #c3e7e1;
+  border: 1.5px solid var(--line, #e6ecea);
   padding: 9px 11px;
   font-size: 0.96rem;
   font-family: inherit;
@@ -1408,15 +1417,15 @@ textarea {
 
 input:focus,
 textarea:focus {
-  border-color: #26b6b8;
+  border-color: var(--mint, #5ecbb5);
 }
 
 .image-upload-box {
   align-items: center;
-  background: #f4fbfa;
-  border: 1.5px dashed #8fd5cc;
+  background: var(--mint-bg, #ecfaf6);
+  border: 1.5px dashed var(--mint, #5ecbb5);
   border-radius: 10px;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -1431,14 +1440,14 @@ textarea:focus {
 
 .image-preview {
   border-radius: 10px;
-  border: 1px solid #c3e7e1;
+  border: 1px solid var(--line, #e6ecea);
   max-height: 180px;
   object-fit: cover;
   width: 100%;
 }
 
 .upload-note {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.82rem;
 }
 
@@ -1459,7 +1468,7 @@ textarea {
   align-items: center;
   gap: 6px;
   font-size: 0.94rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 .toggle-item input {
@@ -1469,21 +1478,21 @@ textarea {
 .submit-btn {
   align-self: flex-start;
   margin-top: 6px;
-  background: #cc7da9;
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   border: none;
-  border-radius: 999px;
-  padding: 9px 20px;
+  border-radius: var(--radius-pill, 999px);
+  padding: 11px 22px;
   font-size: 0.98rem;
-  font-weight: 600;
+  font-weight: 700;
   min-height: 44px;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: background 0.16s ease, transform 0.16s ease;
 }
 
 .submit-btn:hover {
-  background: #b96593;
-  box-shadow: 0 3px 12px rgba(191, 140, 167, 0.5);
+  background: var(--pink-dark, #d44488);
+  transform: translateY(-1px);
 }
 
 .submit-btn:disabled {
@@ -1492,19 +1501,25 @@ textarea {
 }
 
 .cancel-btn {
-  border-radius: 999px;
-  border: 1px solid #c3e7e1;
+  border-radius: var(--radius-pill, 999px);
+  border: 1.5px solid var(--line, #e6ecea);
   background: #ffffff;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   padding: 8px 16px;
   font-size: 0.95rem;
   min-height: 44px;
   cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease;
+}
+
+.cancel-btn:hover {
+  border-color: var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .error-text {
   margin-top: 8px;
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-size: 0.92rem;
 }
 
@@ -1522,15 +1537,21 @@ textarea {
 }
 
 .import-btn {
-  border: 1px solid #2f8f7b;
-  border-radius: 6px;
-  background: transparent;
-  color: #2f8f7b;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.88rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
+  font-weight: 700;
+  padding: 8px 16px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.import-btn:hover:not(:disabled) {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .import-btn:disabled {
@@ -1541,17 +1562,17 @@ textarea {
 .recipes-title {
   font-size: 1.3rem;
   font-weight: 800;
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
   margin-bottom: 12px;
 }
 
 .status-text {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.95rem;
 }
 
 .status-text.error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-weight: 600;
 }
 
@@ -1562,13 +1583,18 @@ textarea {
 .login-link {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  background: #cc7da9;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   padding: 8px 16px;
   font-size: 0.94rem;
   font-weight: 700;
   text-decoration: none;
+  transition: background 0.16s ease;
+}
+
+.login-link:hover {
+  background: var(--pink-dark, #d44488);
 }
 
 .recipes {
@@ -1577,16 +1603,15 @@ textarea {
   margin: 12px 0 0 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .recipe-card {
   position: relative;
-  background: #f4fbfa;
-  border-radius: 14px;
-  border: 1px solid #c3e7e1;
-  padding: 12px 14px 10px 14px;
-  box-shadow: 0 1px 7px rgba(79, 127, 120, 0.1);
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 18px 20px;
   min-width: 0;
 }
 
@@ -1623,13 +1648,13 @@ textarea {
 .name {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   overflow-wrap: anywhere;
 }
 
 .meta {
   font-size: 0.9rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 .badge-column {
@@ -1640,20 +1665,20 @@ textarea {
 }
 
 .badge {
-  border-radius: 999px;
+  border-radius: var(--radius-pill, 999px);
   padding: 3px 9px;
   font-size: 0.76rem;
   font-weight: 600;
 }
 
 .badge-fav {
-  background: #fff5c7;
-  color: #b38700;
+  background: var(--gold-bg, #fef6e4);
+  color: var(--gold, #f0b73d);
 }
 
 .badge-published {
-  background: #e0f5f2;
-  color: #16766c;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .badge-private {
@@ -1664,7 +1689,7 @@ textarea {
 .ingredients {
   margin-top: 4px;
   font-size: 0.94rem;
-  color: #324240;
+  color: var(--text-dark, #2e3437);
   overflow-wrap: anywhere;
 }
 
@@ -1675,12 +1700,18 @@ textarea {
   z-index: 1;
   width: 2rem;
   height: 2rem;
-  border: 1px solid #f2b6c9;
-  border-radius: 999px;
-  background: #fff7fb;
-  color: #9d174d;
+  border: 1.5px solid var(--pink-light, #fdeef5);
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  color: var(--pink-dark, #d44488);
   font-weight: 800;
   cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.favorite-remove-button:hover {
+  background: var(--pink, #e85a9b);
+  color: #ffffff;
 }
 
 .card-actions {
@@ -1693,7 +1724,7 @@ textarea {
 
 .publish-toggle {
   align-items: center;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   cursor: pointer;
   display: inline-flex;
   font-size: 0.86rem;
@@ -1707,8 +1738,9 @@ textarea {
 .link-btn {
   background: transparent;
   border: none;
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.9rem;
+  font-weight: 600;
   min-height: 40px;
   cursor: pointer;
   padding: 0;
@@ -1724,11 +1756,11 @@ textarea {
 }
 
 .link-btn.danger {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
 }
 
 .none-found {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.95rem;
   text-align: center;
   padding: 18px 8px 8px;
@@ -1742,20 +1774,25 @@ textarea {
 
 .empty-action {
   align-items: center;
-  background: #cc7da9;
-  border-radius: 999px;
+  background: var(--pink, #e85a9b);
+  border-radius: var(--radius-pill, 999px);
   color: #ffffff;
   display: inline-flex;
-  font-weight: 800;
+  font-weight: 700;
   min-height: 42px;
   padding: 8px 16px;
   text-decoration: none;
+  transition: background 0.16s ease;
+}
+
+.empty-action:hover {
+  background: var(--pink-dark, #d44488);
 }
 
 .edit-panel {
   margin-top: 18px;
   padding-top: 14px;
-  border-top: 1px solid #f0e1eb;
+  border-top: 1px solid var(--line, #e6ecea);
 }
 
 .edit-buttons {
@@ -1767,7 +1804,7 @@ textarea {
 .recipe-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: 22px;
+  gap: 26px;
   margin-top: 12px;
 }
 
@@ -1777,8 +1814,8 @@ textarea {
 
 .card-title {
   font-size: 1.1rem;
-  font-weight: 800;
-  color: #2b1b23;
+  font-weight: 700;
+  color: var(--text-dark, #2e3437);
   margin-bottom: 4px;
   overflow-wrap: anywhere;
 }
@@ -1792,41 +1829,42 @@ textarea {
 
 .pill {
   font-size: 0.8rem;
-  padding: 4px 9px;
-  border-radius: 999px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 999px);
+  font-weight: 600;
 }
 
 .pill-mint {
-  background: #e0f5f2;
-  color: #26b6b8;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .pill-soft {
-  background: #fbe5f0;
-  color: #cc7da9;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
 }
 
 .pill-rating {
-  background: #fff5c7;
-  color: #b38700;
+  background: var(--gold-bg, #fef6e4);
+  color: var(--gold, #f0b73d);
 }
 
 .card-times {
   font-size: 0.9rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin-bottom: 4px;
 }
 
 .card-ingredients {
   font-size: 0.9rem;
-  color: #324240;
+  color: var(--text-dark, #2e3437);
   margin-top: 2px;
 }
 
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 20, 25, 0.55);
+  background: rgba(46, 52, 55, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1839,9 +1877,9 @@ textarea {
   width: min(700px, 100%);
   max-height: 85vh;
   background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
-  padding: 22px 24px 20px 24px;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-pop, 0 16px 48px rgba(46, 52, 55, 0.16));
+  padding: 26px 28px;
   overflow-y: auto;
 }
 
@@ -1852,33 +1890,33 @@ textarea {
   line-height: 1;
   float: right;
   cursor: pointer;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 .overlay-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   margin: 4px 0 6px 0;
 }
 
 .overlay-meta {
   font-size: 0.95rem;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin-bottom: 6px;
 }
 
 .overlay-subtitle {
   font-size: 1.05rem;
   font-weight: 700;
-  color: #26b6b8;
+  color: var(--mint-darker, #2b8c7b);
   margin-top: 14px;
   margin-bottom: 6px;
 }
 
 .overlay-text {
   font-size: 0.95rem;
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
