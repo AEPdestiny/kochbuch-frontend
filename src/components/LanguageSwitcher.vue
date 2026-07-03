@@ -70,9 +70,20 @@ const selectedLocale = computed({
 @media (max-width: 640px) {
   .language-switcher {
     border-right: none;
-    flex: 1 1 100%;
-    justify-content: center;
-    padding: 8px 10px;
+    padding: 4px 0;
+    gap: 6px;
+    min-height: auto;
+  }
+
+  /* "Sprache"-Beschriftung ausblenden, um Platz zu sparen — die aktuell
+     gewählte Sprache steht bereits sichtbar im Select selbst. */
+  .language-switcher span {
+    display: none;
+  }
+
+  .language-switcher select {
+    min-height: 32px;
+    padding: 4px 8px;
   }
 }
 </style>

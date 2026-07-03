@@ -1203,48 +1203,47 @@ function formatDate(date: Date) {
 .home-wrap {
   width: 100%;
   box-sizing: border-box;
-  max-width: min(1100px, 100%);
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 24px;
 }
 
 .hero {
-  background: #fff7fb;
-  border-radius: 22px;
-  box-shadow: 0 2px 21px 0 rgba(191, 140, 167, 0.12);
-  padding: 40px 28px 26px 28px;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 40px 32px 32px;
   text-align: center;
-  margin: 30px 0 20px 0;
+  margin: 32px 0 24px 0;
   width: 100%;
-  border: 1px solid #f6d9ea;
   box-sizing: border-box;
 }
 
 .hero-desc {
-  color: #486b68;
-  margin-bottom: 19px;
+  color: var(--text-gray, #6b7478);
+  margin-bottom: 22px;
   font-size: 1.05rem;
 }
 
 .search-input {
   background: #ffffff;
-  border: 2px solid #8fd5cc;
-  border-radius: 13px;
-  padding: 15px 19px;
+  border: 2px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  padding: 15px 24px;
   font-size: 1.1rem;
   width: 90%;
-  max-width: 560px;
+  max-width: 600px;
   outline: none;
   margin: 0 auto;
 }
 
 .search-input:focus {
-  border: 2px solid #26b6b8;
+  border-color: var(--mint-dark, #3dae9b);
 }
 
 .filter-panel {
-  margin: 18px auto 0;
-  max-width: 860px;
+  margin: 20px auto 0;
+  max-width: 900px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -1256,33 +1255,44 @@ function formatDate(date: Date) {
   align-items: center;
   gap: 6px;
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
-  padding: 7px 11px;
-  color: #486b68;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: var(--radius-pill, 999px);
+  padding: 8px 14px;
+  color: var(--text-gray, #6b7478);
   font-size: 0.9rem;
+  transition: border-color 0.16s ease;
+}
+
+.filter-panel label:hover {
+  border-color: var(--mint, #5ecbb5);
 }
 
 .plain-filter-button {
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #486b68;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
-  padding: 7px 11px;
+  padding: 8px 14px;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.plain-filter-button:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .personalization-note {
-  color: #2f6f62;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.92rem;
   font-weight: 700;
   margin: 12px 0 0;
 }
 
 .personalization-status {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.9rem;
   margin: 10px 0 0;
 }
@@ -1293,16 +1303,21 @@ function formatDate(date: Date) {
 
 .small-input {
   max-width: 150px;
-  border: 1px solid #8fd5cc;
-  border-radius: 8px;
-  padding: 5px 8px;
+  border: 1.5px solid var(--line, #e6ecea);
+  border-radius: 10px;
+  padding: 6px 10px;
   font: inherit;
+}
+
+.small-input:focus {
+  border-color: var(--mint, #5ecbb5);
+  outline: none;
 }
 
 .shuffle-wrap {
   width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 10px auto;
+  max-width: 1400px;
+  margin: 0 auto 12px auto;
   display: flex;
   justify-content: flex-end;
 }
@@ -1313,19 +1328,21 @@ function formatDate(date: Date) {
   justify-content: center;
   gap: 6px;
   background: #ffffff;
-  border-radius: 999px;
-  border: 1.5px solid #26b6b8;
-  color: #26b6b8;
-  padding: 7px 16px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1.5px solid var(--mint, #5ecbb5);
+  color: var(--mint-darker, #2b8c7b);
+  padding: 10px 20px;
   font-size: 0.94rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 7px rgba(79, 127, 120, 0.18);
+  box-shadow: var(--shadow-sm, 0 2px 10px rgba(61, 174, 155, 0.06));
   min-height: 44px;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
 .shuffle-btn:hover {
-  background: #e0f5f2;
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .shuffle-icon {
@@ -1334,58 +1351,55 @@ function formatDate(date: Date) {
 
 .list-wrap {
   width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 40px auto;
+  max-width: 1400px;
+  margin: 0 auto 48px auto;
 }
 
 .status-text {
   text-align: center;
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin-top: 20px;
 }
 
 .status-text.error {
-  color: #a14c2b;
+  color: var(--pink-dark, #d44488);
   font-weight: 600;
 }
 
 .status-text.success {
-  color: #1d8e90;
+  color: var(--mint-darker, #2b8c7b);
   font-weight: 700;
 }
 
 .recipe-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: 22px;
-  margin-top: 28px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+  margin-top: 30px;
 }
 
 .recipe-card {
-  background: #f4fbfa;
-  border-radius: 18px;
-  box-shadow: 0 1px 7px 0 rgba(79, 127, 120, 0.12);
-  border: 1px solid #c3e7e1;
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease,
-    border-color 0.15s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   min-width: 0;
 }
 
 .recipe-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 18px 0 rgba(79, 127, 120, 0.2);
-  background: #eefaf8;
-  border-color: #8fd5cc;
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover, 0 12px 32px rgba(61, 174, 155, 0.18));
 }
 
 .image-wrap {
   width: 100%;
-  height: 170px;
+  height: 210px;
   overflow: hidden;
+  background: var(--mint-bg, #ecfaf6);
 }
 
 .image-wrap img {
@@ -1396,29 +1410,35 @@ function formatDate(date: Date) {
 }
 
 .card-content {
-  padding: 14px 18px 16px 18px;
+  padding: 20px 22px 24px;
 }
 
 .card-title {
   font-size: 1.2rem;
-  font-weight: 800;
-  color: #2b1b23;
-  margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--text-dark, #2e3437);
+  margin-bottom: 10px;
   overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
 .favorite-button {
-  border: 1px solid #f6d9ea;
-  border-radius: 999px;
+  border: 1.5px solid var(--pink-light, #fdeef5);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #b96593;
+  color: var(--pink, #e85a9b);
   cursor: pointer;
   font: inherit;
   font-size: 0.86rem;
-  font-weight: 800;
-  margin-bottom: 8px;
+  font-weight: 700;
+  margin-bottom: 10px;
   min-height: 44px;
-  padding: 6px 10px;
+  padding: 6px 12px;
+  transition: background 0.16s ease;
+}
+
+.favorite-button:hover {
+  background: var(--pink-light, #fdeef5);
 }
 
 .card-meta {
@@ -1430,23 +1450,24 @@ function formatDate(date: Date) {
 
 .pill {
   font-size: 0.8rem;
-  padding: 4px 9px;
-  border-radius: 999px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill, 999px);
+  font-weight: 600;
 }
 
 .pill-mint {
-  background: #e0f5f2;
-  color: #26b6b8;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .pill-soft {
-  background: #fbe5f0;
-  color: #cc7da9;
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
 }
 
 .pill-rating {
-  background: #fff5c7;
-  color: #b38700;
+  background: var(--gold-bg, #fef6e4);
+  color: var(--gold, #f0b73d);
 }
 
 .pill-warning {
@@ -1461,28 +1482,30 @@ function formatDate(date: Date) {
 
 .card-times {
   font-size: 0.92rem;
-  color: #486b68;
-  margin-bottom: 6px;
+  color: var(--text-gray, #6b7478);
+  margin-bottom: 8px;
   overflow-wrap: anywhere;
 }
 
 .meal-plan-card-button {
-  border: 1px solid #8fd5cc;
-  border-radius: 999px;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #1d8e90;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 700;
   margin-top: 12px;
   min-height: 44px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   width: fit-content;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
 .meal-plan-card-button:hover {
-  background: #e0f5f2;
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .reason-badges {
@@ -1495,18 +1518,18 @@ function formatDate(date: Date) {
 .reason-badge {
   display: inline-flex;
   align-items: center;
-  background: #e3f6f1;
-  color: #2f8f7b;
-  border-radius: 999px;
-  padding: 3px 10px;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
+  border-radius: var(--radius-pill, 999px);
+  padding: 4px 12px;
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.reason-badge--pantry  { background: #fce8f3; color: #cc7da9; }
+.reason-badge--pantry  { background: var(--pink-light, #fdeef5); color: var(--pink-dark, #d44488); }
 .reason-badge--likes   { background: #fff3e6; color: #c4742e; }
-.reason-badge--diet    { background: #e3f6f1; color: #2f8f7b; }
+.reason-badge--diet    { background: var(--mint-bg, #ecfaf6); color: var(--mint-darker, #2b8c7b); }
 .reason-badge--calorie { background: #f0f8ff; color: #2a6fa8; }
 .reason-badge--time    { background: #cef3f4; color: #0e8b8d; }
 
@@ -1514,11 +1537,11 @@ function formatDate(date: Date) {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(10, 20, 25, 0.55);
+  background: rgba(46, 52, 55, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px;
+  padding: 20px;
 }
 
 .meal-plan-modal {
@@ -1526,18 +1549,18 @@ function formatDate(date: Date) {
   max-height: 90vh;
   overflow: auto;
   background: #ffffff;
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: 0 14px 42px rgba(0, 0, 0, 0.24);
+  border-radius: var(--radius-card, 18px);
+  padding: 28px;
+  box-shadow: var(--shadow-pop, 0 16px 48px rgba(46, 52, 55, 0.16));
 }
 
 .meal-plan-modal h2 {
-  color: #cc7da9;
-  margin-bottom: 8px;
+  color: var(--pink-dark, #d44488);
+  margin-bottom: 10px;
 }
 
 .meal-plan-modal p {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   margin-bottom: 16px;
 }
 
@@ -1548,58 +1571,59 @@ function formatDate(date: Date) {
 }
 
 .day-button-group {
-  border: 1px solid #d6eee9;
+  border: 1px solid var(--line, #e6ecea);
   border-radius: 14px;
   display: grid;
   gap: 8px;
-  padding: 10px;
+  padding: 12px;
 }
 
 .day-button-group > strong {
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
 }
 
 .day-button-group > span {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
   font-size: 0.85rem;
 }
 
 .day-button {
-  border: 1px solid #c3e7e1;
+  border: 1px solid var(--line, #e6ecea);
   border-radius: 12px;
-  background: #f4fbfa;
-  color: #2b1b23;
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--text-dark, #2e3437);
   cursor: pointer;
   display: grid;
   gap: 4px;
-  padding: 9px 10px;
+  padding: 10px 12px;
   text-align: left;
+  transition: border-color 0.16s ease;
 }
 
 .day-button:hover {
-  border-color: #26b6b8;
+  border-color: var(--mint, #5ecbb5);
 }
 
 .day-button span {
-  color: #2f6f62;
+  color: var(--mint-darker, #2b8c7b);
   font-size: 0.9rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .day-button small {
-  color: #486b68;
+  color: var(--text-gray, #6b7478);
 }
 
 .cancel-modal {
-  margin-top: 16px;
+  margin-top: 18px;
   border: none;
-  border-radius: 999px;
-  background: #fff0eb;
-  color: #a14c2b;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
-  padding: 9px 16px;
+  font-weight: 700;
+  padding: 10px 18px;
 }
 
 .pagination {
@@ -1607,37 +1631,45 @@ function formatDate(date: Date) {
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
-  margin: 28px 0 12px;
+  margin: 32px 0 12px;
 }
 
 .pagination-btn {
-  border: 1.5px solid #8fd5cc;
-  border-radius: 999px;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
   background: #ffffff;
-  color: #1d8e90;
+  color: var(--mint-darker, #2b8c7b);
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 4px 12px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 4px 14px;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
 .pagination-btn:hover:not(:disabled) {
-  background: #e0f5f2;
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .pagination-btn--active {
-  background: #26b6b8;
-  border-color: #26b6b8;
+  background: var(--mint, #5ecbb5);
+  border-color: var(--mint, #5ecbb5);
   color: #ffffff;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .pagination-btn:disabled {
   cursor: not-allowed;
   opacity: 0.4;
+}
+
+@media (max-width: 900px) {
+  .recipe-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 640px) {
@@ -1648,7 +1680,7 @@ function formatDate(date: Date) {
   .hero {
     border-radius: 16px;
     margin: 16px 0;
-    padding: 24px 14px 18px;
+    padding: 22px 14px 18px;
   }
 
   .hero h1 {
@@ -1663,24 +1695,54 @@ function formatDate(date: Date) {
   .search-input {
     font-size: 1rem;
     width: 100%;
+    padding: 13px 20px;
   }
 
   .filter-panel {
-    align-items: stretch;
-    justify-content: stretch;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
   }
 
-  .filter-panel label,
+  /* Diet/preference checkboxes + personalization toggle: compact pills, ~2 per
+     row, checkbox and label close together — NOT the full-width stretched rows
+     this used to force onto every label regardless of its content. */
+  .filter-panel label:has(input[type="checkbox"]) {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 130px;
+    justify-content: flex-start;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
   .plain-filter-button {
     border-radius: 14px;
-    justify-content: space-between;
-    min-height: 44px;
+    justify-content: center;
+    min-height: 42px;
     width: 100%;
+  }
+
+  /* Max time / max calories / category / sort: stack label above control so
+     the input never gets squeezed into a tight inline row. No card/pill chrome
+     here — the background/border/999px-radius from the base label rule is what
+     made these look like oversized capsules once they became two lines tall. */
+  .filter-panel label:has(input[type="number"]),
+  .filter-panel label:has(select) {
+    flex-direction: column;
+    align-items: stretch;
+    background: none;
+    border: none;
+    border-radius: 0;
+    gap: 4px;
+    padding: 2px 2px 0;
+    width: 100%;
+    font-size: 0.82rem;
   }
 
   .small-input {
     max-width: none;
     width: 100%;
+    padding: 8px 10px;
   }
 
   .shuffle-wrap {

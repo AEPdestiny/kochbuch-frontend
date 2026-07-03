@@ -58,24 +58,28 @@ async function logout() {
         <!-- Sprache, Nutzer-Chip und Abmelden rechts im Header -->
         <div class="header-right">
           <LanguageSwitcher />
-          <div v-if="authStore.isAuthenticated" class="user-chip">
-            <span class="user-avatar">{{
-              (authStore.user?.username ?? t('app.userFallback')).charAt(0).toUpperCase()
-            }}</span>
-            <span class="user-chip-name">{{ authStore.user?.username ?? t('app.userFallback') }}</span>
+          <!-- Gruppiert, damit Avatar+Logout auf Mobile immer zusammen in einer
+               eigenen Zeile bleiben, statt unabhängig voneinander umzubrechen. -->
+          <div class="header-account">
+            <div v-if="authStore.isAuthenticated" class="user-chip">
+              <span class="user-avatar">{{
+                (authStore.user?.username ?? t('app.userFallback')).charAt(0).toUpperCase()
+              }}</span>
+              <span class="user-chip-name">{{ authStore.user?.username ?? t('app.userFallback') }}</span>
+            </div>
+            <button
+              v-if="authStore.isAuthenticated"
+              type="button"
+              class="nav-button logout-link"
+              @click="logout"
+            >
+              {{ t('navigation.logout') }}
+            </button>
+            <template v-else>
+              <RouterLink to="/login" class="header-auth-link">{{ t('navigation.login') }}</RouterLink>
+              <RouterLink to="/register" class="header-auth-link">{{ t('navigation.register') }}</RouterLink>
+            </template>
           </div>
-          <button
-            v-if="authStore.isAuthenticated"
-            type="button"
-            class="nav-button logout-link"
-            @click="logout"
-          >
-            {{ t('navigation.logout') }}
-          </button>
-          <template v-else>
-            <RouterLink to="/login" class="header-auth-link">{{ t('navigation.login') }}</RouterLink>
-            <RouterLink to="/register" class="header-auth-link">{{ t('navigation.register') }}</RouterLink>
-          </template>
         </div>
       </div>
 
@@ -219,6 +223,14 @@ async function logout() {
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+}
+
+/* Hält Avatar-Chip + Logout (bzw. Login/Register) als eine Einheit zusammen,
+   damit sie auf Mobile immer gemeinsam in einer eigenen Zeile umbrechen. */
+.header-account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .user-chip {
@@ -455,30 +467,63 @@ async function logout() {
 
 @media (max-width: 640px) {
   .main-header {
-    padding: 10px 12px 12px;
+    padding: 8px 12px 10px;
+  }
+
+  .logo-text {
+    font-size: 1.5rem;
   }
 
   .header-row {
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .header-right {
-    flex-wrap: wrap;
     gap: 8px;
   }
 
-  .user-chip-name {
-    display: none;
+  /* Flattened: LanguageSwitcher and .header-account become direct flex items
+     of .header-row instead of being boxed inside .header-right. All three
+     (logo, account group, language switcher) now compete for one compact
+     row; `order` puts them in the requested visual sequence — logo, then
+     account, then language — independent of DOM order. flex-wrap (above)
+     is the fallback: if a very narrow viewport genuinely can't fit all
+     three, the language switcher/account group wrap to a second line
+     instead of overflowing or squeezing unreadably. */
+  .header-right {
+    display: contents;
   }
 
+  .header-account {
+    order: 1;
+    gap: 8px;
+  }
+
+  .header-right :deep(.language-switcher) {
+    order: 2;
+  }
+
+  .user-chip {
+    padding: 4px 10px 4px 4px;
+  }
+
+  .user-chip-name {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Statt horizontalem Scrollen: alle Nav-Pills brechen sauber in mehrere
+     Zeilen um, damit jede Seite (inkl. Einkaufsliste, Wochenplan, Über
+     Dishly, Kontakt) sofort sichtbar ist, ohne verstecktes Scrollen. */
   .nav-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: visible;
     gap: 6px;
   }
 
   .nav-item {
-    padding: 9px 14px;
+    padding: 8px 13px;
     font-size: 12.5px;
   }
 
