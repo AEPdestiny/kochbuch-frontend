@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import dishlyLogo from './assets/dishly-logo.png' // Logo importieren
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useSearchStore } from '@/stores/searchStore'
@@ -35,25 +34,48 @@ async function logout() {
 
 <template>
   <div class="app-bg">
+    <!-- Farbige Linie ganz oben zur visuellen Trennung -->
+    <div class="top-line"></div>
+
     <!-- Oberer Bereich mit Logo, Tagline und Navigation -->
     <header class="main-header">
-      <!-- Farbige Linie ganz oben zur visuellen Trennung -->
-      <div class="top-line"></div>
-
-      <!-- Zeile mit Logo links und Tagline rechts -->
+      <!-- Zeile mit Logo links, Tagline mittig und Nutzerbereich rechts -->
       <div class="header-row">
         <!-- Klickbares Logo führt immer zur Home-Seite -->
         <RouterLink to="/" class="logo-link">
-          <img :src="dishlyLogo" alt="Dishly logo" class="logo" />
+          <span class="logo-text">Dishly</span>
         </RouterLink>
 
-        <!-- Box mit Slogan in der Mitte/Rechts -->
+        <!-- Box mit Slogan in der Mitte -->
         <div class="tagline-box">
           <span class="tagline-deco">✦</span>
           <span class="tagline-text">
             {{ t('app.tagline') }}
           </span>
           <span class="tagline-deco">✦</span>
+        </div>
+
+        <!-- Sprache, Nutzer-Chip und Abmelden rechts im Header -->
+        <div class="header-right">
+          <LanguageSwitcher />
+          <div v-if="authStore.isAuthenticated" class="user-chip">
+            <span class="user-avatar">{{
+              (authStore.user?.username ?? t('app.userFallback')).charAt(0).toUpperCase()
+            }}</span>
+            <span class="user-chip-name">{{ authStore.user?.username ?? t('app.userFallback') }}</span>
+          </div>
+          <button
+            v-if="authStore.isAuthenticated"
+            type="button"
+            class="nav-button logout-link"
+            @click="logout"
+          >
+            {{ t('navigation.logout') }}
+          </button>
+          <template v-else>
+            <RouterLink to="/login" class="header-auth-link">{{ t('navigation.login') }}</RouterLink>
+            <RouterLink to="/register" class="header-auth-link">{{ t('navigation.register') }}</RouterLink>
+          </template>
         </div>
       </div>
 
@@ -68,17 +90,6 @@ async function logout() {
         <RouterLink v-if="authStore.isAuthenticated" to="/meal-plan" class="nav-item">{{ t('navigation.mealPlan') }}</RouterLink>
         <RouterLink to="/about" class="nav-item">{{ t('navigation.about') }}</RouterLink>
         <RouterLink to="/contact" class="nav-item">{{ t('navigation.contact') }}</RouterLink>
-        <LanguageSwitcher />
-        <template v-if="authStore.isAuthenticated">
-          <span class="nav-item user-name">{{ authStore.user?.username ?? t('app.userFallback') }}</span>
-          <button class="nav-item nav-button" type="button" @click="logout">
-            {{ t('navigation.logout') }}
-          </button>
-        </template>
-        <template v-else>
-          <RouterLink to="/login" class="nav-item">{{ t('navigation.login') }}</RouterLink>
-          <RouterLink to="/register" class="nav-item">{{ t('navigation.register') }}</RouterLink>
-        </template>
       </nav>
     </header>
 
@@ -98,7 +109,7 @@ async function logout() {
       class="chat-fab"
       @click="aiDrawerOpen = true"
     >
-      Dishly AI
+      🤖 Dishly AI
     </button>
 
     <div v-if="authStore.isAuthenticated && aiDrawerOpen" class="ai-drawer-backdrop" @click.self="aiDrawerOpen = false">
@@ -117,14 +128,14 @@ async function logout() {
 </template>
 
 <style scoped>
-/* Google-Font für die gesamte App einbinden */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+/* Google-Fonts für die gesamte App einbinden: Roboto für Fließtext, Pacifico fürs Logo */
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Roboto:wght@400;700&display=swap');
 
 /* Layout, damit Footer unten bleibt */
 .app-bg {
   min-height: 100vh;
   width: 100%;
-  background: #ffffff;
+  background: var(--page-bg, #fafcfb);
   font-family: 'Roboto', Arial, sans-serif;
   color: #2b1b23;
   display: flex;
@@ -132,22 +143,27 @@ async function logout() {
   overflow-x: hidden;
 }
 
+/* Schmaler Farbverlaufsstreifen mint -> pink ganz oben */
 .top-line {
-  height: 4px;
+  height: 5px;
   width: 100%;
-  background: #8fd5cc;
+  background: linear-gradient(90deg, var(--mint, #5ecbb5), var(--pink, #e85a9b));
+  flex-shrink: 0;
 }
 
 .main-header {
-  background: #ffffff;
-  border-bottom: 1px solid #dde4e6;
+  background: var(--card-bg, #ffffff);
+  border-bottom: 1px solid var(--line, #e6ecea);
   padding: 12px clamp(14px, 8vw, 120px) 10px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 80;
 }
 
-/* Zeile mit Logo und Tagline nebeneinander */
+/* Zeile mit Logo, Tagline und Nutzerbereich nebeneinander */
 .header-row {
   display: flex;
   align-items: center;
@@ -159,96 +175,146 @@ async function logout() {
 .logo-link {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
 }
 
-/* Höhe des Logos */
-.logo {
-  height: 100px;
-  width: auto;
+/* Handschrift-Logo im Dishly-Pink */
+.logo-text {
+  font-family: 'Pacifico', cursive;
+  font-size: 2.1rem;
+  color: var(--pink, #e85a9b);
+  line-height: 1;
+  user-select: none;
 }
 
 .tagline-box {
   flex: 1;
-  margin-left: 24px;
-  padding: 10px 18px;
-  border-radius: 24px;
-  background: #eefaf8;
-  border: 1px solid #c3e7e1;
+  padding: 11px 28px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--mint-bg, #ecfaf6);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  max-width: 540px;
+  margin: 0 24px;
 }
 
 .tagline-text {
-  color: #cc7da9;
-  font-weight: 600;
-  font-size: 1rem;
+  color: var(--pink-dark, #d44488);
+  font-weight: 500;
+  font-size: 0.95rem;
   text-align: center;
 }
 
 .tagline-deco {
-  color: #8fd5cc;
+  color: var(--mint-dark, #3dae9b);
   font-size: 0.95rem;
+}
+
+/* Sprache, Nutzer-Chip und Abmelden/Login rechts im Header */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--mint-bg, #ecfaf6);
+  padding: 6px 14px 6px 6px;
+  border-radius: var(--radius-pill, 999px);
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-chip-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mint-darker, #2b8c7b);
+  white-space: nowrap;
+}
+
+.logout-link,
+.header-auth-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-gray, #6b7478);
+  text-decoration: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.logout-link:hover,
+.header-auth-link:hover {
+  color: var(--pink, #e85a9b);
 }
 
 .nav-bar {
   margin-top: 8px;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-self: center;
-  background: #f4fbfa;
-  border-radius: 999px;
-  border: 1px solid #c3e7e1;
-  max-width: 100%;
-  overflow: visible;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 6px 0;
+  border-top: 1px solid var(--line, #e6ecea);
+  scrollbar-width: none;
+}
+
+.nav-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
   align-items: center;
   display: inline-flex;
   justify-content: center;
-  min-height: 44px;
-  padding: 8px 22px;
+  min-height: 40px;
+  padding: 10px 18px;
   text-decoration: none;
-  color: #486b68;
-  font-weight: 600;
-  font-size: 0.98rem;
-  border-right: 1px solid #ddeeee;
+  color: var(--text-gray, #6b7478);
+  font-weight: 500;
+  font-size: 13.5px;
+  border-radius: var(--radius-pill, 999px);
   text-align: center;
-  transition: background 0.2s, color 0.2s, border 0.2s;
-  white-space: normal;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.16s ease, color 0.16s ease;
 }
 
-/* Rechts außen kein Trenner mehr */
-.nav-item:last-child {
-  border-right: none;
+.nav-item:hover {
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
-.nav-item:hover,
 .nav-item.router-link-exact-active {
-  background: #8fd5cc;
+  background: var(--mint, #5ecbb5);
   color: #ffffff;
 }
 
-.nav-button {
-  border-top: none;
-  border-bottom: none;
-  border-left: none;
-  background: transparent;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.user-name {
-  color: #2b1b23;
-  cursor: default;
-}
-
-.user-name:hover {
-  background: transparent;
-  color: #2b1b23;
+.nav-item.router-link-exact-active:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .main-main {
@@ -257,6 +323,8 @@ async function logout() {
   align-items: flex-start;
   justify-content: center;
   width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
   min-width: 0;
   min-height: 80vh;
   background: #ffffff;
@@ -264,42 +332,49 @@ async function logout() {
 
 .main-footer {
   text-align: center;
-  color: #486b68;
-  background: #f4fbfa;
+  color: var(--text-gray, #6b7478);
+  background: var(--mint-bg, #ecfaf6);
   font-size: 0.98rem;
   padding: 12px 0 10px 0;
-  border-top: 1px solid #dde4e6;
+  border-top: 1px solid var(--line, #e6ecea);
 }
 
 .chat-fab {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 45;
+  right: 28px;
+  bottom: 28px;
+  z-index: 200;
   border: none;
-  border-radius: 999px;
-  background: #cc7da9;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--pink, #e85a9b);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
-  font-weight: 800;
-  padding: 12px 18px;
-  box-shadow: 0 8px 24px rgba(65, 30, 50, 0.22);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 16px 24px;
+  box-shadow: 0 8px 24px rgba(232, 90, 155, 0.4);
+  transition: transform 0.18s ease;
+}
+
+.chat-fab:hover {
+  transform: scale(1.04);
 }
 
 .ai-drawer-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 50;
-  background: rgba(25, 44, 42, 0.24);
+  z-index: 210;
+  background: rgba(46, 52, 55, 0.24);
   display: flex;
   justify-content: flex-end;
 }
 
 .ai-drawer {
-  background: #ffffff;
-  box-shadow: -10px 0 28px rgba(65, 30, 50, 0.18);
-  color: #243b38;
+  background: var(--card-bg, #ffffff);
+  box-shadow: var(--shadow-pop, -10px 0 28px rgba(65, 30, 50, 0.18));
+  border-radius: 22px 0 0 22px;
+  color: var(--text-dark, #243b38);
   display: grid;
   gap: 16px;
   max-width: 480px;
@@ -309,33 +384,42 @@ async function logout() {
 }
 
 .ai-drawer-header {
-  align-items: start;
+  align-items: center;
+  background: var(--pink, #e85a9b);
+  border-radius: 22px 0 0 0;
+  color: #ffffff;
   display: flex;
   gap: 14px;
   justify-content: space-between;
+  margin: -20px -20px 0;
+  padding: 18px 20px;
 }
 
 .ai-drawer-header p {
-  color: #2f8f7b;
+  color: rgba(255, 255, 255, 0.85);
   font-weight: 800;
+  font-size: 11.5px;
   margin: 0 0 4px;
   text-transform: uppercase;
 }
 
 .ai-drawer-header h2 {
-  color: #cc7da9;
+  color: #ffffff;
+  font-size: 15px;
   margin: 0;
 }
 
 .drawer-close {
-  background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 999px;
-  color: #486b68;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
   cursor: pointer;
   font: inherit;
   font-weight: 800;
-  padding: 8px 12px;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 900px) {
@@ -348,21 +432,18 @@ async function logout() {
     gap: 14px;
   }
 
-  .logo {
-    height: 82px;
+  .logo-text {
+    font-size: 1.7rem;
   }
 
   .tagline-box {
-    margin-left: 0;
+    margin-left: 12px;
   }
+}
 
-  .nav-bar {
-    border-radius: 20px;
-  }
-
-  .nav-item {
-    flex: 1 1 auto;
-    padding: 9px 16px;
+@media (max-width: 720px) {
+  .tagline-box {
+    display: none;
   }
 }
 
@@ -372,57 +453,27 @@ async function logout() {
   }
 
   .header-row {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
   }
 
-  .logo-link {
-    justify-content: center;
+  .header-right {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .logo {
-    height: 68px;
-  }
-
-  .tagline-box {
-    border-radius: 16px;
-    padding: 8px 12px;
-    width: 100%;
-  }
-
-  .tagline-deco {
+  .user-chip-name {
     display: none;
   }
 
-  .tagline-text {
-    font-size: 0.92rem;
-    line-height: 1.35;
-  }
-
   .nav-bar {
-    align-self: stretch;
-    border-radius: 16px;
     gap: 6px;
-    padding: 6px;
   }
 
   .nav-item {
-    border: none;
-    border-radius: 12px;
-    flex: 1 1 calc(50% - 6px);
-    font-size: 0.94rem;
-    min-width: 130px;
-    padding: 10px 12px;
-  }
-
-  .nav-button {
-    border: none;
-  }
-
-  .user-name {
-    flex-basis: 100%;
-    min-width: 100%;
+    padding: 9px 14px;
+    font-size: 12.5px;
   }
 
   .main-main {
@@ -437,7 +488,7 @@ async function logout() {
   .chat-fab {
     bottom: 14px;
     right: 14px;
-    padding: 10px 14px;
+    padding: 12px 18px;
   }
 
   .ai-drawer-backdrop {
@@ -446,8 +497,14 @@ async function logout() {
 
   .ai-drawer {
     max-width: none;
+    border-radius: 0;
     padding: 16px;
     width: 100%;
+  }
+
+  .ai-drawer-header {
+    border-radius: 0;
+    margin: -16px -16px 0;
   }
 }
 </style>
