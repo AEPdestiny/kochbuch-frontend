@@ -59,6 +59,15 @@ async function sendMessage() {
   await submitMessage(message.value)
 }
 
+function handleMessageKeydown(event: KeyboardEvent) {
+  if (event.shiftKey) return
+
+  event.preventDefault()
+  if (loading.value) return
+
+  void sendMessage()
+}
+
 async function submitMessage(text: string) {
   if (loading.value) return
 
@@ -144,6 +153,7 @@ async function submitMessage(text: string) {
           v-model="message"
           placeholder="z. B. Was kann ich diese Woche mit meinem Vorrat kochen?"
           :disabled="loading"
+          @keydown.enter="handleMessageKeydown"
         ></textarea>
         <button type="submit" class="chat-send-btn" :disabled="loading">
           {{ loading ? 'Sendet...' : 'Senden' }}
@@ -158,6 +168,7 @@ async function submitMessage(text: string) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
   min-height: 0;
 }
 
@@ -255,8 +266,10 @@ async function submitMessage(text: string) {
   border: 1px solid rgba(94, 203, 181, 0.24);
   border-radius: 18px;
   display: grid;
+  flex: 1 1 auto;
   gap: 12px;
   max-height: min(46vh, 430px);
+  min-height: 0;
   overflow-y: auto;
   padding: 14px;
   scrollbar-width: thin;
@@ -298,6 +311,11 @@ async function submitMessage(text: string) {
   text-transform: uppercase;
 }
 
+.chat-message.assistant .message-role {
+  color: var(--pink, #e85a9b);
+  opacity: 1;
+}
+
 .chat-message.typing {
   align-items: center;
   display: inline-flex;
@@ -334,8 +352,12 @@ async function submitMessage(text: string) {
 
 .chat-form {
   display: grid;
+  flex: 0 0 auto;
   gap: 8px;
   margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
 }
 
 .chat-input-label {
@@ -356,6 +378,12 @@ async function submitMessage(text: string) {
   gap: 10px;
   grid-template-columns: 1fr auto;
   padding: 8px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.chat-input-shell:focus-within {
+  border-color: var(--mint, #5ecbb5);
+  box-shadow: 0 10px 24px rgba(61, 174, 155, 0.14);
 }
 
 .chat-form textarea {
@@ -363,6 +391,7 @@ async function submitMessage(text: string) {
   border: none;
   border-radius: 12px;
   font: inherit;
+  line-height: 1.4;
   max-height: 120px;
   min-height: 52px;
   padding: 10px 8px;
@@ -428,6 +457,7 @@ async function submitMessage(text: string) {
   }
 
   .chat-input-shell {
+    gap: 8px;
     grid-template-columns: 1fr;
   }
 
