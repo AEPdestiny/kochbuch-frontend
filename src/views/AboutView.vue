@@ -1,186 +1,238 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import profileImg from '../assets/dishly-logo.png'
 import food1 from '../assets/food1.jpg'
 import food2 from '../assets/food2.jpg'
 import food3 from '../assets/food3.jpg'
 
 const { t } = useI18n()
+
+const featureKeys = ['discover', 'plan', 'pantry'] as const
 </script>
 
 <template>
-  <section class="about">
-    <div class="about-layout">
-      <div class="food-column">
-        <div class="food-grid">
-          <img :src="food1" alt="Dishly recipe 1" />
-          <img :src="food2" alt="Dishly recipe 2" />
-          <img :src="food3" alt="Dishly recipe 3" />
-        </div>
+  <section class="about-page">
+    <section class="about-hero">
+      <div class="hero-copy">
+        <p class="eyebrow">{{ t('about.eyebrow') }}</p>
+        <h1>{{ t('about.heroTitle') }}</h1>
+        <p class="hero-text">{{ t('about.heroBody') }}</p>
       </div>
 
-      <div class="intro-column">
-        <div class="intro-card">
-          <p class="hello-text">{{ t('about.hello') }}</p>
-          <h1 class="headline">{{ t('about.headline') }}</h1>
-
-          <h2 class="section-title">{{ t('about.whatTitle') }}</h2>
-          <p class="intro-body">{{ t('about.whatBody') }}</p>
-
-          <h2 class="section-title">{{ t('about.findTitle') }}</h2>
-          <p class="intro-body">{{ t('about.findBody') }}</p>
-
-          <h2 class="section-title">{{ t('about.cookingTitle') }}</h2>
-          <p class="intro-body">{{ t('about.cookingBody') }}</p>
-        </div>
+      <div class="hero-gallery" aria-hidden="true">
+        <img :src="food1" alt="" />
+        <img :src="food2" alt="" />
+        <img :src="food3" alt="" />
       </div>
+    </section>
 
-      <div class="portrait-column">
-        <div class="portrait-wrapper">
-          <img :src="profileImg" :alt="t('about.profileAlt')" class="portrait-img" />
-        </div>
+    <section class="feature-grid" :aria-label="t('about.featuresLabel')">
+      <article v-for="feature in featureKeys" :key="feature" class="feature-card">
+        <span class="feature-marker"></span>
+        <h2>{{ t(`about.features.${feature}.title`) }}</h2>
+        <p>{{ t(`about.features.${feature}.body`) }}</p>
+      </article>
+    </section>
+
+    <section class="mission-section">
+      <div>
+        <p class="eyebrow">{{ t('about.missionEyebrow') }}</p>
+        <h2>{{ t('about.missionTitle') }}</h2>
       </div>
-    </div>
+      <p>{{ t('about.missionBody') }}</p>
+    </section>
+
+    <section class="closing-callout">
+      <p>{{ t('about.closing') }}</p>
+    </section>
   </section>
 </template>
 
 <style scoped>
-.about {
-  width: 100%;
-  max-width: 1300px;
-  margin: 44px auto 64px auto;
-  padding: 0 24px;
+.about-page {
   box-sizing: border-box;
-}
-
-.about-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.2fr);
-  gap: 28px;
-  align-items: center;
-}
-
-
-.food-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 170px;
-  gap: 12px;
-}
-
-.food-grid img {
+  gap: 26px;
+  margin: 36px auto 64px;
+  max-width: 1180px;
+  padding: 0 24px;
   width: 100%;
-  height: 100%;
-  border-radius: var(--radius-card, 18px);
-  object-fit: cover;
-  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
 }
 
-.food-grid img:nth-child(3) {
-  grid-column: 1 / span 2;
-}
-
-
-.intro-column {
-  position: relative;
-}
-
-.intro-card {
+.about-hero {
+  align-items: center;
   background: var(--pink-bg, #fdf1f5);
-  border-radius: var(--radius-card, 18px);
-  padding: 28px 26px;
+  border-radius: 28px;
   box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
-  position: relative;
-  z-index: 1;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(300px, 0.92fr);
+  overflow: hidden;
+  padding: 42px;
 }
 
-.hello-text {
-  font-family: 'Pacifico', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-  sans-serif;
-  font-size: 2.2rem;
-  color: var(--pink, #e85a9b);
-  font-style: italic;
-  margin: 0 0 10px 0;
+.hero-copy {
+  display: grid;
+  gap: 16px;
+  max-width: 640px;
 }
 
-.headline {
-  font-size: 1.4rem;
+.eyebrow {
+  color: var(--pink-dark, #d44488);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.about-hero h1,
+.mission-section h2 {
+  color: var(--text-dark, #2e3437);
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.about-hero h1 {
+  font-size: 3rem;
+  line-height: 1.05;
+  max-width: 700px;
+}
+
+.hero-text,
+.mission-section p,
+.feature-card p,
+.closing-callout p {
   color: var(--text-gray, #6b7478);
-  margin: 4px 0 14px 0;
-  font-weight: 700;
-}
-
-.section-title {
-  font-size: 1.05rem;
-  color: var(--mint-darker, #2b8c7b);
-  margin-top: 12px;
-  margin-bottom: 4px;
-}
-
-.intro-body {
   font-size: 1.02rem;
   line-height: 1.7;
-  color: var(--text-dark, #2e3437);
-  margin-bottom: 10px;
+  margin: 0;
 }
 
-
-.portrait-column {
-  position: relative;
+.hero-gallery {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
 }
 
-.portrait-wrapper {
-  position: relative;
-  z-index: 3;
-  margin-top: -40px;
-}
-
-.portrait-img {
-  width: 100%;
-  max-height: 520px;
-  border-radius: 24px;
-  object-fit: cover;
+.hero-gallery img {
+  aspect-ratio: 1 / 1;
+  border: 4px solid #ffffff;
+  border-radius: 22px;
   box-shadow: var(--shadow-card-hover, 0 12px 32px rgba(61, 174, 155, 0.18));
-  border: 3px solid #ffffff;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
-@media (max-width: 960px) {
-  .about-layout {
-    grid-template-columns: minmax(0, 1fr);
+.hero-gallery img:first-child {
+  grid-row: span 2;
+}
+
+.feature-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.feature-card,
+.mission-section,
+.closing-callout {
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+}
+
+.feature-card {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+}
+
+.feature-marker {
+  background: var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  display: inline-block;
+  height: 8px;
+  width: 48px;
+}
+
+.feature-card h2 {
+  color: var(--pink-dark, #d44488);
+  font-size: 1.12rem;
+  margin: 0;
+}
+
+.mission-section {
+  align-items: start;
+  display: grid;
+  gap: 28px;
+  grid-template-columns: 0.85fr 1.15fr;
+  padding: 30px;
+}
+
+.mission-section h2 {
+  font-size: 2rem;
+  line-height: 1.15;
+  margin-top: 8px;
+}
+
+.closing-callout {
+  background: var(--mint-bg, #ecfaf6);
+  border: 1.5px solid rgba(94, 203, 181, 0.32);
+  padding: 22px 26px;
+  text-align: center;
+}
+
+.closing-callout p {
+  color: var(--mint-darker, #2b8c7b);
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .about-hero,
+  .mission-section {
+    grid-template-columns: 1fr;
   }
 
-  .portrait-wrapper {
-    margin-top: 16px;
+  .about-hero {
+    padding: 30px;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
-  .about {
-    margin: 24px auto 36px;
+  .about-page {
+    gap: 18px;
+    margin: 24px auto 42px;
     padding: 0 12px;
   }
 
-  .food-grid {
-    grid-auto-rows: 130px;
+  .about-hero {
+    border-radius: 20px;
+    padding: 24px 18px;
   }
 
-  .intro-card {
+  .about-hero h1 {
+    font-size: 2.1rem;
+    line-height: 1.12;
+  }
+
+  .hero-gallery {
+    gap: 8px;
+  }
+
+  .hero-gallery img {
     border-radius: 16px;
-    padding: 20px 16px;
   }
 
-  .hello-text {
-    font-size: 1.8rem;
-  }
-
-  .headline {
-    font-size: 1.2rem;
-    line-height: 1.3;
-  }
-
-  .portrait-img {
-    border-radius: 18px;
-    max-height: 360px;
+  .feature-card,
+  .mission-section,
+  .closing-callout {
+    border-radius: 16px;
+    padding: 20px;
   }
 }
 </style>

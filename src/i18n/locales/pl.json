@@ -465,15 +465,28 @@
     "locationDeniedHint": "Odmówiono dostępu do lokalizacji. Możesz nadal wpisać miasto."
   },
   "about": {
-    "hello": "Cześć, jestem Salma.",
-    "headline": "Osoba stojąca za Dishly",
-    "whatTitle": "Czym jest Dishly?",
-    "whatBody": "Dishly to cyfrowa książka kucharska, w której zbierasz przepisy w jednym miejscu. Chodzi o proste, smaczne dania, które możesz zawsze odnaleźć, aby ulubione posiłki nie gubiły się w notatkach lub zrzutach ekranu.",
-    "findTitle": "Co tutaj znajdziesz",
-    "findBody": "Na stronie głównej znajdziesz publiczne przepisy, które możesz przeszukiwać i filtrować. U góry możesz szukać według tytułu, kategorii lub słowa kluczowego. W Moich przepisach możesz tworzyć, edytować i usuwać własne dania, oznaczać ulubione oraz wybierać, które pojawią się na stronie głównej.",
-    "cookingTitle": "Gotowanie oznacza dla mnie...",
-    "cookingBody": "Gotowanie powinno być praktyczne na co dzień, spokojne i jednocześnie trochę wyjątkowe. Właśnie tak powinno działać Dishly.",
-    "profileAlt": "Salma - twórczyni Dishly"
+    "eyebrow": "Osoba stojąca za Dishly",
+    "heroTitle": "Dishly sprawia, że gotowanie jest łatwiejsze do zaplanowania i przyjemniejsze.",
+    "heroBody": "Dishly łączy odkrywanie przepisów, plan tygodnia, spiżarnię i listę zakupów w jednym spokojnym miejscu dla kuchni.",
+    "featuresLabel": "Funkcje Dishly",
+    "features": {
+      "discover": {
+        "title": "Odkrywanie przepisów",
+        "body": "Szukaj własnych i publicznych przepisów, filtruj według kategorii i znajduj posiłki pasujące do tygodnia."
+      },
+      "plan": {
+        "title": "Mądrzejsze planowanie",
+        "body": "Dodawaj posiłki do planu tygodnia, widź kalorie i szybciej decyduj, co ugotować."
+      },
+      "pantry": {
+        "title": "Spiżarnia i zakupy",
+        "body": "Lepiej wykorzystuj zapasy i zamieniaj zaplanowane posiłki w listę zakupów pokazującą brakujące składniki."
+      }
+    },
+    "missionEyebrow": "Nasza idea",
+    "missionTitle": "Gotowanie powinno być uporządkowane, ale nie skomplikowane.",
+    "missionBody": "Dishly pomaga szybciej zobaczyć, co masz w domu, co pasuje do tygodnia i co naprawdę trzeba kupić.",
+    "closing": "Sprytny pomocnik kuchenny dla osób, które lubią dobrze jeść i prościej planować codzienne posiłki."
   },
   "contact": {
     "title": "Kontakt",

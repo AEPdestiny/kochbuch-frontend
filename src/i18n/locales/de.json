@@ -539,15 +539,28 @@
     "locationDeniedHint": "Standortfreigabe abgelehnt. Du kannst weiterhin eine Stadt eingeben."
   },
   "about": {
-    "hello": "Hi, ich bin Salma.",
-    "headline": "Die Person hinter Dishly",
-    "whatTitle": "Was ist Dishly?",
-    "whatBody": "Dishly ist ein digitales Kochbuch, in dem du Rezepte an einem Ort sammelst. Es geht um einfache, leckere Gerichte, die du jederzeit wiederfinden kannst, damit deine Lieblingsessen nicht in Notizen oder Screenshots verloren gehen.",
-    "findTitle": "Was du hier findest",
-    "findBody": "Auf der Startseite findest du öffentliche Rezepte, die du durchsuchen und filtern kannst. Oben kannst du nach Titel, Kategorie oder Stichwort suchen, um Gerichte schnell zu finden. Unter Meine Rezepte kannst du eigene Gerichte erstellen, bearbeiten und löschen, Favoriten markieren und auswählen, welche davon auch auf der Startseite erscheinen.",
-    "cookingTitle": "Kochen bedeutet für mich...",
-    "cookingBody": "Kochen soll alltagstauglich, entspannt und trotzdem ein bisschen besonders sein. Genau so soll sich Dishly anfühlen.",
-    "profileAlt": "Salma - Erstellerin von Dishly"
+    "eyebrow": "Die Person hinter Dishly",
+    "heroTitle": "Dishly macht Kochen planbarer, leichter und schöner.",
+    "heroBody": "Dishly verbindet Rezeptideen, Wochenplanung, Vorrat und Einkaufsliste zu einem ruhigen Ort für deine Küche. So findest du schneller passende Gerichte, nutzt vorhandene Zutaten besser und planst Mahlzeiten ohne Zettelchaos.",
+    "featuresLabel": "Dishly Funktionen",
+    "features": {
+      "discover": {
+        "title": "Rezepte entdecken",
+        "body": "Durchsuche eigene und öffentliche Rezepte, filtere nach Kategorien und finde Gerichte, die wirklich zu deinem Alltag passen."
+      },
+      "plan": {
+        "title": "Wochen clever planen",
+        "body": "Lege Mahlzeiten in deinen Wochenplan, behalte Kalorien im Blick und entscheide schneller, was heute gekocht wird."
+      },
+      "pantry": {
+        "title": "Vorrat und Einkauf im Griff",
+        "body": "Nutze deinen Vorrat bewusster und verwandle geplante Mahlzeiten in eine Einkaufsliste, die fehlende Zutaten sichtbar macht."
+      }
+    },
+    "missionEyebrow": "Unsere Idee",
+    "missionTitle": "Kochen soll organisiert sein, ohne kompliziert zu werden.",
+    "missionBody": "Dishly hilft dir, gute Entscheidungen in kleinen Momenten zu treffen: Was ist noch da? Was passt in die Woche? Was muss wirklich eingekauft werden? Das Ergebnis ist weniger Reibung zwischen Inspiration, Planung und Kochen.",
+    "closing": "Ein smarter Küchenbegleiter für alle, die gern gut essen und ihren Alltag einfacher planen möchten."
   },
   "contact": {
     "title": "Kontakt",

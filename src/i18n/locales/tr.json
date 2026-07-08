@@ -465,15 +465,28 @@
     "locationDeniedHint": "Konum izni reddedildi. Yine de bir şehir girebilirsin."
   },
   "about": {
-    "hello": "Merhaba, ben Salma.",
-    "headline": "Dishly arkasındaki kişi",
-    "whatTitle": "Dishly nedir?",
-    "whatBody": "Dishly, tariflerini tek bir yerde topladığın dijital bir yemek kitabıdır. Basit ve lezzetli yemekleri istediğin zaman yeniden bulabilmen içindir; böylece favori yemeklerin notlar veya ekran görüntüleri arasında kaybolmaz.",
-    "findTitle": "Burada ne bulursun",
-    "findBody": "Ana sayfada arayabileceğin ve filtreleyebileceğin herkese açık tarifler bulursun. Üstte başlık, kategori veya anahtar kelime ile hızlıca yemek arayabilirsin. Tariflerim bölümünde kendi yemeklerini oluşturabilir, düzenleyebilir ve silebilir, favorileri işaretleyebilir ve hangilerinin ana sayfada görüneceğini seçebilirsin.",
-    "cookingTitle": "Benim için yemek yapmak...",
-    "cookingBody": "Yemek yapmak günlük hayata uygun, rahat ve yine de biraz özel hissettirmeli. Dishly de tam olarak böyle hissettirmeli.",
-    "profileAlt": "Salma - Dishly oluşturucusu"
+    "eyebrow": "Dishly arkasındaki kişi",
+    "heroTitle": "Dishly yemek yapmayı planlı, kolay ve keyifli hale getirir.",
+    "heroBody": "Dishly; tarif keşfi, haftalık planlama, kiler takibi ve alışveriş listesini sakin bir mutfak alanında birleştirir.",
+    "featuresLabel": "Dishly özellikleri",
+    "features": {
+      "discover": {
+        "title": "Tarif keşfi",
+        "body": "Kendi tariflerini ve herkese açık tarifleri ara, kategorilere göre filtrele ve haftana uygun yemekleri bul."
+      },
+      "plan": {
+        "title": "Daha akıllı planlama",
+        "body": "Yemekleri haftalık plana ekle, kalorileri görünür tut ve ne pişireceğine daha hızlı karar ver."
+      },
+      "pantry": {
+        "title": "Kiler ve alışveriş zekası",
+        "body": "Evdeki malzemeleri daha bilinçli kullan ve planlanan yemekleri eksikleri gösteren bir alışveriş listesine dönüştür."
+      }
+    },
+    "missionEyebrow": "Fikrimiz",
+    "missionTitle": "Yemek yapmak düzenli hissettirmeli, karmaşık olmamalı.",
+    "missionBody": "Dishly evde ne olduğunu, haftaya neyin uyduğunu ve gerçekten ne alınması gerektiğini daha kolay görmene yardımcı olur.",
+    "closing": "İyi yemek yemeyi ve günlük planlamayı kolaylaştırmayı sevenler için akıllı bir mutfak yardımcısı."
   },
   "contact": {
     "title": "İletişim",

@@ -537,15 +537,28 @@
     "locationDeniedHint": "Location permission denied. You can still enter a city."
   },
   "about": {
-    "hello": "Hi, I am Salma.",
-    "headline": "The person behind Dishly",
-    "whatTitle": "What is Dishly?",
-    "whatBody": "Dishly is a digital cookbook where you collect recipes in one place. It is about simple, delicious dishes you can find again anytime, so your favorite meals do not get lost in notes or screenshots.",
-    "findTitle": "What you will find here",
-    "findBody": "On the home page you will find public recipes that you can search and filter. At the top you can search by title, category or keyword to find dishes quickly. Under My Recipes you can create, edit and delete your own dishes, mark favorites and choose which ones appear on the home page.",
-    "cookingTitle": "For me, cooking means...",
-    "cookingBody": "Cooking should be practical for everyday life, relaxed and still feel a little special. That is exactly how Dishly should feel.",
-    "profileAlt": "Salma - creator of Dishly"
+    "eyebrow": "The person behind Dishly",
+    "heroTitle": "Dishly makes cooking easier to plan, easier to enjoy.",
+    "heroBody": "Dishly brings recipe discovery, weekly planning, pantry tracking and shopping lists into one calm kitchen workspace. It helps you find the right meals faster, use what you already have and plan without scattered notes.",
+    "featuresLabel": "Dishly features",
+    "features": {
+      "discover": {
+        "title": "Recipe discovery",
+        "body": "Search your own and public recipes, filter by category and find meals that fit your week."
+      },
+      "plan": {
+        "title": "Smarter meal planning",
+        "body": "Place meals into your weekly plan, keep calories visible and decide what to cook with less friction."
+      },
+      "pantry": {
+        "title": "Pantry and shopping intelligence",
+        "body": "Use pantry items more intentionally and turn planned meals into a shopping list that highlights what is missing."
+      }
+    },
+    "missionEyebrow": "Our idea",
+    "missionTitle": "Cooking should feel organized without becoming complicated.",
+    "missionBody": "Dishly helps you make better small decisions: what is already at home, what fits the week and what actually needs to be bought. The result is less friction between inspiration, planning and cooking.",
+    "closing": "A smarter kitchen companion for people who like eating well and planning everyday meals with less effort."
   },
   "contact": {
     "title": "Contact",

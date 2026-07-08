@@ -465,15 +465,28 @@
     "locationDeniedHint": "位置权限已被拒绝。您仍然可以输入城市。"
   },
   "about": {
-    "hello": "嗨，我是 Salma。",
-    "headline": "Dishly 背后的人",
-    "whatTitle": "Dishly 是什么？",
-    "whatBody": "Dishly 是一本数字食谱，用来把你的食谱收集在一个地方。它关注简单而美味的菜肴，让你随时找回喜爱的食物。",
-    "findTitle": "这里有什么",
-    "findBody": "首页上有可搜索和筛选的公开食谱。在我的食谱中，你可以创建、编辑和删除自己的菜肴，标记收藏并选择哪些显示在首页。",
-    "cookingTitle": "对我来说，烹饪意味着...",
-    "cookingBody": "烹饪应该适合日常生活，轻松而又有一点特别。Dishly 也应该是这样的感觉。",
-    "profileAlt": "Salma - Dishly 创建者"
+    "eyebrow": "关于 Dishly",
+    "heroTitle": "Dishly 让烹饪更好发现、更好计划，也更轻松。",
+    "heroBody": "Dishly 把食谱灵感、周计划、储藏和购物清单放在一个清晰的厨房空间里。你可以更快找到合适的菜肴，更好地使用已有食材，并减少日常计划的混乱。",
+    "featuresLabel": "Dishly 功能",
+    "features": {
+      "discover": {
+        "title": "发现食谱",
+        "body": "搜索自己的食谱和公开灵感，按类别筛选，找到真正适合日常生活的菜肴。"
+      },
+      "plan": {
+        "title": "智能周计划",
+        "body": "把餐食安排进每周计划，查看热量，并更快决定今天要做什么。"
+      },
+      "pantry": {
+        "title": "储藏和购物更清晰",
+        "body": "更有意识地使用现有食材，并把计划好的餐食转成显示缺少食材的购物清单。"
+      }
+    },
+    "missionEyebrow": "我们的理念",
+    "missionTitle": "烹饪应该有条理，但不应该变复杂。",
+    "missionBody": "Dishly 帮助你在日常小决策中更轻松：家里还有什么？本周适合做什么？真正需要买什么？结果是在灵感、计划和烹饪之间少一点摩擦。",
+    "closing": "为喜欢好好吃饭，也想把日常计划变简单的人打造的智能厨房伙伴。"
   },
   "contact": {
     "title": "联系",
