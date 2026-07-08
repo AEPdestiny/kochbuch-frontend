@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { Wand } from 'reicon-vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useToastStore } from '@/stores/toastStore'
 import { useSearchStore } from '@/stores/searchStore'
@@ -109,20 +110,29 @@ async function logout() {
     <AppToast />
 
     <button
-      v-if="authStore.isAuthenticated"
+      v-if="authStore.isAuthenticated && !aiDrawerOpen"
       type="button"
       class="chat-fab"
       @click="aiDrawerOpen = true"
     >
-      🤖 Dishly AI
+      <span class="chat-fab-mark" aria-hidden="true">
+        <Wand class="ai-wand-icon" :size="20" weight="Filled" />
+      </span>
+      <span>Dishly AI</span>
     </button>
 
     <div v-if="authStore.isAuthenticated && aiDrawerOpen" class="ai-drawer-backdrop" @click.self="aiDrawerOpen = false">
       <aside class="ai-drawer" aria-label="Dishly AI Chat">
         <div class="ai-drawer-header">
-          <div>
-            <p>Dishly AI</p>
-            <h2>{{ t('ai.drawerTitle') }}</h2>
+          <div class="ai-drawer-heading">
+            <span class="ai-drawer-icon" aria-hidden="true">
+              <Wand class="ai-wand-icon" :size="22" weight="Filled" />
+            </span>
+            <div>
+              <p>Dishly AI</p>
+              <h2>{{ t('ai.drawerTitle') }}</h2>
+              <span class="ai-drawer-subtitle">Dein smarter Koch-Assistent</span>
+            </div>
           </div>
           <button type="button" class="drawer-close" :aria-label="t('ai.close')" @click="aiDrawerOpen = false">✕</button>
         </div>
@@ -352,76 +362,136 @@ async function logout() {
 }
 
 .chat-fab {
+  align-items: center;
+  display: inline-flex;
+  gap: 9px;
   position: fixed;
   right: 28px;
   bottom: 28px;
   z-index: 200;
   border: none;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: 999px;
   background: var(--pink, #e85a9b);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 16px 24px;
-  box-shadow: 0 8px 24px rgba(232, 90, 155, 0.4);
-  transition: transform 0.18s ease;
+  font-weight: 900;
+  font-size: 13.5px;
+  padding: 10px 16px 10px 10px;
+  box-shadow: 0 12px 30px rgba(232, 90, 155, 0.34);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.chat-fab-mark {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  line-height: 0;
+  width: 30px;
+}
+
+.ai-wand-icon {
+  color: currentColor;
+  display: block;
+  flex-shrink: 0;
 }
 
 .chat-fab:hover {
-  transform: scale(1.04);
+  box-shadow: 0 16px 36px rgba(232, 90, 155, 0.42);
+  transform: translateY(-2px);
 }
 
 .ai-drawer-backdrop {
   position: fixed;
   inset: 0;
   z-index: 210;
-  background: rgba(46, 52, 55, 0.24);
+  background: transparent;
   display: flex;
+  align-items: flex-end;
   justify-content: flex-end;
+  padding: 24px;
+  pointer-events: auto;
 }
 
 .ai-drawer {
   background: var(--card-bg, #ffffff);
-  box-shadow: var(--shadow-pop, -10px 0 28px rgba(65, 30, 50, 0.18));
-  border-radius: 22px 0 0 22px;
+  border: 1px solid rgba(94, 203, 181, 0.24);
+  box-shadow: 0 22px 54px rgba(65, 30, 50, 0.2);
+  border-radius: 24px;
   color: var(--text-dark, #243b38);
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 480px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding: 20px;
-  width: min(100%, 480px);
+  gap: 14px;
+  max-height: min(720px, calc(100vh - 112px));
+  max-width: 460px;
+  overflow: hidden;
+  padding: 14px;
+  pointer-events: auto;
+  width: min(460px, calc(100vw - 48px));
+}
+
+.ai-drawer :deep(.ai-chat-panel) {
+  flex: 1;
+  min-height: 0;
 }
 
 .ai-drawer-header {
-  align-items: center;
-  background: var(--pink, #e85a9b);
-  border-radius: 22px 0 0 0;
+  align-items: flex-start;
+  background: linear-gradient(135deg, var(--pink, #e85a9b), var(--pink-dark, #d44488));
+  border-radius: 18px;
   color: #ffffff;
   display: flex;
   flex-shrink: 0;
   gap: 14px;
   justify-content: space-between;
-  margin: -20px -20px 0;
-  padding: 18px 20px;
+  padding: 16px;
+}
+
+.ai-drawer-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ai-drawer-icon {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 42px;
+  justify-content: center;
+  line-height: 0;
+  width: 42px;
 }
 
 .ai-drawer-header p {
   color: rgba(255, 255, 255, 0.85);
   font-weight: 800;
   font-size: 11.5px;
-  margin: 0 0 4px;
+  letter-spacing: 0.08em;
+  margin: 0 0 5px;
   text-transform: uppercase;
 }
 
 .ai-drawer-header h2 {
   color: #ffffff;
-  font-size: 15px;
+  font-size: 1.35rem;
+  line-height: 1.1;
   margin: 0;
+}
+
+.ai-drawer-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 5px;
 }
 
 .drawer-close {
@@ -433,11 +503,17 @@ async function logout() {
   cursor: pointer;
   display: flex;
   flex-shrink: 0;
-  font-size: 14px;
-  height: 26px;
+  font-size: 15px;
+  height: 34px;
   justify-content: center;
   line-height: 1;
-  width: 26px;
+  transition: background 0.15s ease, transform 0.15s ease;
+  width: 34px;
+}
+
+.drawer-close:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: rotate(4deg);
 }
 
 @media (max-width: 900px) {
@@ -539,23 +615,30 @@ async function logout() {
   .chat-fab {
     bottom: 14px;
     right: 14px;
-    padding: 12px 18px;
+    padding: 9px 14px 9px 9px;
   }
 
   .ai-drawer-backdrop {
-    align-items: stretch;
+    align-items: flex-end;
+    background: rgba(46, 52, 55, 0.28);
+    padding: 10px;
   }
 
   .ai-drawer {
+    max-height: calc(100vh - 20px);
     max-width: none;
-    border-radius: 0;
-    padding: 16px;
+    border-radius: 22px;
+    padding: 10px;
     width: 100%;
   }
 
   .ai-drawer-header {
-    border-radius: 0;
-    margin: -16px -16px 0;
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .ai-drawer-header h2 {
+    font-size: 1.16rem;
   }
 }
 </style>

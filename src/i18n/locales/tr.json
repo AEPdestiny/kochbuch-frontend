@@ -686,7 +686,8 @@
     "button": "AI asistan",
     "title": "Dishly AI Asistan?",
     "placeholder": "AI asistan haz?rland?; backend entegrasyonu daha sonra gelecek.",
-    "close": "Kapat"
+    "close": "Kapat",
+    "drawerTitle": "Mutfak asistan?"
   },
   "profile": {
     "eyebrow": "Profil",

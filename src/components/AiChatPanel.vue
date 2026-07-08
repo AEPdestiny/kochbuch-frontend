@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
+import { Wand } from 'reicon-vue'
 import { ApiClientError } from '@/shared/api/apiClient'
 import { aiApi } from '@/shared/api/aiApi'
 
@@ -20,6 +21,7 @@ const GREETING_TEXT = 'Frag Dishly AI nach deinem Wochenplan, Vorrat, Kalorienzi
 const message = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
+const messagesEl = ref<HTMLDivElement | null>(null)
 const messages = ref<ChatMessage[]>([
   {
     role: 'assistant',
@@ -31,12 +33,36 @@ const messages = ref<ChatMessage[]>([
 // statt der (noch leeren) Chat-Verlauf-Box.
 const showEmptyState = computed(() => messages.value.length <= 1)
 
-function selectSuggestion(text: string) {
-  message.value = text
+async function scrollMessagesToBottom({ smooth = true } = {}) {
+  await nextTick()
+
+  const element = messagesEl.value
+  if (!element) return
+
+  if (typeof element.scrollTo === 'function') {
+    element.scrollTo({
+      top: element.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto',
+    })
+  } else {
+    element.scrollTop = element.scrollHeight
+  }
+}
+
+async function sendPrompt(text: string) {
+  if (loading.value) return
+  message.value = ''
+  await submitMessage(text)
 }
 
 async function sendMessage() {
-  const value = message.value.trim()
+  await submitMessage(message.value)
+}
+
+async function submitMessage(text: string) {
+  if (loading.value) return
+
+  const value = text.trim()
   if (!value) {
     error.value = 'Bitte gib eine Frage ein.'
     return
@@ -46,10 +72,12 @@ async function sendMessage() {
   message.value = ''
   loading.value = true
   error.value = null
+  await scrollMessagesToBottom()
 
   try {
     const response = await aiApi.chat({ message: value })
     messages.value.push({ role: 'assistant', text: response.message })
+    await scrollMessagesToBottom()
   } catch (e: unknown) {
     if (e instanceof ApiClientError && e.status === 401) {
       error.value = 'Bitte melde dich erneut an, um Dishly AI zu nutzen.'
@@ -67,48 +95,60 @@ async function sendMessage() {
 <template>
   <div class="ai-chat-panel">
     <div v-if="showEmptyState" class="ai-empty-state">
-      <div class="ai-empty-icon">🍳</div>
-      <p class="ai-empty-text">{{ GREETING_TEXT }}</p>
+      <div class="ai-empty-icon" aria-hidden="true">
+        <Wand class="ai-wand-icon" :size="22" weight="Filled" />
+      </div>
+      <div class="ai-empty-copy">
+        <p class="ai-empty-kicker">Bereit für deine Küche</p>
+        <p class="ai-empty-text">{{ GREETING_TEXT }}</p>
+      </div>
       <div class="ai-suggestions">
         <button
           v-for="suggestion in PROMPT_SUGGESTIONS"
           :key="suggestion"
           type="button"
           class="ai-suggestion-chip"
-          @click="selectSuggestion(suggestion)"
+          :disabled="loading"
+          @click="sendPrompt(suggestion)"
         >
           {{ suggestion }}
         </button>
       </div>
     </div>
 
-    <div v-else class="chat-box">
+    <div v-else ref="messagesEl" class="chat-box">
       <article
         v-for="(item, index) in messages"
         :key="`${item.role}-${index}`"
         class="chat-message"
         :class="item.role"
       >
-        {{ item.text }}
+        <span class="message-role">{{ item.role === 'assistant' ? 'Dishly AI' : 'Du' }}</span>
+        <span>{{ item.text }}</span>
       </article>
       <article v-if="loading" class="chat-message assistant typing" aria-live="polite">
+        <span class="message-role">Dishly AI</span>
         <span class="typing-dot"></span>
         <span class="typing-dot"></span>
         <span class="typing-dot"></span>
       </article>
     </div>
 
-    <p v-if="error" class="status-text error" role="alert">⚠️ {{ error }}</p>
+    <p v-if="error" class="status-text error" role="alert">{{ error }}</p>
 
     <form class="chat-form" @submit.prevent="sendMessage">
-      <textarea
-        v-model="message"
-        placeholder="z. B. Was kann ich diese Woche mit meinem Vorrat kochen?"
-        :disabled="loading"
-      ></textarea>
-      <button type="submit" class="chat-send-btn" :disabled="loading">
-        {{ loading ? 'Dishly AI antwortet...' : 'Frage senden' }}
-      </button>
+      <label class="chat-input-label" for="dishly-ai-message">Deine Frage</label>
+      <div class="chat-input-shell">
+        <textarea
+          id="dishly-ai-message"
+          v-model="message"
+          placeholder="z. B. Was kann ich diese Woche mit meinem Vorrat kochen?"
+          :disabled="loading"
+        ></textarea>
+        <button type="submit" class="chat-send-btn" :disabled="loading">
+          {{ loading ? 'Sendet...' : 'Senden' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>
@@ -117,97 +157,150 @@ async function sendMessage() {
 .ai-chat-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  min-height: 0;
 }
 
 /* Freundlicher Einstieg, solange noch keine echte Konversation läuft */
 .ai-empty-state {
-  align-items: center;
-  background: var(--mint-bg, #ecfaf6);
-  border-radius: var(--radius-card, 18px);
+  align-items: flex-start;
+  background: linear-gradient(180deg, #ffffff 0%, var(--mint-bg, #ecfaf6) 100%);
+  border: 1px solid rgba(94, 203, 181, 0.26);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 28px 20px;
-  text-align: center;
+  gap: 16px;
+  padding: 18px;
+  text-align: left;
 }
 
 .ai-empty-icon {
-  font-size: 2.4rem;
-  line-height: 1;
+  align-items: center;
+  background: var(--pink, #e85a9b);
+  border-radius: 16px;
+  box-shadow: 0 10px 22px rgba(232, 90, 155, 0.2);
+  color: #ffffff;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  line-height: 0;
+  width: 44px;
+}
+
+.ai-wand-icon {
+  color: currentColor;
+  display: block;
+  flex-shrink: 0;
+}
+
+.ai-empty-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-empty-kicker {
+  color: var(--pink-dark, #d44488);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
 }
 
 .ai-empty-text {
-  color: var(--mint-darker, #2b8c7b);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
+  color: var(--text-dark, #2e3437);
+  font-size: 0.94rem;
+  font-weight: 600;
+  line-height: 1.55;
   margin: 0;
   max-width: 420px;
 }
 
 .ai-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+  width: 100%;
 }
 
 .ai-suggestion-chip {
   background: #ffffff;
-  border: 1.5px solid var(--mint, #5ecbb5);
-  border-radius: var(--radius-pill, 999px);
-  color: var(--mint-darker, #2b8c7b);
+  border: 1px solid rgba(94, 203, 181, 0.38);
+  border-radius: 12px;
+  color: var(--text-dark, #2e3437);
   cursor: pointer;
   font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  padding: 9px 16px;
-  transition: background 0.16s ease, color 0.16s ease;
+  font-size: 0.86rem;
+  font-weight: 800;
+  padding: 10px 12px;
+  text-align: left;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
 }
 
 .ai-suggestion-chip:hover {
-  background: var(--mint, #5ecbb5);
-  color: #ffffff;
+  background: var(--mint-bg, #ecfaf6);
+  border-color: var(--mint, #5ecbb5);
+  transform: translateY(-1px);
+}
+
+.ai-suggestion-chip:disabled {
+  cursor: wait;
+  opacity: 0.64;
+  transform: none;
 }
 
 .chat-box {
-  background: var(--mint-bg, #f4fbfa);
-  border-radius: var(--radius-card, 16px);
+  background: var(--mint-bg, #ecfaf6);
+  border: 1px solid rgba(94, 203, 181, 0.24);
+  border-radius: 18px;
   display: grid;
   gap: 12px;
-  max-height: 420px;
+  max-height: min(46vh, 430px);
   overflow-y: auto;
-  padding: 18px;
+  padding: 14px;
+  scrollbar-width: thin;
 }
 
 .chat-message {
+  display: grid;
+  gap: 5px;
   border-radius: 16px;
-  line-height: 1.45;
-  max-width: 82%;
-  padding: 11px 15px;
+  line-height: 1.48;
+  max-width: 86%;
+  padding: 11px 13px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 .chat-message.assistant {
   background: #ffffff;
-  border-radius: 4px 16px 16px 16px;
-  box-shadow: var(--shadow-sm, 0 2px 10px rgba(61, 174, 155, 0.06));
+  border: 1px solid rgba(94, 203, 181, 0.16);
+  border-radius: 6px 16px 16px 16px;
+  box-shadow: 0 8px 18px rgba(61, 174, 155, 0.08);
   color: var(--text-dark, #2e3437);
   justify-self: start;
 }
 
 .chat-message.user {
   background: var(--pink, #e85a9b);
-  border-radius: 16px 4px 16px 16px;
+  border-radius: 16px 6px 16px 16px;
+  box-shadow: 0 10px 20px rgba(232, 90, 155, 0.18);
   color: #ffffff;
   justify-self: end;
 }
 
+.message-role {
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  opacity: 0.76;
+  text-transform: uppercase;
+}
+
 .chat-message.typing {
   align-items: center;
-  display: flex;
+  display: inline-flex;
   gap: 5px;
   padding: 14px 16px;
 }
@@ -241,34 +334,57 @@ async function sendMessage() {
 
 .chat-form {
   display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.chat-input-label {
+  color: var(--text-gray, #6b7478);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chat-input-shell {
+  align-items: end;
+  background: #ffffff;
+  border: 1.5px solid rgba(94, 203, 181, 0.36);
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(61, 174, 155, 0.08);
+  display: grid;
   gap: 10px;
+  grid-template-columns: 1fr auto;
+  padding: 8px;
 }
 
 .chat-form textarea {
-  border: 1.5px solid var(--line, #c3e7e1);
-  border-radius: 14px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
   font: inherit;
-  min-height: 110px;
-  padding: 12px 14px;
-  resize: vertical;
+  max-height: 120px;
+  min-height: 52px;
+  padding: 10px 8px;
+  resize: none;
 }
 
 .chat-form textarea:focus {
-  border-color: var(--mint, #5ecbb5);
   outline: none;
 }
 
 .chat-send-btn {
-  background: var(--pink, #cc7da9);
+  background: var(--pink, #e85a9b);
   border: none;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(232, 90, 155, 0.2);
   color: #ffffff;
   cursor: pointer;
   font: inherit;
-  font-weight: 700;
-  justify-self: start;
-  min-height: 44px;
-  padding: 10px 22px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  min-height: 42px;
+  padding: 9px 16px;
   transition: background 0.16s ease, transform 0.16s ease;
 }
 
@@ -284,8 +400,9 @@ async function sendMessage() {
 
 .status-text.error {
   background: var(--pink-light, #fdeef5);
-  border-left: 3px solid var(--pink, #e85a9b);
-  border-radius: 10px;
+  border: 1px solid rgba(232, 90, 155, 0.22);
+  border-left: 4px solid var(--pink, #e85a9b);
+  border-radius: 12px;
   color: var(--pink-dark, #d44488);
   font-weight: 600;
   margin: 0;
@@ -293,8 +410,12 @@ async function sendMessage() {
 }
 
 @media (max-width: 640px) {
+  .ai-chat-panel {
+    min-height: 0;
+  }
+
   .chat-box {
-    max-height: 55vh;
+    max-height: 52vh;
     padding: 12px;
   }
 
@@ -303,11 +424,14 @@ async function sendMessage() {
   }
 
   .ai-empty-state {
-    padding: 22px 16px;
+    padding: 16px;
+  }
+
+  .chat-input-shell {
+    grid-template-columns: 1fr;
   }
 
   .chat-send-btn {
-    justify-self: stretch;
     width: 100%;
   }
 }

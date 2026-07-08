@@ -686,7 +686,8 @@
     "button": "Asystent AI",
     "title": "Asystent AI Dishly",
     "placeholder": "Asystent AI jest przygotowany; integracja backendu pojawi si? p??niej.",
-    "close": "Zamknij"
+    "close": "Zamknij",
+    "drawerTitle": "Asystent kuchenny"
   },
   "profile": {
     "eyebrow": "Profil",
