@@ -81,6 +81,7 @@
       "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
       "load": "Dein Vorrat konnte nicht geladen werden.",
       "nameRequired": "Bitte gib einen Namen für das Pantry Item ein.",
+      "quantityPositive": "Die Menge muss größer als 0 sein.",
       "validation": "Bitte prüfe deine Eingaben für das Pantry Item.",
       "create": "Das Pantry Item konnte nicht gespeichert werden.",
       "delete": "Das Pantry Item konnte nicht gelöscht werden.",
@@ -159,6 +160,7 @@
       "network": "Das Backend ist aktuell nicht erreichbar. Bitte versuche es erneut.",
       "load": "Deine Einkaufsliste konnte nicht geladen werden.",
       "nameRequired": "Bitte gib einen Namen für das Shopping List Item ein.",
+      "quantityPositive": "Die Menge muss größer als 0 sein.",
       "validation": "Bitte prüfe deine Eingaben für das Shopping List Item.",
       "create": "Das Shopping List Item konnte nicht gespeichert werden.",
       "delete": "Das Shopping List Item konnte nicht gelöscht werden.",
@@ -383,6 +385,7 @@
     },
     "filters": {
       "ariaLabel": "Rezeptfilter",
+      "title": "Filter",
       "vegan": "Vegan",
       "vegetarian": "Vegetarisch",
       "glutenFree": "Glutenfrei",
@@ -558,15 +561,18 @@
     "subtitle": "Plane deine eigenen Rezepte für die aktuelle Woche.",
     "loading": "Wochenplan wird geladen...",
     "plannedRecipe": "Geplantes Rezept",
-    "caloriesWithUnknown": "{knownSum} kcal + {count} Mahlzeiten ohne kcal-Angabe",
-    "caloriesWithUnknownOne": "{knownSum} kcal + {count} Mahlzeit ohne kcal-Angabe",
-    "caloriesUnknownOnly": "{count} Mahlzeiten ohne kcal-Angabe",
-    "caloriesUnknownOnlyOne": "{count} Mahlzeit ohne kcal-Angabe",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} ohne Angabe / {target} kcal",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} ohne Angabe / {target} kcal",
+    "caloriesUnknownOnly": "{count} ohne Angabe / {target} kcal",
+    "caloriesUnknownOnlyOne": "{count} ohne Angabe / {target} kcal",
     "unknownCaloriesHint": "Einige Mahlzeiten haben keine kcal-Angabe und sind nicht in der Summe enthalten.",
     "weekUnknownCaloriesHint": "{count} Mahlzeiten ohne kcal-Angabe sind nicht in der Summe enthalten.",
     "weekUnknownCaloriesHintOne": "{count} Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.",
     "week": {
       "current": "Aktuelle Woche"
+    },
+    "modal": {
+      "title": "Rezept für {slot}"
     },
     "form": {
       "recipe": "Rezept",
@@ -589,6 +595,7 @@
       "move": "Verschieben",
       "moveSave": "Verschiebung speichern",
       "cancel": "Abbrechen",
+      "close": "Schließen",
       "exportPdf": "Als PDF speichern"
     },
     "errors": {

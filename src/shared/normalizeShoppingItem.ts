@@ -110,6 +110,14 @@ export function normalizeShoppingListItemForEdit(item: {
   return { name: raw, quantity: null, unit: item.unit ?? '' }
 }
 
+/**
+ * Normalizes a name/unit for duplicate-merge comparison: trims, collapses internal
+ * whitespace, and lowercases so "Basmatireis" and " basmatireis  " are treated as equal.
+ */
+export function normalizeForMergeComparison(value: string | null | undefined): string {
+  return (value ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+}
+
 function parseRawQuantity(raw: string): number | null {
   const s = raw.trim().replace(',', '.')
   if (s.includes('/')) {

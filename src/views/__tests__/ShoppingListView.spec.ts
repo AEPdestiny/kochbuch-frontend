@@ -659,6 +659,90 @@ describe('ShoppingListView', () => {
     expect(wrapper.find('input[placeholder="Gemüse"]').exists()).toBe(false)
   })
 
+  it('merges a new item into an existing one with the same normalized name and unit, summing quantities', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Basmatireis', 2, 'Stück', '', false),
+    ])
+    vi.mocked(shoppingListApi.updateShoppingListItem).mockResolvedValue(
+      item('Basmatireis', 4, 'Stück', '', false),
+    )
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('Basmatireis')
+    await wrapper.find('input[placeholder="3"]').setValue(2)
+    await wrapper.find('form.shopping-list-form input[placeholder="Stück"]').setValue('Stück')
+    await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(shoppingListApi.updateShoppingListItem).toHaveBeenCalledWith('Basmatireis', {
+      name: 'Basmatireis',
+      quantity: 4,
+      unit: 'Stück',
+      category: '',
+      recipeId: undefined,
+      recipeTitle: undefined,
+      checked: false,
+    })
+    expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalled()
+    expect(wrapper.findAll('.shopping-item')).toHaveLength(1)
+    expect(wrapper.text()).toContain('4')
+  })
+
+  it('merges regardless of casing/whitespace differences in the name', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Basmatireis', 2, 'Stück', '', false),
+    ])
+    vi.mocked(shoppingListApi.updateShoppingListItem).mockResolvedValue(
+      item('Basmatireis', 4, 'Stück', '', false),
+    )
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('  basmatireis  ')
+    await wrapper.find('input[placeholder="3"]').setValue(2)
+    await wrapper.find('form.shopping-list-form input[placeholder="Stück"]').setValue('stück')
+    await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(shoppingListApi.updateShoppingListItem).toHaveBeenCalledWith('Basmatireis', expect.objectContaining({
+      quantity: 4,
+    }))
+    expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalled()
+  })
+
+  it('does not merge items with different units', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Basmatireis', 2, 'Stück', '', false),
+    ])
+    vi.mocked(shoppingListApi.createShoppingListItem).mockResolvedValue(
+      item('Basmatireis', 2, 'kg', '', false),
+    )
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('Basmatireis')
+    await wrapper.find('input[placeholder="3"]').setValue(2)
+    await wrapper.find('form.shopping-list-form input[placeholder="Stück"]').setValue('kg')
+    await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
+      name: 'Basmatireis',
+      quantity: 2,
+      unit: 'kg',
+      checked: false,
+    })
+    expect(shoppingListApi.updateShoppingListItem).not.toHaveBeenCalled()
+    expect(wrapper.findAll('.shopping-item')).toHaveLength(2)
+  })
+
   it('shows validation message when create returns 400', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
@@ -674,6 +758,38 @@ describe('ShoppingListView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('Bitte prüfe deine Eingaben für das Shopping List Item.')
+  })
+
+  it('rejects a quantity of 0 with a clear message and does not create an item', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('Tomaten')
+    await wrapper.find('input[placeholder="3"]').setValue(0)
+    await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Die Menge muss größer als 0 sein.')
+    expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalled()
+  })
+
+  it('rejects a negative quantity with a clear message and does not create an item', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Tomaten"]').setValue('Tomaten')
+    await wrapper.find('input[placeholder="3"]').setValue(-2)
+    await wrapper.find('form.shopping-list-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Die Menge muss größer als 0 sein.')
+    expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalled()
   })
   it('shows Gesamt-Einkaufsliste section with all items when list is not empty', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')

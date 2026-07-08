@@ -383,6 +383,94 @@ describe('PantryView', () => {
     expect(wrapper.text()).toContain('Bitte gib eine Menge an')
   })
 
+  it('rejects a quantity of 0 with a clear message and does not create an item', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Rice')
+    await wrapper.find('input[placeholder="2"]').setValue(0)
+    await wrapper.find('form.pantry-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Die Menge muss größer als 0 sein.')
+    expect(pantryApi.createPantryItem).not.toHaveBeenCalled()
+  })
+
+  it('rejects a negative quantity with a clear message and does not create an item', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Rice')
+    await wrapper.find('input[placeholder="2"]').setValue(-3)
+    await wrapper.find('form.pantry-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Die Menge muss größer als 0 sein.')
+    expect(pantryApi.createPantryItem).not.toHaveBeenCalled()
+  })
+
+  it('merges a new item into an existing one with the same normalized name and unit, summing quantities', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
+      item('Rundkornreis', 2, 'kg', ''),
+    ])
+    vi.mocked(pantryApi.updatePantryItem).mockResolvedValue(
+      item('Rundkornreis', 4, 'kg', ''),
+    )
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Rundkornreis')
+    await wrapper.find('input[placeholder="2"]').setValue(2)
+    await wrapper.find('form.pantry-form input[placeholder="kg"]').setValue('kg')
+    await wrapper.find('form.pantry-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(pantryApi.updatePantryItem).toHaveBeenCalledWith('Rundkornreis', {
+      name: 'Rundkornreis',
+      quantity: 4,
+      unit: 'kg',
+      category: '',
+    })
+    expect(pantryApi.createPantryItem).not.toHaveBeenCalled()
+    expect(wrapper.findAll('.pantry-item')).toHaveLength(1)
+    expect(wrapper.text()).toContain('4')
+  })
+
+  it('does not merge pantry items with different units', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([
+      item('Rundkornreis', 2, 'kg', ''),
+    ])
+    vi.mocked(pantryApi.createPantryItem).mockResolvedValue(
+      item('Rundkornreis', 2, 'g', ''),
+    )
+
+    const wrapper = mount(PantryView)
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="z.B. Reis"]').setValue('Rundkornreis')
+    await wrapper.find('input[placeholder="2"]').setValue(2)
+    await wrapper.find('form.pantry-form input[placeholder="kg"]').setValue('g')
+    await wrapper.find('form.pantry-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(pantryApi.createPantryItem).toHaveBeenCalledWith({
+      name: 'Rundkornreis',
+      quantity: 2,
+      unit: 'g',
+    })
+    expect(pantryApi.updatePantryItem).not.toHaveBeenCalled()
+    expect(wrapper.findAll('.pantry-item')).toHaveLength(2)
+  })
+
   it('does not show a native datalist and only suggests after typing', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(PantryView)

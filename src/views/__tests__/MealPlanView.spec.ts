@@ -1,4 +1,4 @@
-﻿import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
+﻿import { mount, flushPromises, enableAutoUnmount, DOMWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { config } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
@@ -53,6 +53,20 @@ config.global.stubs = {
     props: ['to'],
     template: '<a :href="typeof to === \'string\' ? to : to.path"><slot /></a>',
   },
+}
+
+// Slot editing/adding now happens in a shared modal instead of an always-visible
+// inline form — click the compact trigger (empty slot) or "Bearbeiten" (filled slot)
+// for the given slot-block within a day card to open it before interacting with it.
+async function openSlotModal(dayCard: DOMWrapper<Element>, slotIndex: number) {
+  const slotBlock = dayCard.findAll('.slot-block')[slotIndex]!
+  const emptyTrigger = slotBlock.find('.slot-empty-trigger')
+  if (emptyTrigger.exists()) {
+    await emptyTrigger.trigger('click')
+    return
+  }
+  const editButton = slotBlock.findAll('button').find(button => button.text().includes('Bearbeiten'))!
+  await editButton.trigger('click')
 }
 
 describe('MealPlanView', () => {
@@ -114,12 +128,17 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Mittagessen')
     expect(wrapper.text()).toContain('Abendessen')
     expect(wrapper.text()).toContain('Snack')
+
+    // The search form only appears once a slot's add/edit modal is opened.
+    const mondayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Montag'))!
+    await openSlotModal(mondayCard, 0)
     expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
+
     expect(wrapper.text()).toContain('Manuell planen')
     expect(wrapper.text()).toContain('Swipe planen')
     expect(wrapper.text()).not.toContain('Gesamt-Kalorien')
     expect(wrapper.text()).toContain('Pasta')
-    expect(wrapper.text()).toContain('600 / 2000 kcal')
+    expect(wrapper.text()).toContain('600 kcal / 2000 kcal')
   })
 
   it('shows "{sum} kcal + 1 Mahlzeit ohne kcal-Angabe" for one known + one unknown meal', async () => {
@@ -135,7 +154,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('600 kcal + 1 Mahlzeit ohne kcal-Angabe')
+    expect(wrapper.text()).toContain('600 kcal + 1 ohne Angabe / 2000 kcal')
     expect(wrapper.text()).toContain('Einige Mahlzeiten haben keine kcal-Angabe')
   })
 
@@ -153,7 +172,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('600 kcal + 2 Mahlzeiten ohne kcal-Angabe')
+    expect(wrapper.text()).toContain('600 kcal + 2 ohne Angabe / 2000 kcal')
   })
 
   it('shows "{n} Mahlzeit(en) ohne kcal-Angabe" without a misleading "0 kcal +" prefix when no meal has known calories', async () => {
@@ -169,7 +188,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('2 Mahlzeiten ohne kcal-Angabe')
+    expect(wrapper.text()).toContain('2 ohne Angabe / 2000 kcal')
     expect(wrapper.text()).not.toContain('0 kcal +')
   })
 
@@ -179,7 +198,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('0 / 2000 kcal')
+    expect(wrapper.text()).toContain('0 kcal / 2000 kcal')
     expect(wrapper.text()).not.toContain('ohne kcal-Angabe')
     expect(wrapper.text()).not.toContain('Einige Mahlzeiten haben keine kcal-Angabe')
   })
@@ -198,7 +217,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('400 kcal + 1 Mahlzeit ohne kcal-Angabe')
+    expect(wrapper.text()).toContain('400 kcal + 1 ohne Angabe / 2000 kcal')
   })
 
   it('week header shows an unknown-kcal hint when known kcal and 1 freetext meal without kcal exist', async () => {
@@ -214,7 +233,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Schnitt:')
+    expect(wrapper.text()).toContain('Schnitt pro Tag')
     expect(wrapper.text()).toContain('1 Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.')
   })
 
@@ -249,7 +268,7 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Schnitt:')
+    expect(wrapper.text()).toContain('Schnitt pro Tag')
     expect(wrapper.text()).not.toContain('ohne kcal-Angabe')
   })
 
@@ -267,8 +286,8 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('2 Mahlzeiten ohne kcal-Angabe sind nicht in der Summe enthalten.')
-    // Day cards still show their own correct per-day hint alongside the week header.
-    expect(wrapper.text()).toContain('1 Mahlzeit ohne kcal-Angabe')
+    // Day cards still show their own correct per-day summary alongside the week header.
+    expect(wrapper.text()).toContain('1 ohne Angabe / 2000 kcal')
   })
 
   it('switches between manual and swipe planning', async () => {
@@ -320,16 +339,20 @@ describe('MealPlanView', () => {
     expect(dinnerSlot.text()).toContain('Rezept ansehen')
     expect(dinnerSlot.text()).toContain('Bearbeiten')
     expect(dinnerSlot.find('input').exists()).toBe(false)
-    expect(dinnerSlot.text()).not.toContain('Verschiebung speichern')
+    expect(wrapper.find('.slot-modal').exists()).toBe(false)
 
     await dinnerSlot.findAll('button')
       .find(button => button.text().includes('Bearbeiten'))!
       .trigger('click')
 
-    expect(dinnerSlot.find('input').exists()).toBe(true)
-    expect(dinnerSlot.text()).toContain('Speichern')
-    expect(dinnerSlot.text()).toContain('Abbrechen')
-    expect(dinnerSlot.text()).toContain('Verschieben')
+    // Editing now happens in the shared modal, not inline inside the day card.
+    expect(dinnerSlot.find('input').exists()).toBe(false)
+    const modal = wrapper.find('.slot-modal')
+    expect(modal.exists()).toBe(true)
+    expect(modal.find('input').exists()).toBe(true)
+    expect(modal.text()).toContain('Speichern')
+    expect(modal.text()).toContain('Abbrechen')
+    expect(modal.text()).toContain('Verschieben')
   })
 
   it('links planned own recipe to the recipe detail page', async () => {
@@ -363,14 +386,16 @@ describe('MealPlanView', () => {
       .find(button => button.text().includes('Bearbeiten'))!
     await editButton.trigger('click')
 
-    const moveButton = mondayCard.findAll('button')
+    // Editing (including the move sub-form) now happens in the shared modal.
+    const modal = wrapper.find('.slot-modal')
+    const moveButton = modal.findAll('button')
       .find(button => button.text().includes('Verschieben'))!
     await moveButton.trigger('click')
 
-    const selects = mondayCard.findAll('.move-form select')
+    const selects = modal.findAll('.move-form select')
     await selects[0]!.setValue('2026-06-02')
     await selects[1]!.setValue('breakfast')
-    await mondayCard.find('.move-form').trigger('submit')
+    await modal.find('.move-form').trigger('submit')
     await flushPromises()
 
     expect(mealPlanApi.moveEntry).toHaveBeenCalledWith('2026-06-01', {
@@ -384,6 +409,60 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).toContain('Pasta')
   })
 
+  it('drags a planned meal onto an empty slot and moves it there', async () => {
+    vi.mocked(mealPlanApi.moveEntry).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [entry('2026-06-01', recipe(1, 'Pasta'), 'breakfast')],
+    })
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const mondayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Montag'))!
+    const slotBlocks = mondayCard.findAll('.slot-block')
+    const dinnerSlot = slotBlocks[2]! // breakfast, lunch, dinner, snack
+    const breakfastSlot = slotBlocks[0]!
+    const dragSource = dinnerSlot.find('.planned-recipe.compact')
+
+    const dataTransfer = { effectAllowed: '', dropEffect: '', setData: vi.fn() }
+    await dragSource.trigger('dragstart', { dataTransfer })
+    expect(dragSource.classes()).toContain('dragging')
+
+    await breakfastSlot.trigger('dragover', { dataTransfer })
+    expect(breakfastSlot.classes()).toContain('drop-target-active')
+
+    await breakfastSlot.trigger('drop', { dataTransfer })
+    await flushPromises()
+
+    expect(mealPlanApi.moveEntry).toHaveBeenCalledWith('2026-06-01', {
+      targetDate: '2026-06-01',
+      targetSlot: 'breakfast',
+      swapIfOccupied: true,
+    })
+    expect(useToastStore().toasts.some(t => t.type === 'success')).toBe(true)
+    expect(dragSource.classes()).not.toContain('dragging')
+  })
+
+  it('does not move anything when a planned meal is dropped back onto its own slot', async () => {
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const mondayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Montag'))!
+    const dinnerSlot = mondayCard.findAll('.slot-block')[2]!
+    const dragSource = dinnerSlot.find('.planned-recipe.compact')
+
+    const dataTransfer = { effectAllowed: '', dropEffect: '', setData: vi.fn() }
+    await dragSource.trigger('dragstart', { dataTransfer })
+    await dinnerSlot.trigger('drop', { dataTransfer })
+    await flushPromises()
+
+    expect(mealPlanApi.moveEntry).not.toHaveBeenCalled()
+  })
+
   it('sets an own recipe suggestion for a day', async () => {
     vi.useFakeTimers()
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue(entry('2026-06-02', recipe(2, 'Soup', { calories: 380, protein: 18 }), 'breakfast'))
@@ -394,16 +473,18 @@ describe('MealPlanView', () => {
 
     const tuesdayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Dienstag'))!
-    await tuesdayCard.find('input').setValue('sou')
+    await openSlotModal(tuesdayCard, 0)
+    const modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('sou')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
-    await tuesdayCard.find('.suggestion-list button').trigger('click')
-    await tuesdayCard.find('.primary-button').trigger('click')
+    await modal.find('.suggestion-list button').trigger('click')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', 2)
     expect(wrapper.text()).toContain('Soup')
-    expect(wrapper.text()).toContain('380 / 2000 kcal')
+    expect(wrapper.text()).toContain('380 kcal / 2000 kcal')
     vi.useRealTimers()
   })
 
@@ -422,8 +503,10 @@ describe('MealPlanView', () => {
 
     const tuesdayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Dienstag'))!
-    await tuesdayCard.find('input').setValue('Sushi frei')
-    await tuesdayCard.find('.primary-button').trigger('click')
+    await openSlotModal(tuesdayCard, 0)
+    const modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('Sushi frei')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
@@ -452,15 +535,17 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     const tuesdayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Dienstag'))!
+    await openSlotModal(tuesdayCard, 0)
+    const modal = wrapper.find('.slot-modal')
 
     // kcal input is visible for freetext (no recipe selected)
-    const caloriesInput = tuesdayCard.find('input[type="number"]')
+    const caloriesInput = modal.find('input[type="number"]')
     expect(caloriesInput.exists()).toBe(true)
     expect(caloriesInput.attributes('min')).toBe('0')
 
-    await tuesdayCard.find('input[type="text"]').setValue('Pasta')
+    await modal.find('input[type="text"]').setValue('Pasta')
     await caloriesInput.setValue(520)
-    await tuesdayCard.find('.primary-button').trigger('click')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', expect.objectContaining({
@@ -477,9 +562,11 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     const tuesdayCard = wrapper.findAll('.day-card').find(c => c.text().includes('Dienstag'))!
-    await tuesdayCard.find('input[type="text"]').setValue('Pizza')
+    await openSlotModal(tuesdayCard, 0)
+    const modal = wrapper.find('.slot-modal')
+    await modal.find('input[type="text"]').setValue('Pizza')
     // kcal field left empty — do NOT fill the number input
-    await tuesdayCard.find('.primary-button').trigger('click')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', expect.objectContaining({
@@ -503,11 +590,11 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     const tuesdayCard = wrapper.findAll('.day-card').find(c => c.text().includes('Dienstag'))!
-    // Click Bearbeiten to open edit form
+    // Click Bearbeiten to open the edit modal
     await tuesdayCard.find('.secondary-button').trigger('click')
     await flushPromises()
 
-    const caloriesInput = tuesdayCard.find('input[type="number"]')
+    const caloriesInput = wrapper.find('.slot-modal').find('input[type="number"]')
     expect(caloriesInput.exists()).toBe(true)
     expect((caloriesInput.element as HTMLInputElement).value).toBe('180')
   })
@@ -534,8 +621,9 @@ describe('MealPlanView', () => {
     await tuesdayCard.find('.secondary-button').trigger('click')
     await flushPromises()
 
-    await tuesdayCard.find('input[type="number"]').setValue('')
-    await tuesdayCard.find('.primary-button').trigger('click')
+    const modal = wrapper.find('.slot-modal')
+    await modal.find('input[type="number"]').setValue('')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', expect.objectContaining({
@@ -577,33 +665,34 @@ describe('MealPlanView', () => {
 
     let mondayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Montag'))!
-    let slotBlocks = mondayCard.findAll('.slot-block')
-    await slotBlocks[0]!.find('input').setValue('Fruehstueck frei')
-    await slotBlocks[0]!.find('.primary-button').trigger('click')
+    await openSlotModal(mondayCard, 0)
+    let modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('Fruehstueck frei')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     mondayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Montag'))!
-    slotBlocks = mondayCard.findAll('.slot-block')
-    await slotBlocks[1]!.find('input').setValue('Lunch frei')
-    await slotBlocks[1]!.find('.primary-button').trigger('click')
+    await openSlotModal(mondayCard, 1)
+    modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('Lunch frei')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     mondayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Montag'))!
-    slotBlocks = mondayCard.findAll('.slot-block')
-    await slotBlocks[2]!.findAll('button')
-      .find(button => button.text().includes('Bearbeiten'))!
-      .trigger('click')
-    await slotBlocks[2]!.find('input').setValue('Dinner frei')
-    await slotBlocks[2]!.find('.primary-button').trigger('click')
+    await openSlotModal(mondayCard, 2)
+    modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('Dinner frei')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     mondayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Montag'))!
-    slotBlocks = mondayCard.findAll('.slot-block')
-    await slotBlocks[3]!.find('input').setValue('Snack frei')
-    await slotBlocks[3]!.find('.primary-button').trigger('click')
+    await openSlotModal(mondayCard, 3)
+    modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('Snack frei')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-01', 'breakfast', {
@@ -659,18 +748,20 @@ describe('MealPlanView', () => {
 
     const tuesdayCard = wrapper.findAll('.day-card')
       .find(card => card.text().includes('Dienstag'))!
-    await tuesdayCard.find('input').setValue('sushi')
+    await openSlotModal(tuesdayCard, 0)
+    const modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('sushi')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
-    const localButton = tuesdayCard.findAll('.suggestion-list button')
+    const localButton = modal.findAll('.suggestion-list button')
       .find(button => button.text().includes('Dishly-Rezept'))!
     expect(localButton.text()).toContain('450 kcal')
     expect(localButton.text()).toContain('24 g Protein')
     await localButton.trigger('click')
 
     expect(wrapper.text()).not.toContain('Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert.')
-    expect((tuesdayCard.find('input').element as HTMLInputElement).value).toBe('Sushi Bowl')
+    expect((modal.find('input').element as HTMLInputElement).value).toBe('Sushi Bowl')
     vi.mocked(mealPlanApi.setSlot).mockResolvedValue({
       id: 9,
       plannedDate: '2026-06-02',
@@ -679,10 +770,10 @@ describe('MealPlanView', () => {
       customTitle: null,
       calories: 450,
     })
-    await tuesdayCard.find('.primary-button').trigger('click')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', 99)
-    expect(wrapper.text()).toContain('450 / 2000 kcal')
+    expect(wrapper.text()).toContain('450 kcal / 2000 kcal')
     expect(wrapper.findAll('.planned-link').some(link => link.attributes('href') === '/recipe/99')).toBe(true)
     vi.useRealTimers()
   })
@@ -699,13 +790,15 @@ describe('MealPlanView', () => {
     await flushPromises()
     vi.mocked(recipeApi.getPublishedRecipes).mockClear()
 
-    const input = wrapper.findAll('.day-card').at(1)!.find('input')
+    await openSlotModal(wrapper.findAll('.day-card').at(1)!, 0)
+    const modal = wrapper.find('.slot-modal')
+    const input = modal.find('input')
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
     await input.setValue('sush')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
-    const firstSuggestions = wrapper.findAll('.day-card').at(1)!.findAll('.suggestion-list button')
+    const firstSuggestions = modal.findAll('.suggestion-list button')
     expect(recipeApi.getPublishedRecipes).toHaveBeenCalledWith('de', 'sush')
     expect(firstSuggestions).toHaveLength(5)
     expect(firstSuggestions.map(button => button.text())).toEqual(expect.arrayContaining([
@@ -720,7 +813,7 @@ describe('MealPlanView', () => {
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
-    const secondSuggestions = wrapper.findAll('.day-card').at(1)!.findAll('.suggestion-list button')
+    const secondSuggestions = modal.findAll('.suggestion-list button')
     expect(secondSuggestions).toHaveLength(5)
     expect(secondSuggestions.map(button => button.text()).join(' ')).toContain('Sushi 6')
     expect(secondSuggestions.map(button => button.text())).not.toEqual(firstSuggestions.map(button => button.text()))
@@ -739,7 +832,8 @@ describe('MealPlanView', () => {
     await flushPromises()
     vi.mocked(recipeApi.getPublishedRecipes).mockClear()
 
-    const input = wrapper.findAll('.day-card').at(1)!.find('input')
+    await openSlotModal(wrapper.findAll('.day-card').at(1)!, 0)
+    const input = wrapper.find('.slot-modal').find('input')
     await input.setValue('pasta')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
@@ -756,14 +850,16 @@ describe('MealPlanView', () => {
     await flushPromises()
     vi.mocked(recipeApi.getPublishedRecipes).mockClear()
 
-    const input = wrapper.findAll('.day-card').at(1)!.find('input')
+    await openSlotModal(wrapper.findAll('.day-card').at(1)!, 0)
+    const modal = wrapper.find('.slot-modal')
+    const input = modal.find('input')
     await input.setValue('sush')
     await input.setValue('')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
     expect(recipeApi.getPublishedRecipes).not.toHaveBeenCalled()
-    expect(wrapper.findAll('.day-card').at(1)!.find('.suggestion-list').exists()).toBe(false)
+    expect(modal.find('.suggestion-list').exists()).toBe(false)
   })
 
   it('keeps free-text planning available when autocomplete loading fails', async () => {
@@ -785,12 +881,14 @@ describe('MealPlanView', () => {
     await flushPromises()
 
     const tuesdayCard = wrapper.findAll('.day-card').at(1)!
-    await tuesdayCard.find('input').setValue('Sushi frei')
+    await openSlotModal(tuesdayCard, 0)
+    const modal = wrapper.find('.slot-modal')
+    await modal.find('input').setValue('Sushi frei')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
-    expect(tuesdayCard.text()).toContain('Vorschläge konnten nicht geladen werden. Freitext bleibt möglich.')
-    await tuesdayCard.find('.primary-button').trigger('click')
+    expect(modal.text()).toContain('Vorschläge konnten nicht geladen werden. Freitext bleibt möglich.')
+    await modal.find('.primary-button').trigger('click')
     await flushPromises()
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith('2026-06-02', 'breakfast', {
       customTitle: 'Sushi frei',
@@ -1273,6 +1371,9 @@ describe('MealPlanView', () => {
 
     expect(wrapper.text()).toContain('Meal Plan')
     expect(wrapper.text()).toContain('Monday')
+
+    const mondayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Monday'))!
+    await openSlotModal(mondayCard, 0)
     expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
   })
 

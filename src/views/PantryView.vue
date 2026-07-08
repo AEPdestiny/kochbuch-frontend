@@ -11,6 +11,7 @@ import { printPantry } from '@/shared/printExport'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import { isRecognizedCategoryAlias, localizedUnitOptions, resolveIngredientSuggestions } from '@/shared/ingredientCategories'
+import { normalizeForMergeComparison } from '@/shared/normalizeShoppingItem'
 import SuggestInput from '@/components/SuggestInput.vue'
 import type { PantryItem, PantryItemRequest } from '@/types/pantry'
 import type { ExternalRecipeMatchResponse } from '@/types/recipe'
@@ -112,6 +113,10 @@ async function createPantryItem() {
     formError.value = 'Bitte gib eine Menge an, z. B. 500 g, 2 Stück oder 1 Packung.'
     return
   }
+  if (newQuantity.value <= 0) {
+    formError.value = t('pantry.errors.quantityPositive')
+    return
+  }
   formError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
@@ -120,13 +125,34 @@ async function createPantryItem() {
     return
   }
 
+  // Merge into an existing row with the same normalized name and unit instead of
+  // creating a visible duplicate — only when both quantities are numeric so we can add them.
+  const duplicate = items.value.find(
+    item =>
+      normalizeForMergeComparison(item.name) === normalizeForMergeComparison(newName.value) &&
+      normalizeForMergeComparison(item.unit) === normalizeForMergeComparison(newUnit.value),
+  )
+  const canMergeQuantities =
+    duplicate != null && typeof duplicate.quantity === 'number' && typeof newQuantity.value === 'number'
+
   try {
-    const created = await pantryApi.createPantryItem({
-      name: newName.value,
-      quantity: newQuantity.value,
-      unit: newUnit.value,
-    })
-    items.value.push(created)
+    if (duplicate && canMergeQuantities) {
+      const updated = await pantryApi.updatePantryItem(duplicate.id, {
+        name: duplicate.name,
+        quantity: duplicate.quantity! + newQuantity.value!,
+        unit: duplicate.unit,
+        category: duplicate.category,
+      })
+      const index = items.value.findIndex(item => item.id === duplicate.id)
+      if (index !== -1) items.value[index] = updated
+    } else {
+      const created = await pantryApi.createPantryItem({
+        name: newName.value,
+        quantity: newQuantity.value,
+        unit: newUnit.value,
+      })
+      items.value.push(created)
+    }
     newName.value = ''
     newQuantity.value = null
     newUnit.value = ''
@@ -536,14 +562,6 @@ function exportPantryAsPdf() {
           </button>
           <p v-if="recipeMatchError" class="form-error">{{ recipeMatchError }}</p>
         </div>
-
-        <div class="tool-card">
-          <h2>{{ t('print.pantryTitle') }}</h2>
-          <p>{{ t('pantry.actions.exportPdf') }}</p>
-          <button type="button" class="submit-btn" @click="exportPantryAsPdf">
-            {{ t('pantry.actions.exportPdf') }}
-          </button>
-        </div>
       </section>
 
       <section v-if="recipeMatches.length" class="recipe-matches">
@@ -588,6 +606,12 @@ function exportPantryAsPdf() {
       </form>
 
       <p v-if="formError" class="form-error">{{ formError }}</p>
+
+      <div class="pantry-actions-bar">
+        <button type="button" class="pdf-btn" @click="exportPantryAsPdf">
+          {{ t('pantry.actions.exportPdf') }}
+        </button>
+      </div>
 
       <p v-if="items.length === 0" class="status-text">
         {{ t('pantry.empty') }}
@@ -644,9 +668,9 @@ function exportPantryAsPdf() {
 <style scoped>
 .pantry-page {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto 48px auto;
-  padding: 36px 24px;
+  padding: 36px 40px;
   box-sizing: border-box;
 }
 
@@ -773,7 +797,7 @@ function exportPantryAsPdf() {
 
 .pantry-toolbox {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -784,6 +808,17 @@ function exportPantryAsPdf() {
   border-radius: var(--radius-card, 18px);
   box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   padding: 22px 24px;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Aligns the primary action button at the same height in both toolbox cards,
+   regardless of how much extra content (scanner, video, results) follows it. */
+.tool-card > .submit-btn {
+  margin-top: 12px;
 }
 
 .tool-card h2,
@@ -891,6 +926,31 @@ function exportPantryAsPdf() {
   margin-bottom: 4px;
 }
 
+.pantry-actions-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.pdf-btn {
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  background: #ffffff;
+  color: var(--mint-darker, #2b8c7b);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.pdf-btn:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
+}
+
 .pantry-list {
   list-style: none;
   padding: 0;
@@ -907,7 +967,7 @@ function exportPantryAsPdf() {
   background: #ffffff;
   border-radius: var(--radius-card, 18px);
   box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
-  padding: 20px 22px;
+  padding: 12px 22px;
   min-width: 0;
 }
 
@@ -1011,12 +1071,6 @@ function exportPantryAsPdf() {
   margin-bottom: 0;
 }
 
-@media (max-width: 1000px) {
-  .pantry-toolbox {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
 @media (max-width: 760px) {
   .pantry-page {
     padding: 22px 12px 32px;
@@ -1046,10 +1100,16 @@ function exportPantryAsPdf() {
     padding: 14px;
   }
 
-  .barcode-row,
   .recipe-match {
     grid-template-columns: 1fr;
-    flex-direction: column;
+  }
+
+  .barcode-row input {
+    flex-basis: 100%;
+  }
+
+  .barcode-row .submit-btn {
+    flex-basis: 100%;
   }
 
   .recipe-match img {

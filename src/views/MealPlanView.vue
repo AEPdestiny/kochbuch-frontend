@@ -63,9 +63,14 @@ const swipeLoading = ref(false)
 const swipeError = ref<string | null>(null)
 const swipeMessage = ref<string | null>(null)
 const activeBucket = ref<MealSlot | null>(null)
-const editingSlotKey = ref<string | null>(null)
+// The date/slot currently open in the add/edit modal (null when the modal is closed).
+const modalDate = ref<string | null>(null)
+const modalSlot = ref<MealSlot | null>(null)
 const moveEditorKey = ref<string | null>(null)
 const moveTargetBySlot = ref<Record<string, { date: string; slot: MealSlot }>>({})
+// Native HTML5 drag & drop state for moving/swapping a planned meal between slots.
+const dragSource = ref<{ date: string; slot: MealSlot } | null>(null)
+const dragOverSlotKey = ref<string | null>(null)
 const shoppingListLoading = ref(false)
 
 const dayKeys = [
@@ -94,6 +99,12 @@ const weekDays = computed<WeekDay[]>(() => {
   }))
 })
 
+// Day label shown under the modal title, e.g. "Montag" for the currently open slot.
+const modalDayLabel = computed(() => {
+  if (!modalDate.value) return ''
+  const day = weekDays.value.find(d => d.date === modalDate.value)
+  return day ? t(day.labelKey) : ''
+})
 const currentSwipeRecipe = computed(() => swipeSuggestions.value[swipeIndex.value] ?? null)
 const currentLanguage = computed(() => {
   const [language] = String(locale.value).split('-')
@@ -191,8 +202,9 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
       })
     upsertEntry(saved)
     syncSlotState(saved)
-    editingSlotKey.value = null
     moveEditorKey.value = null
+    modalDate.value = null
+    modalSlot.value = null
     suggestionsBySlot.value[key] = []
     suggestionNoticeBySlot.value[key] = ''
     toastStore.addToast(
@@ -217,8 +229,9 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
     customTitleBySlot.value[slotKey(date, slot)] = ''
     customSnapshotBySlot.value[slotKey(date, slot)] = {}
     customCaloriesBySlot.value[slotKey(date, slot)] = null
-    if (editingSlotKey.value === slotKey(date, slot)) {
-      editingSlotKey.value = null
+    if (modalDate.value === date && modalSlot.value === slot) {
+      modalDate.value = null
+      modalSlot.value = null
     }
     if (moveEditorKey.value === slotKey(date, slot)) {
       moveEditorKey.value = null
@@ -253,8 +266,9 @@ async function clearWeek() {
     customCaloriesBySlot.value = {}
     suggestionsBySlot.value = {}
     suggestionNoticeBySlot.value = {}
-    editingSlotKey.value = null
     moveEditorKey.value = null
+    modalDate.value = null
+    modalSlot.value = null
     await reloadWeek()
     toastStore.addToast(t('notifications.weekCleared'), 'info')
   } catch {
@@ -312,19 +326,22 @@ function toggleBucket(slot: MealSlot) {
   activeBucket.value = activeBucket.value === slot ? null : slot
 }
 
-function isEditingSlot(date: string, slot: MealSlot) {
-  return editingSlotKey.value === slotKey(date, slot)
-}
-
+// Opens the add/edit modal for a day+slot — used both for an existing entry
+// ("Bearbeiten") and an empty slot (the compact "Noch kein Rezept geplant." trigger).
 function startEditSlot(date: string, slot: MealSlot) {
   const entry = entryFor(date, slot)
-  if (!entry) {
-    return
-  }
   const key = slotKey(date, slot)
-  editingSlotKey.value = key
   moveEditorKey.value = null
-  syncSlotState(entry)
+  modalDate.value = date
+  modalSlot.value = slot
+  if (entry) {
+    syncSlotState(entry)
+  } else {
+    selectedRecipeBySlot.value[key] = ''
+    customTitleBySlot.value[key] = ''
+    customSnapshotBySlot.value[key] = {}
+    customCaloriesBySlot.value[key] = null
+  }
   suggestionsBySlot.value[key] = []
   suggestionNoticeBySlot.value[key] = ''
 }
@@ -342,8 +359,9 @@ function cancelEditSlot(date: string, slot: MealSlot) {
   }
   suggestionsBySlot.value[key] = []
   suggestionNoticeBySlot.value[key] = ''
-  editingSlotKey.value = null
   moveEditorKey.value = null
+  modalDate.value = null
+  modalSlot.value = null
 }
 
 function openMoveEditor(date: string, slot: MealSlot) {
@@ -394,7 +412,64 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
     week.value = updatedWeek
     syncSelectedRecipes(updatedWeek.entries)
     moveEditorKey.value = null
-    editingSlotKey.value = null
+    modalDate.value = null
+    modalSlot.value = null
+    toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
+  } catch {
+    await reloadWeek().catch(() => undefined)
+    actionError.value = t('mealPlan.errors.move')
+  }
+}
+
+// Native HTML5 drag & drop for planned meals — reuses the same moveEntry API call
+// as the manual "Verschieben" form, just driven by drag state instead of a dropdown.
+function onSlotDragStart(date: string, slot: MealSlot, event: DragEvent) {
+  dragSource.value = { date, slot }
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', slotKey(date, slot))
+  }
+}
+
+function onSlotDragEnd() {
+  dragSource.value = null
+  dragOverSlotKey.value = null
+}
+
+function onSlotDragOver(date: string, slot: MealSlot, event: DragEvent) {
+  if (!dragSource.value) return
+  event.preventDefault()
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move'
+  }
+  dragOverSlotKey.value = slotKey(date, slot)
+}
+
+function onSlotDragLeave(date: string, slot: MealSlot) {
+  if (dragOverSlotKey.value === slotKey(date, slot)) {
+    dragOverSlotKey.value = null
+  }
+}
+
+async function onSlotDrop(targetDate: string, targetSlot: MealSlot) {
+  const source = dragSource.value
+  dragOverSlotKey.value = null
+  dragSource.value = null
+  if (!source) return
+  if (source.date === targetDate && source.slot === targetSlot) return
+
+  const sourceEntry = entryFor(source.date, source.slot)
+  if (!sourceEntry) return
+
+  try {
+    actionError.value = null
+    const updatedWeek = await mealPlanApi.moveEntry(sourceEntry.id, {
+      targetDate,
+      targetSlot,
+      swapIfOccupied: true,
+    })
+    week.value = updatedWeek
+    syncSelectedRecipes(updatedWeek.entries)
     toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
   } catch {
     await reloadWeek().catch(() => undefined)
@@ -430,17 +505,18 @@ function caloriesSummaryForDay(date: string): { knownCalories: number; unknownCo
 
 function caloriesSummaryText(date: string): string {
   const { knownCalories, unknownCount } = caloriesSummaryForDay(date)
+  const target = dailyCalorieTarget.value
   if (unknownCount === 0) {
-    return `${caloriesForDay(date)} / ${dailyCalorieTarget.value} kcal`
+    return `${caloriesForDay(date)} kcal / ${target} kcal`
   }
   if (knownCalories > 0) {
     return unknownCount === 1
-      ? t('mealPlan.caloriesWithUnknownOne', { knownSum: knownCalories, count: unknownCount })
-      : t('mealPlan.caloriesWithUnknown', { knownSum: knownCalories, count: unknownCount })
+      ? t('mealPlan.caloriesWithUnknownOne', { knownSum: knownCalories, count: unknownCount, target })
+      : t('mealPlan.caloriesWithUnknown', { knownSum: knownCalories, count: unknownCount, target })
   }
   return unknownCount === 1
-    ? t('mealPlan.caloriesUnknownOnlyOne', { count: unknownCount })
-    : t('mealPlan.caloriesUnknownOnly', { count: unknownCount })
+    ? t('mealPlan.caloriesUnknownOnlyOne', { count: unknownCount, target })
+    : t('mealPlan.caloriesUnknownOnly', { count: unknownCount, target })
 }
 
 function syncSelectedRecipes(entries: MealPlanEntryResponse[]) {
@@ -902,32 +978,38 @@ function formatDate(date: Date) {
       </div>
 
       <div v-if="planningMode === 'manual'" class="week-summary full-width">
-        <div>
-          <strong>Woche manuell planen</strong>
-          <p>
-            Schnitt: {{ averageCaloriesPerDay }} / {{ dailyCalorieTarget }} kcal pro Tag
-            <span v-if="calorieDelta > 0">(+{{ calorieDelta }} kcal)</span>
-            <span v-else-if="calorieDelta < 0">({{ calorieDelta }} kcal)</span>
-          </p>
-          <p v-if="weekUnknownCaloriesCount > 0" class="hint calorie-unknown-hint">
-            {{ weekUnknownCaloriesCount === 1 ? t('mealPlan.weekUnknownCaloriesHintOne', { count: weekUnknownCaloriesCount }) : t('mealPlan.weekUnknownCaloriesHint', { count: weekUnknownCaloriesCount }) }}
-          </p>
-          <p>{{ weeklyRecommendation }}</p>
+        <div class="week-stats">
+          <div class="week-stat">
+            <span class="week-stat-label">Schnitt pro Tag</span>
+            <span class="week-stat-value">{{ averageCaloriesPerDay }} / {{ dailyCalorieTarget }} kcal</span>
+          </div>
+          <div class="week-stat">
+            <span class="week-stat-label">Differenz</span>
+            <span class="week-stat-value" :class="{ over: calorieDelta > 0, under: calorieDelta < 0 }">
+              {{ calorieDelta > 0 ? '+' : '' }}{{ calorieDelta }} kcal
+            </span>
+          </div>
+          <p class="week-hint">{{ weeklyRecommendation }}</p>
         </div>
-        <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
-          {{ t('mealPlan.actions.clearWeek') }}
-        </button>
-        <button type="button" class="secondary-button" @click="exportMealPlanAsPdf">
-          {{ t('mealPlan.actions.exportPdf') }}
-        </button>
-        <button
-          type="button"
-          class="secondary-button"
-          :disabled="shoppingListLoading || !week?.entries.length"
-          @click="createShoppingListFromWeek"
-        >
-          {{ shoppingListLoading ? t('mealPlan.shoppingList.loading') : t('mealPlan.shoppingList.action') }}
-        </button>
+        <p v-if="weekUnknownCaloriesCount > 0" class="hint calorie-unknown-hint">
+          {{ weekUnknownCaloriesCount === 1 ? t('mealPlan.weekUnknownCaloriesHintOne', { count: weekUnknownCaloriesCount }) : t('mealPlan.weekUnknownCaloriesHint', { count: weekUnknownCaloriesCount }) }}
+        </p>
+        <div class="week-actions">
+          <button type="button" class="clear-week-button" :disabled="!week?.entries.length" @click="clearWeek">
+            {{ t('mealPlan.actions.clearWeek') }}
+          </button>
+          <button type="button" class="secondary-button" @click="exportMealPlanAsPdf">
+            {{ t('mealPlan.actions.exportPdf') }}
+          </button>
+          <button
+            type="button"
+            class="secondary-button"
+            :disabled="shoppingListLoading || !week?.entries.length"
+            @click="createShoppingListFromWeek"
+          >
+            {{ shoppingListLoading ? t('mealPlan.shoppingList.loading') : t('mealPlan.shoppingList.action') }}
+          </button>
+        </div>
       </div>
 
 
@@ -1040,13 +1122,12 @@ function formatDate(date: Date) {
       </section>
 
       <template v-if="planningMode === 'manual'">
+      <div class="week-days-row full-width">
       <article v-for="day in weekDays" :key="day.date" class="day-card">
         <div class="day-card-header">
-          <div>
-            <h2>{{ t(day.labelKey) }}</h2>
-            <span>{{ caloriesSummaryText(day.date) }}</span>
-          </div>
-          <span>{{ day.date }}</span>
+          <h2>{{ t(day.labelKey) }}</h2>
+          <span class="day-card-date">{{ day.date }}</span>
+          <span class="day-card-kcal">{{ caloriesSummaryText(day.date) }}</span>
         </div>
         <div class="calorie-meter" :class="caloriesStatusClass(day.date)">
           <span :style="{ width: `${calorieProgress(day.date)}%` }"></span>
@@ -1055,10 +1136,25 @@ function formatDate(date: Date) {
           {{ t('mealPlan.unknownCaloriesHint') }}
         </p>
 
-        <div v-for="slot in mealSlots" :key="slot.key" class="slot-block">
+        <div
+          v-for="slot in mealSlots"
+          :key="slot.key"
+          class="slot-block"
+          :class="{ 'drop-target-active': dragOverSlotKey === slotKey(day.date, slot.key) }"
+          @dragover="onSlotDragOver(day.date, slot.key, $event)"
+          @dragleave="onSlotDragLeave(day.date, slot.key)"
+          @drop.prevent="onSlotDrop(day.date, slot.key)"
+        >
           <h3>{{ t(slot.labelKey) }}</h3>
 
-          <div v-if="entryFor(day.date, slot.key) && !isEditingSlot(day.date, slot.key)" class="planned-recipe compact">
+          <div
+            v-if="entryFor(day.date, slot.key)"
+            class="planned-recipe compact"
+            draggable="true"
+            :class="{ dragging: dragSource && dragSource.date === day.date && dragSource.slot === slot.key }"
+            @dragstart="onSlotDragStart(day.date, slot.key, $event)"
+            @dragend="onSlotDragEnd"
+          >
             <span class="planned-label">{{ t('mealPlan.plannedRecipe') }}</span>
             <strong>{{ entryTitle(entryFor(day.date, slot.key)!) }}</strong>
             <div class="planned-meta">
@@ -1087,17 +1183,52 @@ function formatDate(date: Date) {
             </div>
           </div>
 
-          <template v-else>
-            <p v-if="!entryFor(day.date, slot.key)" class="empty-day">{{ t('mealPlan.empty.day') }}</p>
-            <div v-else class="planned-recipe edit-summary">
+          <button
+            v-else
+            type="button"
+            class="slot-empty-trigger"
+            @click="startEditSlot(day.date, slot.key)"
+          >
+            <span class="empty-day">{{ t('mealPlan.empty.day') }}</span>
+            <span class="slot-add-hint">{{ t('mealPlan.form.chooseRecipe') }}</span>
+          </button>
+        </div>
+      </article>
+      </div>
+
+      <Transition name="slot-modal">
+        <div
+          v-if="modalDate && modalSlot"
+          class="slot-modal-overlay"
+          @click.self="cancelEditSlot(modalDate!, modalSlot!)"
+        >
+          <div class="slot-modal">
+            <div class="slot-modal-header">
+              <div>
+                <h2 class="slot-modal-title">
+                  {{ t('mealPlan.modal.title', { slot: t(mealSlots.find(s => s.key === modalSlot)!.labelKey) }) }}
+                </h2>
+                <p class="slot-modal-subtitle">{{ modalDayLabel }} · {{ modalDate }}</p>
+              </div>
+              <button
+                type="button"
+                class="slot-modal-close"
+                :aria-label="t('mealPlan.actions.close')"
+                @click="cancelEditSlot(modalDate!, modalSlot!)"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div v-if="entryFor(modalDate!, modalSlot!)" class="planned-recipe edit-summary">
               <span class="planned-label">Bearbeitung</span>
-              <strong>{{ entryTitle(entryFor(day.date, slot.key)!) }}</strong>
+              <strong>{{ entryTitle(entryFor(modalDate!, modalSlot!)!) }}</strong>
               <div class="planned-meta">
-                <span v-if="entryCalories(entryFor(day.date, slot.key))">
-                  {{ entryCalories(entryFor(day.date, slot.key)) }} kcal
+                <span v-if="entryCalories(entryFor(modalDate!, modalSlot!))">
+                  {{ entryCalories(entryFor(modalDate!, modalSlot!)) }} kcal
                 </span>
-                <span v-if="entryProtein(entryFor(day.date, slot.key))">
-                  {{ formatProtein(entryProtein(entryFor(day.date, slot.key))) }}
+                <span v-if="entryProtein(entryFor(modalDate!, modalSlot!))">
+                  {{ formatProtein(entryProtein(entryFor(modalDate!, modalSlot!))) }}
                 </span>
               </div>
             </div>
@@ -1105,85 +1236,87 @@ function formatDate(date: Date) {
             <label class="recipe-select">
               <span>Rezept suchen oder Freitext eingeben</span>
               <input
-                v-model="customTitleBySlot[slotKey(day.date, slot.key)]"
+                v-model="customTitleBySlot[slotKey(modalDate!, modalSlot!)]"
                 type="text"
                 placeholder="z. B. Sushi"
-                @input="onSlotSearch(day.date, slot.key)"
+                @input="onSlotSearch(modalDate!, modalSlot!)"
               />
             </label>
             <label
-              v-if="!selectedRecipeBySlot[slotKey(day.date, slot.key)]"
+              v-if="!selectedRecipeBySlot[slotKey(modalDate!, modalSlot!)]"
               class="recipe-select slot-calories-input"
             >
               <span>{{ t('mealPlan.form.calories') }}</span>
               <input
-                v-model.number="customCaloriesBySlot[slotKey(day.date, slot.key)]"
+                v-model.number="customCaloriesBySlot[slotKey(modalDate!, modalSlot!)]"
                 type="number"
                 min="0"
                 :placeholder="t('mealPlan.form.caloriesPlaceholder')"
               />
             </label>
-            <p v-if="suggestionLoadingBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
+            <p v-if="suggestionLoadingBySlot[slotKey(modalDate!, modalSlot!)]" class="suggestion-state">
               Vorschläge werden geladen...
             </p>
-            <ul v-if="suggestionsBySlot[slotKey(day.date, slot.key)]?.length" class="suggestion-list">
+            <ul v-if="suggestionsBySlot[slotKey(modalDate!, modalSlot!)]?.length" class="suggestion-list">
               <li
-                v-for="suggestion in suggestionsBySlot[slotKey(day.date, slot.key)]"
+                v-for="suggestion in suggestionsBySlot[slotKey(modalDate!, modalSlot!)]"
                 :key="`${suggestion.source}-${suggestion.id}`"
               >
-                <button type="button" @click="chooseSuggestion(day.date, slot.key, suggestion)">
-                  <span>{{ suggestion.title }}</span>
-                  <small>{{ suggestion.planAsRecipe ? 'Dishly-Rezept' : 'Freitext-Vorschlag' }}</small>
-                  <small v-if="suggestion.calories || suggestion.protein">
-                    <span v-if="suggestion.calories">{{ suggestion.calories }} kcal</span>
-                    <span v-if="suggestion.calories && suggestion.protein"> · </span>
-                    <span v-if="suggestion.protein">{{ Math.round(suggestion.protein) }} g Protein</span>
-                  </small>
+                <button type="button" @click="chooseSuggestion(modalDate!, modalSlot!, suggestion)">
+                  <img v-if="suggestion.imageUrl" :src="suggestion.imageUrl" :alt="suggestion.title" class="suggestion-thumb" />
+                  <span class="suggestion-info">
+                    <span>{{ suggestion.title }}</span>
+                    <small>{{ suggestion.planAsRecipe ? 'Dishly-Rezept' : 'Freitext-Vorschlag' }}</small>
+                    <small v-if="suggestion.calories || suggestion.protein">
+                      <span v-if="suggestion.calories">{{ suggestion.calories }} kcal</span>
+                      <span v-if="suggestion.calories && suggestion.protein"> · </span>
+                      <span v-if="suggestion.protein">{{ Math.round(suggestion.protein) }} g Protein</span>
+                    </small>
+                  </span>
                 </button>
               </li>
             </ul>
-            <p v-if="suggestionNoticeBySlot[slotKey(day.date, slot.key)]" class="suggestion-state">
-              {{ suggestionNoticeBySlot[slotKey(day.date, slot.key)] }}
+            <p v-if="suggestionNoticeBySlot[slotKey(modalDate!, modalSlot!)]" class="suggestion-state">
+              {{ suggestionNoticeBySlot[slotKey(modalDate!, modalSlot!)] }}
             </p>
 
             <div class="actions">
-              <button type="button" class="primary-button" @click="saveDay(day.date, slot.key)">
-                {{ entryFor(day.date, slot.key) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
+              <button type="button" class="primary-button" @click="saveDay(modalDate!, modalSlot!)">
+                {{ entryFor(modalDate!, modalSlot!) ? t('mealPlan.actions.save') : t('mealPlan.actions.add') }}
               </button>
               <button
-                v-if="entryFor(day.date, slot.key)"
                 type="button"
                 class="secondary-button"
-                @click="cancelEditSlot(day.date, slot.key)"
+                @click="cancelEditSlot(modalDate!, modalSlot!)"
               >
                 {{ t('mealPlan.actions.cancel') }}
               </button>
               <button
-                v-if="entryFor(day.date, slot.key)"
+                v-if="entryFor(modalDate!, modalSlot!)"
                 type="button"
                 class="secondary-button"
-                @click="openMoveEditor(day.date, slot.key)"
+                @click="openMoveEditor(modalDate!, modalSlot!)"
               >
                 {{ t('mealPlan.actions.move') }}
               </button>
               <button
-                v-if="entryFor(day.date, slot.key)"
+                v-if="entryFor(modalDate!, modalSlot!)"
                 type="button"
                 class="secondary-button"
-                @click="removeDay(day.date, slot.key)"
+                @click="removeDay(modalDate!, modalSlot!)"
               >
                 {{ t('mealPlan.actions.remove') }}
               </button>
             </div>
 
             <form
-              v-if="moveEditorKey === slotKey(day.date, slot.key)"
+              v-if="moveEditorKey === slotKey(modalDate!, modalSlot!)"
               class="move-form"
-              @submit.prevent="moveEntry(day.date, slot.key)"
+              @submit.prevent="moveEntry(modalDate!, modalSlot!)"
             >
               <label>
                 <span>{{ t('mealPlan.form.targetDay') }}</span>
-                <select v-model="moveTargetFor(day.date, slot.key).date">
+                <select v-model="moveTargetFor(modalDate!, modalSlot!).date">
                   <option v-for="targetDay in weekDays" :key="targetDay.date" :value="targetDay.date">
                     {{ t(targetDay.labelKey) }} · {{ targetDay.date }}
                   </option>
@@ -1191,14 +1324,14 @@ function formatDate(date: Date) {
               </label>
               <label>
                 <span>{{ t('mealPlan.form.targetSlot') }}</span>
-                <select v-model="moveTargetFor(day.date, slot.key).slot">
+                <select v-model="moveTargetFor(modalDate!, modalSlot!).slot">
                   <option v-for="targetSlot in mealSlots" :key="targetSlot.key" :value="targetSlot.key">
                     {{ t(targetSlot.labelKey) }}
                   </option>
                 </select>
               </label>
               <p
-                v-if="isMoveTargetOccupied(day.date, slot.key)"
+                v-if="isMoveTargetOccupied(modalDate!, modalSlot!)"
                 class="suggestion-state"
               >
                 Der Zielslot ist belegt. Beim Verschieben werden beide Einträge getauscht.
@@ -1208,9 +1341,9 @@ function formatDate(date: Date) {
                 <button type="button" class="secondary-button" @click="cancelMove">{{ t('mealPlan.actions.cancel') }}</button>
               </div>
             </form>
-          </template>
+          </div>
         </div>
-      </article>
+      </Transition>
       </template>
     </section>
   </section>
@@ -1253,9 +1386,19 @@ function formatDate(date: Date) {
 }
 
 .week-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 20px;
+}
+
+/* Keeps the seven day cards in a single horizontal row at all viewport widths,
+   scrolling instead of wrapping when there isn't enough space. */
+.week-days-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .mode-switch {
@@ -1292,29 +1435,35 @@ function formatDate(date: Date) {
   background: #ffffff;
   border-radius: var(--radius-card, 18px);
   box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-width: 0;
+  gap: 10px;
+  width: 220px;
+  flex-shrink: 0;
 }
 
 .day-card-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .day-card-header h2 {
   color: var(--text-dark, #2e3437);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   margin: 0;
 }
 
-.day-card-header span {
+.day-card-date {
+  color: var(--text-light, #9aa2a5);
+  font-size: 0.78rem;
+}
+
+.day-card-kcal {
   color: var(--text-gray, #6b7478);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
+  margin-top: 4px;
 }
 
 .calorie-meter {
@@ -1344,24 +1493,28 @@ function formatDate(date: Date) {
 
 .slot-block {
   border-top: 1px solid var(--line, #e6ecea);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 14px;
+  gap: 6px;
+  padding-top: 10px;
+  transition: background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+/* Drop target highlight while dragging a planned meal over this slot. */
+.slot-block.drop-target-active {
+  background: var(--mint-bg, #ecfaf6);
+  outline: 2px dashed var(--mint, #5ecbb5);
+  outline-offset: -2px;
 }
 
 .slot-block h3 {
   color: var(--pink, #e85a9b);
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin: 0;
-}
-
-.planned-recipe,
-.empty-day {
-  min-height: 48px;
 }
 
 .planned-recipe {
@@ -1371,12 +1524,56 @@ function formatDate(date: Date) {
   overflow-wrap: anywhere;
 }
 
+.planned-recipe.compact {
+  cursor: grab;
+  transition: opacity 0.16s ease;
+}
+
+.planned-recipe.compact.dragging {
+  opacity: 0.5;
+}
+
 .planned-actions,
 .move-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 6px;
+}
+
+/* Compact, click-to-plan trigger replacing the always-visible inline form for
+   an empty slot — opens the add/search modal instead. */
+.slot-empty-trigger {
+  align-items: flex-start;
+  background: var(--mint-bg, #ecfaf6);
+  border: 1.5px dashed var(--line, #e6ecea);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  gap: 2px;
+  padding: 8px 10px;
+  text-align: left;
+  transition: border-color 0.16s ease, background 0.16s ease;
+  width: 100%;
+}
+
+.slot-empty-trigger:hover {
+  background: var(--mint, #5ecbb5);
+  border-color: var(--mint, #5ecbb5);
+}
+
+.slot-empty-trigger:hover .empty-day,
+.slot-empty-trigger:hover .slot-add-hint {
+  color: #ffffff;
+}
+
+.slot-empty-trigger .slot-add-hint {
+  color: var(--mint-darker, #2b8c7b);
+  font-size: 0.8rem;
+  font-weight: 700;
+  transition: color 0.16s ease;
 }
 
 .planned-meta {
@@ -1470,16 +1667,16 @@ function formatDate(date: Date) {
 }
 
 .suggestion-list button {
+  align-items: center;
   background: var(--mint-bg, #ecfaf6);
   border: none;
   border-radius: 10px;
   color: var(--text-dark, #2e3437);
   cursor: pointer;
   display: flex;
-  flex-direction: column;
   font: inherit;
-  gap: 2px;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 6px 10px;
   text-align: left;
   width: 100%;
   overflow-wrap: anywhere;
@@ -1489,6 +1686,21 @@ function formatDate(date: Date) {
 .suggestion-list button:hover {
   background: var(--mint, #5ecbb5);
   color: #ffffff;
+}
+
+.suggestion-thumb {
+  border-radius: 8px;
+  flex-shrink: 0;
+  height: 36px;
+  object-fit: cover;
+  width: 36px;
+}
+
+.suggestion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .suggestion-list small,
@@ -1503,6 +1715,73 @@ function formatDate(date: Date) {
   gap: 8px;
   flex-wrap: wrap;
   margin-top: auto;
+}
+
+/* Add/edit slot modal — opened by the compact slot trigger, replaces the old
+   always-visible inline form so day cards stay short. */
+.slot-modal-overlay {
+  align-items: center;
+  background: rgba(46, 52, 55, 0.4);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.slot-modal {
+  background: #ffffff;
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-pop, 0 16px 48px rgba(46, 52, 55, 0.16));
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 26px;
+  width: min(440px, 100%);
+}
+
+.slot-modal-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.slot-modal-title {
+  color: var(--pink-dark, #d44488);
+  font-size: 1.25rem;
+  margin: 0 0 4px;
+}
+
+.slot-modal-subtitle {
+  color: var(--text-gray, #6b7478);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.slot-modal-close {
+  background: var(--mint-bg, #ecfaf6);
+  border: none;
+  border-radius: 50%;
+  color: var(--mint-darker, #2b8c7b);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 1rem;
+  height: 32px;
+  width: 32px;
+}
+
+.slot-modal-enter-active,
+.slot-modal-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.slot-modal-enter-from,
+.slot-modal-leave-to {
+  opacity: 0;
 }
 
 .week-summary {
@@ -1521,6 +1800,57 @@ function formatDate(date: Date) {
 .week-summary p {
   color: var(--text-gray, #6b7478);
   margin: 4px 0 0;
+}
+
+.week-stats {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.week-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.week-stat-label {
+  color: var(--text-light, #9aa2a5);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.week-stat-value {
+  color: var(--text-dark, #2e3437);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.week-stat-value.over {
+  color: var(--pink, #e85a9b);
+}
+
+.week-stat-value.under {
+  color: var(--mint-darker, #2b8c7b);
+}
+
+.week-summary p.week-hint {
+  background: var(--mint-bg, #ecfaf6);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--mint-darker, #2b8c7b);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 8px 16px;
+}
+
+.week-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .swipe-planner {
@@ -1764,9 +2094,12 @@ function formatDate(date: Date) {
     grid-template-columns: 1fr;
   }
 
-  .day-card-header {
-    align-items: flex-start;
-    flex-direction: column;
+  .slot-modal-overlay {
+    padding: 12px;
+  }
+
+  .slot-modal {
+    padding: 20px;
   }
 
   .week-summary {

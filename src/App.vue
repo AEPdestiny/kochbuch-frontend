@@ -9,6 +9,7 @@ import router from '@/router'
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 import AppToast from '@/components/AppToast.vue'
+import dishlyLogo from '@/assets/dishly-logo.png'
 
 const authStore = useAuthStore()
 const toastStore = useToastStore()
@@ -43,7 +44,7 @@ async function logout() {
       <div class="header-row">
         <!-- Klickbares Logo führt immer zur Home-Seite -->
         <RouterLink to="/" class="logo-link">
-          <span class="logo-text">Dishly</span>
+          <img :src="dishlyLogo" alt="Dishly logo" class="logo" />
         </RouterLink>
 
         <!-- Box mit Slogan in der Mitte -->
@@ -183,13 +184,12 @@ async function logout() {
   text-decoration: none;
 }
 
-/* Handschrift-Logo im Dishly-Pink */
-.logo-text {
-  font-family: 'Pacifico', cursive;
-  font-size: 2.1rem;
-  color: var(--pink, #e85a9b);
-  line-height: 1;
-  user-select: none;
+/* Wiederhergestelltes Bild-Logo, groß genug um sichtbar zu sein, aber weiterhin
+   header-sicher über die responsiven Breakpoints unten skaliert. */
+.logo {
+  height: 70px;
+  width: auto;
+  display: block;
 }
 
 .tagline-box {
@@ -450,8 +450,8 @@ async function logout() {
     gap: 14px;
   }
 
-  .logo-text {
-    font-size: 1.7rem;
+  .logo {
+    height: 56px;
   }
 
   .tagline-box {
@@ -470,8 +470,8 @@ async function logout() {
     padding: 8px 12px 10px;
   }
 
-  .logo-text {
-    font-size: 1.5rem;
+  .logo {
+    height: 44px;
   }
 
   .header-row {

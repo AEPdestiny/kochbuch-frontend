@@ -4,7 +4,11 @@ import { useI18n } from 'vue-i18n'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { printShoppingList } from '@/shared/printExport'
-import { normalizeShoppingListItemDisplay, normalizeShoppingListItemForEdit } from '@/shared/normalizeShoppingItem'
+import {
+  normalizeForMergeComparison,
+  normalizeShoppingListItemDisplay,
+  normalizeShoppingListItemForEdit,
+} from '@/shared/normalizeShoppingItem'
 import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import { isRecognizedCategoryAlias, localizedUnitOptions, resolveIngredientSuggestions } from '@/shared/ingredientCategories'
@@ -100,6 +104,10 @@ async function createShoppingListItem() {
     formError.value = t('shoppingList.errors.nameRequired')
     return
   }
+  if (newQuantity.value !== null && newQuantity.value <= 0) {
+    formError.value = t('shoppingList.errors.quantityPositive')
+    return
+  }
   formError.value = null
 
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
@@ -108,14 +116,38 @@ async function createShoppingListItem() {
     return
   }
 
+  // Merge into an existing row with the same normalized name and unit instead of
+  // creating a visible duplicate — only when both quantities are numeric so we can add them.
+  const duplicate = items.value.find(
+    item =>
+      normalizeForMergeComparison(item.name) === normalizeForMergeComparison(newName.value) &&
+      normalizeForMergeComparison(item.unit) === normalizeForMergeComparison(newUnit.value),
+  )
+  const canMergeQuantities =
+    duplicate != null && typeof duplicate.quantity === 'number' && typeof newQuantity.value === 'number'
+
   try {
-    const created = await shoppingListApi.createShoppingListItem({
-      name: newName.value,
-      quantity: newQuantity.value,
-      unit: newUnit.value,
-      checked: newChecked.value,
-    })
-    items.value.push(created)
+    if (duplicate && canMergeQuantities) {
+      const updated = await shoppingListApi.updateShoppingListItem(duplicate.id, {
+        name: duplicate.name,
+        quantity: duplicate.quantity! + newQuantity.value!,
+        unit: duplicate.unit,
+        category: duplicate.category,
+        recipeId: duplicate.recipeId,
+        recipeTitle: duplicate.recipeTitle,
+        checked: duplicate.checked,
+      })
+      const index = items.value.findIndex(item => item.id === duplicate.id)
+      if (index !== -1) items.value[index] = updated
+    } else {
+      const created = await shoppingListApi.createShoppingListItem({
+        name: newName.value,
+        quantity: newQuantity.value,
+        unit: newUnit.value,
+        checked: newChecked.value,
+      })
+      items.value.push(created)
+    }
     newName.value = ''
     newQuantity.value = null
     newUnit.value = ''
@@ -549,9 +581,9 @@ function exportShoppingListAsPdf() {
 <style scoped>
 .shopping-list-page {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1440px;
   margin: 0 auto 48px auto;
-  padding: 36px 24px;
+  padding: 36px 40px;
   box-sizing: border-box;
 }
 

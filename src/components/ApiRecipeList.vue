@@ -57,6 +57,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const searchNotice = ref<string | null>(null)
 const mealPlanModalOpen = ref(false)
+const filterDrawerOpen = ref(false)
 const mealPlanTarget = ref<DisplayRecipe | null>(null)
 const mealPlanLoading = ref(false)
 const mealPlanError = ref<string | null>(null)
@@ -985,60 +986,90 @@ function formatDate(date: Date) {
       <p class="hero-desc">
         {{ t('home.description') }}
       </p>
-      <input
-        v-model="search"
-        class="search-input"
-        type="search"
-        :placeholder="t('home.searchPlaceholder')"
-        :aria-label="t('home.searchAria')"
-      />
-      <div class="filter-panel" :aria-label="t('home.filters.ariaLabel')">
-        <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('home.filters.vegan') }}</label>
-        <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('home.filters.vegetarian') }}</label>
-        <label><input v-model="glutenFree" type="checkbox" /> {{ t('home.filters.glutenFree') }}</label>
-        <label><input v-model="lactoseFree" type="checkbox" /> {{ t('home.filters.lactoseFree') }}</label>
-        <label><input v-model="calorieConscious" type="checkbox" /> {{ t('home.filters.calorieConscious') }}</label>
-        <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
+      <div class="search-row">
+        <input
+          v-model="search"
+          class="search-input"
+          type="search"
+          :placeholder="t('home.searchPlaceholder')"
+          :aria-label="t('home.searchAria')"
+        />
         <button
-          v-if="isLoggedIn"
           type="button"
-          class="plain-filter-button"
-          :aria-pressed="!profilePersonalizationEnabled"
-          @click="toggleProfilePersonalization"
+          class="filter-trigger"
+          :aria-label="t('home.filters.ariaLabel')"
+          @click="filterDrawerOpen = true"
         >
-          {{ personalizationButtonText }}
+          <span class="filter-trigger-icon" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          {{ t('home.filters.title') }}
         </button>
-        <label>
-          {{ t('home.filters.maxPrepTime') }}
-          <input v-model.number="maxPrepTime" class="small-input" min="1" type="number" />
-        </label>
-        <label>
-          {{ t('home.filters.maxCalories') }}
-          <input v-model.number="maxCalories" class="small-input" min="1" type="number" />
-        </label>
-        <label>
-          {{ t('home.filters.mealType') }}
-          <select v-model="mealType" class="small-input">
-            <option value="">{{ t('home.filters.anyMealType') }}</option>
-            <option value="breakfast">{{ t('home.filters.breakfast') }}</option>
-            <option value="lunch">{{ t('home.filters.lunch') }}</option>
-            <option value="dinner">{{ t('home.filters.dinner') }}</option>
-            <option value="snack">{{ t('home.filters.snack') }}</option>
-          </select>
-        </label>
-        <label>
-          {{ t('home.sort.label') }}
-          <select v-model="sortOrder" class="small-input" @change="onSortChanged">
-            <option value="">{{ t('home.sort.default') }}</option>
-            <option value="caloriesAsc">{{ t('home.sort.caloriesAsc') }}</option>
-            <option value="caloriesDesc">{{ t('home.sort.caloriesDesc') }}</option>
-            <option value="proteinAsc">{{ t('home.sort.proteinAsc') }}</option>
-            <option value="proteinDesc">{{ t('home.sort.proteinDesc') }}</option>
-            <option value="timeAsc">{{ t('home.sort.timeAsc') }}</option>
-            <option value="timeDesc">{{ t('home.sort.timeDesc') }}</option>
-          </select>
-        </label>
       </div>
+      <Transition name="filter-drawer">
+        <div v-if="filterDrawerOpen" class="filter-overlay" @click.self="filterDrawerOpen = false">
+          <aside class="filter-drawer" :aria-label="t('home.filters.ariaLabel')">
+            <div class="filter-drawer-header">
+              <span class="filter-drawer-title">{{ t('home.filters.title') }}</span>
+              <button
+                type="button"
+                class="filter-drawer-close"
+                :aria-label="t('home.overlay.close')"
+                @click="filterDrawerOpen = false"
+              >
+                ✕
+              </button>
+            </div>
+            <div class="filter-panel" :aria-label="t('home.filters.ariaLabel')">
+              <label><input v-model="vegan" type="checkbox" @change="onVeganChanged" /> {{ t('home.filters.vegan') }}</label>
+              <label><input v-model="vegetarian" type="checkbox" @change="onVegetarianChanged" /> {{ t('home.filters.vegetarian') }}</label>
+              <label><input v-model="glutenFree" type="checkbox" /> {{ t('home.filters.glutenFree') }}</label>
+              <label><input v-model="lactoseFree" type="checkbox" /> {{ t('home.filters.lactoseFree') }}</label>
+              <label><input v-model="calorieConscious" type="checkbox" /> {{ t('home.filters.calorieConscious') }}</label>
+              <label><input v-model="highProtein" type="checkbox" /> {{ t('home.filters.highProtein') }}</label>
+              <button
+                v-if="isLoggedIn"
+                type="button"
+                class="plain-filter-button"
+                :aria-pressed="!profilePersonalizationEnabled"
+                @click="toggleProfilePersonalization"
+              >
+                {{ personalizationButtonText }}
+              </button>
+              <label>
+                {{ t('home.filters.maxPrepTime') }}
+                <input v-model.number="maxPrepTime" class="small-input" min="1" type="number" />
+              </label>
+              <label>
+                {{ t('home.filters.maxCalories') }}
+                <input v-model.number="maxCalories" class="small-input" min="1" type="number" />
+              </label>
+              <label>
+                {{ t('home.filters.mealType') }}
+                <select v-model="mealType" class="small-input">
+                  <option value="">{{ t('home.filters.anyMealType') }}</option>
+                  <option value="breakfast">{{ t('home.filters.breakfast') }}</option>
+                  <option value="lunch">{{ t('home.filters.lunch') }}</option>
+                  <option value="dinner">{{ t('home.filters.dinner') }}</option>
+                  <option value="snack">{{ t('home.filters.snack') }}</option>
+                </select>
+              </label>
+              <label>
+                {{ t('home.sort.label') }}
+                <select v-model="sortOrder" class="small-input" @change="onSortChanged">
+                  <option value="">{{ t('home.sort.default') }}</option>
+                  <option value="caloriesAsc">{{ t('home.sort.caloriesAsc') }}</option>
+                  <option value="caloriesDesc">{{ t('home.sort.caloriesDesc') }}</option>
+                  <option value="proteinAsc">{{ t('home.sort.proteinAsc') }}</option>
+                  <option value="proteinDesc">{{ t('home.sort.proteinDesc') }}</option>
+                  <option value="timeAsc">{{ t('home.sort.timeAsc') }}</option>
+                  <option value="timeDesc">{{ t('home.sort.timeDesc') }}</option>
+                </select>
+              </label>
+            </div>
+          </aside>
+        </div>
+      </Transition>
       <p v-if="isLoggedIn" class="personalization-status">
         {{ personalizationStatusText }}
       </p>
@@ -1225,6 +1256,15 @@ function formatDate(date: Date) {
   font-size: 1.05rem;
 }
 
+.search-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
 .search-input {
   background: #ffffff;
   border: 2px solid var(--mint, #5ecbb5);
@@ -1234,19 +1274,135 @@ function formatDate(date: Date) {
   width: 90%;
   max-width: 600px;
   outline: none;
-  margin: 0 auto;
+  margin: 0;
+  flex: 1;
 }
 
 .search-input:focus {
   border-color: var(--mint-dark, #3dae9b);
 }
 
-.filter-panel {
-  margin: 20px auto 0;
-  max-width: 900px;
+.filter-trigger {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  padding: 14px 22px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--mint-darker, #2b8c7b);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.filter-trigger:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
+}
+
+.filter-trigger-icon {
+  width: 16px;
+  height: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.filter-trigger-icon span {
+  display: block;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.filter-trigger-icon span:nth-child(1) {
+  width: 100%;
+}
+
+.filter-trigger-icon span:nth-child(2) {
+  width: 70%;
+}
+
+.filter-trigger-icon span:nth-child(3) {
+  width: 40%;
+}
+
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(46, 52, 55, 0.4);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.filter-drawer {
+  background: #ffffff;
+  width: 420px;
+  max-width: 100%;
+  height: 100%;
+  padding: 28px;
+  overflow-y: auto;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+}
+
+.filter-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.filter-drawer-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--pink-dark, #d44488);
+}
+
+.filter-drawer-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--mint-bg, #ecfaf6);
+  border: none;
+  color: var(--mint-darker, #2b8c7b);
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Slide-in-from-right transition for the drawer, fade for the overlay backdrop */
+.filter-drawer-enter-active .filter-drawer,
+.filter-drawer-leave-active .filter-drawer {
+  transition: transform 0.22s ease;
+}
+
+.filter-drawer-enter-active,
+.filter-drawer-leave-active {
+  transition: opacity 0.22s ease;
+}
+
+.filter-drawer-enter-from,
+.filter-drawer-leave-to {
+  opacity: 0;
+}
+
+.filter-drawer-enter-from .filter-drawer,
+.filter-drawer-leave-to .filter-drawer {
+  transform: translateX(100%);
+}
+
+.filter-panel {
+  margin: 0;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 10px;
 }
 
@@ -1265,6 +1421,20 @@ function formatDate(date: Date) {
 
 .filter-panel label:hover {
   border-color: var(--mint, #5ecbb5);
+}
+
+/* Max time / max calories / category / sort: stack label above control so the
+   input never gets squeezed into a tight inline row inside the narrow drawer. */
+.filter-panel label:has(input[type="number"]),
+.filter-panel label:has(select) {
+  flex-direction: column;
+  align-items: stretch;
+  background: none;
+  border: none;
+  border-radius: 0;
+  gap: 4px;
+  padding: 2px 2px 0;
+  font-size: 0.85rem;
 }
 
 .plain-filter-button {
@@ -1302,10 +1472,11 @@ function formatDate(date: Date) {
 }
 
 .small-input {
-  max-width: 150px;
+  width: 100%;
+  box-sizing: border-box;
   border: 1.5px solid var(--line, #e6ecea);
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 8px 10px;
   font: inherit;
 }
 
@@ -1698,21 +1869,8 @@ function formatDate(date: Date) {
     padding: 13px 20px;
   }
 
-  .filter-panel {
-    justify-content: center;
-    gap: 8px;
-    margin-top: 16px;
-  }
-
-  /* Diet/preference checkboxes + personalization toggle: compact pills, ~2 per
-     row, checkbox and label close together — NOT the full-width stretched rows
-     this used to force onto every label regardless of its content. */
-  .filter-panel label:has(input[type="checkbox"]) {
-    flex: 1 1 calc(50% - 4px);
-    min-width: 130px;
-    justify-content: flex-start;
-    padding: 8px 12px;
-    font-size: 0.85rem;
+  .filter-drawer {
+    width: 100%;
   }
 
   .plain-filter-button {
@@ -1720,23 +1878,6 @@ function formatDate(date: Date) {
     justify-content: center;
     min-height: 42px;
     width: 100%;
-  }
-
-  /* Max time / max calories / category / sort: stack label above control so
-     the input never gets squeezed into a tight inline row. No card/pill chrome
-     here — the background/border/999px-radius from the base label rule is what
-     made these look like oversized capsules once they became two lines tall. */
-  .filter-panel label:has(input[type="number"]),
-  .filter-panel label:has(select) {
-    flex-direction: column;
-    align-items: stretch;
-    background: none;
-    border: none;
-    border-radius: 0;
-    gap: 4px;
-    padding: 2px 2px 0;
-    width: 100%;
-    font-size: 0.82rem;
   }
 
   .small-input {

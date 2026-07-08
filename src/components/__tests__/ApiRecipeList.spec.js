@@ -17,6 +17,12 @@ function loginAsUser() {
   useAuthStore().token = 'jwt-token'
 }
 
+// Filters live in a slide-in drawer now — open it before interacting with any filter control.
+async function openFilterDrawer(wrapper) {
+  await wrapper.find('.filter-trigger').trigger('click')
+  await flushPromises()
+}
+
 const push = vi.fn()
 
 vi.mock('vue-router', () => ({
@@ -214,6 +220,8 @@ describe('ApiRecipeList.vue', () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
 
+    await openFilterDrawer(wrapper)
+
     expect(wrapper.text()).toContain('Personalisierung ausschalten')
     expect(wrapper.text()).toContain('Profil aktiv')
 
@@ -229,6 +237,8 @@ describe('ApiRecipeList.vue', () => {
     setLocale('en')
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+
+    await openFilterDrawer(wrapper)
 
     expect(wrapper.text()).toContain('Turn off personalization')
     expect(wrapper.text()).toContain('Profile active')
@@ -304,6 +314,7 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).not.toContain('Mushroom Pasta')
     expect(wrapper.text()).not.toContain('Nut Salad')
 
+    await openFilterDrawer(wrapper)
     await wrapper.find('.plain-filter-button').trigger('click')
     await vi.advanceTimersByTimeAsync(400)
     await flushPromises()
@@ -488,6 +499,7 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
     expect(wrapper.findAll('.recipe-card')).toHaveLength(5)
 
+    await openFilterDrawer(wrapper)
     const veganCheckbox = wrapper.findAll('label').find(l => l.text().includes('Vegan'))?.find('input')
     await veganCheckbox.setValue(true)
     await vi.advanceTimersByTimeAsync(0)
@@ -508,6 +520,8 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     const titlesBefore = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+
+    await openFilterDrawer(wrapper)
 
     // Apply vegan filter
     const veganLabel = wrapper.findAll('label').find(l => l.text().includes('Vegan'))
@@ -959,6 +973,9 @@ describe('ApiRecipeList.vue', () => {
       'Search by title, cuisine or ingredients',
     )
     expect(wrapper.text()).toContain('Shuffle recipes')
+
+    await openFilterDrawer(wrapper)
+
     expect(wrapper.text()).toContain('Low calorie')
     expect(wrapper.text()).toContain('Calories ascending')
     expect(wrapper.text()).toContain('Turn off personalization')
@@ -1099,6 +1116,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const sortSelect = wrapper.findAll('select').find(select =>
       select.text().includes('Protein absteigend'),
@@ -1125,6 +1143,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const calorieCheckbox = wrapper.findAll('label').find(label =>
       label.text().includes('Kalorienarm'),
@@ -1155,6 +1174,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const calorieLabel = wrapper.findAll('label').find(label => label.text().includes('Kalorienarm'))
     const proteinLabel = wrapper.findAll('label').find(label => label.text().includes('Proteinreich'))
@@ -1191,6 +1211,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const proteinCheckbox = wrapper.findAll('label')
       .find(label => label.text().includes('Proteinreich'))?.find('input')
@@ -1218,6 +1239,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const calorieCheckbox = wrapper.findAll('label')
       .find(label => label.text().includes('Kalorienarm'))?.find('input')
@@ -1247,6 +1269,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const calorieCheckbox = wrapper.findAll('label')
       .find(label => label.text().includes('Kalorienarm'))?.find('input')
@@ -1273,6 +1296,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const calorieCheckbox = wrapper.findAll('label')
       .find(label => label.text().includes('Kalorienarm'))?.find('input')
@@ -1367,6 +1391,7 @@ describe('ApiRecipeList.vue', () => {
   it('category dropdown contains only breakfast, lunch, dinner, snack', async () => {
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     const mealTypeSelect = wrapper.findAll('select').find(s =>
       s.findAll('option').some(o => o.element.value === 'breakfast'),
@@ -1440,6 +1465,7 @@ describe('ApiRecipeList.vue', () => {
 
     const wrapper = mount(ApiRecipeList)
     await flushPromises()
+    await openFilterDrawer(wrapper)
 
     // maxCalories input must be empty — dailyCalorieTarget must NOT be applied
     // The last number input in the filter panel is maxCalories
@@ -1467,6 +1493,8 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('Light Salad')
     expect(wrapper.text()).toContain('Medium Bowl')
 
+    await openFilterDrawer(wrapper)
+
     // Set maxCalories to 300 — only recipes ≤ 300 kcal should show
     const numberInputs = wrapper.findAll('input[type="number"]')
     const calInput = numberInputs[numberInputs.length - 1]
@@ -1489,6 +1517,8 @@ describe('ApiRecipeList.vue', () => {
     await flushPromises()
 
     const titlesBefore = wrapper.findAll('.recipe-card').map(c => c.find('.card-title').text())
+
+    await openFilterDrawer(wrapper)
 
     // Apply filter
     const numberInputs = wrapper.findAll('input[type="number"]')

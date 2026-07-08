@@ -81,6 +81,7 @@
       "network": "The backend is currently unavailable. Please try again.",
       "load": "Your pantry could not be loaded.",
       "nameRequired": "Please enter a name for the pantry item.",
+      "quantityPositive": "Quantity must be greater than 0.",
       "validation": "Please check your pantry item input.",
       "create": "The pantry item could not be saved.",
       "delete": "The pantry item could not be deleted.",
@@ -159,6 +160,7 @@
       "network": "The backend is currently unavailable. Please try again.",
       "load": "Your shopping list could not be loaded.",
       "nameRequired": "Please enter a name for the shopping list item.",
+      "quantityPositive": "Quantity must be greater than 0.",
       "validation": "Please check your shopping list item input.",
       "create": "The shopping list item could not be saved.",
       "delete": "The shopping list item could not be deleted.",
@@ -381,6 +383,7 @@
     },
     "filters": {
       "ariaLabel": "Recipe filters",
+      "title": "Filters",
       "vegan": "Vegan",
       "vegetarian": "Vegetarian",
       "glutenFree": "Gluten-free",
@@ -556,15 +559,18 @@
     "subtitle": "Plan your own recipes for the current week.",
     "loading": "Loading meal plan...",
     "plannedRecipe": "Planned recipe",
-    "caloriesWithUnknown": "{knownSum} kcal + {count} meals without a kcal value",
-    "caloriesWithUnknownOne": "{knownSum} kcal + {count} meal without a kcal value",
-    "caloriesUnknownOnly": "{count} meals without a kcal value",
-    "caloriesUnknownOnlyOne": "{count} meal without a kcal value",
+    "caloriesWithUnknown": "{knownSum} kcal + {count} without data / {target} kcal",
+    "caloriesWithUnknownOne": "{knownSum} kcal + {count} without data / {target} kcal",
+    "caloriesUnknownOnly": "{count} without data / {target} kcal",
+    "caloriesUnknownOnlyOne": "{count} without data / {target} kcal",
     "unknownCaloriesHint": "Some meals have no kcal value and are not included in the total.",
     "weekUnknownCaloriesHint": "{count} meals without a kcal value are not included in the total.",
     "weekUnknownCaloriesHintOne": "{count} meal without a kcal value is not included in the total.",
     "week": {
       "current": "Current week"
+    },
+    "modal": {
+      "title": "Recipe for {slot}"
     },
     "form": {
       "recipe": "Recipe",
@@ -587,6 +593,7 @@
       "move": "Move",
       "moveSave": "Save move",
       "cancel": "Cancel",
+      "close": "Close",
       "exportPdf": "Save as PDF"
     },
     "errors": {

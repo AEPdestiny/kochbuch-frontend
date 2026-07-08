@@ -131,6 +131,10 @@ describe('ApiRecipeList', () => {
     const wrapper = mount(ApiRecipeList, { global: { plugins: [i18n, testRouter()] } })
     await flushPromises()
 
+    // Filters live in a drawer now — open it before interacting with the checkboxes.
+    await wrapper.find('.filter-trigger').trigger('click')
+    await flushPromises()
+
     // Order in the template: vegan, vegetarian, glutenFree, lactoseFree, calorieConscious, highProtein.
     const calorieCheckbox = wrapper.findAll('.filter-panel input[type="checkbox"]')[4]!
     await calorieCheckbox.setValue(true)
