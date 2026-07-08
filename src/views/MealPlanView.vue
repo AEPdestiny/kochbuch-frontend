@@ -113,6 +113,8 @@ const currentLanguage = computed(() => {
 const englishRecipesAllowed = computed(() => currentLanguage.value === 'en')
 const currentSwipeSlot = computed<MealSlot>(() => slotForRecipe(currentSwipeRecipe.value))
 const currentSwipeTargetDate = computed(() => firstFreeDateForSlot(currentSwipeSlot.value))
+const currentSwipeBucketIsFull = computed(() => Boolean(currentSwipeRecipe.value && !currentSwipeTargetDate.value && !allBucketsFull.value))
+const currentSwipeBucketWarning = computed(() => currentSwipeBucketIsFull.value ? fullBucketWarning(currentSwipeSlot.value) : null)
 const bucketCounts = computed<Record<MealSlot, number>>(() => ({
   breakfast: countEntriesForSlot('breakfast'),
   lunch: countEntriesForSlot('lunch'),
@@ -222,20 +224,7 @@ async function removeDay(date: string, slot: MealSlot = 'dinner') {
   try {
     actionError.value = null
     await mealPlanApi.deleteSlot(date, slot)
-    if (week.value) {
-      week.value.entries = week.value.entries.filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
-    }
-    selectedRecipeBySlot.value[slotKey(date, slot)] = ''
-    customTitleBySlot.value[slotKey(date, slot)] = ''
-    customSnapshotBySlot.value[slotKey(date, slot)] = {}
-    customCaloriesBySlot.value[slotKey(date, slot)] = null
-    if (modalDate.value === date && modalSlot.value === slot) {
-      modalDate.value = null
-      modalSlot.value = null
-    }
-    if (moveEditorKey.value === slotKey(date, slot)) {
-      moveEditorKey.value = null
-    }
+    removeSlotFromLocalState(date, slot)
     toastStore.addToast(t('notifications.mealPlanRemoved'), 'info')
   } catch {
     actionError.value = t('mealPlan.errors.remove')
@@ -324,6 +313,15 @@ function entriesForBucket(slot: MealSlot) {
 
 function toggleBucket(slot: MealSlot) {
   activeBucket.value = activeBucket.value === slot ? null : slot
+}
+
+function openCurrentSwipeBucket() {
+  if (!currentSwipeRecipe.value) return
+  activeBucket.value = currentSwipeSlot.value
+}
+
+function fullBucketWarning(slot: MealSlot) {
+  return `Dein ${slotLabel(slot)}-Bucket ist voll. Entferne ein Rezept oder tausche eines aus.`
 }
 
 // Opens the add/edit modal for a day+slot — used both for an existing entry
@@ -536,6 +534,23 @@ function upsertEntry(entry: MealPlanEntryResponse) {
     week.value.entries.splice(existingIndex, 1, entry)
   } else {
     week.value.entries.push(entry)
+  }
+}
+
+function removeSlotFromLocalState(date: string, slot: MealSlot) {
+  if (week.value) {
+    week.value.entries = week.value.entries.filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
+  }
+  selectedRecipeBySlot.value[slotKey(date, slot)] = ''
+  customTitleBySlot.value[slotKey(date, slot)] = ''
+  customSnapshotBySlot.value[slotKey(date, slot)] = {}
+  customCaloriesBySlot.value[slotKey(date, slot)] = null
+  if (modalDate.value === date && modalSlot.value === slot) {
+    modalDate.value = null
+    modalSlot.value = null
+  }
+  if (moveEditorKey.value === slotKey(date, slot)) {
+    moveEditorKey.value = null
   }
 }
 
@@ -792,6 +807,25 @@ function skipSwipeSuggestion() {
   swipeError.value = 'Keine weiteren Vorschläge vorhanden.'
 }
 
+async function saveSwipeSuggestionAt(suggestion: RecipeResponse, date: string, slot: MealSlot) {
+  return suggestion.source === 'dishly' && Number.isFinite(Number(suggestion.id))
+    ? mealPlanApi.setSlot(date, slot, Number(suggestion.id))
+    : mealPlanApi.setSlot(date, slot, {
+      customTitle: suggestion.title,
+      caloriesSnapshot: suggestion.calories ?? null,
+      proteinSnapshot: suggestion.protein ?? null,
+      imageUrlSnapshot: suggestion.imageUrl ?? null,
+      externalRecipeId: suggestion.externalId ? String(suggestion.externalId) : suggestion.id ? String(suggestion.id) : null,
+      externalSource: suggestion.source ?? 'dishly-public',
+    })
+}
+
+function advanceSwipeSuggestion() {
+  if (swipeIndex.value < swipeSuggestions.value.length - 1) {
+    swipeIndex.value += 1
+  }
+}
+
 async function acceptSwipeSuggestion() {
   const suggestion = currentSwipeRecipe.value
   if (!suggestion) {
@@ -803,30 +837,42 @@ async function acceptSwipeSuggestion() {
   if (!date) {
     swipeError.value = allBucketsFull.value
       ? 'Glückwunsch! Deine Woche ist vollständig geplant.'
-      : `Dein ${slotLabel(slot)}-Bucket ist voll. Entferne ein Rezept oder tausche eines aus.`
+      : fullBucketWarning(slot)
     return
   }
 
   try {
     swipeError.value = null
-    const saved = suggestion.source === 'dishly' && Number.isFinite(Number(suggestion.id))
-      ? await mealPlanApi.setSlot(date, slot, Number(suggestion.id))
-      : await mealPlanApi.setSlot(date, slot, {
-        customTitle: suggestion.title,
-        caloriesSnapshot: suggestion.calories ?? null,
-        proteinSnapshot: suggestion.protein ?? null,
-        imageUrlSnapshot: suggestion.imageUrl ?? null,
-        externalRecipeId: suggestion.externalId ? String(suggestion.externalId) : suggestion.id ? String(suggestion.id) : null,
-        externalSource: suggestion.source ?? 'dishly-public',
-      })
+    const saved = await saveSwipeSuggestionAt(suggestion, date, slot)
     upsertEntry(saved)
     syncSlotState(saved)
     toastStore.addToast(t('notifications.swipePlanned', { title: suggestion.title }), 'success')
-    if (swipeIndex.value < swipeSuggestions.value.length - 1) {
-      swipeIndex.value += 1
-    }
+    advanceSwipeSuggestion()
   } catch {
     swipeError.value = 'Vorschlag konnte nicht übernommen werden.'
+  }
+}
+
+async function replaceWithCurrentSwipeSuggestion(date: string, slot: MealSlot) {
+  const suggestion = currentSwipeRecipe.value
+  if (!suggestion) {
+    swipeError.value = 'Kein Vorschlag ausgewählt.'
+    return
+  }
+
+  try {
+    swipeError.value = null
+    await mealPlanApi.deleteSlot(date, slot)
+    removeSlotFromLocalState(date, slot)
+    const saved = await saveSwipeSuggestionAt(suggestion, date, slot)
+    upsertEntry(saved)
+    syncSlotState(saved)
+    toastStore.addToast(t('notifications.swipePlanned', { title: suggestion.title }), 'success')
+    activeBucket.value = null
+    advanceSwipeSuggestion()
+  } catch {
+    swipeError.value = 'Vorschlag konnte nicht ersetzt werden.'
+    toastStore.addToast('Vorschlag konnte nicht ersetzt werden.', 'error')
   }
 }
 
@@ -1053,6 +1099,9 @@ function formatDate(date: Date) {
             <button type="button" class="secondary-button" @click="activeBucket = null">Schließen</button>
           </div>
 
+          <p v-if="activeBucket === currentSwipeSlot && currentSwipeRecipe" class="bucket-current-suggestion">
+            Aktueller Vorschlag: <strong>{{ currentSwipeRecipe.title }}</strong>
+          </p>
           <p v-if="entriesForBucket(activeBucket).length === 0" class="empty-day">
             Noch keine Rezepte in diesem Bucket.
           </p>
@@ -1066,14 +1115,24 @@ function formatDate(date: Date) {
                   <span v-if="entryProtein(item.entry)"> · {{ formatProtein(entryProtein(item.entry)) }}</span>
                 </p>
               </div>
-              <button type="button" class="secondary-button" @click="removeDay(item.day.date, activeBucket)">
-                Entfernen
-              </button>
+              <div class="bucket-entry-actions">
+                <button type="button" class="secondary-button" @click="removeDay(item.day.date, activeBucket)">
+                  Entfernen
+                </button>
+                <button
+                  v-if="activeBucket === currentSwipeSlot && currentSwipeRecipe"
+                  type="button"
+                  class="primary-button"
+                  @click="replaceWithCurrentSwipeSuggestion(item.day.date, activeBucket)"
+                >
+                  Mit aktuellem Rezept ersetzen
+                </button>
+              </div>
             </li>
           </ul>
         </section>
 
-        <p v-if="swipeError" class="status-text error">{{ swipeError }}</p>
+        <p v-if="swipeError && swipeError !== currentSwipeBucketWarning" class="status-text error">{{ swipeError }}</p>
         <div v-if="allBucketsFull" class="completion-card">
           <h3>Glückwunsch! Deine Woche ist vollständig geplant.</h3>
           <p>Alle Buckets sind voll. Du kannst jetzt Rezepte entfernen oder verwalten.</p>
@@ -1082,42 +1141,61 @@ function formatDate(date: Date) {
           </button>
         </div>
 
+        <div v-if="currentSwipeBucketWarning" class="swipe-bucket-warning" aria-live="polite">
+          <p>{{ currentSwipeBucketWarning }}</p>
+          <button type="button" class="secondary-button" @click="openCurrentSwipeBucket">
+            Bucket bearbeiten
+          </button>
+        </div>
+
         <article v-if="currentSwipeRecipe && !allBucketsFull" class="swipe-card">
-          <img v-if="currentSwipeRecipe.imageUrl" :src="currentSwipeRecipe.imageUrl" :alt="currentSwipeRecipe.title" />
-          <div class="swipe-card-content">
-            <span class="progress-pill">{{ swipeIndex + 1 }}/{{ swipeSuggestions.length }}</span>
-            <h3>{{ currentSwipeRecipe.title }}</h3>
-            <div class="swipe-meta">
-              <span v-if="currentSwipeRecipe.prepTimeMinutes || currentSwipeRecipe.cookTimeMinutes">
-                {{ currentSwipeRecipe.prepTimeMinutes + currentSwipeRecipe.cookTimeMinutes }} min
-              </span>
-              <span v-if="currentSwipeRecipe.calories">{{ currentSwipeRecipe.calories }} kcal</span>
-              <span v-if="currentSwipeRecipe.protein">{{ Math.round(currentSwipeRecipe.protein) }} g Protein</span>
-            </div>
-            <div class="tag-list">
-              <span v-if="currentSwipeRecipe.category">{{ visibleCategory(currentSwipeRecipe.category) }}</span>
-              <span v-if="currentSwipeRecipe.difficulty">{{ currentSwipeRecipe.difficulty }}</span>
-            </div>
-            <p v-if="currentSwipeRecipe.source !== 'dishly'" class="suggestion-state">
-              Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
-            </p>
-            <p v-else class="suggestion-state">
-              Dishly-Rezepte werden als echte Rezeptverknüpfung gespeichert.
-            </p>
-            <p class="suggestion-state">
-              Dieses Rezept kommt zu: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>
-              <span v-if="currentSwipeTargetDate"> am {{ currentSwipeTargetDate }}</span>
-              <span v-else> - dieser Bucket ist voll</span>
-            </p>
-            <div class="actions">
-              <button type="button" class="secondary-button" @click="skipSwipeSuggestion">
-                ← Überspringen
-              </button>
-              <button type="button" class="primary-button" @click="acceptSwipeSuggestion">
-                → Übernehmen
-              </button>
+          <button
+            type="button"
+            class="secondary-button swipe-action swipe-action-reject"
+            aria-label="Überspringen"
+            @click="skipSwipeSuggestion"
+          >
+            X
+          </button>
+
+          <div class="swipe-recipe-card">
+            <img v-if="currentSwipeRecipe.imageUrl" :src="currentSwipeRecipe.imageUrl" :alt="currentSwipeRecipe.title" />
+            <div class="swipe-card-content">
+              <span class="progress-pill">{{ swipeIndex + 1 }}/{{ swipeSuggestions.length }}</span>
+              <h3>{{ currentSwipeRecipe.title }}</h3>
+              <div class="swipe-meta">
+                <span v-if="currentSwipeRecipe.prepTimeMinutes || currentSwipeRecipe.cookTimeMinutes">
+                  {{ currentSwipeRecipe.prepTimeMinutes + currentSwipeRecipe.cookTimeMinutes }} min
+                </span>
+                <span v-if="currentSwipeRecipe.calories">{{ currentSwipeRecipe.calories }} kcal</span>
+                <span v-if="currentSwipeRecipe.protein">{{ Math.round(currentSwipeRecipe.protein) }} g Protein</span>
+              </div>
+              <div class="tag-list">
+                <span v-if="currentSwipeRecipe.category">{{ visibleCategory(currentSwipeRecipe.category) }}</span>
+                <span v-if="currentSwipeRecipe.difficulty">{{ currentSwipeRecipe.difficulty }}</span>
+              </div>
+              <p v-if="currentSwipeRecipe.source !== 'dishly'" class="suggestion-state">
+                Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
+              </p>
+              <p v-else class="suggestion-state">
+                Dishly-Rezepte werden als echte Rezeptverknüpfung gespeichert.
+              </p>
+              <p class="suggestion-state">
+                Dieses Rezept kommt zu: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>
+                <span v-if="currentSwipeTargetDate"> am {{ currentSwipeTargetDate }}</span>
+                <span v-else> - dieser Bucket ist voll</span>
+              </p>
             </div>
           </div>
+
+          <button
+            type="button"
+            class="primary-button swipe-action swipe-action-accept"
+            aria-label="Übernehmen"
+            @click="acceptSwipeSuggestion"
+          >
+            ♥
+          </button>
         </article>
       </section>
 
@@ -1911,12 +1989,18 @@ function formatDate(date: Date) {
 }
 
 .bucket-panel,
+.swipe-bucket-warning,
 .completion-card {
   background: var(--pink-bg, #fdf1f5);
   border-radius: 14px;
   display: grid;
   gap: 12px;
   padding: 18px;
+}
+
+.swipe-bucket-warning {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .bucket-panel-header,
@@ -1934,6 +2018,7 @@ function formatDate(date: Date) {
 }
 
 .bucket-panel p,
+.swipe-bucket-warning p,
 .completion-card p {
   color: var(--text-gray, #6b7478);
   margin: 0;
@@ -1955,7 +2040,34 @@ function formatDate(date: Date) {
   overflow-wrap: anywhere;
 }
 
+.bucket-current-suggestion {
+  background: #ffffff;
+  border-radius: var(--radius-pill, 999px);
+  color: var(--pink-dark, #d44488);
+  font-weight: 700;
+  padding: 8px 14px;
+  width: fit-content;
+}
+
+.bucket-entry-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .swipe-card {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 76px minmax(0, 560px) 76px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.swipe-recipe-card {
+  background: #ffffff;
   border-radius: var(--radius-card, 18px);
   box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
   display: grid;
@@ -1964,11 +2076,26 @@ function formatDate(date: Date) {
   min-width: 0;
 }
 
-.swipe-card img {
+.swipe-recipe-card img {
   height: 100%;
   min-height: 180px;
   object-fit: cover;
   width: 100%;
+}
+
+.swipe-action-reject {
+  border-color: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
+}
+
+.swipe-action-reject:hover:not(:disabled) {
+  background: var(--pink-light, #fdeef5);
+  color: var(--pink-dark, #d44488);
+}
+
+.swipe-action-accept {
+  box-shadow: 0 10px 24px rgba(232, 90, 155, 0.24);
+  font-size: 1.9rem;
 }
 
 .swipe-card-content {
@@ -2049,6 +2176,19 @@ function formatDate(date: Date) {
   color: #ffffff;
 }
 
+.swipe-card .swipe-action {
+  align-items: center;
+  border-radius: 50%;
+  display: inline-flex;
+  font-size: 1.6rem;
+  height: 72px;
+  justify-content: center;
+  line-height: 1;
+  min-height: 72px;
+  padding: 0;
+  width: 72px;
+}
+
 .clear-week-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -2112,7 +2252,7 @@ function formatDate(date: Date) {
     width: 100%;
   }
 
-.swipe-controls,
+  .swipe-controls,
   .swipe-card {
     grid-template-columns: 1fr;
   }
@@ -2121,13 +2261,59 @@ function formatDate(date: Date) {
     padding: 14px;
   }
 
+  .swipe-card {
+    gap: 12px;
+    justify-items: center;
+  }
+
+  .swipe-bucket-warning {
+    grid-template-columns: 1fr;
+  }
+
+  .swipe-bucket-warning .secondary-button {
+    width: 100%;
+  }
+
+  .swipe-recipe-card {
+    grid-row: 1;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .swipe-card .swipe-action {
+    height: 58px;
+    min-height: 58px;
+    width: 58px;
+  }
+
+  .swipe-action-reject {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .swipe-action-accept {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+  }
+
   .bucket-panel-header,
   .bucket-entry-list li {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .swipe-card img {
+  .bucket-entry-actions {
+    justify-content: stretch;
+  }
+
+  .bucket-entry-actions .primary-button,
+  .bucket-entry-actions .secondary-button {
+    width: 100%;
+  }
+
+  .swipe-recipe-card img {
     max-height: 220px;
   }
 
@@ -2140,6 +2326,12 @@ function formatDate(date: Date) {
   .move-actions {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .planned-actions > .secondary-button {
+    justify-content: center;
+    text-align: center;
+    width: 100%;
   }
 
   .primary-button,

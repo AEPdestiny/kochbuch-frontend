@@ -1105,6 +1105,90 @@ describe('MealPlanView', () => {
     expect(wrapper.find('.bucket-panel').exists()).toBe(false)
   })
 
+  it('replaces a full bucket entry with the current swipe suggestion and advances after success', async () => {
+    setLocale('en')
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.99)
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        entry('2026-06-01', recipe(1, 'Dinner 1'), 'dinner'),
+        entry('2026-06-02', recipe(2, 'Dinner 2'), 'dinner'),
+        entry('2026-06-03', recipe(3, 'Dinner 3'), 'dinner'),
+        entry('2026-06-04', recipe(4, 'Dinner 4'), 'dinner'),
+        entry('2026-06-05', recipe(5, 'Dinner 5'), 'dinner'),
+        entry('2026-06-06', recipe(6, 'Dinner 6'), 'dinner'),
+      ],
+    })
+    vi.mocked(recipeApi.getExternalRecipes).mockResolvedValue([
+      recipe(99, 'Pizza', { calories: 700 }),
+      recipe(100, 'Burger', { calories: 650 }),
+      recipe(101, 'Taco', { calories: 590 }),
+    ])
+    vi.mocked(mealPlanApi.setSlot)
+      .mockResolvedValueOnce({
+        id: 99,
+        plannedDate: '2026-06-07',
+        mealSlot: 'dinner',
+        recipe: null,
+        customTitle: 'Pizza',
+        calories: 700,
+        caloriesSnapshot: 700,
+      })
+      .mockResolvedValueOnce({
+        id: 100,
+        plannedDate: '2026-06-01',
+        mealSlot: 'dinner',
+        recipe: null,
+        customTitle: 'Burger',
+        calories: 650,
+        caloriesSnapshot: 650,
+      })
+
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Dein Abendessen-Bucket ist voll')
+    const editBucketButton = wrapper.findAll('button').find(button => button.text().includes('Bucket bearbeiten'))!
+    await editBucketButton.trigger('click')
+
+    const bucketPanel = wrapper.find('.bucket-panel')
+    expect(bucketPanel.text()).toContain('Aktueller Vorschlag: Burger')
+    expect(bucketPanel.text()).toContain('Dinner 1')
+    expect(bucketPanel.text()).toContain('Mit aktuellem Rezept ersetzen')
+    expect(wrapper.text()).toContain('2/3')
+
+    const replaceButton = wrapper.findAll('.bucket-panel .primary-button')
+      .find(button => button.text().includes('Mit aktuellem Rezept ersetzen'))!
+    await replaceButton.trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    expect(mealPlanApi.deleteSlot).toHaveBeenCalledWith('2026-06-01', 'dinner')
+    expect(mealPlanApi.setSlot).toHaveBeenLastCalledWith('2026-06-01', 'dinner', {
+      customTitle: 'Burger',
+      caloriesSnapshot: 650,
+      proteinSnapshot: 24,
+      imageUrlSnapshot: '',
+      externalRecipeId: '100',
+      externalSource: 'dishly-public',
+    })
+    expect(wrapper.find('.bucket-panel').exists()).toBe(false)
+    expect(wrapper.find('.swipe-card').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Taco')
+    expect(wrapper.text()).toContain('3/3')
+    randomSpy.mockRestore()
+  })
+
   it('uses published database recipes before calling external swipe suggestions', async () => {
     vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
       recipe(88, 'DB Lunch Bowl', { category: 'lunch', calories: 530 }),
