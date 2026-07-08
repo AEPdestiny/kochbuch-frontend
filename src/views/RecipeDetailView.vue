@@ -802,22 +802,26 @@ function formatDate(date: Date) {
     <p v-else-if="error" class="status-text error">{{ error }}</p>
 
     <article v-else-if="recipe" class="detail-layout">
-      <div v-if="recipe.imageUrl" class="image-panel">
-        <img :src="recipe.imageUrl" :alt="recipe.title" />
-      </div>
+      <section class="recipe-hero">
+        <div v-if="recipe.imageUrl" class="image-panel">
+          <img :src="recipe.imageUrl" :alt="recipe.title" />
+        </div>
+        <div v-else class="image-panel image-panel-empty">
+          <span>{{ recipe.title.charAt(0) }}</span>
+        </div>
 
-      <div class="content-panel">
-        <p class="source-label">
-          {{ recipe.source === 'dishly' ? t('home.source.dishly') : t('home.source.external') }}
-        </p>
-        <h1>{{ recipe.title }}</h1>
+        <div class="content-panel">
+          <p class="source-label">
+            {{ recipe.source === 'dishly' ? t('home.source.dishly') : t('home.source.external') }}
+          </p>
+          <h1>{{ recipe.title }}</h1>
 
         <div class="meta-grid">
-          <span v-if="recipe.calories">{{ t('recipeDetail.meta.calories', { calories: recipe.calories }) }}</span>
-          <span v-if="recipe.protein">{{ t('recipeDetail.meta.protein', { protein: Math.round(recipe.protein) }) }}</span>
-          <span v-if="(recipe.alcohol ?? 0) > 0 || (recipe.alcoholPercent ?? 0) > 0">{{ t('recipeDetail.meta.alcohol') }}</span>
-          <span v-if="recipe.readyInMinutes">{{ t('recipeDetail.meta.time', { minutes: recipe.readyInMinutes }) }}</span>
-          <span v-if="recipe.servings">{{ t('recipeDetail.meta.servings', { count: recipe.servings }) }}</span>
+          <span v-if="recipe.readyInMinutes" class="meta-card">{{ t('recipeDetail.meta.time', { minutes: recipe.readyInMinutes }) }}</span>
+          <span v-if="recipe.servings" class="meta-card">{{ t('recipeDetail.meta.servings', { count: recipe.servings }) }}</span>
+          <span v-if="recipe.calories" class="meta-card highlight">{{ t('recipeDetail.meta.calories', { calories: recipe.calories }) }}</span>
+          <span v-if="recipe.protein" class="meta-card highlight">{{ t('recipeDetail.meta.protein', { protein: Math.round(recipe.protein) }) }}</span>
+          <span v-if="(recipe.alcohol ?? 0) > 0 || (recipe.alcoholPercent ?? 0) > 0" class="meta-card">{{ t('recipeDetail.meta.alcohol') }}</span>
         </div>
 
         <div v-if="recipe.tags.length" class="tag-list">
@@ -864,11 +868,12 @@ function formatDate(date: Date) {
           </button>
         </div>
 
-        <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
-        <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
-        <p v-if="favoriteError" class="status-text error">{{ favoriteError }}</p>
-        <p v-if="ownerActionError" class="status-text error">{{ ownerActionError }}</p>
-      </div>
+          <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
+          <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
+          <p v-if="favoriteError" class="status-text error">{{ favoriteError }}</p>
+          <p v-if="ownerActionError" class="status-text error">{{ ownerActionError }}</p>
+        </div>
+      </section>
 
       <section class="detail-section">
         <h2>
@@ -877,7 +882,7 @@ function formatDate(date: Date) {
         </h2>
         <ul class="ingredient-list">
           <li v-for="ingredient in recipe.ingredients" :key="ingredient.original">
-            <span>{{ ingredient.original }}</span>
+            <span class="ingredient-name">{{ ingredient.original }}</span>
             <button type="button" class="small-button" @click="addIngredientToShoppingList(ingredient)">
               {{ t('recipeDetail.actions.addOne') }}
             </button>
@@ -888,7 +893,9 @@ function formatDate(date: Date) {
       <section class="detail-section">
         <h2>{{ t('recipeDetail.instructions.title') }}</h2>
         <ol v-if="hasInstructions" class="step-list">
-          <li v-for="step in recipe.steps" :key="step">{{ step }}</li>
+          <li v-for="step in recipe.steps" :key="step">
+            <span>{{ step }}</span>
+          </li>
         </ol>
         <div v-else class="instruction-search-panel">
           <p class="instruction-text">
@@ -939,15 +946,17 @@ function formatDate(date: Date) {
         <p class="hint">{{ t('restaurants.disclaimer') }}</p>
         <div class="restaurant-search-form">
           <label class="location-label" for="restaurant-location">{{ t('restaurants.cityLabel') }}</label>
-          <input
-            id="restaurant-location"
-            v-model="restaurantLocation"
-            type="text"
-            class="location-input"
-            :placeholder="t('restaurants.locationPlaceholder')"
-            :disabled="restaurantLoading"
-            @keyup.enter="findRestaurantsByText"
-          />
+          <div class="location-input-row">
+            <input
+              id="restaurant-location"
+              v-model="restaurantLocation"
+              type="text"
+              class="location-input"
+              :placeholder="t('restaurants.locationPlaceholder')"
+              :disabled="restaurantLoading"
+              @keyup.enter="findRestaurantsByText"
+            />
+          </div>
           <p class="location-help">{{ t('restaurants.cityHelp') }}</p>
           <div class="restaurant-search-actions">
             <button
@@ -1033,9 +1042,9 @@ function formatDate(date: Date) {
 <style scoped>
 .detail-page {
   width: 100%;
-  max-width: 1100px;
-  margin: 0 auto 48px auto;
-  padding: 28px 20px;
+  max-width: 1180px;
+  margin: 0 auto 56px auto;
+  padding: 28px 24px 56px;
   box-sizing: border-box;
 }
 
@@ -1053,10 +1062,17 @@ function formatDate(date: Date) {
 
 .back-button {
   background: #ffffff;
-  border: 1.5px solid #8fd5cc;
-  color: #1d8e90;
-  padding: 8px 16px;
-  margin-bottom: 20px;
+  border: 1.5px solid rgba(94, 203, 181, 0.45);
+  color: var(--mint-darker, #2b8c7b);
+  padding: 9px 18px;
+  margin-bottom: 22px;
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.back-button:hover {
+  box-shadow: var(--shadow-card-hover, 0 12px 32px rgba(61, 174, 155, 0.18));
+  transform: translateY(-1px);
 }
 
 .status-text {
@@ -1076,18 +1092,29 @@ function formatDate(date: Date) {
 
 .detail-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 440px) 1fr;
-  gap: 28px;
+  gap: 24px;
   min-width: 0;
 }
 
-.image-panel {
-  border-radius: 18px;
+.recipe-hero {
+  align-items: stretch;
+  background: var(--pink-bg, #fdf1f5);
+  border-radius: 28px;
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  display: grid;
+  gap: 30px;
+  grid-template-columns: minmax(320px, 0.98fr) minmax(0, 1.02fr);
   overflow: hidden;
-  background: #f4fbfa;
-  border: 1px solid #c3e7e1;
-  aspect-ratio: 4 / 3;
-  min-height: 0;
+  padding: 28px;
+}
+
+.image-panel {
+  border: 5px solid #ffffff;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--mint-bg, #ecfaf6);
+  box-shadow: var(--shadow-card-hover, 0 12px 32px rgba(61, 174, 155, 0.18));
+  min-height: 380px;
 }
 
 .image-panel img {
@@ -1097,18 +1124,49 @@ function formatDate(date: Date) {
   display: block;
 }
 
+.image-panel-empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.image-panel-empty span {
+  align-items: center;
+  background: #ffffff;
+  border-radius: 999px;
+  color: var(--pink-dark, #d44488);
+  display: flex;
+  font-size: clamp(4rem, 10vw, 7rem);
+  font-weight: 900;
+  height: 160px;
+  justify-content: center;
+  width: 160px;
+}
+
+.content-panel {
+  align-content: center;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: 12px 6px;
+}
+
 .content-panel h1 {
-  color: #2b1b23;
-  font-size: 2.2rem;
-  margin: 4px 0 14px 0;
+  color: var(--text-dark, #2e3437);
+  font-size: clamp(2.15rem, 4vw, 3.6rem);
+  line-height: 1.04;
+  letter-spacing: 0;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 
 .source-label {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
+  font-size: 0.78rem;
   font-weight: 900;
+  letter-spacing: 0.08em;
+  margin: 0;
   text-transform: uppercase;
-  font-size: 0.8rem;
 }
 
 .meta-grid,
@@ -1117,63 +1175,85 @@ function formatDate(date: Date) {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: 14px 0;
+  margin: 0;
 }
 
-.meta-grid span,
+.meta-card,
 .tag {
   border-radius: 999px;
-  background: #e0f5f2;
-  color: #1d8e90;
+  background: #ffffff;
+  color: var(--mint-darker, #2b8c7b);
+  box-shadow: 0 8px 18px rgba(61, 174, 155, 0.08);
   font-weight: 800;
-  padding: 7px 12px;
+  padding: 9px 13px;
+}
+
+.meta-card.highlight {
+  background: var(--mint-bg, #ecfaf6);
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .tag {
   background: #fff7fb;
-  color: #b96593;
+  color: var(--pink-dark, #d44488);
+  box-shadow: none;
 }
 
 .primary-button {
-  background: #cc7da9;
+  background: var(--pink, #e85a9b);
   color: #ffffff;
-  padding: 10px 16px;
+  padding: 11px 18px;
   min-height: 44px;
+  box-shadow: 0 10px 22px rgba(232, 90, 155, 0.22);
 }
 
 .secondary-button {
-  background: #26b6b8;
+  background: var(--mint, #5ecbb5);
   color: #ffffff;
-  padding: 10px 16px;
+  padding: 11px 18px;
   min-height: 44px;
+}
+
+.secondary-button[aria-pressed="true"] {
+  background: var(--pink-dark, #d44488);
 }
 
 .small-button {
   background: #ffffff;
-  color: #26b6b8;
-  border: 1px solid #8fd5cc;
+  color: var(--mint-darker, #2b8c7b);
+  border: 1.5px solid rgba(94, 203, 181, 0.55);
   padding: 6px 12px;
   min-height: 40px;
+}
+
+.primary-button:hover,
+.secondary-button:hover,
+.small-button:hover {
+  filter: brightness(0.98);
+  transform: translateY(-1px);
 }
 
 .detail-section {
   grid-column: 1 / -1;
   background: #ffffff;
-  border: 1px solid #c3e7e1;
-  border-radius: 14px;
-  padding: 18px;
+  border: 1px solid rgba(94, 203, 181, 0.22);
+  border-radius: var(--radius-card, 18px);
+  box-shadow: var(--shadow-card, 0 4px 20px rgba(61, 174, 155, 0.09));
+  padding: 26px;
 }
 
 .detail-section h2 {
-  color: #cc7da9;
-  margin-bottom: 12px;
+  color: var(--pink-dark, #d44488);
+  font-size: 1.45rem;
+  letter-spacing: 0;
+  margin: 0 0 16px;
 }
 
 .ingredient-list,
 .restaurant-mode-heading {
   margin: 4px 0 8px;
   font-weight: 600;
-  color: #23514c;
+  color: var(--text-dark, #2e3437);
 }
 
 .location-mismatch {
@@ -1188,7 +1268,7 @@ function formatDate(date: Date) {
 
 .restaurant-match-note {
   font-size: 0.82rem;
-  color: #3a7d74;
+  color: var(--mint-darker, #2b8c7b);
 }
 
 .restaurant-match-note.suggestion {
@@ -1197,17 +1277,18 @@ function formatDate(date: Date) {
 
 .restaurant-list {
   list-style: none;
-  padding: 0;
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
 }
 
 .ingredient-list li,
 .restaurant-list li {
-  background: #f4fbfa;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
-  padding: 12px;
+  background: var(--mint-bg, #ecfaf6);
+  border: 1px solid rgba(94, 203, 181, 0.28);
+  border-radius: 14px;
+  padding: 13px 14px;
 }
 
 .ingredient-list li {
@@ -1218,10 +1299,47 @@ function formatDate(date: Date) {
   overflow-wrap: anywhere;
 }
 
+.ingredient-name {
+  color: var(--text-dark, #2e3437);
+  font-weight: 700;
+}
+
 .step-list {
+  counter-reset: recipe-step;
   display: grid;
-  gap: 10px;
-  padding-left: 22px;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.step-list li {
+  align-items: flex-start;
+  background: #fff8fb;
+  border: 1px solid rgba(232, 90, 155, 0.16);
+  border-radius: 16px;
+  color: var(--text-dark, #2e3437);
+  counter-increment: recipe-step;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto 1fr;
+  line-height: 1.6;
+  padding: 15px;
+}
+
+.step-list li::before {
+  align-items: center;
+  background: var(--pink, #e85a9b);
+  border-radius: 999px;
+  color: #ffffff;
+  content: counter(recipe-step);
+  display: inline-flex;
+  font-size: 0.88rem;
+  font-weight: 900;
+  height: 30px;
+  justify-content: center;
+  margin-top: 1px;
+  width: 30px;
 }
 
 .instruction-text,
@@ -1233,17 +1351,21 @@ function formatDate(date: Date) {
 .instruction-search-panel {
   display: grid;
   gap: 12px;
+  background: var(--mint-bg, #ecfaf6);
+  border: 1px solid rgba(94, 203, 181, 0.28);
+  border-radius: 16px;
+  padding: 18px;
 }
 
 .google-search-link {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-weight: 800;
 }
 
 .instruction-results {
-  background: #f4fbfa;
-  border: 1px solid #c3e7e1;
-  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(94, 203, 181, 0.28);
+  border-radius: 16px;
   padding: 14px;
   overflow-wrap: anywhere;
 }
@@ -1282,19 +1404,27 @@ function formatDate(date: Date) {
 
 .restaurant-search-form {
   display: grid;
-  gap: 8px;
-  max-width: 480px;
-  margin: 14px 0;
+  gap: 10px;
+  max-width: 720px;
+  margin: 16px 0;
+  background: var(--mint-bg, #ecfaf6);
+  border: 1px solid rgba(94, 203, 181, 0.28);
+  border-radius: 16px;
+  padding: 16px;
 }
 
 .location-label {
   font-weight: 700;
   font-size: 0.875rem;
-  color: #2b1b23;
+  color: var(--text-dark, #2e3437);
+}
+
+.location-input-row {
+  display: grid;
 }
 
 .location-input {
-  border: 1.5px solid #c3e7e1;
+  border: 1.5px solid rgba(94, 203, 181, 0.5);
   border-radius: 999px;
   padding: 10px 18px;
   font: inherit;
@@ -1306,7 +1436,7 @@ function formatDate(date: Date) {
 }
 
 .location-input:focus {
-  border-color: #1d8e90;
+  border-color: var(--mint-darker, #2b8c7b);
 }
 
 .location-input:disabled {
@@ -1323,18 +1453,18 @@ function formatDate(date: Date) {
 
 .restaurant-list li {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   overflow-wrap: anywhere;
 }
 
 .restaurant-name {
-  font-size: 1rem;
-  color: #2b1b23;
+  font-size: 1.05rem;
+  color: var(--text-dark, #2e3437);
 }
 
 .restaurant-list a,
 .maps-link {
-  color: #cc7da9;
+  color: var(--pink-dark, #d44488);
   font-weight: 800;
   overflow-wrap: anywhere;
   text-decoration: none;
@@ -1436,6 +1566,16 @@ function formatDate(date: Date) {
   padding: 9px 16px;
 }
 
+@media (max-width: 960px) {
+  .recipe-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .image-panel {
+    min-height: 320px;
+  }
+}
+
 @media (max-width: 760px) {
   .detail-page {
     margin-bottom: 32px;
@@ -1453,17 +1593,34 @@ function formatDate(date: Date) {
     gap: 16px;
   }
 
+  .recipe-hero {
+    border-radius: 20px;
+    gap: 18px;
+    padding: 18px;
+  }
+
   .image-panel {
     aspect-ratio: 16 / 10;
     min-height: 180px;
   }
 
-  .content-panel h1 {
-    font-size: 1.45rem;
-    line-height: 1.2;
+  .image-panel-empty span {
+    font-size: 3.6rem;
+    height: 104px;
+    width: 104px;
   }
 
-  .meta-grid span,
+  .content-panel {
+    gap: 14px;
+    padding: 0;
+  }
+
+  .content-panel h1 {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  .meta-card,
   .tag {
     flex: 1 1 auto;
     justify-content: center;
@@ -1483,8 +1640,8 @@ function formatDate(date: Date) {
   }
 
   .detail-section {
-    border-radius: 12px;
-    padding: 14px;
+    border-radius: 16px;
+    padding: 18px;
   }
 
   .ingredient-list li {
@@ -1494,7 +1651,12 @@ function formatDate(date: Date) {
   }
 
   .step-list {
-    padding-left: 18px;
+    gap: 10px;
+  }
+
+  .step-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 13px;
   }
 
   .instruction-results {
@@ -1522,5 +1684,3 @@ function formatDate(date: Date) {
   }
 }
 </style>
-
-
