@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, inject, nextTick, ref, watch } from 'vue'
+import { routeLocationKey, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { Wand } from 'reicon-vue'
 import { ApiClientError } from '@/shared/api/apiClient'
 import { aiApi } from '@/shared/api/aiApi'
@@ -18,20 +19,41 @@ const PROMPT_SUGGESTIONS = [
 
 const GREETING_TEXT = 'Frag Dishly AI nach deinem Wochenplan, Vorrat, Kalorienziel oder passenden Rezeptideen.'
 
+const route = inject(routeLocationKey, undefined) as RouteLocationNormalizedLoaded | undefined
 const message = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
 const messagesEl = ref<HTMLDivElement | null>(null)
-const messages = ref<ChatMessage[]>([
-  {
-    role: 'assistant',
-    text: GREETING_TEXT,
-  },
-])
+const messages = ref<ChatMessage[]>(initialMessages())
+const activeRequestId = ref(0)
 
 // Solange nur die Begrüßung da ist, zeigen wir den freundlichen Einstieg mit Vorschlägen
 // statt der (noch leeren) Chat-Verlauf-Box.
 const showEmptyState = computed(() => messages.value.length <= 1)
+
+watch(
+  () => route?.path ?? '',
+  () => {
+    resetChat()
+  },
+)
+
+function initialMessages(): ChatMessage[] {
+  return [
+    {
+      role: 'assistant',
+      text: GREETING_TEXT,
+    },
+  ]
+}
+
+function resetChat() {
+  activeRequestId.value += 1
+  messages.value = initialMessages()
+  message.value = ''
+  error.value = null
+  loading.value = false
+}
 
 async function scrollMessagesToBottom({ smooth = true } = {}) {
   await nextTick()
@@ -81,13 +103,17 @@ async function submitMessage(text: string) {
   message.value = ''
   loading.value = true
   error.value = null
+  const requestId = activeRequestId.value + 1
+  activeRequestId.value = requestId
   await scrollMessagesToBottom()
 
   try {
     const response = await aiApi.chat({ message: value })
+    if (requestId !== activeRequestId.value) return
     messages.value.push({ role: 'assistant', text: response.message })
     await scrollMessagesToBottom()
   } catch (e: unknown) {
+    if (requestId !== activeRequestId.value) return
     if (e instanceof ApiClientError && e.status === 401) {
       error.value = 'Bitte melde dich erneut an, um Dishly AI zu nutzen.'
     } else if (e instanceof ApiClientError && e.message) {
@@ -96,7 +122,9 @@ async function submitMessage(text: string) {
       error.value = 'Dishly AI konnte gerade nicht antworten.'
     }
   } finally {
-    loading.value = false
+    if (requestId === activeRequestId.value) {
+      loading.value = false
+    }
   }
 }
 </script>
@@ -146,7 +174,12 @@ async function submitMessage(text: string) {
     <p v-if="error" class="status-text error" role="alert">{{ error }}</p>
 
     <form class="chat-form" @submit.prevent="sendMessage">
-      <label class="chat-input-label" for="dishly-ai-message">Deine Frage</label>
+      <div class="chat-form-header">
+        <label class="chat-input-label" for="dishly-ai-message">Deine Frage</label>
+        <button type="button" class="chat-reset-btn" @click="resetChat">
+          Chat zurücksetzen
+        </button>
+      </div>
       <div class="chat-input-shell">
         <textarea
           id="dishly-ai-message"
@@ -360,12 +393,36 @@ async function submitMessage(text: string) {
   z-index: 1;
 }
 
+.chat-form-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
 .chat-input-label {
   color: var(--text-gray, #6b7478);
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.chat-reset-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-gray, #6b7478);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 2px 0;
+  transition: color 0.16s ease;
+  white-space: nowrap;
+}
+
+.chat-reset-btn:hover {
+  color: var(--pink, #e85a9b);
 }
 
 .chat-input-shell {

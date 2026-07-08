@@ -121,7 +121,12 @@ async function logout() {
       <span>Dishly AI</span>
     </button>
 
-    <div v-if="authStore.isAuthenticated && aiDrawerOpen" class="ai-drawer-backdrop" @click.self="aiDrawerOpen = false">
+    <div
+      v-if="authStore.isAuthenticated"
+      v-show="aiDrawerOpen"
+      class="ai-drawer-backdrop"
+      @click.self="aiDrawerOpen = false"
+    >
       <aside class="ai-drawer" aria-label="Dishly AI Chat">
         <div class="ai-drawer-header">
           <div class="ai-drawer-heading">
