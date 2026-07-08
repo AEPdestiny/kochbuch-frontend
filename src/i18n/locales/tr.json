@@ -170,7 +170,9 @@
     "groups": {
       "manual": "Manuel"
     },
-    "allItems": { "title": "Tüm Alışveriş Öğeleri" },
+    "allItems": {
+      "title": "Tüm Alışveriş Öğeleri"
+    },
     "recipeGroups": {
       "title": "Bu malzemeleri kullanan tarifler",
       "empty": "Tarif ataması mevcut değil."
@@ -216,7 +218,14 @@
       "ingredients": "Malzemeler",
       "ingredientsPlaceholder": "Malzemeleri virgülle ayırarak gir.",
       "instructions": "Hazırlanış",
-      "instructionsPlaceholder": "Hazırlanışı adım adım açıkla."
+      "instructionsPlaceholder": "Hazırlanışı adım adım açıkla.",
+      "calories": "Kalori / kcal",
+      "caloriesPlaceholder": "?rn. 450",
+      "ingredientName": "Malzeme",
+      "ingredientQuantity": "Miktar",
+      "ingredientUnit": "Birim",
+      "addIngredient": "Malzeme ekle",
+      "removeIngredient": "Malzemeyi kald?r"
     },
     "actions": {
       "login": "Girişe git",
@@ -362,7 +371,8 @@
     "meta": {
       "minutes": "{minutes} dk",
       "servings": "{count} porsiyon",
-      "rating": "★ {rating}"
+      "rating": "★ {rating}",
+      "protein": "{protein} g protein"
     },
     "filters": {
       "vegan": "Vegan",
@@ -379,7 +389,13 @@
       "dinner": "Dinner",
       "snack": "Snack",
       "context": "Context",
-      "contextPlaceholder": "stressed, cheap, date night"
+      "contextPlaceholder": "stressed, cheap, date night",
+      "ariaLabel": "Tarif filtreleri",
+      "title": "Filtreler",
+      "lactoseFree": "S?ts?z / laktozsuz",
+      "maxCalories": "Maksimum kalori",
+      "dessert": "Tatl?",
+      "drink": "??ecek"
     },
     "reasons": {
       "vegan": "Vegan",
@@ -400,6 +416,37 @@
       "label": "Sayfa gezintisi",
       "previous": "Önceki",
       "next": "Sonraki"
+    },
+    "emptySearch": "E?le?en tarif bulunamad?. Ba?ka bir arama deneyin veya filtreleri de?i?tirin.",
+    "emptyForLanguage": "Bu dil i?in hen?z yerel tarif yok.",
+    "notices": {
+      "localRecipesLoaded": "{count} yerel tarif y?klendi.",
+      "localSearchResults": "Bu arama i?in bu dilde ?u anda yaln?zca {count} yerel tarif var."
+    },
+    "sort": {
+      "label": "S?ralama",
+      "default": "Varsay?lan",
+      "caloriesAsc": "Kalori artan",
+      "caloriesDesc": "Kalori azalan",
+      "proteinAsc": "Protein artan",
+      "proteinDesc": "Protein azalan",
+      "timeAsc": "S?re artan",
+      "timeDesc": "S?re azalan"
+    },
+    "personalization": {
+      "disable": "Ki?iselle?tirmeyi kapat",
+      "enable": "Ki?iselle?tirmeyi a?",
+      "active": "Profil aktif",
+      "inactive": "Profil yok say?l?yor - alerjiler ve sevmedikleriniz aktif kal?r",
+      "note": "Profilinize g?re ki?iselle?tirildi"
+    },
+    "card": {
+      "userCreated": "Bir kullan?c? olu?turdu",
+      "favorite": "Favori",
+      "alcohol": "Alkol"
+    },
+    "mealPlan": {
+      "chooseSlot": "G?n ve ???n se?:"
     }
   },
   "notifications": {
@@ -409,7 +456,31 @@
     "shoppingListPdfReady": "Alışveriş listesi yazdırma için hazırlanıyor.",
     "pantryPdfReady": "Kiler yazdırma için hazırlanıyor.",
     "pdfEmptyList": "PDF için kayıt bulunamadı.",
-    "mealPlanPdfReady": "Haftalık plan yazdırma için hazırlanıyor."
+    "mealPlanPdfReady": "Haftalık plan yazdırma için hazırlanıyor.",
+    "loginSuccess": "Giri? ba?ar?l?.",
+    "logoutSuccess": "??k?? yap?ld?.",
+    "recipeCreated": "Tarif olu?turuldu.",
+    "recipeUpdated": "Tarif g?ncellendi.",
+    "recipeDeleted": "Tarif silindi.",
+    "favoriteAdded": "Tarif favorilere eklendi.",
+    "favoriteRemoved": "Tarif favorilerden kald?r?ld?.",
+    "publishedOn": "Tarif ana sayfada g?r?n?r oldu.",
+    "publishedOff": "Tarif ana sayfadan gizlendi.",
+    "shoppingListItemAdded": "?r?n al??veri? listesine eklendi.",
+    "shoppingListItemDeleted": "?r?n al??veri? listesinden silindi.",
+    "shoppingListCreated": "Al??veri? listesi olu?turuldu.",
+    "pantryItemAdded": "?r?n kilere eklendi.",
+    "pantryItemUpdated": "Kiler ?r?n? g?ncellendi.",
+    "pantryItemDeleted": "Kiler ?r?n? silindi.",
+    "mealPlanAdded": "Tarif yemek plan?na eklendi.",
+    "mealPlanRemoved": "???n plandan kald?r?ld?.",
+    "mealPlanSaved": "Yemek plan? kaydedildi.",
+    "weekCleared": "Hafta temizlendi.",
+    "mealPlanMoved": "???n ta??nd?.",
+    "mealPlanned": "???n planland?.",
+    "swipePlanned": "?neri plana eklendi.",
+    "shuffled": "Tarifler kar??t?r?ld?.",
+    "profileSaved": "Profil kaydedildi."
   },
   "print": {
     "appTitle": "Dishly",
@@ -551,7 +622,19 @@
       "toastInPantry": "{count} kiler tarafından karşılandı",
       "toastExisting": "{count} zaten alışveriş listesinde",
       "toastReview": "{count} incelenmeli",
-      "toastNone": "Yeni malzeme gerekmiyor"
+      "toastNone": "Yeni malzeme gerekmiyor",
+      "action": "Yemek plan?ndan al??veri? listesi olu?tur",
+      "title": "Al??veri? listesi",
+      "subtitle": "Planlanan ???nlerden al??veri? listesi olu?tur.",
+      "loading": "Al??veri? listesi olu?turuluyor...",
+      "success": "Al??veri? listesi olu?turuldu.",
+      "added": "{count} ?r?n eklendi.",
+      "inPantry": "{count} ?r?n kilerde mevcut.",
+      "alreadyOnList": "{count} ?r?n zaten listede.",
+      "needsReview": "{count} ?r?n kontrol edilmeli.",
+      "none": "Yeni ?r?n gerekmez.",
+      "open": "Al??veri? listesini a?",
+      "error": "Al??veri? listesi olu?turulamad?."
     }
   },
   "recipeDetail": {
@@ -620,7 +703,11 @@
       "dietaryStyles": "Beslenme tarz?",
       "goals": "Hedefler",
       "maxPrepTimeMinutes": "Dakika olarak en fazla haz?rl?k s?resi",
-      "calorieGoal": "Kalori hedefi"
+      "calorieGoal": "Kalori hedefi",
+      "likesInputPlaceholder": "Sevdi?iniz bir yiyecek ekleyin + Enter",
+      "dislikesInputPlaceholder": "Sevmedi?iniz bir yiyecek ekleyin + Enter",
+      "allergiesInputPlaceholder": "Alerjen yaz?n veya listeden se?in",
+      "calorieGoalPlaceholder": "?rn. 2200"
     },
     "options": {
       "vegan": "Vegan",
@@ -645,6 +732,30 @@
       "load": "Tercihlerin y?klenemedi.",
       "save": "Tercihlerin kaydedilemedi.",
       "validation": "L?tfen giri?lerini kontrol et."
+    },
+    "sections": {
+      "taste": {
+        "title": "Tat",
+        "description": "Sevdiklerinizi ve Dishly?nin ?nerilerden ??karmas? gerekenleri girin."
+      },
+      "safety": {
+        "title": "G?venlik",
+        "description": "Alerji nedeniyle ?nerilerde yer almamas? gereken malzemeleri ekleyin."
+      },
+      "diet": {
+        "title": "Beslenme tarz?",
+        "description": "?nerilerinizin dikkate alaca?? beslenme tarzlar?n? se?in."
+      },
+      "goals": {
+        "title": "Hedefler",
+        "description": "Tarif ?nerilerini s?ralamak ve se?mek i?in iste?e ba?l? hedefler belirleyin."
+      }
+    },
+    "hints": {
+      "allergiesAlwaysActive": "Alerjiler her zaman dikkate al?n?r.",
+      "calorieGoal": "Genel y?nlendirme i?in kullan?l?r, t?bbi tavsiye de?ildir.",
+      "personalizationTitle": "Dishly profilinizi nas?l kullan?r",
+      "personalization": "Sevdikleriniz ve hedefleriniz ana sayfadaki ?nerileri etkiler. Ki?iselle?tirmeyi kapatsan?z bile alerjiler ve sevmedikleriniz aktif kal?r."
     }
   }
 }
