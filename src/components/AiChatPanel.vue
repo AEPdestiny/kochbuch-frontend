@@ -4,6 +4,7 @@ import { routeLocationKey, type RouteLocationNormalizedLoaded } from 'vue-router
 import { Wand } from 'reicon-vue'
 import { ApiClientError } from '@/shared/api/apiClient'
 import { aiApi } from '@/shared/api/aiApi'
+import type { AiChatTurn } from '@/types/ai'
 
 type ChatMessage = {
   role: 'user' | 'assistant'
@@ -18,6 +19,7 @@ const PROMPT_SUGGESTIONS = [
 ]
 
 const GREETING_TEXT = 'Frag Dishly AI nach deinem Wochenplan, Vorrat, Kalorienziel oder passenden Rezeptideen.'
+const HISTORY_LIMIT = 8
 
 const route = inject(routeLocationKey, undefined) as RouteLocationNormalizedLoaded | undefined
 const message = ref('')
@@ -53,6 +55,16 @@ function resetChat() {
   message.value = ''
   error.value = null
   loading.value = false
+}
+
+function recentHistory(): AiChatTurn[] {
+  return messages.value
+    .filter(item => item.text !== GREETING_TEXT)
+    .slice(-HISTORY_LIMIT)
+    .map(item => ({
+      role: item.role,
+      text: item.text,
+    }))
 }
 
 async function scrollMessagesToBottom({ smooth = true } = {}) {
@@ -99,6 +111,7 @@ async function submitMessage(text: string) {
     return
   }
 
+  const history = recentHistory()
   messages.value.push({ role: 'user', text: value })
   message.value = ''
   loading.value = true
@@ -108,7 +121,10 @@ async function submitMessage(text: string) {
   await scrollMessagesToBottom()
 
   try {
-    const response = await aiApi.chat({ message: value })
+    const response = await aiApi.chat({
+      message: value,
+      ...(history.length ? { history } : {}),
+    })
     if (requestId !== activeRequestId.value) return
     messages.value.push({ role: 'assistant', text: response.message })
     await scrollMessagesToBottom()

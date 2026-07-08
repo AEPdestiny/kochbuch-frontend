@@ -50,6 +50,29 @@ describe('AiChatView', () => {
     expect(wrapper.text()).toContain('Bitte gib eine Frage ein.')
   })
 
+  it('sends recent chat turns as history for follow-up messages', async () => {
+    vi.mocked(aiApi.chat)
+      .mockResolvedValueOnce({ message: 'Ich empfehle Dishly Pasta. Moechtest du (1) Details, (2) Restaurant?', configured: true })
+      .mockResolvedValueOnce({ message: 'Ich erklaere dir Option 2.', configured: true })
+    const { wrapper } = mountAiChatView()
+
+    await wrapper.find('textarea').setValue('Was soll ich kochen?')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    await wrapper.find('textarea').setValue('2')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(aiApi.chat).toHaveBeenLastCalledWith({
+      message: '2',
+      history: [
+        { role: 'user', text: 'Was soll ich kochen?' },
+        { role: 'assistant', text: 'Ich empfehle Dishly Pasta. Moechtest du (1) Details, (2) Restaurant?' },
+      ],
+    })
+  })
+
   it('resets the chat when the reset button is clicked', async () => {
     vi.mocked(aiApi.chat).mockResolvedValue({ message: 'Plane mehr Gemuese ein.', configured: true })
     const { wrapper } = mountAiChatView()

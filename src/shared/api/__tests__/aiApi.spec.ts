@@ -10,7 +10,10 @@ vi.mock('@/shared/api/apiClient', () => ({
 
 describe('aiApi', () => {
   it('chat calls POST /ai/chat and returns the response', async () => {
-    const request = { message: 'Was soll ich kochen?' }
+    const request = {
+      message: 'Was soll ich kochen?',
+      history: [{ role: 'assistant' as const, text: 'Moechtest du (1) Details oder (2) Restaurant?' }],
+    }
     const response = { message: 'Koche Pasta.', configured: true }
     vi.mocked(apiClient.post).mockResolvedValue({ data: response })
 
