@@ -182,6 +182,7 @@
     },
     "recipeGroups": {
       "title": "Rezepte mit diesen Zutaten",
+      "backToList": "Zurück zur Einkaufsliste",
       "empty": "Keine Rezeptzuordnung verfügbar."
     },
     "messages": {
@@ -232,6 +233,9 @@
       "addIngredient": "Zutat hinzufügen",
       "removeIngredient": "Zutat entfernen",
       "instructions": "Zubereitung",
+      "instructionStep": "Schritt {number}",
+      "addInstruction": "Schritt hinzufügen",
+      "removeInstruction": "Schritt entfernen",
       "instructionsPlaceholder": "Beschreibe die Zubereitung Schritt für Schritt."
     },
     "actions": {
@@ -586,6 +590,7 @@
     "unknownCaloriesHint": "Einige Mahlzeiten haben keine kcal-Angabe und sind nicht in der Summe enthalten.",
     "weekUnknownCaloriesHint": "{count} Mahlzeiten ohne kcal-Angabe sind nicht in der Summe enthalten.",
     "weekUnknownCaloriesHintOne": "{count} Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.",
+    "noWeeklyGoal": "Kein Wochenziel gesetzt.",
     "week": {
       "current": "Aktuelle Woche"
     },

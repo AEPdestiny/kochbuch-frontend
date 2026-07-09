@@ -203,6 +203,42 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).not.toContain('Einige Mahlzeiten haben keine kcal-Angabe')
   })
 
+  it('shows no weekly goal state when calorie target is zero or empty', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: [],
+      vegan: false,
+      vegetarian: false,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: 0,
+      dailyCalorieTarget: 0,
+    })
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        entry('2026-06-01', recipe(1, 'Pasta', { calories: 300 }), 'dinner'),
+        entry('2026-06-02', recipe(2, 'Soup', { calories: 400 }), 'lunch'),
+      ],
+    })
+
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Kein Wochenziel gesetzt.')
+    expect(wrapper.text()).toContain('100 kcal')
+    expect(wrapper.text()).not.toContain('Differenz')
+    expect(wrapper.text()).not.toContain('/ 0')
+    expect(wrapper.text()).not.toContain('/ 1')
+    expect(wrapper.text()).not.toContain('+100 kcal')
+  })
+
   it('does not crash for a freetext entry lacking nutrition data and keeps the kcal sum correct', async () => {
     vi.mocked(mealPlanApi.getWeek).mockResolvedValue({
       weekStart: '2026-06-01',

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import ShoppingListRecipes from '@/components/ShoppingListRecipes.vue'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
@@ -73,6 +74,9 @@ async function toggleChecked(item: ShoppingListItem) {
     <div class="shopping-list-header">
       <h1>{{ t('shoppingList.recipeGroups.title') }}</h1>
       <p>{{ t('shoppingList.subtitle') }}</p>
+      <RouterLink to="/shopping-list" class="back-link">
+        {{ t('shoppingList.recipeGroups.backToList') }}
+      </RouterLink>
     </div>
 
     <p v-if="loading" class="status-text">{{ t('shoppingList.loading') }}</p>
@@ -118,6 +122,26 @@ async function toggleChecked(item: ShoppingListItem) {
 .status-text {
   color: var(--text-gray, #6b7478);
   font-size: 1rem;
+}
+
+.back-link {
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid var(--mint, #5ecbb5);
+  border-radius: var(--radius-pill, 999px);
+  color: var(--mint-darker, #2b8c7b);
+  display: inline-flex;
+  font-weight: 700;
+  margin-top: 16px;
+  min-height: 42px;
+  padding: 8px 16px;
+  text-decoration: none;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.back-link:hover {
+  background: var(--mint, #5ecbb5);
+  color: #ffffff;
 }
 
 .status-text.error {

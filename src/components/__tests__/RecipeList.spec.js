@@ -401,6 +401,44 @@ describe('RecipeList.vue', () => {
     )
   })
 
+  it('creates a recipe with separate instruction steps converted to a string', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const wrapper = mount(RecipeList, { props: { mode: 'create' } })
+    await flushPromises()
+
+    vi.mocked(recipeApi.createRecipe).mockResolvedValue({
+      id: 8,
+      title: 'Step Dish',
+      imageUrl: '',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 0,
+      difficulty: '',
+      category: '',
+      rating: 0,
+      ingredients: 'x',
+      instructions: 'Prep\nCook',
+      favorite: false,
+      published: false,
+    })
+
+    await wrapper.find('input[placeholder="z. B. Cremige Tomatenpasta"]').setValue('Step Dish')
+    await wrapper.find('.new-recipe-form input[placeholder="Zutat"]').setValue('x')
+    await wrapper.find('.new-recipe-form .instruction-row textarea').setValue('Prep')
+    await wrapper.find('.new-recipe-form .instruction-rows + .ingredient-add-btn').trigger('click')
+    await wrapper.findAll('.new-recipe-form .instruction-row textarea')[1].setValue('Cook')
+    expect(wrapper.findAll('.new-recipe-form .instruction-row')).toHaveLength(2)
+
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(recipeApi.createRecipe).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instructions: 'Prep\nCook',
+      })
+    )
+  })
+
   it('shows an optional kcal field in the create form', async () => {
     const wrapper = mount(RecipeList, { props: { mode: 'create' } })
     await flushPromises()
@@ -1055,7 +1093,7 @@ describe('RecipeList.vue', () => {
     expect(wrapper.find('.recipe-grid').text()).not.toContain('Fav 1')
   })
 
-  it('paginates own recipes with 10 recipes per page and scrolls to top', async () => {
+  it('paginates own recipes with 8 recipes per page and scrolls to top', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const scrollSpy = vi.fn()
     Object.defineProperty(window, 'scrollTo', {
@@ -1081,15 +1119,15 @@ describe('RecipeList.vue', () => {
     const wrapper = mount(RecipeList)
     await flushPromises()
 
-    expect(wrapper.findAll('.recipes .recipe-card')).toHaveLength(10)
+    expect(wrapper.findAll('.recipes .recipe-card')).toHaveLength(8)
     expect(wrapper.findAll('.recipes .name').map(node => node.text())).toContain('Own 1')
-    expect(wrapper.findAll('.recipes .name').map(node => node.text())).not.toContain('Own 11')
+    expect(wrapper.findAll('.recipes .name').map(node => node.text())).not.toContain('Own 9')
 
     await wrapper.findAll('.pagination .page-number').find(button => button.text() === '2').trigger('click')
     await flushPromises()
 
-    expect(wrapper.findAll('.recipes .recipe-card')).toHaveLength(1)
-    expect(wrapper.findAll('.recipes .name').map(node => node.text())).toEqual(['Own 11'])
+    expect(wrapper.findAll('.recipes .recipe-card')).toHaveLength(3)
+    expect(wrapper.findAll('.recipes .name').map(node => node.text())).toEqual(['Own 9', 'Own 10', 'Own 11'])
     expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
   })
 
@@ -1121,15 +1159,15 @@ describe('RecipeList.vue', () => {
     await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
     await flushPromises()
 
-    expect(wrapper.findAll('.recipe-grid .recipe-card')).toHaveLength(10)
+    expect(wrapper.findAll('.recipe-grid .recipe-card')).toHaveLength(8)
     expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).toContain('Fav 1')
-    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).not.toContain('Fav 11')
+    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).not.toContain('Fav 9')
 
     await wrapper.findAll('.pagination .page-number').find(button => button.text() === '2').trigger('click')
     await flushPromises()
 
-    expect(wrapper.findAll('.recipe-grid .recipe-card')).toHaveLength(1)
-    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).toEqual(['Fav 11'])
+    expect(wrapper.findAll('.recipe-grid .recipe-card')).toHaveLength(3)
+    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).toEqual(['Fav 9', 'Fav 10', 'Fav 11'])
     expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
   })
 

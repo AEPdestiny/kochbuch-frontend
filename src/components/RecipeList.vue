@@ -18,6 +18,10 @@ function emptyIngredientRow(): IngredientRow {
   return { name: '', quantity: '', unit: '' }
 }
 
+function emptyInstructionStep(): string {
+  return ''
+}
+
 function toCaloriesValue(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
@@ -50,6 +54,22 @@ function parseIngredientRows(ingredients: string, ingredientsList?: string[] | n
   })
 }
 
+function serializeInstructionRows(rows: string[]): string {
+  return rows.map(step => step.trim()).filter(Boolean).join('\n')
+}
+
+function parseInstructionRows(instructions: string, instructionsList?: string[] | null): string[] {
+  const lines = instructionsList && instructionsList.length > 0
+    ? instructionsList
+    : instructions.split(/\r?\n/)
+
+  const steps = lines
+    .map(step => step.trim())
+    .filter(Boolean)
+
+  return steps.length > 0 ? steps : [emptyInstructionStep()]
+}
+
 const props = withDefaults(defineProps<{ search?: string; mode?: 'manager' | 'create' }>(), {
   mode: 'manager',
 })
@@ -76,7 +96,7 @@ const newDifficulty = ref('')
 const newCategory = ref('')
 const newCalories = ref<number | null>(null)
 const newIngredientRows = ref<IngredientRow[]>([emptyIngredientRow()])
-const newInstructions = ref('')
+const newInstructionRows = ref<string[]>([emptyInstructionStep()])
 const newFavorite = ref(false)
 const newPublished = ref(false)
 const newImagePreviewUrl = ref('')
@@ -86,9 +106,10 @@ const editImageUploading = ref(false)
 const newImageUploaded = ref(false)
 const editImageUploaded = ref(false)
 const editIngredientRows = ref<IngredientRow[]>([emptyIngredientRow()])
+const editInstructionRows = ref<string[]>([emptyInstructionStep()])
 
 const editing = ref<Recipe | null>(null)
-const PAGE_SIZE = 10
+const PAGE_SIZE = 8
 const ownPage = ref(1)
 const favoritesPage = ref(1)
 const selectedFavorite = ref<Recipe | null>(null)
@@ -163,6 +184,7 @@ const toLoadRecipesErrorMessage = (e: unknown) => {
 }
 
 const hasNewIngredients = computed(() => newIngredientRows.value.some(r => r.name.trim()))
+const hasNewInstructions = computed(() => newInstructionRows.value.some(step => step.trim()))
 
 function addNewIngredientRow() {
   newIngredientRows.value.push(emptyIngredientRow())
@@ -173,6 +195,15 @@ function removeNewIngredientRow(index: number) {
   newIngredientRows.value.splice(index, 1)
 }
 
+function addNewInstructionStep() {
+  newInstructionRows.value.push(emptyInstructionStep())
+}
+
+function removeNewInstructionStep(index: number) {
+  if (newInstructionRows.value.length <= 1) return
+  newInstructionRows.value.splice(index, 1)
+}
+
 const createRecipe = async () => {
   if (newImageUploading.value) {
     formError.value = 'Bitte warte, bis das Bild hochgeladen wurde.'
@@ -181,7 +212,7 @@ const createRecipe = async () => {
   if (
     !newTitle.value.trim() ||
     !hasNewIngredients.value ||
-    !newInstructions.value.trim()
+    !hasNewInstructions.value
   ) {
     formError.value = t('recipes.errors.requiredFields')
     return
@@ -204,7 +235,7 @@ const createRecipe = async () => {
       category: newCategory.value,
       rating: 0,
       ingredients: serializeIngredientRows(newIngredientRows.value),
-      instructions: newInstructions.value,
+      instructions: serializeInstructionRows(newInstructionRows.value),
       favorite: newFavorite.value,
       published: newPublished.value,
       language: currentLanguage.value,
@@ -223,7 +254,7 @@ const createRecipe = async () => {
     newCategory.value = ''
     newCalories.value = null
     newIngredientRows.value = [emptyIngredientRow()]
-    newInstructions.value = ''
+    newInstructionRows.value = [emptyInstructionStep()]
     newFavorite.value = false
     newPublished.value = false
     newImageUploaded.value = false
@@ -262,6 +293,7 @@ const toCreateRecipeErrorMessage = (e: unknown) => {
 const startEdit = (r: Recipe) => {
   editing.value = { ...r }
   editIngredientRows.value = parseIngredientRows(r.ingredients, r.ingredientsList)
+  editInstructionRows.value = parseInstructionRows(r.instructions, r.instructionsList)
   editImagePreviewUrl.value = ''
   editImageUploaded.value = false
   editImageUploading.value = false
@@ -270,12 +302,14 @@ const startEdit = (r: Recipe) => {
 const cancelEdit = () => {
   editing.value = null
   editIngredientRows.value = [emptyIngredientRow()]
+  editInstructionRows.value = [emptyInstructionStep()]
   editImageUploaded.value = false
   editImageUploading.value = false
   clearEditImagePreview()
 }
 
 const hasEditIngredients = computed(() => editIngredientRows.value.some(r => r.name.trim()))
+const hasEditInstructions = computed(() => editInstructionRows.value.some(step => step.trim()))
 
 function addEditIngredientRow() {
   editIngredientRows.value.push(emptyIngredientRow())
@@ -284,6 +318,15 @@ function addEditIngredientRow() {
 function removeEditIngredientRow(index: number) {
   if (editIngredientRows.value.length <= 1) return
   editIngredientRows.value.splice(index, 1)
+}
+
+function addEditInstructionStep() {
+  editInstructionRows.value.push(emptyInstructionStep())
+}
+
+function removeEditInstructionStep(index: number) {
+  if (editInstructionRows.value.length <= 1) return
+  editInstructionRows.value.splice(index, 1)
 }
 
 const updateRecipe = async () => {
@@ -295,7 +338,7 @@ const updateRecipe = async () => {
   if (
     !editing.value.title.trim() ||
     !hasEditIngredients.value ||
-    !editing.value.instructions.trim()
+    !hasEditInstructions.value
   ) {
     editFormError.value = t('recipes.errors.requiredFields')
     return
@@ -308,6 +351,7 @@ const updateRecipe = async () => {
   }
 
   editing.value.ingredients = serializeIngredientRows(editIngredientRows.value)
+  editing.value.instructions = serializeInstructionRows(editInstructionRows.value)
 
   try {
     const updated = await recipeApi.updateRecipe(
@@ -913,11 +957,29 @@ defineExpose({ startEdit })
           <label>
             {{ t('recipes.form.instructions') }} <span class="required-star">*</span>
           </label>
-          <textarea
-            v-model="newInstructions"
-            rows="5"
-            :placeholder="t('recipes.form.instructionsPlaceholder')"
-          ></textarea>
+          <div class="instruction-rows">
+            <div v-for="(_, index) in newInstructionRows" :key="index" class="instruction-row">
+              <label class="instruction-step-label" :for="`new-instruction-${index}`">
+                {{ t('recipes.form.instructionStep', { number: index + 1 }) }}
+              </label>
+              <textarea
+                :id="`new-instruction-${index}`"
+                v-model="newInstructionRows[index]"
+                rows="3"
+                :placeholder="t('recipes.form.instructionsPlaceholder')"
+              ></textarea>
+              <button
+                type="button"
+                class="ingredient-remove-btn"
+                :disabled="newInstructionRows.length <= 1"
+                :aria-label="t('recipes.form.removeInstruction')"
+                @click="removeNewInstructionStep(index)"
+              >-</button>
+            </div>
+          </div>
+          <button type="button" class="ingredient-add-btn" @click="addNewInstructionStep">
+            + {{ t('recipes.form.addInstruction') }}
+          </button>
         </div>
 
         <div class="form-toggle-row">
@@ -1171,7 +1233,29 @@ defineExpose({ startEdit })
 
         <div class="form-field">
           <label>{{ t('recipes.form.instructions') }}</label>
-          <textarea v-model="editing.instructions" rows="5"></textarea>
+          <div class="instruction-rows">
+            <div v-for="(_, index) in editInstructionRows" :key="index" class="instruction-row">
+              <label class="instruction-step-label" :for="`edit-instruction-${index}`">
+                {{ t('recipes.form.instructionStep', { number: index + 1 }) }}
+              </label>
+              <textarea
+                :id="`edit-instruction-${index}`"
+                v-model="editInstructionRows[index]"
+                rows="3"
+                :placeholder="t('recipes.form.instructionsPlaceholder')"
+              ></textarea>
+              <button
+                type="button"
+                class="ingredient-remove-btn"
+                :disabled="editInstructionRows.length <= 1"
+                :aria-label="t('recipes.form.removeInstruction')"
+                @click="removeEditInstructionStep(index)"
+              >-</button>
+            </div>
+          </div>
+          <button type="button" class="ingredient-add-btn" @click="addEditInstructionStep">
+            + {{ t('recipes.form.addInstruction') }}
+          </button>
         </div>
 
         <div class="form-toggle-row">
@@ -1429,12 +1513,39 @@ defineExpose({ startEdit })
   margin-top: 4px;
 }
 
+.instruction-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 .ingredient-row-header,
 .ingredient-row {
   display: grid;
   grid-template-columns: minmax(140px, 2fr) 90px minmax(110px, 1fr) 40px;
   gap: 10px;
   align-items: center;
+}
+
+.instruction-row {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 96px minmax(0, 1fr) 40px;
+}
+
+.instruction-step-label {
+  color: var(--text-light, #9aa2a5);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding-top: 10px;
+  text-transform: uppercase;
+}
+
+.instruction-row textarea {
+  min-height: 76px;
 }
 
 .ingredient-row-header span {
@@ -1518,6 +1629,15 @@ defineExpose({ startEdit })
   .ingredient-add-btn {
     width: 100%;
     text-align: center;
+  }
+
+  .instruction-row {
+    grid-template-columns: 1fr 40px;
+  }
+
+  .instruction-step-label {
+    grid-column: 1 / -1;
+    padding-top: 0;
   }
 }
 

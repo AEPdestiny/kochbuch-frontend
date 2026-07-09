@@ -180,6 +180,7 @@
     "allItems": { "title": "All Shopping Items" },
     "recipeGroups": {
       "title": "Recipes using these items",
+      "backToList": "Back to shopping list",
       "empty": "No recipe assignment available."
     },
     "messages": {
@@ -230,6 +231,9 @@
       "addIngredient": "Add ingredient",
       "removeIngredient": "Remove ingredient",
       "instructions": "Instructions",
+      "instructionStep": "Step {number}",
+      "addInstruction": "Add step",
+      "removeInstruction": "Remove step",
       "instructionsPlaceholder": "Describe the preparation step by step."
     },
     "actions": {
@@ -584,6 +588,7 @@
     "unknownCaloriesHint": "Some meals have no kcal value and are not included in the total.",
     "weekUnknownCaloriesHint": "{count} meals without a kcal value are not included in the total.",
     "weekUnknownCaloriesHintOne": "{count} meal without a kcal value is not included in the total.",
+    "noWeeklyGoal": "No weekly goal set.",
     "week": {
       "current": "Current week"
     },
