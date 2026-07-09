@@ -18,7 +18,9 @@
     "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "lint": "eslint . --fix --cache",
+    "lint": "npm run lint:check",
+    "lint:check": "eslint . --cache",
+    "lint:fix": "eslint . --fix --cache",
     "format": "prettier --write src/",
     "test:jest": "jest"
   },

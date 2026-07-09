@@ -286,6 +286,10 @@ npm run dev
 Das Frontend läuft unter `http://localhost:5173` und ist über `.env.development` (`VITE_BACKEND_BASE_URL=http://localhost:8080`) bereits auf das lokale Backend
 konfiguriert. CORS ist im Backend-Dev-Profil standardmäßig für genau diesen Origin freigegeben.
 
+Eine sichere Vorlage liegt in `.env.example`. Für lokale Abweichungen kann daraus z. B. `.env.development.local` abgeleitet werden; echte Secrets gehören nicht
+ins Frontend und dürfen nicht committed werden. `VITE_BACKEND_BASE_URL` setzt die Backend-Basis-URL. `VITE_DISHLY_AI_ENABLED=false` hält die sichtbaren Dishly-AI-
+Einstiegspunkte standardmäßig deaktiviert; erst `true` blendet sie ein.
+
 ### Umgebungsvariablen (Produktion / optionale Funktionen)
 
 | Variable | Modul | Pflicht in Produktion |
@@ -294,10 +298,13 @@ konfiguriert. CORS ist im Backend-Dev-Profil standardmäßig für genau diesen O
 | `JWT_SECRET` (mind. 32 Zeichen) | Auth | Ja — Start bricht sonst ab |
 | `JWT_ISSUER`, `JWT_EXPIRES_IN_SECONDS` | Auth | Nein (Defaults vorhanden) |
 | `CORS_ORIGINS` | CORS | Ja |
-| `spoonacular.api.keys` / `spoonacular.api.key` | Externe Rezepte | Nein, aber ohne Key keine externen Rezepte |
-| `tavily.api.key` | Anleitungssuche, Restaurantsuche | Nein, aber ohne Key keine Tavily-Suche |
+| `SPOONACULAR_API_KEYS` / `SPOONACULAR_API_KEY` | Externe Rezepte | Nein, aber ohne Key keine externen Rezepte |
+| `TAVILY_API_KEY` | Anleitungssuche, Restaurantsuche | Nein, aber ohne Key keine Tavily-Suche |
 | `GEOAPIFY_API_KEY` | Restaurantsuche (Geocoding) | Nein, aber ohne Key kein Geocoding |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET` | Bild-Upload | Nein, aber ohne Werte kein Bild-Upload |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Dishly AI | Nein, Dishly AI meldet ohne Key kontrolliert "nicht konfiguriert" |
+| `VITE_BACKEND_BASE_URL` / `VITE_API_URL` | Frontend API-Client | Ja für Frontend-Builds außerhalb der Defaults |
+| `VITE_DISHLY_AI_ENABLED` | Frontend Feature-Flag | Nein, Default ist deaktiviert |
 
 ## Projektstruktur
 
