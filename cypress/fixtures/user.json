@@ -1,0 +1,12 @@
+{
+  "accessToken": "e2e-test-jwt-token",
+  "tokenType": "Bearer",
+  "expiresIn": 3600,
+  "user": {
+    "id": 1,
+    "username": "e2euser",
+    "email": "e2e@dishly.test",
+    "role": "USER",
+    "createdAt": "2026-01-01T00:00:00Z"
+  }
+}

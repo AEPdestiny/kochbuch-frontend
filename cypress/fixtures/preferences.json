@@ -1,0 +1,14 @@
+{
+  "likes": [],
+  "dislikes": [],
+  "allergies": [],
+  "vegan": false,
+  "vegetarian": false,
+  "glutenFree": false,
+  "lactoseFree": false,
+  "highProtein": false,
+  "calorieConscious": false,
+  "budgetFriendly": false,
+  "maxPrepTimeMinutes": null,
+  "dailyCalorieTarget": null
+}

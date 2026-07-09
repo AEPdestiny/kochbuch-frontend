@@ -1,0 +1,18 @@
+{
+  "sourceApp": "Dishly",
+  "exportVersion": 1,
+  "exportedAt": "2026-07-01T08:00:00.000Z",
+  "recipe": {
+    "title": "Importiertes Rezept",
+    "ingredients": "Nudeln, Tomatensauce",
+    "instructions": "Nudeln kochen. Sauce erwärmen. Vermischen.",
+    "prepTimeMinutes": 5,
+    "cookTimeMinutes": 15,
+    "servings": 2,
+    "difficulty": "easy",
+    "category": "dinner",
+    "imageUrl": "",
+    "language": "de",
+    "calories": null
+  }
+}

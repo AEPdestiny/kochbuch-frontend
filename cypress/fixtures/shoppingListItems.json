@@ -1,0 +1,14 @@
+[
+  {
+    "id": 201,
+    "name": "Tomaten",
+    "quantity": 3,
+    "unit": "Stück",
+    "category": "Gemüse",
+    "checked": false,
+    "recipeId": null,
+    "recipeTitle": null,
+    "createdAt": "2026-07-01T08:00:00Z",
+    "updatedAt": "2026-07-01T08:00:00Z"
+  }
+]

@@ -8,7 +8,9 @@ describe('App smoke tests', () => {
   it('loads the home page with its search UI', () => {
     cy.visit('/')
     cy.get('.search-input').should('be.visible')
-    cy.get('.filter-panel').should('exist')
+    cy.get('.filter-panel').should('not.exist')
+    cy.get('.filter-trigger').click()
+    cy.get('.filter-panel').should('be.visible')
   })
 
   it('loads the login page with its form fields', () => {
