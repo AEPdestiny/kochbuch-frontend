@@ -47,7 +47,7 @@ const glutenFree = ref(false)
 const lactoseFree = ref(false)
 const highProtein = ref(false)
 const calorieConscious = ref(false)
-const dailyCalorieTarget = ref<number | null>(null)
+const dailyCalorieTarget = ref<number | null | ''>(null)
 
 onMounted(() => {
   loadPreferences()
@@ -86,11 +86,7 @@ async function savePreferences() {
     return
   }
 
-  const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
-  if (normalizedDailyTarget !== null && normalizedDailyTarget < 1) {
-    error.value = t('profile.errors.validation')
-    return
-  }
+  const normalizedDailyTarget = normalizeOptionalCalorieTarget(dailyCalorieTarget.value)
 
   saving.value = true
   error.value = null
@@ -100,7 +96,7 @@ async function savePreferences() {
     likesData.value = (saved.likes ?? []).map(v => toCanonical(v, LIKES_ENTRIES))
     dislikesData.value = (saved.dislikes ?? []).map(v => toCanonical(v, DISLIKES_ENTRIES))
     allergiesData.value = (saved.allergies ?? []).map(v => toCanonical(v, ALLERGEN_ENTRIES))
-    dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? dailyCalorieTarget.value
+    dailyCalorieTarget.value = saved.dailyCalorieTarget ?? saved.calorieGoal ?? normalizedDailyTarget
     toastStore.addToast(t('notifications.profileSaved'), 'success')
   } catch (e: unknown) {
     error.value = toSaveError(e)
@@ -110,7 +106,7 @@ async function savePreferences() {
 }
 
 function toRequest(): UserPreferencesRequest {
-  const normalizedDailyTarget = normalizeOptionalPositiveNumber(dailyCalorieTarget.value)
+  const normalizedDailyTarget = normalizeOptionalCalorieTarget(dailyCalorieTarget.value)
   return {
     likes: likesData.value,
     dislikes: dislikesData.value,
@@ -140,8 +136,11 @@ function onVegetarianChanged() {
   }
 }
 
-function normalizeOptionalPositiveNumber(value: number | null | undefined) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
+function normalizeOptionalCalorieTarget(value: number | string | null | undefined) {
+  if (value === '' || value == null) return null
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
 }
 
 function toLoadError(e: unknown) {
@@ -279,7 +278,7 @@ function toSaveError(e: unknown) {
           <input
             v-model.number="dailyCalorieTarget"
             type="number"
-            min="1"
+            min="0"
             step="1"
             :placeholder="t('profile.form.calorieGoalPlaceholder')"
           />

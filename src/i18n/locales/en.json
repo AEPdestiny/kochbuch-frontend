@@ -153,6 +153,11 @@
       "confirmDeleteDone": "Delete all done items?",
       "confirmClearList": "Clear the entire shopping list?"
     },
+    "confirm": {
+      "clearTitle": "Clear shopping list?",
+      "clearMessage": "Do you really want to clear the entire shopping list?",
+      "clearAction": "Clear list"
+    },
     "errors": {
       "loginRequired": "Please log in to see your shopping list.",
       "sessionExpired": "Please log in again to see your shopping list.",
@@ -704,6 +709,11 @@
     "restaurants": {
       "title": "Matching restaurants"
     },
+    "ownerDelete": {
+      "title": "Delete recipe?",
+      "message": "Do you really want to delete this recipe?",
+      "action": "Delete"
+    },
     "shopping": {
       "category": "Recipe ingredient",
       "addedOne": "Ingredient added to shopping list.",
@@ -711,7 +721,9 @@
       "addedMissing": "Missing ingredients added to shopping list.",
       "nothingMissing": "All ingredients are already in your pantry or on your shopping list.",
       "alreadyOnList": "This ingredient is already on your shopping list.",
-      "confirmPantry": "You already have {name} in your pantry. Add it to the shopping list anyway?"
+      "confirmPantryTitle": "Ingredient already in pantry",
+      "confirmPantry": "You already have {name} in your pantry. Add it to the shopping list anyway?",
+      "confirmPantryAction": "Add anyway"
     },
     "errors": {
       "load": "The recipe could not be loaded.",

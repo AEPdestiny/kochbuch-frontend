@@ -12,6 +12,7 @@ import { favoriteApi } from '@/shared/api/favoriteApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import { exportRecipe } from '@/shared/recipeImportExport'
 import { useToastStore } from '@/stores/toastStore'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import type {
   ExternalRecipeDetailResponse,
   ExternalRecipeIngredient,
@@ -86,6 +87,15 @@ const instructionSearchLoading = ref(false)
 const instructionSearchError = ref<string | null>(null)
 const instructionSearchMessage = ref<string | null>(null)
 const instructionSuggestions = ref<RecipeInstructionSuggestion[]>([])
+const pantryConfirmOpen = ref(false)
+const pendingPantryIngredient = ref<{ ingredient: DetailIngredient; parsed: ParsedShoppingIngredient } | null>(null)
+const ownerDeleteConfirmOpen = ref(false)
+
+type ParsedShoppingIngredient = {
+  name: string
+  quantity: number | null
+  unit: string | null
+}
 
 const isExternal = computed(() => route.name === 'external-recipe-detail')
 const weekDays = computed(() => {
@@ -318,8 +328,12 @@ function editOwnRecipe() {
 
 async function deleteOwnRecipe() {
   if (!recipe.value?.ownedByCurrentUser) return
-  if (!window.confirm(`${t('recipes.actions.delete')}?`)) return
+  ownerDeleteConfirmOpen.value = true
+}
 
+async function confirmDeleteOwnRecipe() {
+  if (!recipe.value?.ownedByCurrentUser) return
+  ownerDeleteConfirmOpen.value = false
   ownerActionError.value = null
   try {
     await recipeApi.deleteRecipe(recipe.value.id)
@@ -329,6 +343,10 @@ async function deleteOwnRecipe() {
       ? e.message
       : t('recipes.errors.delete')
   }
+}
+
+function cancelDeleteOwnRecipe() {
+  ownerDeleteConfirmOpen.value = false
 }
 
 function exportCurrentRecipe() {
@@ -379,10 +397,29 @@ async function addIngredientToShoppingList(ingredient: DetailIngredient) {
       return
     }
     if (isInPantry(parsed.name, pantryItems)) {
-      const confirmed = window.confirm(t('recipeDetail.shopping.confirmPantry', { name: parsed.name }))
-      if (!confirmed) return
+      pendingPantryIngredient.value = { ingredient, parsed }
+      pantryConfirmOpen.value = true
+      return
     }
     await shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient, parsed))
+    toastStore.addToast(t('recipeDetail.shopping.addedOne'), 'success')
+  } catch {
+    toastStore.addToast(t('recipeDetail.errors.shopping'), 'error')
+  }
+}
+
+function cancelPantryConfirm() {
+  pantryConfirmOpen.value = false
+  pendingPantryIngredient.value = null
+}
+
+async function confirmPantryIngredient() {
+  const pending = pendingPantryIngredient.value
+  if (!pending) return
+  pantryConfirmOpen.value = false
+  pendingPantryIngredient.value = null
+  try {
+    await shoppingListApi.createShoppingListItem(buildShoppingListRequest(pending.ingredient, pending.parsed))
     toastStore.addToast(t('recipeDetail.shopping.addedOne'), 'success')
   } catch {
     toastStore.addToast(t('recipeDetail.errors.shopping'), 'error')
@@ -441,7 +478,7 @@ function buildShoppingListRequest(ingredient: DetailIngredient, parsed = parseSh
   }
 }
 
-function parseShoppingIngredient(ingredient: DetailIngredient) {
+function parseShoppingIngredient(ingredient: DetailIngredient): ParsedShoppingIngredient {
   const raw = (ingredient.original || ingredient.name || '').trim()
   const parts = raw.split(/\s+/).filter(Boolean)
   let quantity = ingredient.amount ?? null
@@ -1113,6 +1150,27 @@ function formatDate(date: Date) {
         </template>
       </section>
     </article>
+
+    <ConfirmDialog
+      :open="pantryConfirmOpen"
+      :title="t('recipeDetail.shopping.confirmPantryTitle')"
+      :message="t('recipeDetail.shopping.confirmPantry', { name: pendingPantryIngredient?.parsed.name ?? '' })"
+      :confirm-label="t('recipeDetail.shopping.confirmPantryAction')"
+      :cancel-label="t('recipeDetail.actions.cancel')"
+      @cancel="cancelPantryConfirm"
+      @confirm="confirmPantryIngredient"
+    />
+
+    <ConfirmDialog
+      :open="ownerDeleteConfirmOpen"
+      :title="t('recipeDetail.ownerDelete.title')"
+      :message="t('recipeDetail.ownerDelete.message')"
+      :confirm-label="t('recipeDetail.ownerDelete.action')"
+      :cancel-label="t('recipeDetail.actions.cancel')"
+      danger
+      @cancel="cancelDeleteOwnRecipe"
+      @confirm="confirmDeleteOwnRecipe"
+    />
 
     <div v-if="mealPlanModalOpen" class="modal-backdrop" @click.self="mealPlanModalOpen = false">
       <section class="meal-plan-modal" :aria-label="t('recipeDetail.mealPlan.title')">

@@ -153,6 +153,11 @@
       "confirmDeleteDone": "Erledigte Einträge wirklich löschen?",
       "confirmClearList": "Wirklich die gesamte Einkaufsliste löschen?"
     },
+    "confirm": {
+      "clearTitle": "Einkaufsliste leeren?",
+      "clearMessage": "Möchtest du wirklich die gesamte Einkaufsliste löschen?",
+      "clearAction": "Liste leeren"
+    },
     "errors": {
       "loginRequired": "Bitte melde dich an, um deine Einkaufsliste zu sehen.",
       "sessionExpired": "Bitte melde dich erneut an, um deine Einkaufsliste zu sehen.",
@@ -706,6 +711,11 @@
     "restaurants": {
       "title": "Passende Restaurants"
     },
+    "ownerDelete": {
+      "title": "Rezept löschen?",
+      "message": "Möchtest du dieses Rezept wirklich löschen?",
+      "action": "Löschen"
+    },
     "shopping": {
       "category": "Rezeptzutat",
       "addedOne": "Zutat wurde zur Einkaufsliste hinzugefügt.",
@@ -713,7 +723,9 @@
       "addedMissing": "Fehlende Zutaten wurden zur Einkaufsliste hinzugefügt.",
       "nothingMissing": "Alle Zutaten sind bereits im Vorrat oder auf der Einkaufsliste.",
       "alreadyOnList": "Diese Zutat steht bereits auf deiner Einkaufsliste.",
-      "confirmPantry": "Du hast {name} bereits im Vorrat. Trotzdem zur Einkaufsliste hinzufügen?"
+      "confirmPantryTitle": "Zutat bereits im Vorrat",
+      "confirmPantry": "Du hast {name} bereits im Vorrat. Trotzdem zur Einkaufsliste hinzufügen?",
+      "confirmPantryAction": "Trotzdem hinzufügen"
     },
     "errors": {
       "load": "Das Rezept konnte nicht geladen werden.",

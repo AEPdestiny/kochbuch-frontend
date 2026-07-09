@@ -92,7 +92,7 @@ const PAGE_SIZE = 10
 const ownPage = ref(1)
 const favoritesPage = ref(1)
 const selectedFavorite = ref<Recipe | null>(null)
-const activeTab = ref<'own' | 'favorites'>('own')
+const activeTab = ref<'own' | 'favorites'>(tabFromQuery(route.query.tab))
 
 const isCreateMode = computed(() => props.mode === 'create')
 
@@ -494,6 +494,24 @@ const closeFavoriteDetails = () => {
 
 const setActiveTab = (tab: 'own' | 'favorites') => {
   activeTab.value = tab
+  if (!isCreateMode.value) {
+    router.replace({
+      path: route.path,
+      query: {
+        ...route.query,
+        tab,
+      },
+    })
+  }
+}
+
+watch(() => route.query.tab, tab => {
+  activeTab.value = tabFromQuery(tab)
+})
+
+function tabFromQuery(tab: unknown): 'own' | 'favorites' {
+  const value = Array.isArray(tab) ? tab[0] : tab
+  return value === 'favorites' ? 'favorites' : 'own'
 }
 
 const currentLanguage = computed(() => {

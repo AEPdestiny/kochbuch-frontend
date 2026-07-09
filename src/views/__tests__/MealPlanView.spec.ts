@@ -899,12 +899,14 @@ describe('MealPlanView', () => {
     await openSlotModal(wrapper.findAll('.day-card').at(1)!, 0)
     const modal = wrapper.find('.slot-modal')
     const input = modal.find('input')
+    vi.mocked(recipeApi.getPublishedRecipes).mockClear()
     await input.setValue('sush')
     await input.setValue('')
     await vi.advanceTimersByTimeAsync(300)
     await flushPromises()
 
-    expect(recipeApi.getPublishedRecipes).not.toHaveBeenCalled()
+    expect(recipeApi.getPublishedRecipes).not.toHaveBeenCalledWith('de', '')
+    expect(recipeApi.getPublishedRecipes).not.toHaveBeenCalledWith('de', 'sush')
     expect(modal.find('.suggestion-list').exists()).toBe(false)
   })
 

@@ -123,14 +123,23 @@ const bucketCounts = computed<Record<MealSlot, number>>(() => ({
   snack: countEntriesForSlot('snack'),
 }))
 const allBucketsFull = computed(() => mealSlots.every(slot => bucketCounts.value[slot.key] >= BUCKET_LIMIT))
-const dailyCalorieTarget = computed(() => preferences.value?.dailyCalorieTarget ?? preferences.value?.calorieGoal ?? 2200)
+const dailyCalorieTarget = computed(() => {
+  const target = preferences.value?.dailyCalorieTarget ?? preferences.value?.calorieGoal ?? null
+  return typeof target === 'number' && target > 0 ? target : null
+})
+const hasDailyCalorieTarget = computed(() => dailyCalorieTarget.value !== null)
 const averageCaloriesPerDay = computed(() => Math.round(weekDays.value.reduce((sum, day) => sum + caloriesForDay(day.date), 0) / 7))
 // Count of planned entries across the whole week that have no resolvable calorie value,
 // so the week header can disclose that the average above doesn't include them.
 const weekUnknownCaloriesCount = computed(() => (week.value?.entries ?? []).filter(hasUnknownCalories).length)
-const calorieDelta = computed(() => averageCaloriesPerDay.value - dailyCalorieTarget.value)
+const calorieDelta = computed(() => hasDailyCalorieTarget.value ? averageCaloriesPerDay.value - dailyCalorieTarget.value! : 0)
 const weeklyRecommendation = computed(() => {
   const freeSlots = 28 - (week.value?.entries.length ?? 0)
+  if (!hasDailyCalorieTarget.value) {
+    return freeSlots > 0
+      ? 'Du hast noch freie Slots in deinem Wochenplan.'
+      : 'Deine Woche ist vollständig geplant.'
+  }
   if (calorieDelta.value > 200) {
     return 'Du liegst im Wochenschnitt über deinem Kalorienziel. Plane eher leichtere Gerichte oder kleinere Snacks.'
   }
@@ -246,8 +255,8 @@ async function clearWeek() {
       result.status === 'rejected' && !isNotFoundError(result.reason)
     ))
     if (failedDeletes.length) {
-      actionError.value = 'Einige Slots konnten nicht gelöscht werden. Bitte versuche es erneut.'
       await reloadWeek()
+      actionError.value = 'Einige Slots konnten nicht gelöscht werden. Bitte versuche es erneut.'
       return
     }
     selectedRecipeBySlot.value = {}
@@ -292,6 +301,7 @@ async function reloadWeek() {
   const loadedWeek = await mealPlanApi.getWeek(week.value?.weekStart)
   week.value = loadedWeek
   syncSelectedRecipes(loadedWeek.entries)
+  actionError.value = null
 }
 
 function isNotFoundError(error: unknown) {
@@ -311,10 +321,28 @@ function moveOrSwapSucceeded(
   targetEntry?: MealPlanEntryResponse | null,
 ) {
   const movedEntry = entryFor(targetDate, targetSlot)
-  if (movedEntry?.id === sourceEntry.id) return true
+  if (movedEntry?.id === sourceEntry.id || entriesRepresentSameMeal(movedEntry, sourceEntry)) return true
 
   const swappedEntry = entryFor(sourceDate, sourceSlot)
-  return Boolean(targetEntry && swappedEntry?.id === targetEntry.id)
+  return Boolean(targetEntry && (swappedEntry?.id === targetEntry.id || entriesRepresentSameMeal(swappedEntry, targetEntry)))
+}
+
+function entriesRepresentSameMeal(
+  left: MealPlanEntryResponse | null | undefined,
+  right: MealPlanEntryResponse | null | undefined,
+) {
+  const leftKey = mealIdentityKey(left)
+  return Boolean(leftKey && leftKey === mealIdentityKey(right))
+}
+
+function mealIdentityKey(entry: MealPlanEntryResponse | null | undefined): string {
+  if (!entry) return ''
+  const recipeId = entry.recipe?.id
+  if (recipeId != null) return `recipe:${recipeId}`
+  const externalId = entry.externalRecipeId ?? entry.recipe?.externalId
+  if (externalId) return `external:${externalId}`
+  const title = (entry.customTitle ?? entry.recipe?.title ?? '').trim().toLowerCase()
+  return title ? `title:${title}` : ''
 }
 
 function entriesForBucket(slot: MealSlot) {
@@ -538,7 +566,12 @@ function caloriesSummaryText(date: string): string {
   const { knownCalories, unknownCount } = caloriesSummaryForDay(date)
   const target = dailyCalorieTarget.value
   if (unknownCount === 0) {
-    return `${caloriesForDay(date)} kcal / ${target} kcal`
+    return target ? `${caloriesForDay(date)} kcal / ${target} kcal` : `${caloriesForDay(date)} kcal`
+  }
+  if (!target) {
+    return knownCalories > 0
+      ? `${knownCalories} kcal + ${unknownCount} ${unknownCount === 1 ? 'Mahlzeit' : 'Mahlzeiten'} ohne kcal-Angabe`
+      : `${unknownCount} ${unknownCount === 1 ? 'Mahlzeit' : 'Mahlzeiten'} ohne kcal-Angabe`
   }
   if (knownCalories > 0) {
     return unknownCount === 1
@@ -1020,6 +1053,7 @@ function firstFreeDateForSlot(slot: MealSlot) {
 }
 
 function caloriesStatusClass(date: string) {
+  if (!dailyCalorieTarget.value) return 'good'
   const calories = caloriesForDay(date)
   if (calories <= dailyCalorieTarget.value) return 'good'
   if (calories <= dailyCalorieTarget.value + 200) return 'warning'
@@ -1027,6 +1061,7 @@ function caloriesStatusClass(date: string) {
 }
 
 function calorieProgress(date: string) {
+  if (!dailyCalorieTarget.value) return 0
   return Math.min(100, Math.round((caloriesForDay(date) / dailyCalorieTarget.value) * 100))
 }
 
@@ -1104,9 +1139,11 @@ function formatDate(date: Date) {
         <div class="week-stats">
           <div class="week-stat">
             <span class="week-stat-label">Schnitt pro Tag</span>
-            <span class="week-stat-value">{{ averageCaloriesPerDay }} / {{ dailyCalorieTarget }} kcal</span>
+            <span class="week-stat-value">
+              {{ hasDailyCalorieTarget ? `${averageCaloriesPerDay} / ${dailyCalorieTarget} kcal` : `${averageCaloriesPerDay} kcal` }}
+            </span>
           </div>
-          <div class="week-stat">
+          <div v-if="hasDailyCalorieTarget" class="week-stat">
             <span class="week-stat-label">Differenz</span>
             <span class="week-stat-value" :class="{ over: calorieDelta > 0, under: calorieDelta < 0 }">
               {{ calorieDelta > 0 ? '+' : '' }}{{ calorieDelta }} kcal

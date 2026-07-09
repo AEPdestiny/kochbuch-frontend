@@ -1,5 +1,5 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import RecipeDetailView from '@/views/RecipeDetailView.vue'
 import { recipeApi } from '@/shared/api/recipeApi'
@@ -149,6 +149,10 @@ describe('RecipeDetailView', () => {
     })
   })
 
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
   it('loads external recipe details and shows ingredients and steps', async () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
@@ -246,24 +250,30 @@ describe('RecipeDetailView', () => {
       createdAt: '2026-06-06T00:00:00Z',
       updatedAt: '2026-06-06T00:00:00Z',
     }])
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
     await wrapper.find('.small-button').trigger('click')
     await flushPromises()
 
-    expect(confirmSpy).toHaveBeenCalledWith('Du hast pasta bereits im Vorrat. Trotzdem zur Einkaufsliste hinzufügen?')
+    expect(document.body.textContent).toContain('Zutat bereits im Vorrat')
+    expect(document.body.textContent).toContain('Du hast pasta bereits im Vorrat. Trotzdem zur Einkaufsliste hinzufügen?')
+    const cancelButton = Array.from(document.body.querySelectorAll('button'))
+      .find(button => button.textContent?.trim() === 'Abbrechen') as HTMLButtonElement
+    cancelButton.click()
+    await flushPromises()
     expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalled()
 
-    confirmSpy.mockReturnValue(true)
     await wrapper.find('.small-button').trigger('click')
+    await flushPromises()
+    const confirmButton = Array.from(document.body.querySelectorAll('button'))
+      .find(button => button.textContent?.trim() === 'Trotzdem hinzufügen') as HTMLButtonElement
+    confirmButton.click()
     await flushPromises()
 
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
       name: 'pasta',
     }))
-    confirmSpy.mockRestore()
   })
 
   it('searches restaurants with recipe title and text location', async () => {
@@ -859,7 +869,6 @@ describe('RecipeDetailView', () => {
       ...localRecipe(),
       ownedByCurrentUser: true,
     })
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
@@ -871,9 +880,13 @@ describe('RecipeDetailView', () => {
 
     await wrapper.find('.owner-delete-button').trigger('click')
     await flushPromises()
+    expect(document.body.textContent).toContain('Rezept löschen?')
+    const confirmButton = Array.from(document.body.querySelectorAll('button'))
+      .find(button => button.textContent?.trim() === 'Löschen') as HTMLButtonElement
+    confirmButton.click()
+    await flushPromises()
     expect(recipeApi.deleteRecipe).toHaveBeenCalledWith(1)
     expect(push).toHaveBeenCalledWith('/my-recipes')
-    confirmSpy.mockRestore()
   })
 
   it('shows transparent suggestion search when instructions are missing', async () => {

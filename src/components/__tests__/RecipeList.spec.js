@@ -9,6 +9,7 @@ import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { i18n, setLocale } from '@/i18n'
 
 const push = vi.fn()
+const replace = vi.fn()
 let routeQuery = {}
 
 vi.mock('vue-router', () => ({
@@ -22,8 +23,8 @@ vi.mock('vue-router', () => ({
       },
     },
   },
-  useRouter: () => ({ push }),
-  useRoute: () => ({ query: routeQuery }),
+  useRouter: () => ({ push, replace }),
+  useRoute: () => ({ path: '/my-recipes', query: routeQuery }),
 }))
 
 vi.mock('@/shared/api/recipeApi', () => ({
@@ -50,6 +51,7 @@ describe('RecipeList.vue', () => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
     push.mockClear()
+    replace.mockClear()
     routeQuery = {}
     sessionStorage.clear()
     setLocale('de')
@@ -899,6 +901,44 @@ describe('RecipeList.vue', () => {
     // Erwartung: Nur das Favorite-Rezept wird angezeigt
     expect(favGrid).toContain('Fav 1')
     expect(favGrid).not.toContain('Not Fav')
+  })
+
+  it('opens the favorites tab from the route query and updates the query when tabs change', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    routeQuery = { tab: 'favorites' }
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
+      {
+        id: 1,
+        title: 'Fav 1',
+        imageUrl: '',
+        prepTimeMinutes: 0,
+        cookTimeMinutes: 0,
+        servings: 0,
+        difficulty: '',
+        category: '',
+        rating: 0,
+        ingredients: 'x',
+        instructions: 'y',
+        favorite: true,
+        published: false,
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.find('.recipe-grid').text()).toContain('Fav 1')
+    expect(wrapper.find('.list-card').text()).toContain('Deine Favoriten')
+
+    await wrapper.findAll('.recipe-tabs button')[0].trigger('click')
+    await flushPromises()
+
+    expect(replace).toHaveBeenCalledWith({
+      path: '/my-recipes',
+      query: {
+        tab: 'own',
+      },
+    })
   })
 
   it('shows external API favorites and opens external detail route', async () => {

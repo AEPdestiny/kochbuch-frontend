@@ -1,5 +1,5 @@
 import { mount, flushPromises, config } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import ShoppingListView from '@/views/ShoppingListView.vue'
 import ShoppingListRecipes from '@/components/ShoppingListRecipes.vue'
@@ -37,6 +37,10 @@ describe('ShoppingListView', () => {
     setActivePinia(pinia)
     config.global.plugins = [i18n, pinia]
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ''
   })
 
   it('shows login hint and link without login', async () => {
@@ -257,7 +261,6 @@ describe('ShoppingListView', () => {
 
   it('deletes all done shopping list items after confirmation', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
       item('Tomatoes', 3, 'piece', 'Vegetables', false),
       item('Milk', 1, 'l', 'Dairy', true),
@@ -271,7 +274,12 @@ describe('ShoppingListView', () => {
     await wrapper.findAll('.bulk-btn').at(1)!.trigger('click')
     await flushPromises()
 
-    expect(window.confirm).toHaveBeenCalled()
+    expect(document.body.textContent).toContain('Erledigte Einträge wirklich löschen?')
+    const confirmButton = Array.from(document.body.querySelectorAll('button'))
+      .find(button => button.textContent?.trim() === 'Erledigte löschen') as HTMLButtonElement
+    confirmButton.click()
+    await flushPromises()
+
     expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Milk')
     expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Bread')
     expect(wrapper.text()).toContain('Tomatoes')
@@ -281,7 +289,6 @@ describe('ShoppingListView', () => {
 
   it('clears the complete shopping list after confirmation', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
       item('Tomatoes', 3, 'piece', 'Vegetables', false),
       item('Milk', 1, 'l', 'Dairy', true),
@@ -292,6 +299,12 @@ describe('ShoppingListView', () => {
     await flushPromises()
 
     await wrapper.findAll('.bulk-btn').at(2)!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('Möchtest du wirklich die gesamte Einkaufsliste löschen?')
+    const confirmButton = Array.from(document.body.querySelectorAll('button'))
+      .find(button => button.textContent?.trim() === 'Liste leeren') as HTMLButtonElement
+    confirmButton.click()
     await flushPromises()
 
     expect(shoppingListApi.deleteShoppingListItem).toHaveBeenCalledWith('Tomatoes')

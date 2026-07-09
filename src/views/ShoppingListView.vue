@@ -13,6 +13,7 @@ import { useToastStore } from '@/stores/toastStore'
 import { NAME_SUGGESTIONS, STANDARD_UNITS } from '@/shared/ingredientConstants'
 import { isRecognizedCategoryAlias, localizedUnitOptions, resolveIngredientSuggestions } from '@/shared/ingredientCategories'
 import SuggestInput from '@/components/SuggestInput.vue'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import type { ShoppingListItem, ShoppingListItemRequest } from '@/types/shoppingList'
 
 const { t, locale } = useI18n()
@@ -40,6 +41,21 @@ const editUnit = ref('')
 const editCategory = ref('')  // not shown in UI — preserved on update so existing data is not lost
 const editChecked = ref(false)
 const editError = ref<string | null>(null)
+const confirmDialog = ref<{
+  open: boolean
+  title: string
+  message: string
+  confirmLabel: string
+  danger: boolean
+  action: null | (() => Promise<void>)
+}>({
+  open: false,
+  title: '',
+  message: '',
+  confirmLabel: '',
+  danger: false,
+  action: null,
+})
 
 const sortedItems = computed(() => {
   const unchecked = items.value.filter(i => !i.checked)
@@ -229,10 +245,16 @@ async function deleteDoneItems() {
     toastStore.addToast(t('shoppingList.messages.noDoneItems'), 'info')
     return
   }
-  if (!window.confirm(t('shoppingList.actions.confirmDeleteDone'))) {
-    return
-  }
+  openConfirmDialog({
+    title: t('shoppingList.actions.deleteDone'),
+    message: t('shoppingList.actions.confirmDeleteDone'),
+    confirmLabel: t('shoppingList.actions.deleteDone'),
+    danger: true,
+    action: () => deleteDoneItemsConfirmed(doneItems),
+  })
+}
 
+async function deleteDoneItemsConfirmed(doneItems: ShoppingListItem[]) {
   try {
     await Promise.all(doneItems.map(item => shoppingListApi.deleteShoppingListItem(item.id)))
     const doneIds = new Set(doneItems.map(item => item.id))
@@ -249,10 +271,16 @@ async function clearShoppingList() {
     toastStore.addToast(t('shoppingList.messages.listAlreadyEmpty'), 'info')
     return
   }
-  if (!window.confirm(t('shoppingList.actions.confirmClearList'))) {
-    return
-  }
+  openConfirmDialog({
+    title: t('shoppingList.confirm.clearTitle'),
+    message: t('shoppingList.confirm.clearMessage'),
+    confirmLabel: t('shoppingList.confirm.clearAction'),
+    danger: true,
+    action: clearShoppingListConfirmed,
+  })
+}
 
+async function clearShoppingListConfirmed() {
   try {
     await Promise.all(items.value.map(item => shoppingListApi.deleteShoppingListItem(item.id)))
     items.value = []
@@ -260,6 +288,32 @@ async function clearShoppingList() {
   } catch (e: unknown) {
     error.value = toDeleteErrorMessage(e)
     loginRequired.value = e instanceof ApiClientError && e.status === 401
+  }
+}
+
+function openConfirmDialog(options: {
+  title: string
+  message: string
+  confirmLabel: string
+  danger: boolean
+  action: () => Promise<void>
+}) {
+  confirmDialog.value = {
+    open: true,
+    ...options,
+  }
+}
+
+function closeConfirmDialog() {
+  confirmDialog.value.open = false
+  confirmDialog.value.action = null
+}
+
+async function confirmDialogAction() {
+  const action = confirmDialog.value.action
+  closeConfirmDialog()
+  if (action) {
+    await action()
   }
 }
 
@@ -525,6 +579,17 @@ function exportShoppingListAsPdf() {
         </section>
       </div>
     </template>
+
+    <ConfirmDialog
+      :open="confirmDialog.open"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      :confirm-label="confirmDialog.confirmLabel"
+      :cancel-label="t('shoppingList.actions.cancel')"
+      :danger="confirmDialog.danger"
+      @cancel="closeConfirmDialog"
+      @confirm="confirmDialogAction"
+    />
   </section>
 </template>
 
