@@ -231,12 +231,39 @@ describe('MealPlanView', () => {
     const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Kein Wochenziel gesetzt.')
+    expect(wrapper.text()).toContain('Kein Wochenziel gesetzt. Du hast noch freie Slots in deinem Wochenplan.')
     expect(wrapper.text()).toContain('100 kcal')
     expect(wrapper.text()).not.toContain('Differenz')
     expect(wrapper.text()).not.toContain('/ 0')
     expect(wrapper.text()).not.toContain('/ 1')
     expect(wrapper.text()).not.toContain('+100 kcal')
+  })
+
+  it('shows fully planned no-goal hint when all slots are filled', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: [],
+      vegan: false,
+      vegetarian: false,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+      dailyCalorieTarget: null,
+    })
+    vi.mocked(mealPlanApi.getWeek).mockResolvedValue(fullWeekResponse())
+
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Kein Wochenziel gesetzt. Deine Woche ist vollständig geplant.')
+    expect(wrapper.text()).not.toContain('Differenz')
+    expect(wrapper.text()).not.toContain('/ 0')
+    expect(wrapper.text()).not.toContain('/ 1')
   })
 
   it('does not crash for a freetext entry lacking nutrition data and keeps the kcal sum correct', async () => {

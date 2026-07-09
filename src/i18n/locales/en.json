@@ -589,6 +589,8 @@
     "weekUnknownCaloriesHint": "{count} meals without a kcal value are not included in the total.",
     "weekUnknownCaloriesHintOne": "{count} meal without a kcal value is not included in the total.",
     "noWeeklyGoal": "No weekly goal set.",
+    "noWeeklyGoalWithFreeSlots": "No weekly goal set. You still have free slots in your meal plan.",
+    "noWeeklyGoalFull": "No weekly goal set. Your week is fully planned.",
     "week": {
       "current": "Current week"
     },

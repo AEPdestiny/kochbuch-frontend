@@ -591,6 +591,8 @@
     "weekUnknownCaloriesHint": "{count} Mahlzeiten ohne kcal-Angabe sind nicht in der Summe enthalten.",
     "weekUnknownCaloriesHintOne": "{count} Mahlzeit ohne kcal-Angabe ist nicht in der Summe enthalten.",
     "noWeeklyGoal": "Kein Wochenziel gesetzt.",
+    "noWeeklyGoalWithFreeSlots": "Kein Wochenziel gesetzt. Du hast noch freie Slots in deinem Wochenplan.",
+    "noWeeklyGoalFull": "Kein Wochenziel gesetzt. Deine Woche ist vollständig geplant.",
     "week": {
       "current": "Aktuelle Woche"
     },

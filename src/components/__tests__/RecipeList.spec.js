@@ -998,7 +998,12 @@ describe('RecipeList.vue', () => {
     await flushPromises()
 
     expect(wrapper.text()).toContain('External Pasta')
-    await wrapper.find('.recipe-grid .recipe-card').trigger('click')
+    const favoriteCard = wrapper.find('.recipe-grid .recipe-card')
+    expect(favoriteCard.find('.card-meta').text()).toBe('')
+    expect(favoriteCard.find('.card-ingredients').text()).toBe('')
+    expect(favoriteCard.text()).not.toContain('Externes API-Rezept')
+    expect(favoriteCard.text()).not.toContain('External API recipe')
+    await favoriteCard.trigger('click')
 
     expect(push).toHaveBeenCalledWith('/recipe/external/716429')
   })

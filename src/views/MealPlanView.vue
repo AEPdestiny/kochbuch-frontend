@@ -136,7 +136,9 @@ const calorieDelta = computed(() => hasDailyCalorieTarget.value ? averageCalorie
 const weeklyRecommendation = computed(() => {
   const freeSlots = 28 - (week.value?.entries.length ?? 0)
   if (!hasDailyCalorieTarget.value) {
-    return t('mealPlan.noWeeklyGoal')
+    return freeSlots > 0
+      ? t('mealPlan.noWeeklyGoalWithFreeSlots')
+      : t('mealPlan.noWeeklyGoalFull')
   }
   if (calorieDelta.value > 200) {
     return 'Du liegst im Wochenschnitt über deinem Kalorienziel. Plane eher leichtere Gerichte oder kleinere Snacks.'
