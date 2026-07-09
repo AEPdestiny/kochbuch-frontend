@@ -7,9 +7,11 @@ import { restaurantApi } from '@/shared/api/restaurantApi'
 import { favoriteApi } from '@/shared/api/favoriteApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import { pantryApi } from '@/shared/api/pantryApi'
 import { AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { exportRecipe } from '@/shared/recipeImportExport'
 import { i18n, setLocale } from '@/i18n'
+import { useToastStore } from '@/stores/toastStore'
 
 const back = vi.fn()
 const push = vi.fn()
@@ -61,7 +63,14 @@ vi.mock('@/shared/api/mealPlanApi', () => ({
 
 vi.mock('@/shared/api/shoppingListApi', () => ({
   shoppingListApi: {
+    getShoppingListItems: vi.fn(),
     createShoppingListItem: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/api/pantryApi', () => ({
+  pantryApi: {
+    getPantryItems: vi.fn(),
   },
 }))
 
@@ -118,6 +127,8 @@ describe('RecipeDetailView', () => {
       mealSlot: 'breakfast',
       recipe: localRecipe(),
     })
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([])
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
     vi.mocked(shoppingListApi.createShoppingListItem).mockResolvedValue({
       id: 1,
       name: 'pasta',
@@ -184,6 +195,35 @@ describe('RecipeDetailView', () => {
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(2)
   })
 
+  it('adds only recipe ingredients that are missing from the pantry and shopping list', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([{
+      id: 1,
+      name: 'pasta',
+      quantity: 1,
+      unit: null,
+      category: null,
+      createdAt: '2026-06-06T00:00:00Z',
+      updatedAt: '2026-06-06T00:00:00Z',
+    }])
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([])
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(1)
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'olive oil',
+      quantity: 1,
+      unit: 'tbsp',
+    }))
+    expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalledWith(expect.objectContaining({
+      name: 'pasta',
+    }))
+  })
+
   it('adds one ingredient to the shopping list', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const wrapper = mount(RecipeDetailView)
@@ -193,6 +233,37 @@ describe('RecipeDetailView', () => {
     await flushPromises()
 
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks before adding a single ingredient that is already in the pantry', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(pantryApi.getPantryItems).mockResolvedValue([{
+      id: 1,
+      name: 'pasta',
+      quantity: 1,
+      unit: null,
+      category: null,
+      createdAt: '2026-06-06T00:00:00Z',
+      updatedAt: '2026-06-06T00:00:00Z',
+    }])
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.small-button').trigger('click')
+    await flushPromises()
+
+    expect(confirmSpy).toHaveBeenCalledWith('Du hast pasta bereits im Vorrat. Trotzdem zur Einkaufsliste hinzufügen?')
+    expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalled()
+
+    confirmSpy.mockReturnValue(true)
+    await wrapper.find('.small-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'pasta',
+    }))
+    confirmSpy.mockRestore()
   })
 
   it('searches restaurants with recipe title and text location', async () => {
@@ -718,9 +789,9 @@ describe('RecipeDetailView', () => {
     await flushPromises()
 
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
-      name: '61 g geröstetes Kürbispüree',
-      quantity: null,
-      unit: null,
+      name: 'geröstetes Kürbispüree',
+      quantity: 61,
+      unit: 'g',
       category: 'Rezeptzutat',
       checked: false,
       recipeId: '1',
@@ -925,7 +996,8 @@ describe('RecipeDetailView', () => {
     await flushPromises()
 
     expect(mealPlanApi.setSlot).toHaveBeenCalledWith(weekStart, 'breakfast', 1)
-    expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
+    expect(useToastStore().toasts.some(t => t.message === 'Rezept wurde zum Wochenplan hinzugefügt.' && t.type === 'success')).toBe(true)
+    expect(wrapper.text()).not.toContain('Rezept wurde zum Wochenplan hinzugefügt.')
     expect(wrapper.find('.meal-plan-modal').exists()).toBe(false)
   })
 
@@ -956,7 +1028,8 @@ describe('RecipeDetailView', () => {
       externalRecipeId: '716429',
       externalSource: 'spoonacular',
     })
-    expect(wrapper.text()).toContain('Rezept wurde zum Wochenplan hinzugefügt.')
+    expect(useToastStore().toasts.some(t => t.message === 'Rezept wurde zum Wochenplan hinzugefügt.' && t.type === 'success')).toBe(true)
+    expect(wrapper.text()).not.toContain('Rezept wurde zum Wochenplan hinzugefügt.')
   })
 
   it('toggles external recipe favorite', async () => {

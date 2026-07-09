@@ -707,7 +707,11 @@
     "shopping": {
       "category": "Recipe ingredient",
       "addedOne": "Ingredient added to shopping list.",
-      "addedAll": "All ingredients added to shopping list."
+      "addedAll": "All ingredients added to shopping list.",
+      "addedMissing": "Missing ingredients added to shopping list.",
+      "nothingMissing": "All ingredients are already in your pantry or on your shopping list.",
+      "alreadyOnList": "This ingredient is already on your shopping list.",
+      "confirmPantry": "You already have {name} in your pantry. Add it to the shopping list anyway?"
     },
     "errors": {
       "load": "The recipe could not be loaded.",

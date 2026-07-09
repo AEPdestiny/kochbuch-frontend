@@ -709,7 +709,11 @@
     "shopping": {
       "category": "Rezeptzutat",
       "addedOne": "Zutat wurde zur Einkaufsliste hinzugefügt.",
-      "addedAll": "Alle Zutaten wurden zur Einkaufsliste hinzugefügt."
+      "addedAll": "Alle Zutaten wurden zur Einkaufsliste hinzugefügt.",
+      "addedMissing": "Fehlende Zutaten wurden zur Einkaufsliste hinzugefügt.",
+      "nothingMissing": "Alle Zutaten sind bereits im Vorrat oder auf der Einkaufsliste.",
+      "alreadyOnList": "Diese Zutat steht bereits auf deiner Einkaufsliste.",
+      "confirmPantry": "Du hast {name} bereits im Vorrat. Trotzdem zur Einkaufsliste hinzufügen?"
     },
     "errors": {
       "load": "Das Rezept konnte nicht geladen werden.",

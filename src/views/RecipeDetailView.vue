@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
 import { restaurantApi } from '@/shared/api/restaurantApi'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
+import { pantryApi } from '@/shared/api/pantryApi'
 import { mealPlanApi } from '@/shared/api/mealPlanApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { favoriteApi } from '@/shared/api/favoriteApi'
@@ -19,6 +20,8 @@ import type {
 } from '@/types/recipe'
 import type { RestaurantResponse, TavilyRestaurantSearchResponse } from '@/types/restaurant'
 import type { MealPlanEntryRequest, MealPlanEntryResponse, MealSlot } from '@/types/mealPlan'
+import type { PantryItemResponse } from '@/types/pantry'
+import type { ShoppingListItemResponse } from '@/types/shoppingList'
 
 type DetailIngredient = {
   name: string
@@ -74,7 +77,6 @@ const restaurantSearchMode = ref<'exact' | 'suggestions' | null>(null)
 const locationMismatch = ref(false)
 const mealPlanModalOpen = ref(false)
 const mealPlanError = ref<string | null>(null)
-const mealPlanMessage = ref<string | null>(null)
 const mealPlanLoading = ref(false)
 const plannedEntries = ref<MealPlanEntryResponse[]>([])
 const favorite = ref(false)
@@ -367,7 +369,20 @@ async function addIngredientToShoppingList(ingredient: DetailIngredient) {
   }
 
   try {
-    await shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient))
+    const [pantryItems, shoppingItems] = await Promise.all([
+      pantryApi.getPantryItems(),
+      shoppingListApi.getShoppingListItems(),
+    ])
+    const parsed = parseShoppingIngredient(ingredient)
+    if (isInShoppingList(parsed.name, shoppingItems)) {
+      toastStore.addToast(t('recipeDetail.shopping.alreadyOnList'), 'info')
+      return
+    }
+    if (isInPantry(parsed.name, pantryItems)) {
+      const confirmed = window.confirm(t('recipeDetail.shopping.confirmPantry', { name: parsed.name }))
+      if (!confirmed) return
+    }
+    await shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient, parsed))
     toastStore.addToast(t('recipeDetail.shopping.addedOne'), 'success')
   } catch {
     toastStore.addToast(t('recipeDetail.errors.shopping'), 'error')
@@ -382,28 +397,121 @@ async function addAllIngredientsToShoppingList() {
   }
 
   try {
-    await Promise.all(recipe.value.ingredients.map(ingredient =>
-      shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient)),
+    const [pantryItems, shoppingItems] = await Promise.all([
+      pantryApi.getPantryItems(),
+      shoppingListApi.getShoppingListItems(),
+    ])
+    const existingNames = new Set(shoppingItems.map(item => comparableIngredientName(item.name)))
+    const ingredientsToAdd = recipe.value.ingredients
+      .map(ingredient => ({ ingredient, parsed: parseShoppingIngredient(ingredient) }))
+      .filter(({ parsed }) => parsed.name && !isInPantry(parsed.name, pantryItems))
+      .filter(({ parsed }) => {
+        const key = comparableIngredientName(parsed.name)
+        if (!key || existingNames.has(key)) return false
+        existingNames.add(key)
+        return true
+      })
+
+    if (ingredientsToAdd.length === 0) {
+      toastStore.addToast(t('recipeDetail.shopping.nothingMissing'), 'info')
+      return
+    }
+
+    await Promise.all(ingredientsToAdd.map(({ ingredient, parsed }) =>
+      shoppingListApi.createShoppingListItem(buildShoppingListRequest(ingredient, parsed)),
     ))
-    toastStore.addToast(t('recipeDetail.shopping.addedAll'), 'success')
+    toastStore.addToast(t('recipeDetail.shopping.addedMissing'), 'success')
   } catch {
     toastStore.addToast(t('recipeDetail.errors.shopping'), 'error')
   }
 }
 
-function buildShoppingListRequest(ingredient: DetailIngredient) {
+function buildShoppingListRequest(ingredient: DetailIngredient, parsed = parseShoppingIngredient(ingredient)) {
   if (!recipe.value) {
     throw new Error('Recipe is not loaded.')
   }
   return {
-    name: ingredient.name || ingredient.original,
-    quantity: ingredient.amount ?? null,
-    unit: ingredient.unit ?? null,
+    name: parsed.name || ingredient.name || ingredient.original,
+    quantity: parsed.quantity,
+    unit: parsed.unit,
     category: t('recipeDetail.shopping.category'),
     checked: false,
     recipeId: String(recipe.value.id),
     recipeTitle: recipe.value.title,
   }
+}
+
+function parseShoppingIngredient(ingredient: DetailIngredient) {
+  const raw = (ingredient.original || ingredient.name || '').trim()
+  const parts = raw.split(/\s+/).filter(Boolean)
+  let quantity = ingredient.amount ?? null
+  let unit = ingredient.unit ?? null
+
+  if (quantity == null && parts[0] && isQuantityToken(parts[0])) {
+    quantity = quantityTokenToNumber(parts.shift()!)
+  }
+
+  if (!unit && parts[0] && isUnitToken(parts[0])) {
+    unit = parts.shift()!
+  }
+
+  const explicitName = ingredient.name && ingredient.name !== raw ? ingredient.name : parts.join(' ')
+  const name = cleanIngredientName(explicitName || raw)
+  return { name, quantity, unit }
+}
+
+function isQuantityToken(value: string): boolean {
+  return /^(\d+(?:[,.]\d+)?|\d+\/\d+|\d+[-–]\d+)$/.test(value.trim())
+}
+
+function quantityTokenToNumber(value: string): number | null {
+  const token = value.trim().replace(',', '.')
+  if (/^\d+\/\d+$/.test(token)) {
+    const [left, right] = token.split('/').map(Number)
+    return left != null && right ? left / right : null
+  }
+  if (/^\d+[-–]\d+$/.test(token)) return null
+  const parsed = Number(token)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function isUnitToken(value: string): boolean {
+  return /^(g|kg|ml|l|el|tl|tbsp|tsp|tasse|tassen|stueck|stuck|stück|prise|prisen|bund|scheibe|scheiben|zehe|zehen)$/i.test(value.trim())
+}
+
+function cleanIngredientName(value: string): string {
+  return value
+    .replace(/^\s*(?:\d+(?:[,.]\d+)?|\d+\/\d+|\d+[-–]\d+)\s+/u, '')
+    .replace(/^\s*(?:g|kg|ml|l|el|tl|tbsp|tsp|tasse|tassen|stueck|stuck|stück|prise|prisen|bund|scheibe|scheiben|zehe|zehen)\s+/iu, '')
+    .replace(/\b(?:nach bedarf|nach geschmack|zum braten)\b/giu, '')
+    .replace(/^\s*(?:etwas|ein wenig)\s+/iu, '')
+    .replace(/^[\s,./-]+|[\s,./-]+$/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function comparableIngredientName(value: string | null | undefined): string {
+  const cleaned = cleanIngredientName(value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+  if (cleaned === 'eier') return 'ei'
+  if (cleaned.endsWith('en') && cleaned.length > 5) return cleaned.slice(0, -1)
+  if (cleaned.endsWith('n') && cleaned.length > 4) return cleaned.slice(0, -1)
+  return cleaned
+}
+
+function isInPantry(name: string, pantryItems: PantryItemResponse[]): boolean {
+  const key = comparableIngredientName(name)
+  return Boolean(key) && pantryItems.some(item => comparableIngredientName(item.name) === key)
+}
+
+function isInShoppingList(name: string, shoppingItems: ShoppingListItemResponse[]): boolean {
+  const key = comparableIngredientName(name)
+  return Boolean(key) && shoppingItems.some(item => comparableIngredientName(item.name) === key)
 }
 
 const BROAD_LOCATION_TERMS = new Set([
@@ -681,7 +789,6 @@ function isInstructionSuggestionError(value: unknown): value is { message?: stri
 }
 
 async function openMealPlanModal() {
-  mealPlanMessage.value = null
   mealPlanError.value = null
   if (!recipe.value) return
   if (!sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)) {
@@ -711,7 +818,7 @@ async function addToMealPlan(date: string, slot: MealSlot) {
     plannedEntries.value = plannedEntries.value
       .filter(entry => !(entry.plannedDate === date && normalizedSlot(entry) === slot))
       .concat(savedEntry)
-    mealPlanMessage.value = t('recipeDetail.mealPlan.added')
+    toastStore.addToast(t('recipeDetail.mealPlan.added'), 'success')
     mealPlanModalOpen.value = false
   } catch (e: unknown) {
     logMealPlanError(e, date, slot, payload)
@@ -868,7 +975,6 @@ function formatDate(date: Date) {
           </button>
         </div>
 
-          <p v-if="mealPlanMessage" class="status-text success">{{ mealPlanMessage }}</p>
           <p v-if="mealPlanError" class="status-text error">{{ mealPlanError }}</p>
           <p v-if="favoriteError" class="status-text error">{{ favoriteError }}</p>
           <p v-if="ownerActionError" class="status-text error">{{ ownerActionError }}</p>

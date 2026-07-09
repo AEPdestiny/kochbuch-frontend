@@ -445,6 +445,52 @@ describe('MealPlanView', () => {
     expect(dragSource.classes()).not.toContain('dragging')
   })
 
+  it('treats a successful drag swap reload as success and does not show a move error', async () => {
+    const initialWeek = {
+      weekStart: '2026-06-01',
+      weekEnd: '2026-06-07',
+      entries: [
+        { ...entry('2026-06-01', recipe(1, 'Pasta'), 'dinner'), id: 'source-entry' },
+        { ...entry('2026-06-02', recipe(2, 'Soup'), 'breakfast'), id: 'target-entry' },
+      ],
+    }
+    const swappedWeek = {
+      ...initialWeek,
+      entries: [
+        { ...entry('2026-06-02', recipe(1, 'Pasta'), 'breakfast'), id: 'source-entry' },
+        { ...entry('2026-06-01', recipe(2, 'Soup'), 'dinner'), id: 'target-entry' },
+      ],
+    }
+    vi.mocked(mealPlanApi.getWeek)
+      .mockResolvedValueOnce(initialWeek)
+      .mockResolvedValueOnce(swappedWeek)
+    vi.mocked(mealPlanApi.moveEntry).mockRejectedValue(new Error('late network error'))
+
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    const mondayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Montag'))!
+    const tuesdayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Dienstag'))!
+    const dinnerSlot = mondayCard.findAll('.slot-block')[2]!
+    const breakfastSlot = tuesdayCard.findAll('.slot-block')[0]!
+    const dragSource = dinnerSlot.find('.planned-recipe.compact')
+    const dataTransfer = { effectAllowed: '', dropEffect: '', setData: vi.fn() }
+
+    await dragSource.trigger('dragstart', { dataTransfer })
+    await breakfastSlot.trigger('drop', { dataTransfer })
+    await flushPromises()
+
+    expect(mealPlanApi.moveEntry).toHaveBeenCalledWith('source-entry', {
+      targetDate: '2026-06-02',
+      targetSlot: 'breakfast',
+      swapIfOccupied: true,
+    })
+    expect(wrapper.text()).not.toContain('Der Wochenplan-Eintrag konnte nicht verschoben werden.')
+    expect(useToastStore().toasts.some(t => t.type === 'success')).toBe(true)
+  })
+
   it('does not move anything when a planned meal is dropped back onto its own slot', async () => {
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -947,6 +993,41 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).not.toContain('Keine Vorschläge gefunden.')
   })
 
+  it('filters swipe suggestions that conflict with allergies or explicit diet flags', async () => {
+    vi.mocked(profileApi.getPreferences).mockResolvedValue({
+      likes: [],
+      dislikes: [],
+      allergies: ['Eier'],
+      vegan: true,
+      vegetarian: true,
+      glutenFree: false,
+      lactoseFree: false,
+      highProtein: false,
+      calorieConscious: false,
+      budgetFriendly: false,
+      maxPrepTimeMinutes: null,
+      calorieGoal: null,
+      dailyCalorieTarget: 2000,
+    })
+    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
+      recipe(10, 'Vegane Bowl', { ingredients: 'Reis, Gemüse', vegan: true, vegetarian: true }),
+      recipe(11, 'Eier Pasta', { ingredients: 'Ei, Nudeln', vegan: true, vegetarian: true }),
+      recipe(12, 'Chicken Pasta', { ingredients: 'Huhn, Nudeln', vegan: false, vegetarian: false }),
+    ])
+    const wrapper = mount(MealPlanView, {
+      global: { plugins: [i18n] },
+    })
+    await flushPromises()
+
+    await wrapper.findAll('.mode-switch button').at(1)!.trigger('click')
+    await wrapper.find('.swipe-planner .primary-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Vegane Bowl')
+    expect(wrapper.text()).not.toContain('Eier Pasta')
+    expect(wrapper.text()).not.toContain('Chicken Pasta')
+  })
+
   it('opens and closes bucket panels from real week state', async () => {
     const wrapper = mount(MealPlanView, {
       global: { plugins: [i18n] },
@@ -1351,7 +1432,7 @@ describe('MealPlanView', () => {
     expect(successToast.message).toContain('1 zur Einkaufsliste hinzugefügt')
     expect(successToast.message).toContain('1 durch Vorrat abgedeckt')
     expect(successToast.message).toContain('1 bereits auf der Einkaufsliste')
-    expect(successToast.message).toContain('1 zum Prüfen')
+    expect(successToast.message).not.toContain('zum Prüfen')
     expect(wrapper.find('.shopping-list-result').exists()).toBe(false)
   })
 

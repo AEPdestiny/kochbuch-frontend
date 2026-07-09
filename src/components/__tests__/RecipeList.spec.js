@@ -1014,6 +1014,85 @@ describe('RecipeList.vue', () => {
     }))
     expect(wrapper.find('.recipe-grid').text()).not.toContain('Fav 1')
   })
+
+  it('paginates own recipes with 10 recipes per page and scrolls to top', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const scrollSpy = vi.fn()
+    Object.defineProperty(window, 'scrollTo', {
+      configurable: true,
+      value: scrollSpy,
+    })
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(Array.from({ length: 11 }, (_, index) => ({
+      id: index + 1,
+      title: `Own ${index + 1}`,
+      imageUrl: '',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 1,
+      difficulty: '',
+      category: '',
+      rating: 0,
+      ingredients: 'x',
+      instructions: 'y',
+      favorite: false,
+      published: false,
+    })))
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipes .recipe-card')).toHaveLength(10)
+    expect(wrapper.findAll('.recipes .name').map(node => node.text())).toContain('Own 1')
+    expect(wrapper.findAll('.recipes .name').map(node => node.text())).not.toContain('Own 11')
+
+    await wrapper.findAll('.pagination .page-number').find(button => button.text() === '2').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipes .recipe-card')).toHaveLength(1)
+    expect(wrapper.findAll('.recipes .name').map(node => node.text())).toEqual(['Own 11'])
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+  })
+
+  it('paginates favorites independently from own recipes', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    const scrollSpy = vi.fn()
+    Object.defineProperty(window, 'scrollTo', {
+      configurable: true,
+      value: scrollSpy,
+    })
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue(Array.from({ length: 11 }, (_, index) => ({
+      id: index + 1,
+      title: `Fav ${index + 1}`,
+      imageUrl: '',
+      prepTimeMinutes: 0,
+      cookTimeMinutes: 0,
+      servings: 1,
+      difficulty: '',
+      category: '',
+      rating: 0,
+      ingredients: 'x',
+      instructions: 'y',
+      favorite: true,
+      published: false,
+    })))
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-grid .recipe-card')).toHaveLength(10)
+    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).toContain('Fav 1')
+    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).not.toContain('Fav 11')
+
+    await wrapper.findAll('.pagination .page-number').find(button => button.text() === '2').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('.recipe-grid .recipe-card')).toHaveLength(1)
+    expect(wrapper.findAll('.recipe-grid .card-title').map(node => node.text())).toEqual(['Fav 11'])
+    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' })
+  })
+
   it('shows English recipe UI texts after locale switch while recipe data stays unchanged', async () => {
     setLocale('en')
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')

@@ -9,6 +9,7 @@ import { recipeApi } from '@/shared/api/recipeApi'
 import { profileApi } from '@/shared/api/profileApi'
 import { displayCategory } from '@/shared/recipeDisplay'
 import { categorySearchTerms, matchesCategoryAwareText } from '@/shared/ingredientCategories'
+import { ALLERGEN_ENTRIES, getMatchTerms } from '@/shared/profileSuggestions'
 import { printMealPlan } from '@/shared/printExport'
 import type {
   MealPlanEntryResponse,
@@ -270,7 +271,6 @@ function buildShoppingToast(result: MealPlanShoppingListResponse): string {
   if (result.added.length > 0) parts.push(t('mealPlan.shoppingList.toastAdded', { count: result.added.length }))
   if (result.skippedBecauseInPantry.length > 0) parts.push(t('mealPlan.shoppingList.toastInPantry', { count: result.skippedBecauseInPantry.length }))
   if (result.alreadyOnShoppingList.length > 0) parts.push(t('mealPlan.shoppingList.toastExisting', { count: result.alreadyOnShoppingList.length }))
-  if (result.needsReview.length > 0) parts.push(t('mealPlan.shoppingList.toastReview', { count: result.needsReview.length }))
   if (parts.length === 0) return t('mealPlan.shoppingList.toastNone')
   return parts.join(', ') + '.'
 }
@@ -300,6 +300,21 @@ function isNotFoundError(error: unknown) {
 
 function entryFor(date: string, slot: MealSlot = 'dinner') {
   return week.value?.entries.find(entry => entry.plannedDate === date && normalizedSlot(entry) === slot)
+}
+
+function moveOrSwapSucceeded(
+  sourceEntry: MealPlanEntryResponse,
+  sourceDate: string,
+  sourceSlot: MealSlot,
+  targetDate: string,
+  targetSlot: MealSlot,
+  targetEntry?: MealPlanEntryResponse | null,
+) {
+  const movedEntry = entryFor(targetDate, targetSlot)
+  if (movedEntry?.id === sourceEntry.id) return true
+
+  const swappedEntry = entryFor(sourceDate, sourceSlot)
+  return Boolean(targetEntry && swappedEntry?.id === targetEntry.id)
 }
 
 function entriesForBucket(slot: MealSlot) {
@@ -400,6 +415,8 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
     return
   }
 
+  const targetEntry = entryFor(target.date, target.slot)
+
   try {
     actionError.value = null
     const updatedWeek = await mealPlanApi.moveEntry(entry.id, {
@@ -415,8 +432,7 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
     toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
   } catch {
     await reloadWeek().catch(() => undefined)
-    const movedEntry = entryFor(target.date, target.slot)
-    if (movedEntry?.id === entry.id) {
+    if (moveOrSwapSucceeded(entry, currentDate, currentSlot, target.date, target.slot, targetEntry)) {
       actionError.value = null
       moveEditorKey.value = null
       modalDate.value = null
@@ -431,6 +447,7 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
 // Native HTML5 drag & drop for planned meals — reuses the same moveEntry API call
 // as the manual "Verschieben" form, just driven by drag state instead of a dropdown.
 function onSlotDragStart(date: string, slot: MealSlot, event: DragEvent) {
+  actionError.value = null
   dragSource.value = { date, slot }
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
@@ -459,6 +476,7 @@ function onSlotDragLeave(date: string, slot: MealSlot) {
 }
 
 async function onSlotDrop(targetDate: string, targetSlot: MealSlot) {
+  actionError.value = null
   const source = dragSource.value
   dragOverSlotKey.value = null
   dragSource.value = null
@@ -467,6 +485,7 @@ async function onSlotDrop(targetDate: string, targetSlot: MealSlot) {
 
   const sourceEntry = entryFor(source.date, source.slot)
   if (!sourceEntry) return
+  const targetEntry = entryFor(targetDate, targetSlot)
 
   try {
     actionError.value = null
@@ -480,8 +499,7 @@ async function onSlotDrop(targetDate: string, targetSlot: MealSlot) {
     toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
   } catch {
     await reloadWeek().catch(() => undefined)
-    const movedEntry = entryFor(targetDate, targetSlot)
-    if (movedEntry?.id === sourceEntry.id) {
+    if (moveOrSwapSucceeded(sourceEntry, source.date, source.slot, targetDate, targetSlot, targetEntry)) {
       actionError.value = null
       toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
       return
@@ -777,6 +795,7 @@ async function loadSwipeSuggestions() {
     const seen = new Set<string>()
     let candidates: RecipeResponse[] = publishedRecipes
       .map(recipe => ({ ...recipe, source: 'dishly' }))
+      .filter(matchesSwipePreferences)
       .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
       .filter(recipe => {
         const key = `${recipe.source ?? 'dishly'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -788,6 +807,7 @@ async function loadSwipeSuggestions() {
     if (candidates.length === 0 && englishRecipesAllowed.value) {
       const externalRecipes = await recipeApi.getExternalRecipes(undefined, swipeFilters(), currentLanguage.value)
       candidates = externalRecipes
+        .filter(matchesSwipePreferences)
         .filter(recipe => bucketCounts.value[slotForRecipe(recipe)] < BUCKET_LIMIT)
         .filter(recipe => {
           const key = `${recipe.source ?? 'external'}-${recipe.externalId ?? recipe.id ?? recipe.title}`
@@ -810,6 +830,48 @@ async function loadSwipeSuggestions() {
   } finally {
     swipeLoading.value = false
   }
+}
+
+function recipeSearchText(recipe: RecipeResponse): string {
+  return [
+    recipe.title,
+    recipe.category,
+    recipe.ingredients,
+    ...(recipe.ingredientsList ?? []),
+    recipe.diets,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+}
+
+function textContainsTerm(text: string, term: string): boolean {
+  const normalizedTerm = term.trim().toLowerCase()
+  if (!normalizedTerm) return false
+  return new RegExp(`(^|[^\\p{L}])${escapeRegExp(normalizedTerm)}([^\\p{L}]|$)`, 'u').test(text)
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function conflictsWithAllergies(recipe: RecipeResponse, profile: UserPreferencesResponse): boolean {
+  const text = recipeSearchText(recipe)
+  return profile.allergies.some(allergy =>
+    getMatchTerms(allergy, ALLERGEN_ENTRIES).some(term => textContainsTerm(text, term)),
+  )
+}
+
+function matchesSwipePreferences(recipe: RecipeResponse): boolean {
+  const profile = preferences.value
+  if (!profile) return true
+  if (conflictsWithAllergies(recipe, profile)) return false
+
+  if (profile.vegan && recipe.vegan === false) return false
+  if (profile.vegetarian && recipe.vegetarian === false && recipe.vegan === false) return false
+  if (profile.glutenFree && recipe.glutenFree === false) return false
+
+  return true
 }
 
 function skipSwipeSuggestion() {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
@@ -88,6 +88,9 @@ const editImageUploaded = ref(false)
 const editIngredientRows = ref<IngredientRow[]>([emptyIngredientRow()])
 
 const editing = ref<Recipe | null>(null)
+const PAGE_SIZE = 10
+const ownPage = ref(1)
+const favoritesPage = ref(1)
 const selectedFavorite = ref<Recipe | null>(null)
 const activeTab = ref<'own' | 'favorites'>('own')
 
@@ -436,6 +439,46 @@ const favorites = computed(() => [
   ...recipes.value.filter(r => r.favorite),
   ...externalFavorites.value,
 ])
+
+const ownTotalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)))
+const favoritesTotalPages = computed(() => Math.max(1, Math.ceil(favorites.value.length / PAGE_SIZE)))
+const ownPageNumbers = computed(() => Array.from({ length: ownTotalPages.value }, (_, index) => index + 1))
+const favoritesPageNumbers = computed(() => Array.from({ length: favoritesTotalPages.value }, (_, index) => index + 1))
+const paginatedOwnRecipes = computed(() => paginate(filtered.value, ownPage.value))
+const paginatedFavorites = computed(() => paginate(favorites.value, favoritesPage.value))
+
+watch(filtered, () => {
+  if (ownPage.value > ownTotalPages.value) ownPage.value = ownTotalPages.value
+})
+
+watch(favorites, () => {
+  if (favoritesPage.value > favoritesTotalPages.value) favoritesPage.value = favoritesTotalPages.value
+})
+
+function paginate<T>(items: T[], page: number): T[] {
+  const start = (page - 1) * PAGE_SIZE
+  return items.slice(start, start + PAGE_SIZE)
+}
+
+function scrollListToTop() {
+  try {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } catch {
+    window.scrollTo(0, 0)
+  }
+}
+
+function goToOwnPage(page: number) {
+  if (page < 1 || page > ownTotalPages.value || page === ownPage.value) return
+  ownPage.value = page
+  scrollListToTop()
+}
+
+function goToFavoritesPage(page: number) {
+  if (page < 1 || page > favoritesTotalPages.value || page === favoritesPage.value) return
+  favoritesPage.value = page
+  scrollListToTop()
+}
 
 const openFavoriteDetails = (r: Recipe) => {
   if (r.externalId || r.source === 'spoonacular' || r.source === 'external') {
@@ -925,7 +968,7 @@ defineExpose({ startEdit })
       </div>
 
       <ul v-else class="recipes">
-        <li v-for="r in filtered" :key="r.id" class="recipe-card">
+        <li v-for="r in paginatedOwnRecipes" :key="r.id" class="recipe-card">
           <div class="recipe-row">
             <div class="image-wrap" v-if="r.imageUrl">
               <img :src="r.imageUrl" :alt="r.title" />
@@ -987,6 +1030,36 @@ defineExpose({ startEdit })
           </RouterLink>
         </li>
       </ul>
+
+      <nav v-if="filtered.length > PAGE_SIZE" class="pagination" :aria-label="t('home.pagination.label')">
+        <button
+          type="button"
+          class="pagination-btn"
+          :disabled="ownPage === 1"
+          @click="goToOwnPage(ownPage - 1)"
+        >
+          {{ t('home.pagination.previous') }}
+        </button>
+        <button
+          v-for="page in ownPageNumbers"
+          :key="`own-page-${page}`"
+          type="button"
+          class="pagination-btn page-number"
+          :class="{ active: ownPage === page }"
+          :aria-current="ownPage === page ? 'page' : undefined"
+          @click="goToOwnPage(page)"
+        >
+          {{ page }}
+        </button>
+        <button
+          type="button"
+          class="pagination-btn"
+          :disabled="ownPage === ownTotalPages"
+          @click="goToOwnPage(ownPage + 1)"
+        >
+          {{ t('home.pagination.next') }}
+        </button>
+      </nav>
 
       <div class="edit-panel" v-if="editing">
         <h4>{{ t('recipes.my.editTitle') }}</h4>
@@ -1122,7 +1195,7 @@ defineExpose({ startEdit })
           {{ t('recipes.errors.prefix') }} {{ favoriteError }}
         </p>
         <article
-          v-for="r in favorites"
+          v-for="r in paginatedFavorites"
           :key="'fav-' + r.id"
           class="recipe-card"
           @click="openFavoriteDetails(r)"
@@ -1170,6 +1243,36 @@ defineExpose({ startEdit })
           </RouterLink>
         </p>
       </div>
+
+      <nav v-if="favorites.length > PAGE_SIZE" class="pagination" :aria-label="t('home.pagination.label')">
+        <button
+          type="button"
+          class="pagination-btn"
+          :disabled="favoritesPage === 1"
+          @click="goToFavoritesPage(favoritesPage - 1)"
+        >
+          {{ t('home.pagination.previous') }}
+        </button>
+        <button
+          v-for="page in favoritesPageNumbers"
+          :key="`favorites-page-${page}`"
+          type="button"
+          class="pagination-btn page-number"
+          :class="{ active: favoritesPage === page }"
+          :aria-current="favoritesPage === page ? 'page' : undefined"
+          @click="goToFavoritesPage(page)"
+        >
+          {{ page }}
+        </button>
+        <button
+          type="button"
+          class="pagination-btn"
+          :disabled="favoritesPage === favoritesTotalPages"
+          @click="goToFavoritesPage(favoritesPage + 1)"
+        >
+          {{ t('home.pagination.next') }}
+        </button>
+      </nav>
     </div>
 
     <div v-if="selectedFavorite" class="overlay" @click.self="closeFavoriteDetails">
@@ -1859,6 +1962,37 @@ textarea {
   font-size: 0.9rem;
   color: var(--text-dark, #2e3437);
   margin-top: 2px;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.pagination-btn {
+  border: 1px solid var(--border-soft, #e5e7eb);
+  background: #ffffff;
+  color: var(--text-dark, #2e3437);
+  border-radius: 8px;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagination-btn:hover:not(:disabled),
+.pagination-btn.active {
+  border-color: var(--pink-dark, #d44488);
+  color: var(--pink-dark, #d44488);
+}
+
+.pagination-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .overlay {
