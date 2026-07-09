@@ -94,7 +94,7 @@ describe('App navigation', () => {
     expect(wrapper.text()).not.toContain('Favoriten')
   })
 
-  it('opens Dishly AI as a same-page drawer for authenticated users', async () => {
+  it('does not render Dishly AI entry points when the feature is disabled', () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
     const authStore = useAuthStore()
@@ -113,12 +113,11 @@ describe('App navigation', () => {
       },
     })
 
-    const aiButton = wrapper.find('.chat-fab')
-    expect(aiButton.element.tagName).toBe('BUTTON')
-    await aiButton.trigger('click')
-
-    expect(wrapper.find('.ai-drawer').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Küchenassistent')
+    expect(wrapper.find('.chat-fab').exists()).toBe(false)
+    expect(wrapper.find('.ai-drawer-backdrop').exists()).toBe(false)
+    expect(wrapper.find('.ai-drawer').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Dishly AI')
+    expect(wrapper.text()).not.toContain('Kuechenassistent')
   })
 
   it('logout clears auth state and the search store, then navigates home', async () => {

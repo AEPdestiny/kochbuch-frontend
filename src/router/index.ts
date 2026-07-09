@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { useAuthStore } from '@/stores/authStore'
+import { DISHLY_AI_ENABLED } from '@/shared/features'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -80,8 +81,14 @@ const router = createRouter({
     {
       path: '/ai',
       name: 'ai-chat',
-      component: () => import('../views/AiChatView.vue'),
-      meta: { requiresAuth: true },
+      ...(DISHLY_AI_ENABLED
+        ? {
+            component: () => import('../views/AiChatView.vue'),
+            meta: { requiresAuth: true },
+          }
+        : {
+            redirect: '/',
+          }),
     },
     {
       // About-Seite mit Informationen zur App

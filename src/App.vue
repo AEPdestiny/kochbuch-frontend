@@ -11,6 +11,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 import AiChatPanel from '@/components/AiChatPanel.vue'
 import AppToast from '@/components/AppToast.vue'
 import dishlyLogo from '@/assets/dishly-logo.png'
+import { DISHLY_AI_ENABLED } from '@/shared/features'
 
 const authStore = useAuthStore()
 const toastStore = useToastStore()
@@ -110,7 +111,7 @@ async function logout() {
     <AppToast />
 
     <button
-      v-if="authStore.isAuthenticated && !aiDrawerOpen"
+      v-if="DISHLY_AI_ENABLED && authStore.isAuthenticated && !aiDrawerOpen"
       type="button"
       class="chat-fab"
       @click="aiDrawerOpen = true"
@@ -122,7 +123,7 @@ async function logout() {
     </button>
 
     <div
-      v-if="authStore.isAuthenticated"
+      v-if="DISHLY_AI_ENABLED && authStore.isAuthenticated"
       v-show="aiDrawerOpen"
       class="ai-drawer-backdrop"
       @click.self="aiDrawerOpen = false"

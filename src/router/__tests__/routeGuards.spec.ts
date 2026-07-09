@@ -83,6 +83,13 @@ describe('route guards', () => {
     expect(router.currentRoute.value.query.redirect).toBe('/meal-plan')
   })
 
+  it('redirects /ai to home while Dishly AI is disabled', async () => {
+    await router.push('/ai')
+
+    expect(router.currentRoute.value.path).toBe('/')
+    expect(authApi.me).not.toHaveBeenCalled()
+  })
+
   it('allows authenticated users to open protected routes', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     sessionStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
