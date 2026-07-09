@@ -2,6 +2,7 @@
 import { computed, inject, nextTick, ref, watch } from 'vue'
 import { routeLocationKey, type RouteLocationNormalizedLoaded } from 'vue-router'
 import { Wand } from 'reicon-vue'
+import { i18n } from '@/i18n'
 import { ApiClientError } from '@/shared/api/apiClient'
 import { aiApi } from '@/shared/api/aiApi'
 import type { AiChatTurn } from '@/types/ai'
@@ -67,6 +68,10 @@ function recentHistory(): AiChatTurn[] {
     }))
 }
 
+function currentLocale() {
+  return String(i18n.global.locale.value || '').split('-')[0] || undefined
+}
+
 async function scrollMessagesToBottom({ smooth = true } = {}) {
   await nextTick()
 
@@ -123,6 +128,7 @@ async function submitMessage(text: string) {
   try {
     const response = await aiApi.chat({
       message: value,
+      locale: currentLocale(),
       ...(history.length ? { history } : {}),
     })
     if (requestId !== activeRequestId.value) return

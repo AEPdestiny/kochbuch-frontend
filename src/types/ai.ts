@@ -6,6 +6,7 @@ export type AiChatTurn = {
 export type AiChatRequest = {
   message: string
   history?: AiChatTurn[]
+  locale?: string
 }
 
 export type AiChatResponse = {

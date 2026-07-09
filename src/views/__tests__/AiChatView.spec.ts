@@ -4,6 +4,7 @@ import { routeLocationKey } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import AiChatView from '@/views/AiChatView.vue'
 import { aiApi } from '@/shared/api/aiApi'
+import { setLocale } from '@/i18n'
 
 vi.mock('@/shared/api/aiApi', () => ({
   aiApi: {
@@ -14,6 +15,8 @@ vi.mock('@/shared/api/aiApi', () => ({
 describe('AiChatView', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
+    setLocale('de')
   })
 
   function mountAiChatView(path = '/ai') {
@@ -36,7 +39,7 @@ describe('AiChatView', () => {
     await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(aiApi.chat).toHaveBeenCalledWith({ message: 'Wie sieht mein Wochenplan aus?' })
+    expect(aiApi.chat).toHaveBeenCalledWith({ message: 'Wie sieht mein Wochenplan aus?', locale: 'de' })
     expect(wrapper.text()).toContain('Wie sieht mein Wochenplan aus?')
     expect(wrapper.text()).toContain('Plane mehr Gemuese ein.')
   })
@@ -66,11 +69,24 @@ describe('AiChatView', () => {
 
     expect(aiApi.chat).toHaveBeenLastCalledWith({
       message: '2',
+      locale: 'de',
       history: [
         { role: 'user', text: 'Was soll ich kochen?' },
         { role: 'assistant', text: 'Ich empfehle Dishly Pasta. Moechtest du (1) Details, (2) Restaurant?' },
       ],
     })
+  })
+
+  it('sends the active UI locale with the chat request', async () => {
+    setLocale('en')
+    vi.mocked(aiApi.chat).mockResolvedValue({ message: 'Use more vegetables.', configured: true })
+    const { wrapper } = mountAiChatView()
+
+    await wrapper.find('textarea').setValue('What can I cook?')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(aiApi.chat).toHaveBeenCalledWith({ message: 'What can I cook?', locale: 'en' })
   })
 
   it('resets the chat when the reset button is clicked', async () => {
