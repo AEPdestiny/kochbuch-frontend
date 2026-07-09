@@ -31,6 +31,7 @@ import MyRecipesView from '@/views/MyRecipesView.vue'
 import NewRecipeView from '@/views/NewRecipeView.vue'
 import PantryView from '@/views/PantryView.vue'
 import ShoppingListView from '@/views/ShoppingListView.vue'
+import ShoppingListRecipesView from '@/views/ShoppingListRecipesView.vue'
 import MealPlanView from '@/views/MealPlanView.vue'
 import AboutView from '@/views/AboutView.vue'
 import ContactView from '@/views/ContactView.vue'
@@ -43,6 +44,7 @@ const router = createRouter({
     { path: '/recipes/new', component: NewRecipeView },
     { path: '/pantry', component: PantryView },
     { path: '/shopping-list', component: ShoppingListView },
+    { path: '/shopping-list/recipes', component: ShoppingListRecipesView },
     { path: '/meal-plan', component: MealPlanView },
     { path: '/about', component: AboutView },
     { path: '/contact', component: ContactView },
@@ -141,7 +143,8 @@ describe('App routing', () => {
       global: { plugins: [router, i18n] },
     })
 
-    expect(wrapper.text()).toContain('Die Person hinter Dishly')
+    expect(wrapper.text()).toContain('Dishly macht Kochen planbarer')
+    expect(wrapper.text()).not.toContain('Die Person hinter Dishly')
   })
 
   it('renders AboutView in English', async () => {
@@ -152,7 +155,8 @@ describe('App routing', () => {
       global: { plugins: [router, i18n] },
     })
 
-    expect(wrapper.text()).toContain('The person behind Dishly')
+    expect(wrapper.text()).toContain('Dishly makes cooking easier to plan')
+    expect(wrapper.text()).not.toContain('The person behind Dishly')
     expect(wrapper.text()).not.toContain('Die Person hinter Dishly')
   })
 
@@ -179,19 +183,4 @@ describe('App routing', () => {
     expect(wrapper.text()).toContain('Dishly.Rezepte@gmx.de')
   })
 
-  it('renders About and Contact with Arabic direction enabled', async () => {
-    setLocale('ar')
-    router.push('/about')
-    await router.isReady()
-    const aboutWrapper = mount(AboutView, {
-      global: { plugins: [router, i18n] },
-    })
-    const contactWrapper = mount(ContactView, {
-      global: { plugins: [router, i18n] },
-    })
-
-    expect(document.documentElement.dir).toBe('rtl')
-    expect(aboutWrapper.text().length).toBeGreaterThan(0)
-    expect(contactWrapper.text().length).toBeGreaterThan(0)
-  })
 })

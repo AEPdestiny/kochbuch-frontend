@@ -789,15 +789,6 @@ describe('PantryView', () => {
     expect(wrapper.find('button[type="submit"]').text()).toBe('Add')
   })
 
-  it('renders Arabic pantry texts without errors', async () => {
-    setLocale('ar')
-
-    const wrapper = mount(PantryView)
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية مخزونك.')
-    expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
-  })
 
   // ─── PDF export tests ─────────────────────────────────────────────────────
 

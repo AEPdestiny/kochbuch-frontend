@@ -415,6 +415,15 @@ async function moveEntry(currentDate: string, currentSlot: MealSlot) {
     toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
   } catch {
     await reloadWeek().catch(() => undefined)
+    const movedEntry = entryFor(target.date, target.slot)
+    if (movedEntry?.id === entry.id) {
+      actionError.value = null
+      moveEditorKey.value = null
+      modalDate.value = null
+      modalSlot.value = null
+      toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
+      return
+    }
     actionError.value = t('mealPlan.errors.move')
   }
 }
@@ -471,6 +480,12 @@ async function onSlotDrop(targetDate: string, targetSlot: MealSlot) {
     toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
   } catch {
     await reloadWeek().catch(() => undefined)
+    const movedEntry = entryFor(targetDate, targetSlot)
+    if (movedEntry?.id === sourceEntry.id) {
+      actionError.value = null
+      toastStore.addToast(t('notifications.mealPlanMoved'), 'success')
+      return
+    }
     actionError.value = t('mealPlan.errors.move')
   }
 }
@@ -1176,9 +1191,6 @@ function formatDate(date: Date) {
               </div>
               <p v-if="currentSwipeRecipe.source !== 'dishly'" class="suggestion-state">
                 Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
-              </p>
-              <p v-else class="suggestion-state">
-                Dishly-Rezepte werden als echte Rezeptverknüpfung gespeichert.
               </p>
               <p class="suggestion-state">
                 Dieses Rezept kommt zu: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>

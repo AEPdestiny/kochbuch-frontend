@@ -203,17 +203,6 @@ describe('ApiRecipeList.vue', () => {
     expect(wrapper.text()).toContain('24 g Protein')
   })
 
-  it('shows protein on Arabic recipe cards', async () => {
-    setLocale('ar')
-    vi.mocked(recipeApi.getPublishedRecipes).mockResolvedValue([
-      recipe(10, 'Protein Bowl', 'beans', 'lunch', { protein: 24.4 }),
-    ])
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('24 g Protein')
-  })
 
   it('shows a clear profile personalization toggle and status', async () => {
     loginAsUser()
@@ -1328,15 +1317,6 @@ describe('ApiRecipeList.vue', () => {
     expect(cards[1]).not.toContain('Alkohol')
   })
 
-  it('renders Arabic home UI without errors', async () => {
-    setLocale('ar')
-
-    const wrapper = mount(ApiRecipeList)
-    await flushPromises()
-
-    expect(wrapper.find('.hero-desc').exists()).toBe(true)
-    expect(document.documentElement.dir).toBe('rtl')
-  })
 
   it('does not load external English recipes for German locale and shows generic empty state', async () => {
     setLocale('de')

@@ -47,16 +47,6 @@ const sortedItems = computed(() => {
   return [...unchecked, ...checked]
 })
 
-const recipeGroups = computed(() => {
-  const groups = new Map<string, ShoppingListItem[]>()
-  for (const item of items.value) {
-    const title = item.recipeTitle?.trim()
-    if (!title) continue
-    groups.set(title, [...(groups.get(title) ?? []), item])
-  }
-  return Array.from(groups.entries()).map(([title, groupItems]) => ({ title, items: groupItems }))
-})
-
 const displayItems = computed(() =>
   sortedItems.value.map(item => ({ item, display: normalizeShoppingListItemDisplay(item) }))
 )
@@ -449,6 +439,7 @@ function exportShoppingListAsPdf() {
 
       <div class="shopping-actions-bar">
         <button type="button" class="pdf-btn" @click="exportShoppingListAsPdf">{{ t('shoppingList.actions.exportPdf') }}</button>
+        <a class="pdf-btn recipes-link" href="/shopping-list/recipes">{{ t('shoppingList.recipeGroups.title') }}</a>
       </div>
 
       <p v-if="items.length === 0" class="status-text">
@@ -531,47 +522,6 @@ function exportShoppingListAsPdf() {
               </form>
             </li>
           </ul>
-        </section>
-
-        <!-- Rezepte mit diesen Zutaten: collapsible recipe groups, read-only view -->
-        <section class="shopping-section recipe-groups-section">
-          <h2 class="section-title">{{ t('shoppingList.recipeGroups.title') }}</h2>
-
-          <p v-if="recipeGroups.length === 0" class="status-text recipe-groups-empty">
-            {{ t('shoppingList.recipeGroups.empty') }}
-          </p>
-
-          <div v-else class="recipe-groups">
-            <details
-              v-for="group in recipeGroups"
-              :key="group.title"
-              class="recipe-group"
-            >
-              <summary class="recipe-group-summary">{{ group.title }}</summary>
-              <ul class="recipe-item-list">
-                <li
-                  v-for="groupItem in group.items"
-                  :key="groupItem.id"
-                  class="recipe-item"
-                  :class="{ checked: groupItem.checked }"
-                >
-                  <label class="item-check">
-                    <input
-                      type="checkbox"
-                      :checked="groupItem.checked"
-                      aria-label="Zutat erledigt"
-                      @change="toggleChecked(groupItem)"
-                    />
-                  </label>
-                  <span class="recipe-item-name">{{ groupItem.name }}</span>
-                  <span class="recipe-item-quantity">
-                    <span v-if="groupItem.quantity !== null && groupItem.quantity !== undefined">{{ groupItem.quantity }}</span>
-                    <span v-if="groupItem.unit"> {{ groupItem.unit }}</span>
-                  </span>
-                </li>
-              </ul>
-            </details>
-          </div>
         </section>
       </div>
     </template>
@@ -726,11 +676,13 @@ function exportShoppingListAsPdf() {
 
 .shopping-actions-bar {
   display: flex;
+  gap: 10px;
   justify-content: flex-end;
   margin-bottom: 0.5rem;
 }
 
-.pdf-btn {
+.pdf-btn,
+.recipes-link {
   border: 1.5px solid var(--mint, #5ecbb5);
   border-radius: var(--radius-pill, 999px);
   background: #ffffff;
@@ -741,10 +693,12 @@ function exportShoppingListAsPdf() {
   min-height: 36px;
   padding: 8px 16px;
   font-size: 0.9rem;
+  text-decoration: none;
   transition: background 0.16s ease, color 0.16s ease;
 }
 
-.pdf-btn:hover {
+.pdf-btn:hover,
+.recipes-link:hover {
   background: var(--mint, #5ecbb5);
   color: #ffffff;
 }
@@ -902,95 +856,6 @@ function exportShoppingListAsPdf() {
   margin: 0;
 }
 
-/* Recipe groups section */
-.recipe-groups-section {
-  background: var(--mint-bg, #ecfaf6);
-  border-radius: var(--radius-card, 18px);
-  padding: 22px 24px;
-}
-
-.recipe-groups-empty {
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-.recipe-groups {
-  display: grid;
-  gap: 10px;
-}
-
-.recipe-group {
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: var(--shadow-sm, 0 2px 10px rgba(61, 174, 155, 0.06));
-  overflow: hidden;
-}
-
-.recipe-group-summary {
-  align-items: center;
-  color: var(--text-dark, #2e3437);
-  cursor: pointer;
-  display: flex;
-  font-size: 1rem;
-  font-weight: 700;
-  justify-content: space-between;
-  list-style: none;
-  min-height: 44px;
-  padding: 10px 16px;
-}
-
-.recipe-group-summary::-webkit-details-marker {
-  display: none;
-}
-
-.recipe-group[open] .recipe-group-summary {
-  border-bottom: 1px solid var(--line, #e6ecea);
-}
-
-.recipe-group-summary::after {
-  content: '▾';
-  color: var(--mint-darker, #2b8c7b);
-  font-size: 0.9rem;
-}
-
-.recipe-group[open] .recipe-group-summary::after {
-  content: '▴';
-}
-
-.recipe-item-list {
-  display: grid;
-  gap: 6px;
-  list-style: none;
-  margin: 0;
-  padding: 10px 16px 14px;
-}
-
-.recipe-item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  border-radius: 8px;
-  padding: 6px 2px;
-}
-
-.recipe-item.checked .recipe-item-name {
-  opacity: 0.55;
-  text-decoration: line-through;
-}
-
-.recipe-item-name {
-  color: var(--text-dark, #2e3437);
-  font-size: 0.95rem;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
-.recipe-item-quantity {
-  color: var(--text-gray, #6b7478);
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
 
 @media (max-width: 760px) {
   .shopping-list-page {

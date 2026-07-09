@@ -10,11 +10,6 @@ const toastStore = useToastStore()
 const languageOptions: Array<{ code: LocaleCode; label: string }> = [
   { code: 'de', label: 'Deutsch' },
   { code: 'en', label: 'English' },
-  { code: 'tr', label: 'Türkçe' },
-  { code: 'pl', label: 'Polski' },
-  { code: 'ar', label: 'العربية' },
-  { code: 'zh', label: '中文' },
-  { code: 'ja', label: '日本語' },
 ]
 
 const selectedLocale = computed({
@@ -22,7 +17,6 @@ const selectedLocale = computed({
   set: value => {
     if (supportedLocales.includes(value) && value !== locale.value) {
       setLocale(value)
-      // t() now uses the new locale, so the message is in the target language.
       toastStore.addToast(t('notifications.languageChanged'), 'info')
     }
   },
@@ -75,8 +69,6 @@ const selectedLocale = computed({
     min-height: auto;
   }
 
-  /* "Sprache"-Beschriftung ausblenden, um Platz zu sparen — die aktuell
-     gewählte Sprache steht bereits sichtbar im Select selbst. */
   .language-switcher span {
     display: none;
   }

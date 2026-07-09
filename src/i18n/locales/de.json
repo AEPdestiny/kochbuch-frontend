@@ -232,6 +232,7 @@
     "actions": {
       "login": "Zum Login",
       "save": "Rezept speichern",
+      "saving": "Rezept wird gespeichert...",
       "saveChanges": "Änderungen speichern",
       "view": "Ansehen",
       "edit": "Bearbeiten",
@@ -539,7 +540,6 @@
     "locationDeniedHint": "Standortfreigabe abgelehnt. Du kannst weiterhin eine Stadt eingeben."
   },
   "about": {
-    "eyebrow": "Die Person hinter Dishly",
     "heroTitle": "Dishly macht Kochen planbarer, leichter und schöner.",
     "heroBody": "Dishly verbindet Rezeptideen, Wochenplanung, Vorrat und Einkaufsliste zu einem ruhigen Ort für deine Küche. So findest du schneller passende Gerichte, nutzt vorhandene Zutaten besser und planst Mahlzeiten ohne Zettelchaos.",
     "featuresLabel": "Dishly Funktionen",

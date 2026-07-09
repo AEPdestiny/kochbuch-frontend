@@ -230,6 +230,7 @@
     "actions": {
       "login": "Go to login",
       "save": "Save recipe",
+      "saving": "Saving recipe...",
       "saveChanges": "Save changes",
       "view": "View",
       "edit": "Edit",
@@ -537,7 +538,6 @@
     "locationDeniedHint": "Location permission denied. You can still enter a city."
   },
   "about": {
-    "eyebrow": "The person behind Dishly",
     "heroTitle": "Dishly makes cooking easier to plan, easier to enjoy.",
     "heroBody": "Dishly brings recipe discovery, weekly planning, pantry tracking and shopping lists into one calm kitchen workspace. It helps you find the right meals faster, use what you already have and plan without scattered notes.",
     "featuresLabel": "Dishly features",

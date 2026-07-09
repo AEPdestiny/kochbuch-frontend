@@ -1,24 +1,14 @@
 import { createI18n } from 'vue-i18n'
 import de from './locales/de.json'
 import en from './locales/en.json'
-import tr from './locales/tr.json'
-import pl from './locales/pl.json'
-import ar from './locales/ar.json'
-import zh from './locales/zh.json'
-import ja from './locales/ja.json'
 
 export const LOCALE_STORAGE_KEY = 'dishly.locale'
-export const supportedLocales = ['de', 'en', 'tr', 'pl', 'ar', 'zh', 'ja'] as const
+export const supportedLocales = ['de', 'en'] as const
 export type LocaleCode = (typeof supportedLocales)[number]
 
 const messages = {
   de,
   en,
-  tr,
-  pl,
-  ar,
-  zh,
-  ja,
 }
 
 export const i18n = createI18n({
@@ -55,5 +45,5 @@ function resolveInitialLocale() {
 
 function applyDocumentLocale(locale: LocaleCode) {
   document.documentElement.lang = locale
-  document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr'
+  document.documentElement.dir = 'ltr'
 }

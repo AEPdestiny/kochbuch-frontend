@@ -2,6 +2,7 @@ import { mount, flushPromises, config } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import ShoppingListView from '@/views/ShoppingListView.vue'
+import ShoppingListRecipes from '@/components/ShoppingListRecipes.vue'
 import { shoppingListApi } from '@/shared/api/shoppingListApi'
 import { ApiClientError, AUTH_TOKEN_STORAGE_KEY } from '@/shared/api/apiClient'
 import { printShoppingList } from '@/shared/printExport'
@@ -124,20 +125,18 @@ describe('ShoppingListView', () => {
   })
 
   it('groups shopping list items by recipe title', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
-      { ...item('Pasta', 2, 'cups', 'Recipe ingredient', false), recipeId: '716429', recipeTitle: 'Pasta with Garlic' },
-      item('Milk', 1, 'l', 'Dairy', false),
-    ])
-
-    const wrapper = mount(ShoppingListView)
-    await flushPromises()
+    const wrapper = mount(ShoppingListRecipes, {
+      props: {
+        items: [
+          { ...item('Pasta', 2, 'cups', 'Recipe ingredient', false), recipeId: '716429', recipeTitle: 'Pasta with Garlic' },
+          item('Milk', 1, 'l', 'Dairy', false),
+        ],
+      },
+    })
 
     expect(wrapper.text()).toContain('Pasta with Garlic')
     expect(wrapper.text()).not.toContain('Manuell')
     expect(wrapper.text()).toContain('Pasta')
-    expect(wrapper.text()).toContain('Milk')
-    // Milk has no recipeTitle → appears only in flat list, not in recipe groups
     expect(wrapper.find('.recipe-groups-section').text()).not.toContain('Milk')
   })
 
@@ -153,8 +152,8 @@ describe('ShoppingListView', () => {
     const wrapper = mount(ShoppingListView)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Rezept A')
-    expect(wrapper.text()).toContain('Rezept B')
+    expect(wrapper.text()).not.toContain('Rezept A')
+    expect(wrapper.text()).not.toContain('Rezept B')
     expect(wrapper.text()).toContain('Gesamt-Einkaufsliste')
     // Items appear individually, not aggregated
     expect(wrapper.text()).not.toContain('10 Stück')
@@ -806,26 +805,22 @@ describe('ShoppingListView', () => {
   })
 
   it('shows recipe groups section with empty message when no items have recipe titles', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
-      item('Milch', 1, 'l', '', false),
-    ])
-
-    const wrapper = mount(ShoppingListView)
-    await flushPromises()
+    const wrapper = mount(ShoppingListRecipes, {
+      props: {
+        items: [item('Milch', 1, 'l', '', false)],
+      },
+    })
 
     expect(wrapper.find('.recipe-groups-section').exists()).toBe(true)
     expect(wrapper.find('.recipe-groups-section').text()).toContain('Keine Rezeptzuordnung')
   })
 
   it('shows collapsible recipe group for items with recipe titles', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
-      { ...item('Pasta', 2, 'cups', '', false), recipeId: '1', recipeTitle: 'Pasta Bolognese' },
-    ])
-
-    const wrapper = mount(ShoppingListView)
-    await flushPromises()
+    const wrapper = mount(ShoppingListRecipes, {
+      props: {
+        items: [{ ...item('Pasta', 2, 'cups', '', false), recipeId: '1', recipeTitle: 'Pasta Bolognese' }],
+      },
+    })
 
     const details = wrapper.find('.recipe-groups-section details.recipe-group')
     expect(details.exists()).toBe(true)
@@ -833,13 +828,11 @@ describe('ShoppingListView', () => {
   })
 
   it('recipe group items have a checkbox but no edit or delete buttons', async () => {
-    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
-    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
-      { ...item('Pasta', 2, 'cups', '', false), recipeId: '1', recipeTitle: 'Pasta Bolognese' },
-    ])
-
-    const wrapper = mount(ShoppingListView)
-    await flushPromises()
+    const wrapper = mount(ShoppingListRecipes, {
+      props: {
+        items: [{ ...item('Pasta', 2, 'cups', '', false), recipeId: '1', recipeTitle: 'Pasta Bolognese' }],
+      },
+    })
 
     const recipeSection = wrapper.find('.recipe-groups-section')
     expect(recipeSection.find('input[type="checkbox"]').exists()).toBe(true)
@@ -859,15 +852,6 @@ describe('ShoppingListView', () => {
     expect(wrapper.find('button[type="submit"]').text()).toBe('Add')
   })
 
-  it('renders Arabic shopping list texts without errors', async () => {
-    setLocale('ar')
-
-    const wrapper = mount(ShoppingListView)
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية قائمة التسوق الخاصة بك.')
-    expect(wrapper.find('a.login-link').text()).toBe('إلى تسجيل الدخول')
-  })
 
   // ─── Display normalization tests ──────────────────────────────────────────
 
@@ -999,6 +983,18 @@ describe('ShoppingListView', () => {
 
     const pdfBtn = wrapper.findAll('button').find(b => b.text().includes('PDF'))
     expect(pdfBtn).toBeTruthy()
+  })
+
+  it('links to the separate shopping-list recipe page', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const link = wrapper.find('a.recipes-link')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('/shopping-list/recipes')
+    expect(wrapper.find('.recipe-groups-section').exists()).toBe(false)
   })
 
   it('calls printShoppingList with all items when PDF button is clicked', async () => {

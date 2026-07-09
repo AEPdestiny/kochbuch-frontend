@@ -128,8 +128,8 @@ describe('ingredientCategories', () => {
       expect(suggestions.length).toBe(NAME_SUGGESTIONS.length)
     })
 
-    it('returns the original English list for en/tr/pl/ar/zh/ja', () => {
-      for (const locale of ['en', 'tr', 'pl', 'ar', 'zh', 'ja']) {
+    it('returns the original English list for en', () => {
+      for (const locale of ['en']) {
         expect(localizedNameSuggestions(NAME_SUGGESTIONS, locale)).toEqual(NAME_SUGGESTIONS)
       }
     })
@@ -177,8 +177,8 @@ describe('ingredientCategories', () => {
       expect(units.length).toBe(STANDARD_UNITS.length)
     })
 
-    it('returns the original STANDARD_UNITS codes for all other locales', () => {
-      for (const locale of ['en', 'tr', 'pl', 'ar', 'zh', 'ja']) {
+    it('returns the original STANDARD_UNITS codes for en', () => {
+      for (const locale of ['en']) {
         expect(localizedUnitOptions(STANDARD_UNITS, locale)).toEqual(STANDARD_UNITS)
       }
     })

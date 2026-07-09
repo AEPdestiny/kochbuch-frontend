@@ -13,7 +13,6 @@ const featureKeys = ['discover', 'plan', 'pantry'] as const
   <section class="about-page">
     <section class="about-hero">
       <div class="hero-copy">
-        <p class="eyebrow">{{ t('about.eyebrow') }}</p>
         <h1>{{ t('about.heroTitle') }}</h1>
         <p class="hero-text">{{ t('about.heroBody') }}</p>
       </div>

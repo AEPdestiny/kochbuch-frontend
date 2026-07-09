@@ -1046,13 +1046,4 @@ describe('RecipeList.vue', () => {
     expect(wrapper.text()).toContain('Hausmannskost')
   })
 
-  it('renders Arabic recipe UI texts without errors', async () => {
-    setLocale('ar')
-
-    const wrapper = mount(RecipeList)
-    await flushPromises()
-
-    expect(wrapper.text()).toContain('وصفاتك المنشأة')
-    expect(wrapper.text()).toContain('يرجى تسجيل الدخول لرؤية وصفاتك.')
-  })
 })

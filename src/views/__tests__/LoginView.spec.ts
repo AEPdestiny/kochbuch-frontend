@@ -219,24 +219,4 @@ describe('LoginView', () => {
     expect(wrapper.text()).toContain('Your session has expired. Please sign in again.')
   })
 
-  it('renders Arabic login texts without errors', async () => {
-    setLocale('ar')
-
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [{ path: '/login', component: LoginView }],
-    })
-
-    await router.push('/login')
-    await router.isReady()
-
-    const wrapper = mount(LoginView, {
-      global: {
-        plugins: [router, i18n],
-      },
-    })
-
-    expect(wrapper.text()).toContain('تسجيل الدخول')
-    expect(wrapper.text()).toContain('كلمة المرور')
-  })
 })

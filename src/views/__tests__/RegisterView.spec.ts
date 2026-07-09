@@ -130,22 +130,6 @@ describe('RegisterView', () => {
     expect(wrapper.text()).toContain('Email or username is already taken.')
   })
 
-  it('renders Arabic register texts without errors', async () => {
-    setLocale('ar')
-    const router = createRegisterRouter()
-
-    await router.push('/register')
-    await router.isReady()
-
-    const wrapper = mount(RegisterView, {
-      global: {
-        plugins: [router, i18n],
-      },
-    })
-
-    expect(wrapper.text()).toContain('إنشاء حساب')
-    expect(wrapper.text()).toContain('اسم المستخدم')
-  })
 })
 
 function createRegisterRouter() {

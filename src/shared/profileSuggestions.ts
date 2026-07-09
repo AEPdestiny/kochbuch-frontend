@@ -1,13 +1,11 @@
-import type { LocaleCode } from '@/i18n'
-
 export type SuggestionEntry = {
   canonical: string
   matchTerms: string[]
-  labels: Record<LocaleCode, string>
+  labels: Record<string, string>
 }
 
 function getLabel(entry: SuggestionEntry, locale: string): string {
-  return entry.labels[locale as LocaleCode] ?? entry.labels['de']
+  return entry.labels[locale] ?? entry.labels['de'] ?? entry.canonical
 }
 
 export function getSuggestions(entries: SuggestionEntry[], locale: string): string[] {

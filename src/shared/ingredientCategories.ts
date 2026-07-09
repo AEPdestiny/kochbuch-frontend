@@ -1,5 +1,3 @@
-import type { LocaleCode } from '@/i18n'
-
 /**
  * Groups related ingredient names under a category alias (e.g. "Pasta" / "Nudeln")
  * so search/suggestions can understand category words, not just literal ingredient
@@ -14,7 +12,7 @@ export type CategoryEntry = {
   canonical: string
   matchTerms: string[]
   members: string[]
-  labels: Record<LocaleCode, string>
+  labels: Record<string, string>
 }
 
 export const CATEGORY_ENTRIES: CategoryEntry[] = [

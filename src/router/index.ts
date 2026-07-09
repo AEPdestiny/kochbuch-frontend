@@ -66,6 +66,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/shopping-list/recipes',
+      name: 'shopping-list-recipes',
+      component: () => import('../views/ShoppingListRecipesView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/meal-plan',
       name: 'meal-plan',
       component: () => import('../views/MealPlanView.vue'),

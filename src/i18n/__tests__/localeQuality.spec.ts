@@ -1,21 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import ar from '../locales/ar.json'
 import de from '../locales/de.json'
 import en from '../locales/en.json'
-import ja from '../locales/ja.json'
-import pl from '../locales/pl.json'
-import tr from '../locales/tr.json'
-import zh from '../locales/zh.json'
 
 const locales = {
-  ar,
   de,
   en,
-  ja,
-  pl,
-  tr,
-  zh,
 }
 
 const globalForbiddenArtifacts = ['Ã', 'Â', '�', 'â˜']

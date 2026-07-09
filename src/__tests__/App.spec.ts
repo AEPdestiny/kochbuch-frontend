@@ -177,7 +177,7 @@ describe('App navigation', () => {
     expect(document.documentElement.lang).toBe('en')
   })
 
-  it('sets RTL direction when Arabic is selected', async () => {
+  it('offers only German and English as UI languages', () => {
     const wrapper = mount(App, {
       global: {
         plugins: [i18n],
@@ -190,12 +190,15 @@ describe('App navigation', () => {
       },
     })
 
-    await wrapper.find('select').setValue('ar')
-    await nextTick()
+    const options = wrapper.findAll('select option').map(option => ({
+      value: option.attributes('value'),
+      text: option.text(),
+    }))
 
-    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe('ar')
-    expect(document.documentElement.lang).toBe('ar')
-    expect(document.documentElement.dir).toBe('rtl')
-    expect(wrapper.text()).toContain('الرئيسية')
+    expect(options).toEqual([
+      { value: 'de', text: 'Deutsch' },
+      { value: 'en', text: 'English' },
+    ])
+    expect(document.documentElement.dir).toBe('ltr')
   })
 })
