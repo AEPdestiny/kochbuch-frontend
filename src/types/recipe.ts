@@ -36,6 +36,7 @@ export type RecipeResponse = RecipeRequest & {
   vegan?: boolean
   glutenFree?: boolean
   dairyFree?: boolean
+  favoriteRecordId?: number | string | null
 }
 
 export type Recipe = RecipeResponse

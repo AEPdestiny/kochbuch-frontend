@@ -211,6 +211,7 @@
       "requiredHintEnd": "are required.",
       "createdTitle": "Own recipes",
       "favoritesTitle": "Your favorite recipes",
+      "incompleteFavoriteTitle": "Incomplete favorite",
       "editTitle": "Edit recipe",
       "pageTitle": "Your personal Dishly cookbook",
       "pageSubtitle": "Manage your own recipes and favorites in one place."

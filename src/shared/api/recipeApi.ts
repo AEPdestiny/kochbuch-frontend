@@ -94,6 +94,10 @@ export const recipeApi = {
     return response.data
   },
 
+  async removeRecipeFavorite(id: number | string): Promise<void> {
+    await apiClient.delete(`/recipes/${id}/favorite`)
+  },
+
   async deleteRecipe(id: number | string): Promise<void> {
     await apiClient.delete(`/recipes/${id}`)
   },

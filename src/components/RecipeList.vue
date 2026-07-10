@@ -148,11 +148,12 @@ const loadExternalFavoriteRecipes = async (): Promise<Recipe[]> => {
   try {
     const favorites = await favoriteApi.getExternalFavorites()
     return favorites.map(favorite => ({
-      id: favorite.externalRecipeId,
+      id: favorite.externalRecipeId?.trim() || `favorite-${favorite.id}`,
       externalId: favorite.externalRecipeId,
+      favoriteRecordId: favorite.id,
       source: (favorite.externalSource ?? 'SPOONACULAR').toLowerCase(),
       sourceName: favorite.externalSource ?? 'SPOONACULAR',
-      title: favorite.externalTitle,
+      title: favorite.externalTitle?.trim() || t('recipes.my.incompleteFavoriteTitle'),
       imageUrl: favorite.externalImageUrl ?? '',
       prepTimeMinutes: 0,
       cookTimeMinutes: 0,
@@ -788,24 +789,29 @@ const removeFavorite = async (r: Recipe) => {
     if (isExternalFavoriteRecipe(r)) {
       const source = r.sourceName?.trim() || r.source?.trim() || 'SPOONACULAR'
       const externalRecipeId = String(r.externalId ?? r.id)
-      await favoriteApi.removeExternalFavorite(source, externalRecipeId)
-      externalFavorites.value = externalFavorites.value.filter(favorite =>
-        String(favorite.externalId ?? favorite.id) !== externalRecipeId
-        || (favorite.sourceName?.trim() || favorite.source?.trim() || 'SPOONACULAR').toUpperCase() !== source.toUpperCase()
-      )
+      if (r.favoriteRecordId != null) {
+        await favoriteApi.removeExternalFavoriteById(r.favoriteRecordId)
+        externalFavorites.value = externalFavorites.value.filter(favorite =>
+          favorite.favoriteRecordId !== r.favoriteRecordId
+        )
+      } else {
+        await favoriteApi.removeExternalFavorite(source, externalRecipeId)
+        externalFavorites.value = externalFavorites.value.filter(favorite =>
+          String(favorite.externalId ?? favorite.id) !== externalRecipeId
+          || (favorite.sourceName?.trim() || favorite.source?.trim() || 'SPOONACULAR').toUpperCase() !== source.toUpperCase()
+        )
+      }
       if (selectedFavorite.value?.id === r.id) {
         selectedFavorite.value = null
       }
       return
     }
 
-    const updated = await recipeApi.updateRecipe(
-      r.id,
-      recipeRequestFrom(r, { favorite: false }),
-    )
+    await recipeApi.removeRecipeFavorite(r.id)
     const index = recipes.value.findIndex(recipe => recipe.id === r.id)
-    if (index >= 0) {
-      recipes.value[index] = updated
+    const existing = index >= 0 ? recipes.value[index] : null
+    if (existing) {
+      recipes.value[index] = { ...existing, favorite: false }
     }
     if (selectedFavorite.value?.id === r.id) {
       selectedFavorite.value = null

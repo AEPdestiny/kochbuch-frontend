@@ -43,6 +43,14 @@ describe('recipeApi', () => {
     expect(result).toEqual(recipes)
   })
 
+  it('removeRecipeFavorite deletes only the favorite relation', async () => {
+    vi.mocked(apiClient.delete).mockResolvedValue({})
+
+    await recipeApi.removeRecipeFavorite(1)
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/recipes/1/favorite')
+  })
+
   it('getExternalRecipes calls /recipes/external without params when search is empty', async () => {
     vi.mocked(apiClient.get).mockResolvedValue({ data: [] })
 

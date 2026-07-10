@@ -213,6 +213,7 @@
       "requiredHintEnd": "markierten Felder sind Pflichtfelder.",
       "createdTitle": "Eigene Rezepte",
       "favoritesTitle": "Deine Favoriten",
+      "incompleteFavoriteTitle": "Unvollständiger Favorit",
       "editTitle": "Rezept bearbeiten",
       "pageTitle": "Dein persönliches Dishly-Kochbuch",
       "pageSubtitle": "Verwalte deine eigenen Rezepte und Favoriten an einem Ort."

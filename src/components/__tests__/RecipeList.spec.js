@@ -33,6 +33,7 @@ vi.mock('@/shared/api/recipeApi', () => ({
     getMyRecipes: vi.fn(),
     createRecipe: vi.fn(),
     updateRecipe: vi.fn(),
+    removeRecipeFavorite: vi.fn(),
     deleteRecipe: vi.fn(),
     uploadRecipeImage: vi.fn(),
   },
@@ -42,6 +43,7 @@ vi.mock('@/shared/api/favoriteApi', () => ({
   favoriteApi: {
     getExternalFavorites: vi.fn(),
     removeExternalFavorite: vi.fn(),
+    removeExternalFavoriteById: vi.fn(),
   },
 }))
 
@@ -60,11 +62,13 @@ describe('RecipeList.vue', () => {
     config.global.plugins = [i18n, pinia]
     vi.mocked(recipeApi.getRecipes).mockResolvedValue([])
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(recipeApi.removeRecipeFavorite).mockResolvedValue()
     vi.mocked(recipeApi.uploadRecipeImage).mockResolvedValue({
       imageUrl: 'https://example.supabase.co/storage/v1/object/public/recipe-images/recipes/1/uploaded.png',
     })
     vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
     vi.mocked(favoriteApi.removeExternalFavorite).mockResolvedValue()
+    vi.mocked(favoriteApi.removeExternalFavoriteById).mockResolvedValue()
     Object.defineProperty(URL, 'createObjectURL', {
       configurable: true,
       value: vi.fn(() => 'blob:image-preview'),
@@ -1064,7 +1068,8 @@ describe('RecipeList.vue', () => {
     await wrapper.find('.favorite-remove-button').trigger('click')
     await flushPromises()
 
-    expect(favoriteApi.removeExternalFavorite).toHaveBeenCalledWith('spoonacular', '716429')
+    expect(favoriteApi.removeExternalFavoriteById).toHaveBeenCalledWith(1)
+    expect(favoriteApi.removeExternalFavorite).not.toHaveBeenCalled()
     expect(wrapper.text()).not.toContain('External Pasta')
   })
 
@@ -1080,7 +1085,7 @@ describe('RecipeList.vue', () => {
         externalSource: 'spoonacular',
       },
     ])
-    vi.mocked(favoriteApi.removeExternalFavorite).mockRejectedValue(new Error('delete failed'))
+    vi.mocked(favoriteApi.removeExternalFavoriteById).mockRejectedValue(new Error('delete failed'))
 
     const wrapper = mount(RecipeList)
     await flushPromises()
@@ -1090,12 +1095,40 @@ describe('RecipeList.vue', () => {
     await wrapper.find('.favorite-remove-button').trigger('click')
     await flushPromises()
 
-    expect(favoriteApi.removeExternalFavorite).toHaveBeenCalledWith('spoonacular', '716429')
+    expect(favoriteApi.removeExternalFavoriteById).toHaveBeenCalledWith(1)
     expect(wrapper.text()).toContain('External Pasta')
     expect(wrapper.text()).toContain('Favorit konnte nicht entfernt werden.')
   })
 
-  it('removes own favorites directly by updating the recipe', async () => {
+  it('shows and removes incomplete external favorites by favorite id', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([
+      {
+        id: 77,
+        externalRecipeId: '',
+        externalTitle: '',
+        externalImageUrl: '',
+        externalSource: 'spoonacular',
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Unvollständiger Favorit')
+    expect(wrapper.find('.favorite-remove-button').exists()).toBe(true)
+
+    await wrapper.find('.favorite-remove-button').trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.removeExternalFavoriteById).toHaveBeenCalledWith(77)
+    expect(wrapper.find('.recipe-grid').text()).not.toContain('Unvollständiger Favorit')
+  })
+
+  it('removes own favorites without updating broken recipe content', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const ownFavorite = {
       id: 1,
@@ -1107,14 +1140,14 @@ describe('RecipeList.vue', () => {
       difficulty: '',
       category: '',
       rating: 0,
-      ingredients: 'x',
-      instructions: 'y',
+      ingredients: '',
+      instructions: '',
       favorite: true,
       published: true,
       language: 'de',
     }
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([ownFavorite])
-    vi.mocked(recipeApi.updateRecipe).mockResolvedValue({ ...ownFavorite, favorite: false })
+    vi.mocked(recipeApi.removeRecipeFavorite).mockResolvedValue()
 
     const wrapper = mount(RecipeList)
     await flushPromises()
@@ -1124,11 +1157,8 @@ describe('RecipeList.vue', () => {
     await wrapper.find('.favorite-remove-button').trigger('click')
     await flushPromises()
 
-    expect(recipeApi.updateRecipe).toHaveBeenCalledWith(1, expect.objectContaining({
-      favorite: false,
-      published: true,
-      language: 'de',
-    }))
+    expect(recipeApi.removeRecipeFavorite).toHaveBeenCalledWith(1)
+    expect(recipeApi.updateRecipe).not.toHaveBeenCalled()
     expect(wrapper.find('.recipe-grid').text()).not.toContain('Fav 1')
   })
 

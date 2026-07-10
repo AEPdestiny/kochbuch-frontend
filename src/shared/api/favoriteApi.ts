@@ -23,4 +23,8 @@ export const favoriteApi = {
   async removeExternalFavorite(source: string, externalRecipeId: string): Promise<void> {
     await apiClient.delete(`/favorites/external/${encodeURIComponent(source)}/${encodeURIComponent(externalRecipeId)}`)
   },
+
+  async removeExternalFavoriteById(favoriteId: number | string): Promise<void> {
+    await apiClient.delete(`/favorites/external/${encodeURIComponent(String(favoriteId))}`)
+  },
 }

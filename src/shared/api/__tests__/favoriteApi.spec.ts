@@ -49,4 +49,12 @@ describe('favoriteApi', () => {
 
     expect(apiClient.delete).toHaveBeenCalledWith('/favorites/external/SPOONACULAR/716429')
   })
+
+  it('removes external favorite by favorite id', async () => {
+    vi.mocked(apiClient.delete).mockResolvedValue({})
+
+    await favoriteApi.removeExternalFavoriteById(1)
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/favorites/external/1')
+  })
 })
