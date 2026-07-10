@@ -96,11 +96,22 @@
       "placeholder": "Barcode eingeben",
       "action": "Barcode suchen",
       "loading": "Barcode wird gesucht...",
+      "scan": "Barcode scannen",
+      "scannerStarting": "Scanner startet...",
+      "stopScanner": "Scanner stoppen",
+      "brand": "Marke: {brand}",
+      "code": "Barcode: {code}",
+      "addToPantry": "Zum Vorrat hinzufügen",
       "found": "{name} wurde gefunden und ins Formular übernommen.",
+      "productFound": "Produkt gefunden: {name}",
+      "addedToPantry": "{name} wurde zum Vorrat hinzugefügt.",
       "errors": {
         "required": "Bitte gib einen Barcode ein.",
+        "requiredOrScan": "Bitte gib einen Barcode ein oder starte den Scanner.",
         "notFound": "Für diesen Barcode wurde kein Produktname gefunden.",
-        "lookup": "Barcode konnte nicht geprüft werden."
+        "lookup": "Barcode konnte nicht geprüft werden.",
+        "scannerStart": "Barcode-Scanner konnte nicht gestartet werden.",
+        "openFoodFacts": "Open Food Facts ist gerade nicht erreichbar."
       }
     },
     "recipeSearch": {
@@ -596,12 +607,23 @@
     "week": {
       "current": "Aktuelle Woche"
     },
+    "planningMode": {
+      "label": "Planungsmodus",
+      "manual": "Manuell planen",
+      "swipe": "Swipe planen"
+    },
+    "stats": {
+      "averagePerDay": "Schnitt pro Tag",
+      "difference": "Differenz"
+    },
     "modal": {
       "title": "Rezept für {slot}"
     },
     "form": {
       "recipe": "Rezept",
       "chooseRecipe": "Rezept auswählen",
+      "searchOrCustom": "Rezept suchen oder Freitext eingeben",
+      "searchOrCustomPlaceholder": "z. B. Sushi",
       "targetDay": "Neuer Tag",
       "targetSlot": "Neuer Slot",
       "calories": "Kalorien / kcal (optional)",
@@ -619,6 +641,7 @@
       "viewRecipe": "Rezept ansehen",
       "move": "Verschieben",
       "moveSave": "Verschiebung speichern",
+      "edit": "Bearbeiten",
       "cancel": "Abbrechen",
       "close": "Schließen",
       "exportPdf": "Als PDF speichern"
@@ -628,11 +651,18 @@
       "save": "Das Rezept konnte nicht geplant werden.",
       "remove": "Das Rezept konnte nicht entfernt werden.",
       "move": "Der Wochenplan-Eintrag konnte nicht verschoben werden.",
-      "noRecipeSelected": "Bitte wähle zuerst ein Rezept aus."
+      "noRecipeSelected": "Bitte wähle zuerst ein Rezept aus.",
+      "recipeOrCustomRequired": "Bitte wähle ein Rezept oder gib einen Freitext ein."
     },
     "messages": {
       "moved": "Der Wochenplan-Eintrag wurde verschoben.",
-      "targetOccupied": "Der Zielslot ist bereits belegt und wird ersetzt."
+      "targetOccupied": "Der Zielslot ist bereits belegt und wird ersetzt.",
+      "targetOccupiedSwap": "Der Zielslot ist belegt. Beim Verschieben werden beide Einträge getauscht."
+    },
+    "suggestions": {
+      "empty": "Keine passenden Rezepte gefunden. Freitext bleibt möglich.",
+      "error": "Vorschläge konnten nicht geladen werden. Freitext bleibt möglich.",
+      "customSaved": "Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert."
     },
     "shoppingList": {
       "action": "Einkaufsliste aus Wochenplan erstellen",
@@ -668,11 +698,36 @@
       "dinner": "Abendessen",
       "snack": "Snack"
     },
+    "customEntry": "Freitext",
     "summary": {
       "totalCalories": "Gesamt-Kalorien: {calories} kcal"
     },
     "swipe": {
-      "placeholder": "Swipe-Planung kommt später."
+      "placeholder": "Swipe-Planung kommt später.",
+      "title": "Swipe-Planung",
+      "description": "Swipe durch Vorschläge. Dishly legt jedes Rezept automatisch in den passenden Wochenplan-Bucket.",
+      "load": "Vorschläge laden",
+      "loading": "Vorschläge werden geladen...",
+      "currentSuggestion": "Aktueller Vorschlag",
+      "emptyBucket": "Noch keine Rezepte in diesem Bucket.",
+      "replaceWithCurrent": "Mit aktuellem Rezept ersetzen",
+      "completeTitle": "Glückwunsch! Deine Woche ist vollständig geplant.",
+      "completeBody": "Alle Buckets sind voll. Du kannst jetzt Rezepte entfernen oder verwalten.",
+      "manageRecipes": "Rezepte verwalten",
+      "editBucket": "Bucket bearbeiten",
+      "skip": "Überspringen",
+      "accept": "Übernehmen",
+      "externalFreestyle": "Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.",
+      "targetPrefix": "Dieses Rezept kommt zu",
+      "targetDate": "am {date}",
+      "bucketFull": "dieser Bucket ist voll",
+      "fullBucketWarning": "Dein {slot}-Bucket ist voll. Entferne ein Rezept oder tausche eines aus.",
+      "bucketProgress": "{count}/{limit} geplant · {calories} kcal",
+      "dishlyRecipe": "Dishly-Rezept",
+      "customSuggestion": "Freitext-Vorschlag",
+      "noSuggestion": "Kein Vorschlag ausgewählt.",
+      "acceptError": "Vorschlag konnte nicht übernommen werden.",
+      "replaceError": "Vorschlag konnte nicht ersetzt werden."
     }
   },
   "recipeDetail": {

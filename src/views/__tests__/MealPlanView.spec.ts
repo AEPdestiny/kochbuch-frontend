@@ -65,7 +65,9 @@ async function openSlotModal(dayCard: DOMWrapper<Element>, slotIndex: number) {
     await emptyTrigger.trigger('click')
     return
   }
-  const editButton = slotBlock.findAll('button').find(button => button.text().includes('Bearbeiten'))!
+  const editButton = slotBlock.findAll('button').find(button =>
+    button.text().includes('Bearbeiten') || button.text().includes('Edit'),
+  )!
   await editButton.trigger('click')
 }
 
@@ -139,6 +141,19 @@ describe('MealPlanView', () => {
     expect(wrapper.text()).not.toContain('Gesamt-Kalorien')
     expect(wrapper.text()).toContain('Pasta')
     expect(wrapper.text()).toContain('600 kcal / 2000 kcal')
+  })
+
+  it('shows English planning tabs and edit labels when locale is English', async () => {
+    setLocale('en')
+    const wrapper = mount(MealPlanView, { global: { plugins: [i18n] } })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Manual planning')
+    expect(wrapper.text()).toContain('Swipe planning')
+    expect(wrapper.text()).toContain('Edit')
+    expect(wrapper.text()).not.toContain('Manuell planen')
+    expect(wrapper.text()).not.toContain('Bearbeiten')
   })
 
   it('shows "{sum} kcal + 1 Mahlzeit ohne kcal-Angabe" for one known + one unknown meal', async () => {
@@ -1303,18 +1318,18 @@ describe('MealPlanView', () => {
     await wrapper.findAll('.swipe-card .primary-button').at(0)!.trigger('click')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Dein Abendessen-Bucket ist voll')
-    const editBucketButton = wrapper.findAll('button').find(button => button.text().includes('Bucket bearbeiten'))!
+    expect(wrapper.text()).toContain('Your Dinner bucket is full')
+    const editBucketButton = wrapper.findAll('button').find(button => button.text().includes('Edit bucket'))!
     await editBucketButton.trigger('click')
 
     const bucketPanel = wrapper.find('.bucket-panel')
-    expect(bucketPanel.text()).toContain('Aktueller Vorschlag: Burger')
+    expect(bucketPanel.text()).toContain('Current suggestion: Burger')
     expect(bucketPanel.text()).toContain('Dinner 1')
-    expect(bucketPanel.text()).toContain('Mit aktuellem Rezept ersetzen')
+    expect(bucketPanel.text()).toContain('Replace with current recipe')
     expect(wrapper.text()).toContain('2/3')
 
     const replaceButton = wrapper.findAll('.bucket-panel .primary-button')
-      .find(button => button.text().includes('Mit aktuellem Rezept ersetzen'))!
+      .find(button => button.text().includes('Replace with current recipe'))!
     await replaceButton.trigger('click')
     await flushPromises()
     await flushPromises()
@@ -1604,7 +1619,7 @@ describe('MealPlanView', () => {
 
     const mondayCard = wrapper.findAll('.day-card').find(card => card.text().includes('Monday'))!
     await openSlotModal(mondayCard, 0)
-    expect(wrapper.text()).toContain('Rezept suchen oder Freitext eingeben')
+    expect(wrapper.text()).toContain('Search recipe or enter custom text')
   })
 
   // ─── PDF export / totalCalories tests ────────────────────────────────────────

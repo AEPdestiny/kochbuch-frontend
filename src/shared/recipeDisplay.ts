@@ -12,6 +12,20 @@ const CATEGORY_LABELS_DE: Record<string, string> = {
   salad: 'Salat',
 }
 
+const CATEGORY_LABELS_EN: Record<string, string> = {
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snack: 'Snack',
+  snacks: 'Snacks',
+  dessert: 'Dessert',
+  drink: 'Drink',
+  'main course': 'Main course',
+  'side dish': 'Side dish',
+  soup: 'Soup',
+  salad: 'Salad',
+}
+
 export function displayCategory(value?: string | null, language = 'de') {
   const category = value?.trim()
   if (!category) {
@@ -21,5 +35,5 @@ export function displayCategory(value?: string | null, language = 'de') {
   if (language.toLowerCase().startsWith('de')) {
     return CATEGORY_LABELS_DE[normalized] ?? category
   }
-  return category
+  return CATEGORY_LABELS_EN[normalized] ?? category
 }

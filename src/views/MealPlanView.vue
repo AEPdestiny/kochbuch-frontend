@@ -196,7 +196,7 @@ async function saveDay(date: string, slot: MealSlot = 'dinner') {
   const recipeId = selectedRecipeBySlot.value[key]
   const customTitle = customTitleBySlot.value[key]?.trim()
   if (!recipeId && !customTitle) {
-    actionError.value = 'Bitte wähle ein Rezept oder gib einen Freitext ein.'
+    actionError.value = t('mealPlan.errors.recipeOrCustomRequired')
     return
   }
 
@@ -364,7 +364,7 @@ function openCurrentSwipeBucket() {
 }
 
 function fullBucketWarning(slot: MealSlot) {
-  return `Dein ${slotLabel(slot)}-Bucket ist voll. Entferne ein Rezept oder tausche eines aus.`
+  return t('mealPlan.swipe.fullBucketWarning', { slot: slotLabel(slot) })
 }
 
 // Opens the add/edit modal for a day+slot — used both for an existing entry
@@ -764,14 +764,14 @@ function onSlotSearch(date: string, slot: MealSlot) {
 
       suggestionsBySlot.value[key] = suggestions
       if (suggestions.length === 0) {
-        suggestionNoticeBySlot.value[key] = 'Keine passenden Rezepte gefunden. Freitext bleibt möglich.'
+        suggestionNoticeBySlot.value[key] = t('mealPlan.suggestions.empty')
       }
     } catch {
       if (suggestionRequestIds[key] !== requestId) {
         return
       }
       suggestionsBySlot.value[key] = []
-      suggestionNoticeBySlot.value[key] = 'Vorschläge konnten nicht geladen werden. Freitext bleibt möglich.'
+      suggestionNoticeBySlot.value[key] = t('mealPlan.suggestions.error')
     } finally {
       if (suggestionRequestIds[key] === requestId) {
         suggestionLoadingBySlot.value[key] = false
@@ -815,7 +815,7 @@ function chooseSuggestion(date: string, slot: MealSlot, suggestion: SlotSuggesti
     externalRecipeId: suggestion.externalRecipeId ?? String(suggestion.id),
     externalSource: suggestion.externalSource ?? 'external',
   }
-  suggestionNoticeBySlot.value[key] = 'Dieser Vorschlag wird mit Kalorien/Protein als Freitext gespeichert.'
+  suggestionNoticeBySlot.value[key] = t('mealPlan.suggestions.customSaved')
 }
 
 async function loadSwipeSuggestions() {
@@ -939,7 +939,7 @@ function advanceSwipeSuggestion() {
 async function acceptSwipeSuggestion() {
   const suggestion = currentSwipeRecipe.value
   if (!suggestion) {
-    swipeError.value = 'Kein Vorschlag ausgewählt.'
+    swipeError.value = t('mealPlan.swipe.noSuggestion')
     return
   }
   const slot = slotForRecipe(suggestion)
@@ -959,14 +959,14 @@ async function acceptSwipeSuggestion() {
     toastStore.addToast(t('notifications.swipePlanned', { title: suggestion.title }), 'success')
     advanceSwipeSuggestion()
   } catch {
-    swipeError.value = 'Vorschlag konnte nicht übernommen werden.'
+    swipeError.value = t('mealPlan.swipe.acceptError')
   }
 }
 
 async function replaceWithCurrentSwipeSuggestion(date: string, slot: MealSlot) {
   const suggestion = currentSwipeRecipe.value
   if (!suggestion) {
-    swipeError.value = 'Kein Vorschlag ausgewählt.'
+    swipeError.value = t('mealPlan.swipe.noSuggestion')
     return
   }
 
@@ -981,8 +981,8 @@ async function replaceWithCurrentSwipeSuggestion(date: string, slot: MealSlot) {
     activeBucket.value = null
     advanceSwipeSuggestion()
   } catch {
-    swipeError.value = 'Vorschlag konnte nicht ersetzt werden.'
-    toastStore.addToast('Vorschlag konnte nicht ersetzt werden.', 'error')
+    swipeError.value = t('mealPlan.swipe.replaceError')
+    toastStore.addToast(t('mealPlan.swipe.replaceError'), 'error')
   }
 }
 
@@ -1084,10 +1084,7 @@ function visibleCategory(category?: string | null) {
 }
 
 function slotLabel(slot: MealSlot) {
-  if (slot === 'breakfast') return 'Frühstück'
-  if (slot === 'lunch') return 'Mittagessen'
-  if (slot === 'snack') return 'Snack'
-  return 'Abendessen'
+  return t(`mealPlan.slots.${slot}`)
 }
 
 function startOfCurrentWeek() {
@@ -1126,25 +1123,25 @@ function formatDate(date: Date) {
     <section v-else class="week-grid" :aria-label="t('mealPlan.title')">
       <p v-if="actionError" class="status-text error full-width">{{ actionError }}</p>
       <p v-if="recipes.length === 0" class="status-text full-width">{{ t('mealPlan.empty.noRecipes') }}</p>
-      <div class="mode-switch full-width" aria-label="Planungsmodus">
+      <div class="mode-switch full-width" :aria-label="t('mealPlan.planningMode.label')">
         <button type="button" :class="{ active: planningMode === 'manual' }" @click="planningMode = 'manual'">
-          Manuell planen
+          {{ t('mealPlan.planningMode.manual') }}
         </button>
         <button type="button" :class="{ active: planningMode === 'swipe' }" @click="planningMode = 'swipe'">
-          Swipe planen
+          {{ t('mealPlan.planningMode.swipe') }}
         </button>
       </div>
 
       <div v-if="planningMode === 'manual'" class="week-summary full-width">
         <div class="week-stats">
           <div class="week-stat">
-            <span class="week-stat-label">Schnitt pro Tag</span>
+            <span class="week-stat-label">{{ t('mealPlan.stats.averagePerDay') }}</span>
             <span class="week-stat-value">
               {{ hasDailyCalorieTarget ? `${averageCaloriesPerDay} / ${dailyCalorieTarget} kcal` : `${averageCaloriesPerDay} kcal` }}
             </span>
           </div>
           <div v-if="hasDailyCalorieTarget" class="week-stat">
-            <span class="week-stat-label">Differenz</span>
+            <span class="week-stat-label">{{ t('mealPlan.stats.difference') }}</span>
             <span class="week-stat-value" :class="{ over: calorieDelta > 0, under: calorieDelta < 0 }">
               {{ calorieDelta > 0 ? '+' : '' }}{{ calorieDelta }} kcal
             </span>
@@ -1173,11 +1170,11 @@ function formatDate(date: Date) {
       </div>
 
 
-      <section v-if="planningMode === 'swipe'" class="swipe-planner full-width" aria-label="Swipe-Planung">
+      <section v-if="planningMode === 'swipe'" class="swipe-planner full-width" :aria-label="t('mealPlan.swipe.title')">
         <div class="swipe-controls">
           <div>
-            <h2>Swipe-Planung</h2>
-            <p>Swipe durch Vorschläge. Dishly legt jedes Rezept automatisch in den passenden Wochenplan-Bucket.</p>
+            <h2>{{ t('mealPlan.swipe.title') }}</h2>
+            <p>{{ t('mealPlan.swipe.description') }}</p>
           </div>
           <button
             v-if="!allBucketsFull"
@@ -1186,7 +1183,7 @@ function formatDate(date: Date) {
             :disabled="swipeLoading"
             @click="loadSwipeSuggestions"
           >
-            {{ swipeLoading ? 'Vorschläge werden geladen...' : 'Vorschläge laden' }}
+            {{ swipeLoading ? t('mealPlan.swipe.loading') : t('mealPlan.swipe.load') }}
           </button>
         </div>
 
@@ -1208,16 +1205,16 @@ function formatDate(date: Date) {
           <div class="bucket-panel-header">
             <div>
               <h3>{{ slotLabel(activeBucket) }}</h3>
-              <p>{{ bucketCounts[activeBucket] }}/{{ BUCKET_LIMIT }} geplant · {{ totalCaloriesForBucket(activeBucket) }} kcal</p>
+              <p>{{ t('mealPlan.swipe.bucketProgress', { count: bucketCounts[activeBucket], limit: BUCKET_LIMIT, calories: totalCaloriesForBucket(activeBucket) }) }}</p>
             </div>
-            <button type="button" class="secondary-button" @click="activeBucket = null">Schließen</button>
+            <button type="button" class="secondary-button" @click="activeBucket = null">{{ t('mealPlan.actions.close') }}</button>
           </div>
 
           <p v-if="activeBucket === currentSwipeSlot && currentSwipeRecipe" class="bucket-current-suggestion">
-            Aktueller Vorschlag: <strong>{{ currentSwipeRecipe.title }}</strong>
+            {{ t('mealPlan.swipe.currentSuggestion') }}: <strong>{{ currentSwipeRecipe.title }}</strong>
           </p>
           <p v-if="entriesForBucket(activeBucket).length === 0" class="empty-day">
-            Noch keine Rezepte in diesem Bucket.
+            {{ t('mealPlan.swipe.emptyBucket') }}
           </p>
           <ul v-else class="bucket-entry-list">
             <li v-for="item in entriesForBucket(activeBucket)" :key="`${item.day.date}-${activeBucket}`">
@@ -1231,7 +1228,7 @@ function formatDate(date: Date) {
               </div>
               <div class="bucket-entry-actions">
                 <button type="button" class="secondary-button" @click="removeDay(item.day.date, activeBucket)">
-                  Entfernen
+                  {{ t('mealPlan.actions.remove') }}
                 </button>
                 <button
                   v-if="activeBucket === currentSwipeSlot && currentSwipeRecipe"
@@ -1239,7 +1236,7 @@ function formatDate(date: Date) {
                   class="primary-button"
                   @click="replaceWithCurrentSwipeSuggestion(item.day.date, activeBucket)"
                 >
-                  Mit aktuellem Rezept ersetzen
+                  {{ t('mealPlan.swipe.replaceWithCurrent') }}
                 </button>
               </div>
             </li>
@@ -1248,17 +1245,17 @@ function formatDate(date: Date) {
 
         <p v-if="swipeError && swipeError !== currentSwipeBucketWarning" class="status-text error">{{ swipeError }}</p>
         <div v-if="allBucketsFull" class="completion-card">
-          <h3>Glückwunsch! Deine Woche ist vollständig geplant.</h3>
-          <p>Alle Buckets sind voll. Du kannst jetzt Rezepte entfernen oder verwalten.</p>
+          <h3>{{ t('mealPlan.swipe.completeTitle') }}</h3>
+          <p>{{ t('mealPlan.swipe.completeBody') }}</p>
           <button type="button" class="secondary-button" @click="planningMode = 'manual'">
-            Rezepte verwalten
+            {{ t('mealPlan.swipe.manageRecipes') }}
           </button>
         </div>
 
         <div v-if="currentSwipeBucketWarning" class="swipe-bucket-warning" aria-live="polite">
           <p>{{ currentSwipeBucketWarning }}</p>
           <button type="button" class="secondary-button" @click="openCurrentSwipeBucket">
-            Bucket bearbeiten
+            {{ t('mealPlan.swipe.editBucket') }}
           </button>
         </div>
 
@@ -1266,7 +1263,7 @@ function formatDate(date: Date) {
           <button
             type="button"
             class="secondary-button swipe-action swipe-action-reject"
-            aria-label="Überspringen"
+            :aria-label="t('mealPlan.swipe.skip')"
             @click="skipSwipeSuggestion"
           >
             X
@@ -1289,12 +1286,12 @@ function formatDate(date: Date) {
                 <span v-if="currentSwipeRecipe.difficulty">{{ currentSwipeRecipe.difficulty }}</span>
               </div>
               <p v-if="currentSwipeRecipe.source !== 'dishly'" class="suggestion-state">
-                Externe Vorschläge werden aktuell ehrlich als Freitext gespeichert.
+                {{ t('mealPlan.swipe.externalFreestyle') }}
               </p>
               <p class="suggestion-state">
-                Dieses Rezept kommt zu: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>
-                <span v-if="currentSwipeTargetDate"> am {{ currentSwipeTargetDate }}</span>
-                <span v-else> - dieser Bucket ist voll</span>
+                {{ t('mealPlan.swipe.targetPrefix') }}: <strong>{{ slotLabel(currentSwipeSlot) }}</strong>
+                <span v-if="currentSwipeTargetDate"> {{ t('mealPlan.swipe.targetDate', { date: currentSwipeTargetDate }) }}</span>
+                <span v-else> - {{ t('mealPlan.swipe.bucketFull') }}</span>
               </p>
             </div>
           </div>
@@ -1302,7 +1299,7 @@ function formatDate(date: Date) {
           <button
             type="button"
             class="primary-button swipe-action swipe-action-accept"
-            aria-label="Übernehmen"
+            :aria-label="t('mealPlan.swipe.accept')"
             @click="acceptSwipeSuggestion"
           >
             ♥
@@ -1353,7 +1350,7 @@ function formatDate(date: Date) {
               <span v-if="entryProtein(entryFor(day.date, slot.key))">
                 {{ formatProtein(entryProtein(entryFor(day.date, slot.key))) }}
               </span>
-              <span v-if="!entryFor(day.date, slot.key)?.recipe?.id">Freitext</span>
+              <span v-if="!entryFor(day.date, slot.key)?.recipe?.id">{{ t('mealPlan.customEntry') }}</span>
             </div>
             <div class="planned-actions">
               <RouterLink
@@ -1364,7 +1361,7 @@ function formatDate(date: Date) {
                 {{ t('mealPlan.actions.viewRecipe') }}
               </RouterLink>
               <button type="button" class="secondary-button" @click="startEditSlot(day.date, slot.key)">
-                Bearbeiten
+                {{ t('mealPlan.actions.edit') }}
               </button>
               <button type="button" class="secondary-button" @click="removeDay(day.date, slot.key)">
                 {{ t('mealPlan.actions.remove') }}
@@ -1410,7 +1407,7 @@ function formatDate(date: Date) {
             </div>
 
             <div v-if="entryFor(modalDate!, modalSlot!)" class="planned-recipe edit-summary">
-              <span class="planned-label">Bearbeitung</span>
+              <span class="planned-label">{{ t('mealPlan.actions.edit') }}</span>
               <strong>{{ entryTitle(entryFor(modalDate!, modalSlot!)!) }}</strong>
               <div class="planned-meta">
                 <span v-if="entryCalories(entryFor(modalDate!, modalSlot!))">
@@ -1423,11 +1420,11 @@ function formatDate(date: Date) {
             </div>
 
             <label class="recipe-select">
-              <span>Rezept suchen oder Freitext eingeben</span>
+              <span>{{ t('mealPlan.form.searchOrCustom') }}</span>
               <input
                 v-model="customTitleBySlot[slotKey(modalDate!, modalSlot!)]"
                 type="text"
-                placeholder="z. B. Sushi"
+                :placeholder="t('mealPlan.form.searchOrCustomPlaceholder')"
                 @input="onSlotSearch(modalDate!, modalSlot!)"
               />
             </label>
@@ -1444,7 +1441,7 @@ function formatDate(date: Date) {
               />
             </label>
             <p v-if="suggestionLoadingBySlot[slotKey(modalDate!, modalSlot!)]" class="suggestion-state">
-              Vorschläge werden geladen...
+              {{ t('mealPlan.swipe.loading') }}
             </p>
             <ul v-if="suggestionsBySlot[slotKey(modalDate!, modalSlot!)]?.length" class="suggestion-list">
               <li
@@ -1455,7 +1452,7 @@ function formatDate(date: Date) {
                   <img v-if="suggestion.imageUrl" :src="suggestion.imageUrl" :alt="suggestion.title" class="suggestion-thumb" />
                   <span class="suggestion-info">
                     <span>{{ suggestion.title }}</span>
-                    <small>{{ suggestion.planAsRecipe ? 'Dishly-Rezept' : 'Freitext-Vorschlag' }}</small>
+                    <small>{{ suggestion.planAsRecipe ? t('mealPlan.swipe.dishlyRecipe') : t('mealPlan.swipe.customSuggestion') }}</small>
                     <small v-if="suggestion.calories || suggestion.protein">
                       <span v-if="suggestion.calories">{{ suggestion.calories }} kcal</span>
                       <span v-if="suggestion.calories && suggestion.protein"> · </span>
@@ -1523,7 +1520,7 @@ function formatDate(date: Date) {
                 v-if="isMoveTargetOccupied(modalDate!, modalSlot!)"
                 class="suggestion-state"
               >
-                Der Zielslot ist belegt. Beim Verschieben werden beide Einträge getauscht.
+                {{ t('mealPlan.messages.targetOccupiedSwap') }}
               </p>
               <div class="move-actions">
                 <button type="submit" class="primary-button">{{ t('mealPlan.actions.moveSave') }}</button>

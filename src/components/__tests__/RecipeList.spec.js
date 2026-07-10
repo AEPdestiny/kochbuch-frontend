@@ -1008,6 +1008,40 @@ describe('RecipeList.vue', () => {
     expect(push).toHaveBeenCalledWith('/recipe/external/716429')
   })
 
+  it('opens local seed favorites with externalId through the local recipe detail route', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([
+      {
+        id: 10,
+        externalId: '635547',
+        source: null,
+        title: 'Blaubeer-Muffins',
+        imageUrl: 'https://example.com/muffins.jpg',
+        prepTimeMinutes: 10,
+        cookTimeMinutes: 20,
+        servings: 4,
+        difficulty: '',
+        category: 'breakfast',
+        rating: 0,
+        ingredients: 'Mehl',
+        instructions: 'Backen',
+        favorite: true,
+        published: true,
+        language: 'de',
+      },
+    ])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
+
+    await wrapper.find('.recipe-grid .recipe-card').trigger('click')
+
+    expect(push).toHaveBeenCalledWith('/recipe/10')
+  })
+
   it('removes external favorites directly from the favorites grid', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])

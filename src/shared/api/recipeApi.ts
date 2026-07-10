@@ -49,8 +49,8 @@ export const recipeApi = {
     return response.data
   },
 
-  async getExternalRecipeDetail(id: number | string): Promise<ExternalRecipeDetailResponse> {
-    const response = await apiClient.get<ExternalRecipeDetailResponse>(`/recipes/external/${id}`)
+  async getExternalRecipeDetail(id: number | string, language?: string): Promise<ExternalRecipeDetailResponse> {
+    const response = await apiClient.get<ExternalRecipeDetailResponse>(`/recipes/external/${id}`, languageConfig(language))
     return response.data
   },
 
@@ -71,8 +71,8 @@ export const recipeApi = {
     return response.data
   },
 
-  async getRecipe(id: number | string): Promise<RecipeResponse> {
-    const response = await apiClient.get<RecipeResponse>(`/recipes/${id}`)
+  async getRecipe(id: number | string, language?: string): Promise<RecipeResponse> {
+    const response = await apiClient.get<RecipeResponse>(`/recipes/${id}`, languageConfig(language))
     return response.data
   },
 

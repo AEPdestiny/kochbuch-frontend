@@ -786,6 +786,8 @@ describe('PantryView', () => {
 
     expect(wrapper.text()).toContain('Your Pantry')
     expect(wrapper.text()).toContain('Your pantry is still empty.')
+    expect(wrapper.text()).toContain('Scan barcode')
+    expect(wrapper.text()).not.toContain('Barcode scannen')
     expect(wrapper.find('button[type="submit"]').text()).toBe('Add')
   })
 

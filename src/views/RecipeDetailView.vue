@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { recipeApi } from '@/shared/api/recipeApi'
@@ -115,9 +115,9 @@ const mealSlots: { key: MealSlot; labelKey: string }[] = [
   { key: 'snack', labelKey: 'mealPlan.slots.snack' },
 ]
 
-const ingredientAmountPattern = String.raw`(?:\d+(?:[,.]\d+)?|\d+\/\d+|[\u00BC\u00BD\u00BE])`
-const directIngredientUnitPattern = String.raw`ml|g|kg|l|el|tl|tbsp|tsp|cups?|servings?|strips?|cloves?|sticks?|prise|prisen|zehe|zehen|stück|stueck|scheiben?|dose|dosen|bund|handvoll`
-const trailingIngredientUnitPattern = String.raw`cloves?|zehen?|sticks?|strips?|scheiben?`
+const ingredientAmountPattern = String.raw`(?:\d+(?:[,.]\d+)?|\d+\/\d+|[\u00BC\u00BD\u00BE\u2153\u2154])`
+const directIngredientUnitPattern = String.raw`ml|g|kg|l|el|tl|tbsp|tbsps?|tablespoons?|tsp|tsps?|teaspoons?|t|cups?|tassen?|ounces?|oz|unzen?|servings?|strips?|cloves?|zehen?|stalks?|stiele?|sticks?|prise|prisen|pinches?|pieces?|stueck|stuck|stück|scheiben?|dose|dosen|bund|bunch|handvoll`
+const trailingIngredientUnitPattern = String.raw`cloves?|zehen?|stalks?|stiele?|sticks?|strips?|scheiben?`
 const embeddedIngredientBoundary = new RegExp(
   String.raw`(?<=\p{L})\s+(?=${ingredientAmountPattern}\s+(?:(?:${directIngredientUnitPattern})\b|\p{Lu}|\p{L}+\s+(?:${trailingIngredientUnitPattern})\b))`,
   'giu',
@@ -129,8 +129,13 @@ const hasInstructions = computed(() => {
   return !!current && current.hasRealInstructions && current.steps.length > 0
 })
 const ingredientCount = computed(() => recipe.value?.ingredients.length ?? 0)
+const currentLanguage = computed(() => String(locale.value).split('-')[0]?.toLowerCase() || 'de')
 
 onMounted(() => {
+  loadRecipe()
+})
+
+watch(locale, () => {
   loadRecipe()
 })
 
@@ -140,8 +145,8 @@ async function loadRecipe() {
   try {
     const id = route.params.id as string
     recipe.value = isExternal.value
-      ? mapExternal(await recipeApi.getExternalRecipeDetail(id))
-      : mapDishly(await recipeApi.getRecipe(id))
+      ? mapExternal(await recipeApi.getExternalRecipeDetail(id, currentLanguage.value))
+      : mapDishly(await recipeApi.getRecipe(id, currentLanguage.value))
     resetInstructionSearch()
     await loadFavoriteState()
   } catch {
@@ -479,22 +484,31 @@ function buildShoppingListRequest(ingredient: DetailIngredient, parsed = parseSh
 }
 
 function parseShoppingIngredient(ingredient: DetailIngredient): ParsedShoppingIngredient {
-  const raw = (ingredient.original || ingredient.name || '').trim()
+  const raw = normalizeQuantityGlyphs(ingredient.original || ingredient.name || '').trim()
   const parts = raw.split(/\s+/).filter(Boolean)
   let quantity = ingredient.amount ?? null
-  let unit = ingredient.unit ?? null
+  let unit = normalizeUnitToken(ingredient.unit) ?? null
 
   if (quantity == null && parts[0] && isQuantityToken(parts[0])) {
     quantity = quantityTokenToNumber(parts.shift()!)
   }
 
   if (!unit && parts[0] && isUnitToken(parts[0])) {
-    unit = parts.shift()!
+    unit = normalizeUnitToken(parts.shift()!) ?? null
   }
 
   const explicitName = ingredient.name && ingredient.name !== raw ? ingredient.name : parts.join(' ')
   const name = cleanIngredientName(explicitName || raw)
   return { name, quantity, unit }
+}
+
+function normalizeQuantityGlyphs(value: string): string {
+  return value
+    .replace(/\u00BC/g, '1/4')
+    .replace(/\u00BD/g, '1/2')
+    .replace(/\u00BE/g, '3/4')
+    .replace(/\u2153/g, '1/3')
+    .replace(/\u2154/g, '2/3')
 }
 
 function isQuantityToken(value: string): boolean {
@@ -513,13 +527,36 @@ function quantityTokenToNumber(value: string): number | null {
 }
 
 function isUnitToken(value: string): boolean {
-  return /^(g|kg|ml|l|el|tl|tbsp|tsp|tasse|tassen|stueck|stuck|stück|prise|prisen|bund|scheibe|scheiben|zehe|zehen)$/i.test(value.trim())
+  return normalizeUnitToken(value) !== null
+}
+
+function normalizeUnitToken(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null
+  const normalized = value.trim().toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace('ß', 'ss')
+  if (['g', 'kg', 'ml', 'l'].includes(normalized)) return normalized
+  if (['el', 'tbsp', 'tbsps', 'tablespoon', 'tablespoons'].includes(normalized)) return 'EL'
+  if (['tl', 'tsp', 'tsps', 'teaspoon', 'teaspoons', 't'].includes(normalized)) return 'TL'
+  if (['tasse', 'tassen', 'cup', 'cups'].includes(normalized)) return 'Tasse'
+  if (['ounce', 'ounces', 'oz', 'unze', 'unzen'].includes(normalized)) return 'Unzen'
+  if (['clove', 'cloves', 'zehe', 'zehen'].includes(normalized)) return 'Zehen'
+  if (['stalk', 'stalks', 'stiel', 'stiele'].includes(normalized)) return 'Stiele'
+  if (['pinch', 'pinches', 'prise', 'prisen'].includes(normalized)) return 'Prise'
+  if (['piece', 'pieces', 'stueck', 'stuck', 'stk'].includes(normalized)) return 'Stueck'
+  if (['bunch', 'bund'].includes(normalized)) return 'Bund'
+  if (['scheibe', 'scheiben', 'slice', 'slices'].includes(normalized)) return 'Scheiben'
+  if (['dose', 'dosen', 'can', 'cans'].includes(normalized)) return 'Dose'
+  return null
 }
 
 function cleanIngredientName(value: string): string {
-  return value
+  const unitPattern = String.raw`g|kg|ml|l|el|tl|tbsp|tbsps?|tablespoons?|tsp|tsps?|teaspoons?|t|tasse|tassen|cups?|ounces?|oz|unze|unzen|stueck|stuck|stück|stk|pieces?|prise|prisen|pinches?|bund|bunch|scheiben?|slices?|zehe|zehen|cloves?|stiele?|stalks?|dose|dosen|cans?`
+  return normalizeQuantityGlyphs(value)
     .replace(/^\s*(?:\d+(?:[,.]\d+)?|\d+\/\d+|\d+[-–]\d+)\s+/u, '')
-    .replace(/^\s*(?:g|kg|ml|l|el|tl|tbsp|tsp|tasse|tassen|stueck|stuck|stück|prise|prisen|bund|scheibe|scheiben|zehe|zehen)\s+/iu, '')
+    .replace(new RegExp(String.raw`^\s*(?:${unitPattern})\s+`, 'iu'), '')
+    .replace(/^\s*(?:large|small|medium|große|grosse|kleine|mittlere)\s+(?:cloves?|zehen|stiele?|stalks?)\s+/iu, '')
     .replace(/\b(?:nach bedarf|nach geschmack|zum braten)\b/giu, '')
     .replace(/^\s*(?:etwas|ein wenig)\s+/iu, '')
     .replace(/^[\s,./-]+|[\s,./-]+$/g, '')

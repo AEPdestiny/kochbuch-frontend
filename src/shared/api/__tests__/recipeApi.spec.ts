@@ -111,8 +111,18 @@ describe('recipeApi', () => {
 
     const result = await recipeApi.getExternalRecipeDetail(716429)
 
-    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external/716429')
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external/716429', undefined)
     expect(result).toEqual(detail)
+  })
+
+  it('getExternalRecipeDetail sends language param when provided', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { id: 716429, title: 'Pasta' } })
+
+    await recipeApi.getExternalRecipeDetail(716429, 'de')
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/external/716429', {
+      params: { language: 'de' },
+    })
   })
 
   it('getRecipe calls /recipes/{id}', async () => {
@@ -121,8 +131,18 @@ describe('recipeApi', () => {
 
     const result = await recipeApi.getRecipe(1)
 
-    expect(apiClient.get).toHaveBeenCalledWith('/recipes/1')
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/1', undefined)
     expect(result).toEqual(recipe)
+  })
+
+  it('getRecipe sends language param when provided', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue({ data: { id: 1, title: 'Dishly Pasta' } })
+
+    await recipeApi.getRecipe(1, 'de')
+
+    expect(apiClient.get).toHaveBeenCalledWith('/recipes/1', {
+      params: { language: 'de' },
+    })
   })
 
   it('findExternalRecipesByIngredients calls /recipes/external/by-ingredients with comma separated ingredients', async () => {

@@ -305,7 +305,7 @@ function toUpdateErrorMessage(e: unknown) {
 async function lookupBarcode() {
   const value = barcode.value.trim()
   if (!value) {
-    barcodeError.value = 'Bitte gib einen Barcode ein oder starte den Scanner.'
+    barcodeError.value = t('pantry.barcode.errors.requiredOrScan')
     barcodeMessage.value = null
     return
   }
@@ -331,7 +331,7 @@ async function startBarcodeScanner() {
   if (!scannerVideo.value) {
     scannerActive.value = false
     scannerStarting.value = false
-    barcodeError.value = 'Scanner konnte nicht gestartet werden.'
+    barcodeError.value = t('pantry.barcode.errors.scannerStart')
     return
   }
 
@@ -383,7 +383,7 @@ function toCameraErrorMessage(e: unknown) {
   if (name === 'NotFoundError' || name === 'OverconstrainedError') {
     return 'Keine Kamera gefunden.'
   }
-  return 'Barcode-Scanner konnte nicht gestartet werden.'
+  return t('pantry.barcode.errors.scannerStart')
 }
 
 async function lookupProductByBarcode(value: string) {
@@ -411,9 +411,9 @@ async function lookupProductByBarcode(value: string) {
       imageUrl: data?.product?.image_front_url ?? data?.product?.image_url ?? '',
       category,
     }
-    barcodeMessage.value = `Produkt gefunden: ${productName}`
+    barcodeMessage.value = t('pantry.barcode.productFound', { name: productName })
   } catch {
-    barcodeError.value = 'Open Food Facts ist gerade nicht erreichbar.'
+    barcodeError.value = t('pantry.barcode.errors.openFoodFacts')
   } finally {
     barcodeLoading.value = false
   }
@@ -434,7 +434,7 @@ async function addScannedProductToPantry() {
       category: scannedProduct.value.category || 'Barcode',
     })
     items.value.push(created)
-    barcodeMessage.value = `${scannedProduct.value.name} wurde zum Vorrat hinzugefügt.`
+    barcodeMessage.value = t('pantry.barcode.addedToPantry', { name: scannedProduct.value.name })
     scannedProduct.value = null
     barcode.value = ''
   } catch (e: unknown) {
@@ -519,10 +519,10 @@ function exportPantryAsPdf() {
               :disabled="barcodeLoading || scannerStarting"
               @click="startBarcodeScanner"
             >
-              {{ scannerStarting ? 'Scanner startet...' : 'Barcode scannen' }}
+              {{ scannerStarting ? t('pantry.barcode.scannerStarting') : t('pantry.barcode.scan') }}
             </button>
             <button v-else type="button" class="cancel-btn" @click="stopBarcodeScanner">
-              Scanner stoppen
+              {{ t('pantry.barcode.stopScanner') }}
             </button>
           </div>
           <video
@@ -543,10 +543,10 @@ function exportPantryAsPdf() {
             <img v-if="scannedProduct.imageUrl" :src="scannedProduct.imageUrl" :alt="scannedProduct.name" />
             <div>
               <h3>{{ scannedProduct.name }}</h3>
-              <p v-if="scannedProduct.brand">Marke: {{ scannedProduct.brand }}</p>
-              <p>Barcode: {{ scannedProduct.barcode }}</p>
+              <p v-if="scannedProduct.brand">{{ t('pantry.barcode.brand', { brand: scannedProduct.brand }) }}</p>
+              <p>{{ t('pantry.barcode.code', { code: scannedProduct.barcode }) }}</p>
               <button type="button" class="submit-btn" @click="addScannedProductToPantry">
-                Zum Vorrat hinzufügen
+                {{ t('pantry.barcode.addToPantry') }}
               </button>
             </div>
           </article>

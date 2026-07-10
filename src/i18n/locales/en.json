@@ -96,11 +96,22 @@
       "placeholder": "Enter barcode",
       "action": "Search barcode",
       "loading": "Searching barcode...",
+      "scan": "Scan barcode",
+      "scannerStarting": "Starting scanner...",
+      "stopScanner": "Stop scanner",
+      "brand": "Brand: {brand}",
+      "code": "Barcode: {code}",
+      "addToPantry": "Add to pantry",
       "found": "{name} was found and added to the form.",
+      "productFound": "Product found: {name}",
+      "addedToPantry": "{name} was added to your pantry.",
       "errors": {
         "required": "Please enter a barcode.",
+        "requiredOrScan": "Please enter a barcode or start the scanner.",
         "notFound": "No product name was found for this barcode.",
-        "lookup": "Barcode could not be checked."
+        "lookup": "Barcode could not be checked.",
+        "scannerStart": "Barcode scanner could not be started.",
+        "openFoodFacts": "Open Food Facts is currently unavailable."
       }
     },
     "recipeSearch": {
@@ -594,12 +605,23 @@
     "week": {
       "current": "Current week"
     },
+    "planningMode": {
+      "label": "Planning mode",
+      "manual": "Manual planning",
+      "swipe": "Swipe planning"
+    },
+    "stats": {
+      "averagePerDay": "Average per day",
+      "difference": "Difference"
+    },
     "modal": {
       "title": "Recipe for {slot}"
     },
     "form": {
       "recipe": "Recipe",
       "chooseRecipe": "Choose a recipe",
+      "searchOrCustom": "Search recipe or enter custom text",
+      "searchOrCustomPlaceholder": "e.g. Sushi",
       "targetDay": "New day",
       "targetSlot": "New slot",
       "calories": "Calories / kcal (optional)",
@@ -617,6 +639,7 @@
       "viewRecipe": "View recipe",
       "move": "Move",
       "moveSave": "Save move",
+      "edit": "Edit",
       "cancel": "Cancel",
       "close": "Close",
       "exportPdf": "Save as PDF"
@@ -626,11 +649,18 @@
       "save": "The recipe could not be planned.",
       "remove": "The recipe could not be removed.",
       "move": "The meal plan entry could not be moved.",
-      "noRecipeSelected": "Please choose a recipe first."
+      "noRecipeSelected": "Please choose a recipe first.",
+      "recipeOrCustomRequired": "Please choose a recipe or enter custom text."
     },
     "messages": {
       "moved": "The meal plan entry was moved.",
-      "targetOccupied": "The target slot is already filled and will be replaced."
+      "targetOccupied": "The target slot is already filled and will be replaced.",
+      "targetOccupiedSwap": "The target slot is filled. Moving will swap both entries."
+    },
+    "suggestions": {
+      "empty": "No matching recipes found. Custom text remains possible.",
+      "error": "Suggestions could not be loaded. Custom text remains possible.",
+      "customSaved": "This suggestion is saved as custom text with calories/protein."
     },
     "shoppingList": {
       "action": "Create shopping list from meal plan",
@@ -666,11 +696,36 @@
       "dinner": "Dinner",
       "snack": "Snack"
     },
+    "customEntry": "Custom text",
     "summary": {
       "totalCalories": "Total calories: {calories} kcal"
     },
     "swipe": {
-      "placeholder": "Swipe planning is coming later."
+      "placeholder": "Swipe planning is coming later.",
+      "title": "Swipe planning",
+      "description": "Swipe through suggestions. Dishly automatically puts each recipe into the matching meal-plan bucket.",
+      "load": "Load suggestions",
+      "loading": "Loading suggestions...",
+      "currentSuggestion": "Current suggestion",
+      "emptyBucket": "No recipes in this bucket yet.",
+      "replaceWithCurrent": "Replace with current recipe",
+      "completeTitle": "Congratulations! Your week is fully planned.",
+      "completeBody": "All buckets are full. You can now remove or manage recipes.",
+      "manageRecipes": "Manage recipes",
+      "editBucket": "Edit bucket",
+      "skip": "Skip",
+      "accept": "Accept",
+      "externalFreestyle": "External suggestions are currently saved transparently as custom text.",
+      "targetPrefix": "This recipe goes to",
+      "targetDate": "on {date}",
+      "bucketFull": "this bucket is full",
+      "fullBucketWarning": "Your {slot} bucket is full. Remove a recipe or swap one.",
+      "bucketProgress": "{count}/{limit} planned · {calories} kcal",
+      "dishlyRecipe": "Dishly recipe",
+      "customSuggestion": "Custom suggestion",
+      "noSuggestion": "No suggestion selected.",
+      "acceptError": "Suggestion could not be accepted.",
+      "replaceError": "Suggestion could not be replaced."
     }
   },
   "recipeDetail": {

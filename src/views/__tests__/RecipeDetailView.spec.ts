@@ -133,7 +133,7 @@ describe('RecipeDetailView', () => {
       id: 1,
       name: 'pasta',
       quantity: 2,
-      unit: 'cups',
+      unit: 'Tasse',
       category: 'Rezeptzutat',
       checked: false,
       recipeId: '716429',
@@ -157,7 +157,7 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(recipeApi.getExternalRecipeDetail).toHaveBeenCalledWith('716429')
+    expect(recipeApi.getExternalRecipeDetail).toHaveBeenCalledWith('716429', 'de')
     expect(wrapper.text()).toContain('Pasta with Garlic')
     expect(wrapper.text()).toContain('510 kcal')
     expect(wrapper.text()).toContain('31 g Protein')
@@ -190,7 +190,7 @@ describe('RecipeDetailView', () => {
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
       name: 'pasta',
       quantity: 2,
-      unit: 'cups',
+      unit: 'Tasse',
       category: 'Rezeptzutat',
       checked: false,
       recipeId: '716429',
@@ -221,7 +221,7 @@ describe('RecipeDetailView', () => {
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
       name: 'olive oil',
       quantity: 1,
-      unit: 'tbsp',
+      unit: 'EL',
     }))
     expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalledWith(expect.objectContaining({
       name: 'pasta',
@@ -764,7 +764,7 @@ describe('RecipeDetailView', () => {
     const wrapper = mount(RecipeDetailView)
     await flushPromises()
 
-    expect(recipeApi.getRecipe).toHaveBeenCalledWith('716429')
+    expect(recipeApi.getRecipe).toHaveBeenCalledWith('716429', 'de')
     expect(wrapper.text()).toContain('Dishly Pasta')
     expect(wrapper.text()).toContain('19 g Protein')
     expect(wrapper.text()).toContain('2 Zutaten')

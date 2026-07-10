@@ -525,11 +525,15 @@ function goToFavoritesPage(page: number) {
 }
 
 const openFavoriteDetails = (r: Recipe) => {
-  if (r.externalId || r.source === 'spoonacular' || r.source === 'external') {
+  if (isExternalFavoriteRecipe(r)) {
     router.push(`/recipe/external/${r.externalId ?? r.id}`)
     return
   }
   router.push(`/recipe/${r.id}`)
+}
+
+function isExternalFavoriteRecipe(recipe: Recipe) {
+  return recipe.source === 'spoonacular' || recipe.source === 'external'
 }
 
 const closeFavoriteDetails = () => {
@@ -781,7 +785,7 @@ const removeFavorite = async (r: Recipe) => {
 
   try {
     favoriteError.value = null
-    if (r.externalId || r.source === 'spoonacular' || r.source === 'external') {
+    if (isExternalFavoriteRecipe(r)) {
       const source = r.sourceName?.trim() || r.source?.trim() || 'SPOONACULAR'
       const externalRecipeId = String(r.externalId ?? r.id)
       await favoriteApi.removeExternalFavorite(source, externalRecipeId)
