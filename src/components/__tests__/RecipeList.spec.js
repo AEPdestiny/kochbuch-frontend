@@ -1128,6 +1128,39 @@ describe('RecipeList.vue', () => {
     expect(wrapper.find('.recipe-grid').text()).not.toContain('Unvollständiger Favorit')
   })
 
+  it('removes legacy orphan favorites by favorite id without opening a missing recipe detail', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getMyRecipes).mockResolvedValue([])
+    vi.mocked(favoriteApi.getExternalFavorites).mockResolvedValue([
+      {
+        id: 88,
+        externalRecipeId: '632928',
+        externalTitle: 'Legacy Missing Recipe',
+        externalImageUrl: '',
+        externalSource: 'DISHLY',
+      },
+    ])
+
+    const wrapper = mount(RecipeList)
+    await flushPromises()
+    await wrapper.findAll('.recipe-tabs button')[1].trigger('click')
+    await flushPromises()
+
+    const favoriteCard = wrapper.find('.recipe-grid .recipe-card')
+    expect(favoriteCard.text()).toContain('Legacy Missing Recipe')
+
+    await favoriteCard.trigger('click')
+    expect(push).not.toHaveBeenCalledWith('/recipe/632928')
+    expect(push).not.toHaveBeenCalledWith('/recipe/external/632928')
+
+    await wrapper.find('.favorite-remove-button').trigger('click')
+    await flushPromises()
+
+    expect(favoriteApi.removeExternalFavoriteById).toHaveBeenCalledWith(88)
+    expect(recipeApi.removeRecipeFavorite).not.toHaveBeenCalledWith('632928')
+    expect(wrapper.find('.recipe-grid').text()).not.toContain('Legacy Missing Recipe')
+  })
+
   it('removes own favorites without updating broken recipe content', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     const ownFavorite = {

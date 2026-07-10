@@ -61,6 +61,24 @@ describe('normalizeShoppingListItemDisplay', () => {
     expect(result.displayUnit).toBe('')
   })
 
+  it('strips leading bullet markers before parsing quantity and unit prefixes', () => {
+    expect(normalizeShoppingListItemDisplay({ name: '•1/2 tbsp soy sauce' })).toEqual({
+      displayName: 'soy sauce',
+      displayQuantity: '1/2',
+      displayUnit: 'tbsp',
+    })
+    expect(normalizeShoppingListItemDisplay({ name: '.1/2 cup fish cake, thinly sliced flat' })).toEqual({
+      displayName: 'fish cake, thinly sliced flat',
+      displayQuantity: '1/2',
+      displayUnit: 'cup',
+    })
+    expect(normalizeShoppingListItemDisplay({ name: '•scallion, finely cut' })).toEqual({
+      displayName: 'scallion, finely cut',
+      displayQuantity: '',
+      displayUnit: '',
+    })
+  })
+
   it('leaves name unchanged when no numeric prefix', () => {
     const result = normalizeShoppingListItemDisplay({ name: 'Salz und Pfeffer' })
     expect(result.displayName).toBe('Salz und Pfeffer')

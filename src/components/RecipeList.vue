@@ -526,6 +526,9 @@ function goToFavoritesPage(page: number) {
 }
 
 const openFavoriteDetails = (r: Recipe) => {
+  if (!canOpenFavoriteDetails(r)) {
+    return
+  }
   if (isExternalFavoriteRecipe(r)) {
     router.push(`/recipe/external/${r.externalId ?? r.id}`)
     return
@@ -534,7 +537,16 @@ const openFavoriteDetails = (r: Recipe) => {
 }
 
 function isExternalFavoriteRecipe(recipe: Recipe) {
-  return recipe.source === 'spoonacular' || recipe.source === 'external'
+  return recipe.favoriteRecordId != null || recipe.source === 'spoonacular' || recipe.source === 'external'
+}
+
+function isRoutableExternalFavorite(recipe: Recipe) {
+  const source = (recipe.sourceName?.trim() || recipe.source?.trim() || '').toLowerCase()
+  return Boolean(recipe.externalId) && (source === 'spoonacular' || source === 'external')
+}
+
+function canOpenFavoriteDetails(recipe: Recipe) {
+  return isExternalFavoriteRecipe(recipe) ? isRoutableExternalFavorite(recipe) : true
 }
 
 const closeFavoriteDetails = () => {
@@ -786,21 +798,25 @@ const removeFavorite = async (r: Recipe) => {
 
   try {
     favoriteError.value = null
+    if (r.favoriteRecordId != null) {
+      await favoriteApi.removeExternalFavoriteById(r.favoriteRecordId)
+      externalFavorites.value = externalFavorites.value.filter(favorite =>
+        favorite.favoriteRecordId !== r.favoriteRecordId
+      )
+      if (selectedFavorite.value?.id === r.id) {
+        selectedFavorite.value = null
+      }
+      return
+    }
+
     if (isExternalFavoriteRecipe(r)) {
       const source = r.sourceName?.trim() || r.source?.trim() || 'SPOONACULAR'
       const externalRecipeId = String(r.externalId ?? r.id)
-      if (r.favoriteRecordId != null) {
-        await favoriteApi.removeExternalFavoriteById(r.favoriteRecordId)
-        externalFavorites.value = externalFavorites.value.filter(favorite =>
-          favorite.favoriteRecordId !== r.favoriteRecordId
-        )
-      } else {
-        await favoriteApi.removeExternalFavorite(source, externalRecipeId)
-        externalFavorites.value = externalFavorites.value.filter(favorite =>
-          String(favorite.externalId ?? favorite.id) !== externalRecipeId
-          || (favorite.sourceName?.trim() || favorite.source?.trim() || 'SPOONACULAR').toUpperCase() !== source.toUpperCase()
-        )
-      }
+      await favoriteApi.removeExternalFavorite(source, externalRecipeId)
+      externalFavorites.value = externalFavorites.value.filter(favorite =>
+        String(favorite.externalId ?? favorite.id) !== externalRecipeId
+        || (favorite.sourceName?.trim() || favorite.source?.trim() || 'SPOONACULAR').toUpperCase() !== source.toUpperCase()
+      )
       if (selectedFavorite.value?.id === r.id) {
         selectedFavorite.value = null
       }
@@ -1310,6 +1326,8 @@ defineExpose({ startEdit })
           v-for="r in paginatedFavorites"
           :key="'fav-' + r.id"
           class="recipe-card"
+          :class="{ 'recipe-card-disabled': !canOpenFavoriteDetails(r) }"
+          :aria-disabled="!canOpenFavoriteDetails(r)"
           @click="openFavoriteDetails(r)"
         >
           <button

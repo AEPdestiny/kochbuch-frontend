@@ -6,7 +6,7 @@ const TWO_PART = /^(\d+(?:[.,]\d+)?(?:\/\d+)?)\s+(.+)$/u
 type Extracted = { rawQuantity: string; unit: string; name: string }
 
 function extractFromName(raw: string): Extracted | null {
-  const normalizedRaw = normalizeQuantityGlyphs(raw)
+  const normalizedRaw = stripLeadingIngredientMarkers(normalizeQuantityGlyphs(raw))
   const m3 = normalizedRaw.match(THREE_PART)
   if (m3 && canonicalUnit(m3[2]!)) {
     return { rawQuantity: m3[1]!, unit: m3[2]!, name: m3[3]! }
@@ -42,7 +42,7 @@ export function normalizeShoppingListItemDisplay(item: {
   quantity?: number | null
   unit?: string | null
 }, locale?: string): DisplayShoppingItem {
-  const raw = (item.name ?? '').trim()
+  const raw = stripLeadingIngredientMarkers((item.name ?? '').trim())
   const extracted = extractFromName(raw)
 
   if (item.quantity != null) {
@@ -84,7 +84,7 @@ export function normalizeShoppingListItemForEdit(item: {
   quantity?: number | null
   unit?: string | null
 }): EditShoppingItem {
-  const raw = (item.name ?? '').trim()
+  const raw = stripLeadingIngredientMarkers((item.name ?? '').trim())
   const extracted = extractFromName(raw)
 
   if (item.quantity != null) {
@@ -133,6 +133,10 @@ function normalizeQuantityGlyphs(value: string): string {
     .replace(/\u00BE/g, '3/4')
     .replace(/\u2153/g, '1/3')
     .replace(/\u2154/g, '2/3')
+}
+
+function stripLeadingIngredientMarkers(value: string): string {
+  return value.replace(/^[\s•·●*\-–—.:)]+/u, '').trim()
 }
 
 export function displayUnitForLocale(unit: string | null | undefined, locale?: string): string {

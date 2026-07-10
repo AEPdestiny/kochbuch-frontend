@@ -484,7 +484,7 @@ function buildShoppingListRequest(ingredient: DetailIngredient, parsed = parseSh
 }
 
 function parseShoppingIngredient(ingredient: DetailIngredient): ParsedShoppingIngredient {
-  const raw = normalizeQuantityGlyphs(ingredient.original || ingredient.name || '').trim()
+  const raw = stripLeadingIngredientMarkers(normalizeQuantityGlyphs(ingredient.original || ingredient.name || '')).trim()
   const parts = raw.split(/\s+/).filter(Boolean)
   let quantity = ingredient.amount ?? null
   let unit = normalizeUnitToken(ingredient.unit) ?? null
@@ -509,6 +509,10 @@ function normalizeQuantityGlyphs(value: string): string {
     .replace(/\u00BE/g, '3/4')
     .replace(/\u2153/g, '1/3')
     .replace(/\u2154/g, '2/3')
+}
+
+function stripLeadingIngredientMarkers(value: string): string {
+  return value.replace(/^[\s•·●*\-–—.:)]+/u, '').trim()
 }
 
 function isQuantityToken(value: string): boolean {
@@ -561,7 +565,7 @@ function normalizeUnitToken(value: string | null | undefined): string | null {
 
 function cleanIngredientName(value: string): string {
   const unitPattern = String.raw`g|kg|ml|l|el|tl|tbsp|tbsps?|tablespoons?|tsp|tsps?|teaspoons?|t|tasse|tassen|cups?|ounces?|oz|unze|unzen|stueck|stuck|stück|stk|pieces?|prise|prisen|pinches?|bund|bunch|scheiben?|slices?|zehe|zehen|cloves?|stiele?|stalks?|dose|dosen|cans?`
-  return normalizeQuantityGlyphs(value)
+  return stripLeadingIngredientMarkers(normalizeQuantityGlyphs(value))
     .replace(/^\s*(?:\d+(?:[,.]\d+)?|\d+\/\d+|\d+[-–]\d+)\s+/u, '')
     .replace(new RegExp(String.raw`^\s*(?:${unitPattern})\s+`, 'iu'), '')
     .replace(/^\s*(?:large|small|medium|große|grosse|kleine|mittlere)\s+(?:cloves?|zehen|stiele?|stalks?)\s+/iu, '')

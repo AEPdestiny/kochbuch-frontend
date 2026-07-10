@@ -244,6 +244,57 @@ describe('RecipeDetailView', () => {
     }))
   })
 
+  it('strips bullet markers before parsing recipe ingredients for the shopping list', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue({
+      ...externalDetail(),
+      ingredients: [
+        { name: 'soy sauce', original: '•1/2 tbsp soy sauce', amount: null, unit: null },
+        { name: 'shrimp flavored udon', original: '•2 package shrimp flavored udon', amount: null, unit: null },
+        { name: 'scallion, finely cut', original: '•scallion, finely cut', amount: null, unit: null },
+        { name: 'fish cake, thinly sliced flat', original: '.1/2 cup fish cake, thinly sliced flat', amount: null, unit: null },
+        { name: 'minced garlic', original: '.1 tsp minced garlic', amount: null, unit: null },
+        { name: 'eggs, poached', original: '•2 eggs, poached', amount: null, unit: null },
+      ],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'soy sauce',
+      quantity: 0.5,
+      unit: 'tbsp',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'shrimp flavored udon',
+      quantity: 2,
+      unit: 'package',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'scallion, finely cut',
+      quantity: null,
+      unit: null,
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'fish cake, thinly sliced flat',
+      quantity: 0.5,
+      unit: 'cup',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'minced garlic',
+      quantity: 1,
+      unit: 'tsp',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'eggs, poached',
+      quantity: 2,
+      unit: null,
+    }))
+  })
+
   it('adds only recipe ingredients that are missing from the pantry and shopping list', async () => {
     sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
     vi.mocked(pantryApi.getPantryItems).mockResolvedValue([{
