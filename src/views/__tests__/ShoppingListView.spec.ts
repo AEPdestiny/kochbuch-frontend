@@ -122,7 +122,7 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.text()).toContain('Tomatoes')
     expect(wrapper.text()).toContain('3')
-    expect(wrapper.text()).toContain('piece')
+    expect(wrapper.text()).toContain('Stück')
     // Category is no longer displayed
     expect(wrapper.text()).not.toContain('Vegetables')
     expect(wrapper.text()).toContain('Milk')
@@ -923,7 +923,55 @@ describe('ShoppingListView', () => {
 
     expect(wrapper.find('.item-main h3').text()).toBe('Tomaten')
     expect(wrapper.find('.item-quantity').text()).toContain('3')
-    expect(wrapper.find('.item-quantity').text()).toContain('piece')
+    expect(wrapper.find('.item-quantity').text()).toContain('Stück')
+  })
+
+  it('shows stored German units as English labels when locale is English', async () => {
+    setLocale('en')
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('Öl', 1, 'EL', '', false),
+      item('Mehl', 1, 'Tasse', '', false),
+      item('Schinken', 2, 'Scheiben', '', false),
+      item('Sauce', 1, 'Packung', '', false),
+      item('Essig', 1, 'Teelöffel', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const quantities = wrapper.findAll('.item-quantity').map(node => node.text()).join(' ')
+    expect(quantities).toContain('1 tbsp')
+    expect(quantities).toContain('1 cup')
+    expect(quantities).toContain('2 slices')
+    expect(quantities).toContain('1 package')
+    expect(quantities).toContain('1 tsp')
+    expect(quantities).not.toContain('EL')
+    expect(quantities).not.toContain('Tasse')
+    expect(quantities).not.toContain('Scheiben')
+    expect(quantities).not.toContain('Packung')
+    expect(quantities).not.toContain('Teelöffel')
+  })
+
+  it('shows stored English units as German labels when locale is German', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(shoppingListApi.getShoppingListItems).mockResolvedValue([
+      item('oil', 1, 'tbsp', '', false),
+      item('flour', 1, 'cup', '', false),
+      item('ham', 2, 'slices', '', false),
+      item('sauce', 1, 'package', '', false),
+      item('vinegar', 1, 'teaspoon', '', false),
+    ])
+
+    const wrapper = mount(ShoppingListView)
+    await flushPromises()
+
+    const quantities = wrapper.findAll('.item-quantity').map(node => node.text()).join(' ')
+    expect(quantities).toContain('1 EL')
+    expect(quantities).toContain('1 Tasse')
+    expect(quantities).toContain('2 Scheiben')
+    expect(quantities).toContain('1 Packung')
+    expect(quantities).toContain('1 TL')
   })
 
   it('opens edit form with cleaned name and parsed quantity when item name has embedded prefix', async () => {

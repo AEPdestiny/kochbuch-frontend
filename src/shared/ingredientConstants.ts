@@ -1,5 +1,5 @@
 export const STANDARD_UNITS = [
-  'g', 'kg', 'ml', 'l', 'piece', 'tbsp', 'tsp', 'cup', 'slice', 'can', 'pack', 'clove', 'pinch',
+  'g', 'kg', 'ml', 'l', 'piece', 'tbsp', 'tsp', 'cup', 'oz', 'lb', 'slice', 'can', 'package', 'clove', 'pinch',
 ]
 
 export const NAME_SUGGESTIONS = [

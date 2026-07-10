@@ -86,6 +86,22 @@ describe('normalizeShoppingListItemDisplay', () => {
     expect(result.displayUnit).toBe('cup')
   })
 
+  it('localizes stored German units for English display', () => {
+    expect(normalizeShoppingListItemDisplay({ name: 'Öl', quantity: 1, unit: 'EL' }, 'en').displayUnit).toBe('tbsp')
+    expect(normalizeShoppingListItemDisplay({ name: 'Mehl', quantity: 1, unit: 'Tasse' }, 'en').displayUnit).toBe('cup')
+    expect(normalizeShoppingListItemDisplay({ name: 'Schinken', quantity: 2, unit: 'Scheiben' }, 'en').displayUnit).toBe('slices')
+    expect(normalizeShoppingListItemDisplay({ name: 'Sauce', quantity: 1, unit: 'Packung' }, 'en').displayUnit).toBe('package')
+    expect(normalizeShoppingListItemDisplay({ name: 'Essig', quantity: 1, unit: 'Teelöffel.' }, 'en').displayUnit).toBe('tsp')
+  })
+
+  it('localizes stored English units for German display', () => {
+    expect(normalizeShoppingListItemDisplay({ name: 'oil', quantity: 1, unit: 'tbsp' }, 'de').displayUnit).toBe('EL')
+    expect(normalizeShoppingListItemDisplay({ name: 'flour', quantity: 1, unit: 'cup' }, 'de').displayUnit).toBe('Tasse')
+    expect(normalizeShoppingListItemDisplay({ name: 'ham', quantity: 2, unit: 'slices' }, 'de').displayUnit).toBe('Scheiben')
+    expect(normalizeShoppingListItemDisplay({ name: 'sauce', quantity: 1, unit: 'package' }, 'de').displayUnit).toBe('Packung')
+    expect(normalizeShoppingListItemDisplay({ name: 'vinegar', quantity: 1, unit: 'teaspoon' }, 'de').displayUnit).toBe('TL')
+  })
+
   it('strips prefix when name duplicates the explicit quantity/unit fields', () => {
     const result = normalizeShoppingListItemDisplay({ name: '280 g Lachs', quantity: 280, unit: 'g' })
     expect(result.displayName).toBe('Lachs')

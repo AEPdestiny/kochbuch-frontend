@@ -116,7 +116,7 @@ const mealSlots: { key: MealSlot; labelKey: string }[] = [
 ]
 
 const ingredientAmountPattern = String.raw`(?:\d+(?:[,.]\d+)?|\d+\/\d+|[\u00BC\u00BD\u00BE\u2153\u2154])`
-const directIngredientUnitPattern = String.raw`ml|g|kg|l|el|tl|tbsp|tbsps?|tablespoons?|tsp|tsps?|teaspoons?|t|cups?|tassen?|ounces?|oz|unzen?|servings?|strips?|cloves?|zehen?|stalks?|stiele?|sticks?|prise|prisen|pinches?|pieces?|stueck|stuck|stück|scheiben?|dose|dosen|bund|bunch|handvoll`
+const directIngredientUnitPattern = String.raw`ml|g|kg|l|grams?|liters?|litres?|el|esslöffel\.?|essloeffel\.?|tl|teelöffel\.?|teeloeffel\.?|tbsp|tbsps?|tablespoons?|tsp|tsps?|teaspoons?|t|T|cups?|tassen?|ounces?|oz|unzen?|pounds?|lbs?|pfund|packages?|packs?|packung|packungen|paket|pakete|servings?|strips?|cloves?|zehen?|stalks?|stiele?|sticks?|prise|prisen|pinches?|pieces?|stueck|stuck|stück|scheiben?|slices?|dose|dosen|bund|bunches?|handvoll`
 const trailingIngredientUnitPattern = String.raw`cloves?|zehen?|stalks?|stiele?|sticks?|strips?|scheiben?`
 const embeddedIngredientBoundary = new RegExp(
   String.raw`(?<=\p{L})\s+(?=${ingredientAmountPattern}\s+(?:(?:${directIngredientUnitPattern})\b|\p{Lu}|\p{L}+\s+(?:${trailingIngredientUnitPattern})\b))`,
@@ -532,22 +532,30 @@ function isUnitToken(value: string): boolean {
 
 function normalizeUnitToken(value: string | null | undefined): string | null {
   if (!value?.trim()) return null
-  const normalized = value.trim().toLowerCase()
+  const trimmed = value.trim()
+  if (trimmed === 'T') return 'tbsp'
+  if (trimmed === 't') return 'tsp'
+  const normalized = trimmed.toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.]/g, '')
     .replace('ß', 'ss')
   if (['g', 'kg', 'ml', 'l'].includes(normalized)) return normalized
-  if (['el', 'tbsp', 'tbsps', 'tablespoon', 'tablespoons'].includes(normalized)) return 'EL'
-  if (['tl', 'tsp', 'tsps', 'teaspoon', 'teaspoons', 't'].includes(normalized)) return 'TL'
-  if (['tasse', 'tassen', 'cup', 'cups'].includes(normalized)) return 'Tasse'
-  if (['ounce', 'ounces', 'oz', 'unze', 'unzen'].includes(normalized)) return 'Unzen'
-  if (['clove', 'cloves', 'zehe', 'zehen'].includes(normalized)) return 'Zehen'
-  if (['stalk', 'stalks', 'stiel', 'stiele'].includes(normalized)) return 'Stiele'
-  if (['pinch', 'pinches', 'prise', 'prisen'].includes(normalized)) return 'Prise'
-  if (['piece', 'pieces', 'stueck', 'stuck', 'stk'].includes(normalized)) return 'Stueck'
-  if (['bunch', 'bund'].includes(normalized)) return 'Bund'
-  if (['scheibe', 'scheiben', 'slice', 'slices'].includes(normalized)) return 'Scheiben'
-  if (['dose', 'dosen', 'can', 'cans'].includes(normalized)) return 'Dose'
+  if (['gram', 'grams'].includes(normalized)) return 'g'
+  if (['liter', 'liters', 'litre', 'litres'].includes(normalized)) return 'l'
+  if (['el', 'essloffel', 'essloeffel', 'tbsp', 'tbsps', 'tablespoon', 'tablespoons'].includes(normalized)) return 'tbsp'
+  if (['tl', 'teeloffel', 'teeloeffel', 'tsp', 'tsps', 'teaspoon', 'teaspoons'].includes(normalized)) return 'tsp'
+  if (['tasse', 'tassen', 'cup', 'cups'].includes(normalized)) return 'cup'
+  if (['ounce', 'ounces', 'oz', 'unze', 'unzen'].includes(normalized)) return 'oz'
+  if (['pound', 'pounds', 'lb', 'lbs', 'pfund'].includes(normalized)) return 'lb'
+  if (['clove', 'cloves', 'zehe', 'zehen'].includes(normalized)) return 'clove'
+  if (['stalk', 'stalks', 'stiel', 'stiele'].includes(normalized)) return 'stalk'
+  if (['pinch', 'pinches', 'prise', 'prisen'].includes(normalized)) return 'pinch'
+  if (['piece', 'pieces', 'stueck', 'stuck', 'stk'].includes(normalized)) return 'piece'
+  if (['bunch', 'bunches', 'bund'].includes(normalized)) return 'bunch'
+  if (['scheibe', 'scheiben', 'slice', 'slices'].includes(normalized)) return 'slice'
+  if (['packung', 'packungen', 'paket', 'pakete', 'package', 'packages', 'pack', 'packs'].includes(normalized)) return 'package'
+  if (['dose', 'dosen', 'can', 'cans'].includes(normalized)) return 'can'
   return null
 }
 

@@ -133,7 +133,7 @@ describe('RecipeDetailView', () => {
       id: 1,
       name: 'pasta',
       quantity: 2,
-      unit: 'Tasse',
+      unit: 'cup',
       category: 'Rezeptzutat',
       checked: false,
       recipeId: '716429',
@@ -190,13 +190,58 @@ describe('RecipeDetailView', () => {
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith({
       name: 'pasta',
       quantity: 2,
-      unit: 'Tasse',
+      unit: 'cup',
       category: 'Rezeptzutat',
       checked: false,
       recipeId: '716429',
       recipeTitle: 'Pasta with Garlic',
     })
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledTimes(2)
+  })
+
+  it('parses package, spoon, oz, lb and slice units when adding recipe ingredients', async () => {
+    sessionStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'jwt-token')
+    vi.mocked(recipeApi.getExternalRecipeDetail).mockResolvedValue({
+      ...externalDetail(),
+      ingredients: [
+        { name: 'Knorr-Sauce Hollandaise', original: '1 Packung Knorr-Sauce Hollandaise', amount: null, unit: null },
+        { name: 'weißer Essig', original: '1 Teelöffel weißer Essig', amount: null, unit: null },
+        { name: 'butter', original: '0.5 oz butter', amount: null, unit: null },
+        { name: 'potatoes', original: '1 lb potatoes', amount: null, unit: null },
+        { name: 'prosciutto-style ham', original: '3 slices prosciutto-style ham', amount: null, unit: null },
+      ],
+    })
+    const wrapper = mount(RecipeDetailView)
+    await flushPromises()
+
+    await wrapper.find('.primary-button').trigger('click')
+    await flushPromises()
+
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Knorr-Sauce Hollandaise',
+      quantity: 1,
+      unit: 'package',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'weißer Essig',
+      quantity: 1,
+      unit: 'tsp',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'butter',
+      quantity: 0.5,
+      unit: 'oz',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'potatoes',
+      quantity: 1,
+      unit: 'lb',
+    }))
+    expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'prosciutto-style ham',
+      quantity: 3,
+      unit: 'slice',
+    }))
   })
 
   it('adds only recipe ingredients that are missing from the pantry and shopping list', async () => {
@@ -221,7 +266,7 @@ describe('RecipeDetailView', () => {
     expect(shoppingListApi.createShoppingListItem).toHaveBeenCalledWith(expect.objectContaining({
       name: 'olive oil',
       quantity: 1,
-      unit: 'EL',
+      unit: 'tbsp',
     }))
     expect(shoppingListApi.createShoppingListItem).not.toHaveBeenCalledWith(expect.objectContaining({
       name: 'pasta',

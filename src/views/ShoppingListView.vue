@@ -64,7 +64,7 @@ const sortedItems = computed(() => {
 })
 
 const displayItems = computed(() =>
-  sortedItems.value.map(item => ({ item, display: normalizeShoppingListItemDisplay(item) }))
+  sortedItems.value.map(item => ({ item, display: normalizeShoppingListItemDisplay(item, locale.value) }))
 )
 
 onMounted(() => {
@@ -438,7 +438,7 @@ function exportShoppingListAsPdf() {
   toastStore.addToast(t('notifications.shoppingListPdfReady'), 'success')
   printShoppingList(
     items.value.map(i => {
-      const d = normalizeShoppingListItemDisplay(i)
+      const d = normalizeShoppingListItemDisplay(i, locale.value)
       return { name: d.displayName, quantity: d.displayQuantity || null, unit: d.displayUnit, checked: i.checked }
     }),
     {
@@ -531,8 +531,9 @@ function exportShoppingListAsPdf() {
               </div>
               <div class="item-side">
                 <p class="item-quantity">
-                  <span v-if="display.displayQuantity">{{ display.displayQuantity }}</span>
-                  <span v-if="display.displayUnit">{{ display.displayUnit }}</span>
+                  <span v-if="display.displayQuantity || display.displayUnit">
+                    {{ [display.displayQuantity, display.displayUnit].filter(Boolean).join(' ') }}
+                  </span>
                 </p>
                 <button type="button" class="edit-btn" @click="startEdit(item)">
                   {{ t('shoppingList.actions.edit') }}

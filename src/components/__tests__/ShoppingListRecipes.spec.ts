@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import ShoppingListRecipes from '@/components/ShoppingListRecipes.vue'
-import { i18n } from '@/i18n'
+import { i18n, setLocale } from '@/i18n'
 import type { ShoppingListItem } from '@/types/shoppingList'
 
 function item(overrides: Partial<ShoppingListItem>): ShoppingListItem {
@@ -20,6 +20,10 @@ function item(overrides: Partial<ShoppingListItem>): ShoppingListItem {
 }
 
 describe('ShoppingListRecipes.vue', () => {
+  afterEach(() => {
+    setLocale('de')
+  })
+
   it('shows an empty state when no items belong to recipes', () => {
     const wrapper = mount(ShoppingListRecipes, {
       props: {
@@ -80,5 +84,23 @@ describe('ShoppingListRecipes.vue', () => {
     await wrapper.findAll('.item-check input[type="checkbox"]')[1]!.setValue(true)
 
     expect(wrapper.emitted('toggle')).toEqual([[openItem]])
+  })
+
+  it('localizes units by current locale', () => {
+    setLocale('en')
+    const wrapper = mount(ShoppingListRecipes, {
+      props: {
+        items: [
+          item({ id: 'pasta-1', name: 'Oil', quantity: 1, unit: 'EL', recipeTitle: 'Pasta' }),
+          item({ id: 'pasta-2', name: 'Ham', quantity: 2, unit: 'Scheiben', recipeTitle: 'Pasta' }),
+        ],
+      },
+      global: { plugins: [i18n] },
+    })
+
+    expect(wrapper.text()).toContain('1 tbsp')
+    expect(wrapper.text()).toContain('2 slices')
+    expect(wrapper.text()).not.toContain('EL')
+    expect(wrapper.text()).not.toContain('Scheiben')
   })
 })

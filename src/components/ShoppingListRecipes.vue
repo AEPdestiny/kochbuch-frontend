@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { displayUnitForLocale } from '@/shared/normalizeShoppingItem'
 import type { ShoppingListItem } from '@/types/shoppingList'
 
 const props = defineProps<{
@@ -11,7 +12,16 @@ const emit = defineEmits<{
   toggle: [item: ShoppingListItem]
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+function displayUnit(unit: string | null | undefined) {
+  return displayUnitForLocale(unit, locale.value)
+}
+
+function displayQuantity(item: ShoppingListItem) {
+  const quantity = item.quantity !== null && item.quantity !== undefined ? String(item.quantity) : ''
+  return [quantity, displayUnit(item.unit)].filter(Boolean).join(' ')
+}
 
 const recipeGroups = computed(() => {
   const groups = new Map<string, ShoppingListItem[]>()
@@ -55,10 +65,7 @@ const recipeGroups = computed(() => {
               />
             </label>
             <span class="recipe-item-name">{{ groupItem.name }}</span>
-            <span class="recipe-item-quantity">
-              <span v-if="groupItem.quantity !== null && groupItem.quantity !== undefined">{{ groupItem.quantity }}</span>
-              <span v-if="groupItem.unit"> {{ groupItem.unit }}</span>
-            </span>
+            <span class="recipe-item-quantity">{{ displayQuantity(groupItem) }}</span>
           </li>
         </ul>
       </details>
