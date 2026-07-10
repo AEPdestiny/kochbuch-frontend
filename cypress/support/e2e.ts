@@ -16,5 +16,12 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
 
+const LOCALE_STORAGE_KEY = 'dishly.locale'
+const E2E_LOCALE = Cypress.env('DISHLY_LOCALE') || 'de'
+
+Cypress.on('window:before:load', win => {
+  win.localStorage.setItem(LOCALE_STORAGE_KEY, E2E_LOCALE)
+})
+
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
